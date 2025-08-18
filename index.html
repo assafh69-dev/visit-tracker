@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול טיפולי גינות</title>
+	
+	<script src="https://apis.google.com/js/api.js"></script>
+	<script src="https://accounts.google.com/gsi/client"></script>
+	
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            padding: 12px 20px;
+            border: none;
+            background: #ecf0f1;
+            color: #2c3e50;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: #d5dbdb;
+        }
+
+        .nav-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        /* Filter Buttons */
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #bdc3c7;
+            background: white;
+            color: #2c3e50;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            background: #ecf0f1;
+        }
+
+        .filter-btn.active {
+            background: #27ae60;
+            color: white;
+            border-color: #27ae60;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 500px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            background: #34495e;
+            color: white;
+            padding: 12px 8px;
+            text-align: right;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ecf0f1;
+            text-align: right;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .data-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        /* Forms */
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        /* Timer Section */
+        .timer-section {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 6px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .timer-display {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .timer-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .timer-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        #startBtn {
+            background: #27ae60;
+            color: white;
+        }
+
+        #startBtn:hover:not(:disabled) {
+            background: #229954;
+        }
+
+        #pauseBtn {
+            background: #f39c12;
+            color: white;
+        }
+
+        #pauseBtn:hover:not(:disabled) {
+            background: #e67e22;
+        }
+
+        #stopBtn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        #stopBtn:hover:not(:disabled) {
+            background: #c0392b;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Buttons */
+        .add-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .add-btn:hover {
+            background: #229954;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 0 2px;
+            transition: all 0.3s ease;
+        }
+
+        .edit-btn {
+            background: #3498db;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background: #2980b9;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+
+        .start-treatment-btn {
+            background: #27ae60;
+            color: white;
+        }
+
+        .start-treatment-btn:hover {
+            background: #229954;
+        }
+
+        /* Submit Button */
+        button[type="submit"] {
+            width: 100%;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: background 0.3s ease;
+        }
+
+        button[type="submit"]:hover {
+            background: #2980b9;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .nav-buttons {
+                gap: 5px;
+            }
+            
+            .nav-btn {
+                padding: 10px 15px;
+                font-size: 13px;
+            }
+            
+            .timer-display {
+                font-size: 1.5em;
+            }
+            
+            .timer-buttons {
+                gap: 5px;
+            }
+            
+            .timer-buttons button {
+                padding: 8px 15px;
+                font-size: 13px;
+            }
+            
+            .data-table {
+                font-size: 12px;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 8px 6px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-buttons {
+                flex-direction: column;
+            }
+            
+            .nav-btn {
+                width: 100%;
+            }
+            
+            .filter-buttons {
+                flex-direction: column;
+            }
+            
+            .filter-btn {
+                width: 100%;
+            }
+            
+            .timer-buttons {
+                flex-direction: column;
+            }
+            
+            .timer-buttons button {
+                width: 100%;
+            }
+        }
+
+        /* Loading and Error States */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .success {
+            background: #27ae60;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .modal-header h3 {
+            color: #2c3e50;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+		
+		/* Connection Status */
+		
+		/* Hide connection for now */
+		.connection-status {
+			display: none;
+		}
+		
+		.connection-status {
+			text-align: center;
+			margin-bottom: 20px;
+			padding: 15px;
+			background: #f8f9fa;
+			border-radius: 6px;
+		}
+
+		.connect-btn {
+			background: #4285f4;
+			color: white;
+			border: none;
+			padding: 12px 24px;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 14px;
+			margin-left: 10px;
+			transition: background 0.3s ease;
+		}
+
+		.connect-btn:hover {
+			background: #3367d6;
+		}
+
+		.connect-btn:disabled {
+			background: #95a5a6;
+			cursor: not-allowed;
+		}
+
+		#statusText {
+			color: #7f8c8d;
+			font-weight: 500;
+		}
+
+		.connected {
+			color: #27ae60 !important;
+		}
+
+		.connecting {
+			color: #f39c12 !important;
+		}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>ניהול טיפולי גינות</h1>
+			<div id="connectionStatus" class="connection-status">
+				<button onclick="connectToGoogleSheets()" id="connectBtn" class="connect-btn">
+					התחבר ל-Google Sheets
+				</button>
+				<span id="statusText">לא מחובר</span>
+			</div>
+            <nav class="nav-buttons">
+                <button onclick="showSection('planning')" class="nav-btn active">תכנון יומי</button>
+                <button onclick="showSection('treatment')" class="nav-btn">טיפול חדש</button>
+                <button onclick="showSection('gardens')" class="nav-btn">ניהול גינות</button>
+                <button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
+            </nav>
+        </header>
+
+        <main class="main-content">
+            <!-- Planning Section -->
+            <section id="planning" class="section active">
+                <h2>תכנון יומי - גינות לטיפול</h2>
+                <div class="filter-buttons">
+					<button onclick="filterTreatments('today')" class="filter-btn active">היום</button>
+					<button onclick="filterTreatments('week')" class="filter-btn">השבוע</button>
+					<button onclick="filterTreatments('overdue')" class="filter-btn">מאחרות</button>
+				</div>
+                <div class="table-container">
+                    <table id="planningTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>שם גינה</th>
+                                <th>כתובת</th>
+                                <th>יום מותר</th>
+                                <th>טיפול הבא</th>
+                                <th>פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="planningTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Treatment Section -->
+            <section id="treatment" class="section">
+                <h2>טיפול חדש</h2>
+                <div class="form-container">
+                    <form id="treatmentForm">
+                        <div class="form-group">
+                            <label for="gardenSelect">בחר גינה:</label>
+                            <select id="gardenSelect" required>
+                                <option value="">בחר גינה...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="treatmentType">סוג טיפול:</label>
+                            <select id="treatmentType" required>
+                                <option value="מלא">מלא</option>
+                                <option value="חלקי">חלקי</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="workDone">מה בוצע:</label>
+                            <textarea id="workDone" placeholder="תיאור העבודה שבוצעה"></textarea>
+                        </div>
+                        <div class="timer-section">
+                            <div class="timer-display">
+                                <span id="timerDisplay">00:00:00</span>
+                            </div>
+                            <div class="timer-buttons">
+                                <button type="button" id="startBtn" onclick="startTreatment()">התחל טיפול</button>
+                                <button type="button" id="pauseBtn" onclick="pauseTreatment()" disabled>הפסקה</button>
+                                <button type="button" id="stopBtn" onclick="stopTreatment()" disabled>סיום טיפול</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="manualDuration">משך ידני (דקות):</label>
+                            <input type="number" id="manualDuration" placeholder="עריכה ידנית">
+                        </div>
+                        <div class="form-group">
+                            <label for="amount">סכום:</label>
+                            <input type="number" id="amount" placeholder="סכום הטיפול">
+                        </div>
+                        <div class="form-group">
+                            <label for="expense">הוצאה:</label>
+                            <input type="number" id="expense" placeholder="הוצאות נלוות">
+                        </div>
+                        <button type="submit">שמור טיפול</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Gardens Section -->
+            <section id="gardens" class="section">
+                <h2>ניהול גינות</h2>
+                <button onclick="showAddGardenForm()" class="add-btn">הוסף גינה חדשה</button>
+                <div class="table-container">
+                    <table id="gardensTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>שם</th>
+                                <th>כתובת</th>
+                                <th>איש קשר</th>
+                                <th>יום מותר</th>
+                                <th>מרווח</th>
+                                <th>פעילה</th>
+                                <th>פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gardensTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Receipts Section -->
+            <section id="receipts" class="section">
+                <h2>ניהול קבלות</h2>
+                <button onclick="showAddReceiptForm()" class="add-btn">הוסף קבלה חדשה</button>
+                <div class="table-container">
+                    <table id="receiptsTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>פנקס</th>
+                                <th>קבלה</th>
+                                <th>תאריך</th>
+                                <th>גינה</th>
+                                <th>סכום</th>
+                                <th>סוג תשלום</th>
+                                <th>פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="receiptsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modalContainer"></div>
+
+    <script>
+		 // Google Sheets API Configuration
+		const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+		const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+		const SPREADSHEET_ID = '1fSD5dh0bXRzFSeOZUwJ2bPjGRLqs2crGXPkebz6MpWc';
+		const CLIENT_ID = '1040357646874-4sbkrokgjn4dd7a0e9rkrtjt8d9l3vie.apps.googleusercontent.com';
+		const API_KEY = 'AIzaSyB25ms_UzbgfY9FnduMwMhGhlvwfVPaTg8';
+
+		let gapi_loaded = false;
+		let google_loaded = false;
+		let access_token = null;
+		let spreadsheet_id = SPREADSHEET_ID;
+        
+        // Sheet names
+        const SHEETS = {
+            GARDENS: 'gardens',
+            TREATMENTS: 'treatments',
+            RECEIPTS: 'receipts'
+        };
+
+        // Global variables
+        let gardens = [];
+        let treatments = [];
+        let receipts = [];
+        let currentFilter = 'today';
+        let timer = {
+            startTime: null,
+            pauseTime: 0,
+            interval: null,
+            isRunning: false,
+            isPaused: false
+        };
+
+		// Initialize Google APIs
+		function initializeGoogleAPIs() {
+			gapi.load('client', initializeGapiClient);
+			google.accounts.id.initialize({
+				client_id: CLIENT_ID,
+				callback: handleCredentialResponse,
+			});
+		}
+
+		async function initializeGapiClient() {
+			await gapi.client.init({
+				apiKey: API_KEY,
+				discoveryDocs: [DISCOVERY_DOC],
+			});
+			gapi_loaded = true;
+		}
+
+		function handleCredentialResponse(response) {
+			access_token = response.credential;
+			showSuccess('התחברת בהצלחה ל-Google!');
+		}
+
+		async function connectToGoogleSheets() {
+			try {
+				console.log('Connecting to Google Sheets...');
+				showSuccess('מתחבר ל-Google Sheets...');
+				
+				const tokenClient = google.accounts.oauth2.initTokenClient({
+					client_id: CLIENT_ID,
+					scope: SCOPES,
+					callback: (response) => {
+						access_token = response.access_token;
+						showSuccess('התחברת בהצלחה ל-Google Sheets!');
+						loadAllDataFromSheets();
+					},
+				});
+				
+				tokenClient.requestAccessToken();
+				
+			} catch (error) {
+				console.error('Error connecting to Google Sheets:', error);
+				showError('שגיאה בחיבור ל-Google Sheets');
+			}
+		}
+
+		// Local Storage functions
+		function saveToLocalStorage() {
+			try {
+				localStorage.setItem('gardens_data', JSON.stringify(gardens));
+				localStorage.setItem('treatments_data', JSON.stringify(treatments));
+				localStorage.setItem('receipts_data', JSON.stringify(receipts));
+				console.log('Data saved to local storage');
+			} catch (error) {
+				console.error('Error saving to local storage:', error);
+			}
+		}
+
+		function loadFromLocalStorage() {
+			try {
+				const savedGardens = localStorage.getItem('gardens_data');
+				const savedTreatments = localStorage.getItem('treatments_data');
+				const savedReceipts = localStorage.getItem('receipts_data');
+				
+				if (savedGardens) {
+					gardens = JSON.parse(savedGardens);
+				}
+				if (savedTreatments) {
+					treatments = JSON.parse(savedTreatments);
+				}
+				if (savedReceipts) {
+					receipts = JSON.parse(savedReceipts);
+				}
+				
+				console.log('Data loaded from local storage');
+				
+			} catch (error) {
+				console.error('Error loading from local storage:', error);
+			}
+		}
+
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+			console.log('App starting...');
+			initializeGoogleAPIs();
+			loadAllData(); // זה יטען נתונים מקומיים
+			setupEventListeners();
+		});
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Treatment form submission
+            document.getElementById('treatmentForm').addEventListener('submit', handleTreatmentSubmit);
+        }
+
+        // Navigation
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName).classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            // Load section-specific data
+            switch(sectionName) {
+                case 'planning':
+                    loadPlanningData();
+                    break;
+                case 'treatment':
+                    loadGardensForSelect();
+                    break;
+                case 'gardens':
+                    loadGardensTable();
+                    break;
+                case 'receipts':
+                    loadReceiptsTable();
+                    break;
+            }
+        }
+
+        // Timer functions
+        function startTreatment() {
+            timer.startTime = Date.now() - timer.pauseTime;
+            timer.isRunning = true;
+            timer.isPaused = false;
+            
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = false;
+            
+            timer.interval = setInterval(updateTimerDisplay, 1000);
+        }
+
+        function pauseTreatment() {
+            if (timer.isPaused) {
+                // Resume
+                timer.startTime = Date.now() - timer.pauseTime;
+                timer.isPaused = false;
+                timer.interval = setInterval(updateTimerDisplay, 1000);
+                document.getElementById('pauseBtn').textContent = 'הפסקה';
+            } else {
+                // Pause
+                clearInterval(timer.interval);
+                timer.pauseTime = Date.now() - timer.startTime;
+                timer.isPaused = true;
+                document.getElementById('pauseBtn').textContent = 'המשך';
+            }
+        }
+
+        function stopTreatment() {
+            clearInterval(timer.interval);
+            const totalDuration = Math.floor((Date.now() - timer.startTime) / 60000); // minutes
+            
+            document.getElementById('manualDuration').value = totalDuration;
+            
+            // Reset timer
+            timer = {
+                startTime: null,
+                pauseTime: 0,
+                interval: null,
+                isRunning: false,
+                isPaused: false
+            };
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('pauseBtn').textContent = 'הפסקה';
+            document.getElementById('timerDisplay').textContent = '00:00:00';
+        }
+
+        function updateTimerDisplay() {
+            const elapsed = Date.now() - timer.startTime;
+            const hours = Math.floor(elapsed / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            
+            document.getElementById('timerDisplay').textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Data loading functions
+		async function loadAllData() {
+			try {
+				showLoading('טוען נתונים...');
+				loadFromLocalStorage();
+				hideLoading();
+				loadPlanningData();
+			} catch (error) {
+				console.error('Error loading data:', error);
+				showError('שגיאה בטעינת הנתונים');
+			}
+		}
+
+        async function loadGardens() {
+            // For now, we'll use dummy data until we set up the Google Sheets API
+            gardens = [
+                {
+                    ID: 1,
+                    name: "גינת דוגמה 1",
+                    full_address: "רחוב הדוגמה 1, תל אביב",
+                    neighborhood: "מרכז",
+                    city: "תל אביב",
+                    contact_person: "יוסי כהן",
+                    phone: "050-1234567",
+                    allowed_day: "א'",
+                    interval_weeks: 4,
+                    temp_addition: 0,
+                    base_amount: 300,
+                    active: "כן",
+                    notes: "",
+                    last_treatment: "2024-01-15",
+                    next_treatment: "2024-02-12"
+                },
+                {
+                    ID: 2,
+                    name: "גינת דוגמה 2",
+                    full_address: "רחוב הדוגמה 2, תל אביב",
+                    neighborhood: "צפון",
+                    city: "תל אביב",
+                    contact_person: "מרים לוי",
+                    phone: "052-7654321",
+                    allowed_day: "ג'",
+                    interval_weeks: 6,
+                    temp_addition: 0,
+                    base_amount: 400,
+                    active: "כן",
+                    notes: "",
+                    last_treatment: "2024-01-10",
+                    next_treatment: "2024-02-21"
+                }
+            ];
+        }
+
+        async function loadTreatments() {
+            treatments = []; // Will be loaded from Google Sheets
+        }
+
+        async function loadReceipts() {
+            receipts = []; // Will be loaded from Google Sheets
+        }
+
+        // Display functions
+        function loadPlanningData() {
+            filterTreatments(currentFilter);
+        }
+
+        function filterTreatments(filter) {
+			currentFilter = filter;
+			
+			// Update filter buttons - fix the event.target issue
+			document.querySelectorAll('.filter-btn').forEach(btn => {
+				btn.classList.remove('active');
+				// Add active class to the button that matches the current filter
+				if ((filter === 'today' && btn.textContent === 'היום') ||
+					(filter === 'week' && btn.textContent === 'השבוע') ||
+					(filter === 'overdue' && btn.textContent === 'מאחרות')) {
+					btn.classList.add('active');
+				}
+			});
+			
+			// Filter gardens based on next_treatment date
+			const today = new Date();
+			const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+			
+			let filteredGardens = gardens.filter(garden => garden.active === "כן");
+			
+			switch(filter) {
+				case 'today':
+					filteredGardens = filteredGardens.filter(garden => {
+						const nextTreatment = new Date(garden.next_treatment);
+						return nextTreatment <= today;
+					});
+					break;
+				case 'week':
+					filteredGardens = filteredGardens.filter(garden => {
+						const nextTreatment = new Date(garden.next_treatment);
+						return nextTreatment <= weekFromNow;
+					});
+					break;
+				case 'overdue':
+					filteredGardens = filteredGardens.filter(garden => {
+						const nextTreatment = new Date(garden.next_treatment);
+						return nextTreatment < today;
+					});
+					break;
+			}
+			
+			displayPlanningTable(filteredGardens);
+		}
+
+        function displayPlanningTable(gardensToShow) {
+            const tbody = document.getElementById('planningTableBody');
+            tbody.innerHTML = '';
+            
+            if (gardensToShow.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">אין גינות לטיפול</td></tr>';
+                return;
+            }
+            
+            gardensToShow.forEach(garden => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${garden.name}</td>
+                    <td>${garden.full_address}</td>
+                    <td>${garden.allowed_day}</td>
+                    <td>${formatDate(garden.next_treatment)}</td>
+                    <td>
+                        <button class="action-btn start-treatment-btn" onclick="startTreatmentForGarden(${garden.ID})">
+                            התחל טיפול
+                        </button>
+                        <button class="action-btn edit-btn" onclick="postponeTreatment(${garden.ID})">
+                            דחה
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function loadGardensForSelect() {
+            const select = document.getElementById('gardenSelect');
+            select.innerHTML = '<option value="">בחר גינה...</option>';
+            
+            gardens.filter(garden => garden.active === "כן").forEach(garden => {
+                const option = document.createElement('option');
+                option.value = garden.ID;
+                option.textContent = `${garden.name} - ${garden.full_address}`;
+                select.appendChild(option);
+            });
+        }
+
+        function loadGardensTable() {
+            const tbody = document.getElementById('gardensTableBody');
+            tbody.innerHTML = '';
+            
+            gardens.forEach(garden => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${garden.name}</td>
+                    <td>${garden.full_address}</td>
+                    <td>${garden.contact_person}</td>
+                    <td>${garden.allowed_day}</td>
+                    <td>${garden.interval_weeks} שבועות</td>
+                    <td>${garden.active}</td>
+                    <td>
+                        <button class="action-btn edit-btn" onclick="editGarden(${garden.ID})">ערוך</button>
+                        <button class="action-btn delete-btn" onclick="deleteGarden(${garden.ID})">מחק</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+       function loadReceiptsTable() {
+			const tbody = document.getElementById('receiptsTableBody');
+			tbody.innerHTML = '';
+			
+			if (receipts.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">אין קבלות</td></tr>';
+				return;
+			}
+			
+			receipts.forEach(receipt => {
+				const row = document.createElement('tr');
+				row.innerHTML = `
+					<td>${receipt.book_number}</td>
+					<td>${receipt.receipt_number}</td>
+					<td>${formatDate(receipt.date)}</td>
+					<td>${receipt.garden_name}</td>
+					<td>${receipt.amount}</td>
+					<td>${receipt.payment_type}</td>
+					<td>
+						<button class="action-btn edit-btn" onclick="editReceipt(${receipt.ID})">ערוך</button>
+						<button class="action-btn delete-btn" onclick="deleteReceipt(${receipt.ID})">מחק</button>
+					</td>
+				`;
+				tbody.appendChild(row);
+			});
+		}
+
+        // Treatment handling
+        function startTreatmentForGarden(gardenId) {
+            const garden = gardens.find(g => g.ID === gardenId);
+            if (garden) {
+                showSection('treatment');
+                document.getElementById('gardenSelect').value = gardenId;
+            }
+        }
+
+        function handleTreatmentSubmit(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const treatmentData = {
+                garden_id: document.getElementById('gardenSelect').value,
+                treatment_type: document.getElementById('treatmentType').value,
+                work_done: document.getElementById('workDone').value,
+                duration_minutes: document.getElementById('manualDuration').value || 0,
+                amount: document.getElementById('amount').value || 0,
+                expense: document.getElementById('expense').value || 0,
+                date: new Date().toISOString().split('T')[0],
+                start_time: new Date().toTimeString().split(' ')[0],
+                end_time: new Date().toTimeString().split(' ')[0]
+            };
+            
+            console.log('Treatment data:', treatmentData);
+            
+            // Here we would save to Google Sheets
+            saveTreatment(treatmentData);
+        }
+
+		async function saveTreatment(treatmentData) {
+            try {
+                // For now, just add to local array
+                const newTreatment = {
+                    ID: treatments.length + 1,
+                    ...treatmentData,
+                    paid: 'לא',
+                    notes: ''
+                };
+                
+                treatments.push(newTreatment);
+
+				// Update next treatment date if it's a full treatment
+			    if (treatmentData.treatment_type === 'מלא') {
+				   updateNextTreatmentDate(treatmentData.garden_id);
+			    }
+			   
+			    showSuccess('טיפול נשמר בהצלחה!');
+			    
+			    // Reset form
+			    document.getElementById('treatmentForm').reset();
+			   
+			    // Reset timer display
+			    document.getElementById('timerDisplay').textContent = '00:00:00';
+			   
+			    // Reload planning data
+			    loadPlanningData();
+				saveToLocalStorage();
+               
+            } catch (error) {
+                console.error('Error saving treatment:', error);
+                showError('שגיאה בשמירת הטיפול');
+            }
+		}
+
+		function updateNextTreatmentDate(gardenId) {
+			const garden = gardens.find(g => g.ID == gardenId);
+			if (garden) {
+               const lastTreatment = new Date();
+               const intervalWeeks = parseInt(garden.interval_weeks) + parseInt(garden.temp_addition || 0);
+               const nextTreatment = new Date(lastTreatment.getTime() + (intervalWeeks * 7 * 24 * 60 * 60 * 1000));
+               
+               garden.last_treatment = lastTreatment.toISOString().split('T')[0];
+               garden.next_treatment = nextTreatment.toISOString().split('T')[0];
+               garden.temp_addition = 0; // Reset temporary addition
+               
+               // Here we would update Google Sheets
+               console.log(`Updated next treatment for ${garden.name}: ${garden.next_treatment}`);
+			}
+		}
+
+		function postponeTreatment(gardenId) {
+			const garden = gardens.find(g => g.ID == gardenId);
+			if (garden) {
+				const weeks = prompt('כמה שבועות לדחות?', '1');
+				if (weeks && !isNaN(weeks)) {
+					const currentNext = new Date(garden.next_treatment);
+					const newNext = new Date(currentNext.getTime() + (parseInt(weeks) * 7 * 24 * 60 * 60 * 1000));
+					garden.next_treatment = newNext.toISOString().split('T')[0];
+
+					loadPlanningData();
+					showSuccess(`טיפול נדחה ב-${weeks} שבועות`);
+				}
+			}
+		}
+
+       // Garden management
+       function showAddGardenForm() {
+           const modalHTML = `
+               <div class="modal" id="gardenModal">
+                   <div class="modal-content">
+                       <div class="modal-header">
+                           <h3>הוספת גינה חדשה</h3>
+                           <span class="close" onclick="closeModal('gardenModal')">&times;</span>
+                       </div>
+                       <form id="gardenForm" onsubmit="handleGardenSubmit(event)">
+                           <div class="form-group">
+                               <label for="gardenName">שם גינה:</label>
+                               <input type="text" id="gardenName" required>
+                           </div>
+                           <div class="form-group">
+                               <label for="gardenAddress">כתובת מלאה:</label>
+                               <input type="text" id="gardenAddress" required>
+                           </div>
+                           <div class="form-group">
+                               <label for="gardenNeighborhood">שכונה:</label>
+                               <input type="text" id="gardenNeighborhood">
+                           </div>
+                           <div class="form-group">
+                               <label for="gardenCity">עיר:</label>
+                               <input type="text" id="gardenCity">
+                           </div>
+                           <div class="form-group">
+                               <label for="gardenContact">איש קשר:</label>
+                               <input type="text" id="gardenContact" required>
+                           </div>
+                           <div class="form-group">
+                               <label for="gardenPhone">טלפון:</label>
+                               <input type="tel" id="gardenPhone">
+                           </div>
+                           <div class="form-group">
+                               <label for="gardenDay">יום מותר:</label>
+                               <select id="gardenDay" required>
+                                   <option value="">בחר יום...</option>
+                                   <option value="א'">ראשון</option>
+                                   <option value="ב'">שני</option>
+                                   <option value="ג'">שלישי</option>
+                                   <option value="ד'">רביעי</option>
+                                   <option value="ה'">חמישי</option>
+                                   <option value="ו'">שישי</option>
+                                   <option value="שבת">שבת</option>
+                               </select>
+                           </div>
+                           <div class="form-group">
+                               <label for="gardenInterval">מרווח שבועות:</label>
+                               <input type="number" id="gardenInterval" required min="1" max="52">
+                           </div>
+                           <div class="form-group">
+                               <label for="gardenAmount">סכום בסיסי:</label>
+                               <input type="number" id="gardenAmount">
+                           </div>
+                           <div class="form-group">
+                               <label for="gardenActive">פעילה:</label>
+                               <select id="gardenActive" required>
+                                   <option value="כן">כן</option>
+                                   <option value="לא">לא</option>
+                               </select>
+                           </div>
+                           <div class="form-group">
+                               <label for="gardenNextTreatment">תאריך לטיפול הבא:</label>
+                               <input type="date" id="gardenNextTreatment" required>
+                           </div>
+                           <div class="form-group">
+                               <label for="gardenNotes">הערות:</label>
+                               <textarea id="gardenNotes"></textarea>
+                           </div>
+                           <button type="submit">שמור גינה</button>
+                       </form>
+                   </div>
+               </div>
+           `;
+           
+           document.getElementById('modalContainer').innerHTML = modalHTML;
+           document.getElementById('gardenModal').style.display = 'block';
+           
+           // Set default next treatment date to today
+           document.getElementById('gardenNextTreatment').value = new Date().toISOString().split('T')[0];
+       }
+
+       function handleGardenSubmit(event) {
+           event.preventDefault();
+           
+           const gardenData = {
+               ID: gardens.length + 1,
+               name: document.getElementById('gardenName').value,
+               full_address: document.getElementById('gardenAddress').value,
+               neighborhood: document.getElementById('gardenNeighborhood').value,
+               city: document.getElementById('gardenCity').value,
+               contact_person: document.getElementById('gardenContact').value,
+               phone: document.getElementById('gardenPhone').value,
+               allowed_day: document.getElementById('gardenDay').value,
+               interval_weeks: parseInt(document.getElementById('gardenInterval').value),
+               temp_addition: 0,
+               base_amount: parseFloat(document.getElementById('gardenAmount').value) || 0,
+               active: document.getElementById('gardenActive').value,
+               notes: document.getElementById('gardenNotes').value,
+               last_treatment: '',
+               next_treatment: document.getElementById('gardenNextTreatment').value
+           };
+           
+           gardens.push(gardenData);
+           
+           closeModal('gardenModal');
+           loadGardensTable();
+           loadGardensForSelect();
+           showSuccess('גינה נוספה בהצלחה!');
+		   saveToLocalStorage();
+       }
+
+       function editGarden(gardenId) {
+           const garden = gardens.find(g => g.ID == gardenId);
+           if (!garden) return;
+           
+           showAddGardenForm();
+           
+           // Populate form with existing data
+           setTimeout(() => {
+               document.getElementById('gardenName').value = garden.name;
+               document.getElementById('gardenAddress').value = garden.full_address;
+               document.getElementById('gardenNeighborhood').value = garden.neighborhood || '';
+               document.getElementById('gardenCity').value = garden.city || '';
+               document.getElementById('gardenContact').value = garden.contact_person;
+               document.getElementById('gardenPhone').value = garden.phone || '';
+               document.getElementById('gardenDay').value = garden.allowed_day;
+               document.getElementById('gardenInterval').value = garden.interval_weeks;
+               document.getElementById('gardenAmount').value = garden.base_amount;
+               document.getElementById('gardenActive').value = garden.active;
+               document.getElementById('gardenNextTreatment').value = garden.next_treatment;
+               document.getElementById('gardenNotes').value = garden.notes || '';
+               
+               // Change form submission to update instead of add
+               document.getElementById('gardenForm').onsubmit = function(event) {
+                   event.preventDefault();
+                   updateGarden(gardenId);
+               };
+               
+               document.querySelector('.modal-header h3').textContent = 'עריכת גינה';
+           }, 100);
+       }
+
+       function updateGarden(gardenId) {
+           const garden = gardens.find(g => g.ID == gardenId);
+           if (!garden) return;
+           
+           garden.name = document.getElementById('gardenName').value;
+           garden.full_address = document.getElementById('gardenAddress').value;
+           garden.neighborhood = document.getElementById('gardenNeighborhood').value;
+           garden.city = document.getElementById('gardenCity').value;
+           garden.contact_person = document.getElementById('gardenContact').value;
+           garden.phone = document.getElementById('gardenPhone').value;
+           garden.allowed_day = document.getElementById('gardenDay').value;
+           garden.interval_weeks = parseInt(document.getElementById('gardenInterval').value);
+           garden.base_amount = parseFloat(document.getElementById('gardenAmount').value) || 0;
+           garden.active = document.getElementById('gardenActive').value;
+           garden.next_treatment = document.getElementById('gardenNextTreatment').value;
+           garden.notes = document.getElementById('gardenNotes').value;
+           
+           closeModal('gardenModal');
+           loadGardensTable();
+           loadGardensForSelect();
+           loadPlanningData();
+           showSuccess('גינה עודכנה בהצלחה!');
+		   saveToLocalStorage();
+       }
+
+       function deleteGarden(gardenId) {
+           if (confirm('האם אתה בטוח שברצונך למחוק את הגינה?')) {
+               gardens = gardens.filter(g => g.ID != gardenId);
+               loadGardensTable();
+               loadGardensForSelect();
+               loadPlanningData();
+               showSuccess('גינה נמחקה בהצלחה!');
+			   saveToLocalStorage();
+           }
+       }
+
+       // Receipt management
+       function showAddReceiptForm() {
+           const modalHTML = `
+               <div class="modal" id="receiptModal">
+                   <div class="modal-content">
+                       <div class="modal-header">
+                           <h3>הוספת קבלה חדשה</h3>
+                           <span class="close" onclick="closeModal('receiptModal')">&times;</span>
+                       </div>
+                       <form id="receiptForm" onsubmit="handleReceiptSubmit(event)">
+                           <div class="form-group">
+                               <label for="receiptBook">מספר פנקס:</label>
+                               <input type="number" id="receiptBook" required>
+                           </div>
+                           <div class="form-group">
+                               <label for="receiptNumber">מספר קבלה:</label>
+                               <input type="number" id="receiptNumber" required>
+                           </div>
+                           <div class="form-group">
+                               <label for="receiptDate">תאריך:</label>
+                               <input type="date" id="receiptDate" required>
+                           </div>
+                           <div class="form-group">
+                               <label for="receiptGarden">גינה:</label>
+                               <select id="receiptGarden" required>
+                                   <option value="">בחר גינה...</option>
+                               </select>
+                           </div>
+                           <div class="form-group">
+                               <label for="receiptAmount">סכום:</label>
+                               <input type="number" id="receiptAmount" required>
+                           </div>
+                           <div class="form-group">
+                               <label for="receiptPaymentType">סוג תשלום:</label>
+                               <select id="receiptPaymentType" required>
+                                   <option value="">בחר סוג...</option>
+                                   <option value="מזומן">מזומן</option>
+                                   <option value="צ'ק">צ'ק</option>
+                                   <option value="העברה">העברה בנקאית</option>
+                                   <option value="ביט">ביט</option>
+                                   <option value="פייבוקס">פייבוקס</option>
+                               </select>
+                           </div>
+                           <div class="form-group">
+                               <label for="receiptNotes">הערות:</label>
+                               <textarea id="receiptNotes"></textarea>
+                           </div>
+                           <button type="submit">שמור קבלה</button>
+                       </form>
+                   </div>
+               </div>
+           `;
+           
+           document.getElementById('modalContainer').innerHTML = modalHTML;
+           document.getElementById('receiptModal').style.display = 'block';
+           
+           // Set default date to today
+           document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
+           
+           // Populate gardens select
+           const select = document.getElementById('receiptGarden');
+           gardens.forEach(garden => {
+               const option = document.createElement('option');
+               option.value = garden.ID;
+               option.textContent = `${garden.name} - ${garden.full_address}`;
+               select.appendChild(option);
+           });
+       }
+
+       function handleReceiptSubmit(event) {
+           event.preventDefault();
+           
+           const gardenId = document.getElementById('receiptGarden').value;
+           const garden = gardens.find(g => g.ID == gardenId);
+           
+           const receiptData = {
+               ID: receipts.length + 1,
+               book_number: document.getElementById('receiptBook').value,
+               receipt_number: document.getElementById('receiptNumber').value,
+               date: document.getElementById('receiptDate').value,
+               garden_id: gardenId,
+               garden_name: garden ? garden.name : '',
+               amount: parseFloat(document.getElementById('receiptAmount').value),
+               payment_type: document.getElementById('receiptPaymentType').value,
+               notes: document.getElementById('receiptNotes').value
+           };
+           
+           receipts.push(receiptData);
+           
+           closeModal('receiptModal');
+           loadReceiptsTable();
+           showSuccess('קבלה נוספה בהצלחה!');
+		   saveToLocalStorage();
+       }
+
+       // Utility functions
+       function closeModal(modalId) {
+           document.getElementById(modalId).style.display = 'none';
+       }
+
+       function formatDate(dateString) {
+           const date = new Date(dateString);
+           return date.toLocaleDateString('he-IL');
+       }
+
+       function showLoading(message) {
+           // Could implement loading spinner
+           console.log('Loading:', message);
+       }
+
+       function hideLoading() {
+           // Hide loading spinner
+           console.log('Loading complete');
+       }
+
+       function showError(message) {
+           // Show error message
+           const errorDiv = document.createElement('div');
+           errorDiv.className = 'error';
+           errorDiv.textContent = message;
+           document.querySelector('.main-content').insertBefore(errorDiv, document.querySelector('.main-content').firstChild);
+           
+           setTimeout(() => {
+               errorDiv.remove();
+           }, 5000);
+       }
+
+       function showSuccess(message) {
+           // Show success message
+           const successDiv = document.createElement('div');
+           successDiv.className = 'success';
+           successDiv.textContent = message;
+           document.querySelector('.main-content').insertBefore(successDiv, document.querySelector('.main-content').firstChild);
+           
+           setTimeout(() => {
+               successDiv.remove();
+           }, 3000);
+       }
+
+       // Click outside modal to close
+       window.onclick = function(event) {
+           if (event.target.classList.contains('modal')) {
+               event.target.style.display = 'none';
+           }
+       }
+	   
+	   function editReceipt(receiptId) {
+			const receipt = receipts.find(r => r.ID == receiptId);
+			if (!receipt) return;
+			
+			showAddReceiptForm();
+			
+			// Populate form with existing data
+			setTimeout(() => {
+				document.getElementById('receiptBook').value = receipt.book_number;
+				document.getElementById('receiptNumber').value = receipt.receipt_number;
+				document.getElementById('receiptDate').value = receipt.date;
+				document.getElementById('receiptGarden').value = receipt.garden_id;
+				document.getElementById('receiptAmount').value = receipt.amount;
+				document.getElementById('receiptPaymentType').value = receipt.payment_type;
+				document.getElementById('receiptNotes').value = receipt.notes || '';
+				
+				// Change form submission to update instead of add
+				document.getElementById('receiptForm').onsubmit = function(event) {
+					event.preventDefault();
+					updateReceipt(receiptId);
+				};
+				
+				document.querySelector('.modal-header h3').textContent = 'עריכת קבלה';
+			}, 100);
+		}
+
+		function updateReceipt(receiptId) {
+			const receipt = receipts.find(r => r.ID == receiptId);
+			if (!receipt) return;
+			
+			const gardenId = document.getElementById('receiptGarden').value;
+			const garden = gardens.find(g => g.ID == gardenId);
+			
+			receipt.book_number = document.getElementById('receiptBook').value;
+			receipt.receipt_number = document.getElementById('receiptNumber').value;
+			receipt.date = document.getElementById('receiptDate').value;
+			receipt.garden_id = gardenId;
+			receipt.garden_name = garden ? garden.name : '';
+			receipt.amount = parseFloat(document.getElementById('receiptAmount').value);
+			receipt.payment_type = document.getElementById('receiptPaymentType').value;
+			receipt.notes = document.getElementById('receiptNotes').value;
+			
+			closeModal('receiptModal');
+			loadReceiptsTable();
+			saveToLocalStorage();
+			showSuccess('קבלה עודכנה בהצלחה!');
+		}
+
+		function deleteReceipt(receiptId) {
+			if (confirm('האם אתה בטוח שברצונך למחוק את הקבלה?')) {
+				receipts = receipts.filter(r => r.ID != receiptId);
+				loadReceiptsTable();
+				saveToLocalStorage();
+				showSuccess('קבלה נמחקה בהצלחה!');
+			}
+		}
+	   
+   </script>
+</body>
+</html>
