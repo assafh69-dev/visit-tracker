@@ -529,8 +529,9 @@
             <nav class="nav-buttons">
                 <button onclick="showSection('planning')" class="nav-btn active">תכנון יומי</button>
                 <button onclick="showSection('visit')" class="nav-btn">טיפול חדש</button>
-                <button onclick="showSection('locations')" class="nav-btn">ניהול גינות</button>
+				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
                 <button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
             </nav>
         </header>
 
@@ -611,8 +612,8 @@
 
             <!-- locations Section -->
             <section id="locations" class="section">
-                <h2>ניהול גינות</h2>
-                <button onclick="showAddLocationForm()" class="add-btn">הוסף גינה חדשה</button>
+                <h2>ניהול לקוחות</h2>
+				<button onclick="showAddLocationForm()" class="add-btn">הוסף לקוח חדש</button>
                 <div class="table-container">
                     <table id="locationsTable" class="data-table">
                         <thead>
@@ -1483,7 +1484,7 @@
            document.getElementById('locationNextVisit').value = new Date().toISOString().split('T')[0];
        }
 
-        function handleLocationSubmit(event) {
+        async function handleLocationSubmit(event) {
             event.preventDefault();
            
 			const locationData = {
@@ -1504,20 +1505,17 @@
 				next_visit: document.getElementById('locationNextVisit').value
 			};
            
-            locations.push(locationData);
-           
-		    if (access_token) {
+            if (access_token) {
 				await saveLocationToSheets(locationData);
-				showSuccess('מיקום נשמר בהצלחה ל-Google Sheets!');
+				showSuccess('לקוח נשמר בהצלחה ל-Google Sheets!');
 			} else {
-				showSuccess('מיקום נשמר מקומית!');
+				showSuccess('לקוח נשמר מקומית!');
 			}
-		   
-           closeModal('locationModal');
-           loadLocationsTable();
-           loadLocationsForSelect();
-           showSuccess('גינה נוספה בהצלחה!');
-		   saveToLocalStorage();
+
+			closeModal('locationModal');
+			loadLocationsTable();
+			loadLocationsForSelect();
+			saveToLocalStorage();
         }
 
 		function editLocation(locationId) {
@@ -1656,7 +1654,7 @@
            });
        }
 
-       function handleReceiptSubmit(event) {
+       async function handleReceiptSubmit(event) {
            event.preventDefault();
            
            const locationId = document.getElementById('receiptlocation').value;
