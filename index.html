@@ -537,7 +537,7 @@
                 <button onclick="showSection('visit')" class="nav-btn">טיפול חדש</button>
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
                 <button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
             </nav>
         </header>
 
@@ -1405,7 +1405,7 @@
 			try {
 				// For now, just add to local array
 				const newVisit= {
-					ID: visits.length + 1,
+					ID: Date.now(),
 					...visitData,
 					paid: 'לא',
 					notes: ''
@@ -1559,7 +1559,7 @@
             event.preventDefault();
            
 			const locationData = {
-				ID: locations.length + 1,
+				ID: Date.now(),
 				name: document.getElementById('locationName').value,
 				full_address: document.getElementById('locationAddress').value,
 				neighborhood: document.getElementById('locationNeighborhood').value,
@@ -1734,7 +1734,7 @@
            const location = locations.find(g => g.ID == locationId);
            
            const receiptData = {
-				ID: receipts.length + 1,
+				ID: Date.now(),
 				book_number: document.getElementById('receiptBook').value,
 				receipt_number: document.getElementById('receiptNumber').value,
 				date: document.getElementById('receiptDate').value,
