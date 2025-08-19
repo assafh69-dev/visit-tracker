@@ -519,10 +519,16 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1>ניהול טיפולי גינות</h1>
+            <h1>טיפולים</h1>
 			<div id="connectionStatus" class="connection-status">
 				<button onclick="connectToGoogleSheets()" id="connectBtn" class="connect-btn">
 					התחבר ל-Google Sheets
+				</button>
+				<button onclick="saveAllToSheets()" id="saveBtn" class="connect-btn" disabled>
+					שמור לענן
+				</button>
+				<button onclick="loadAllFromSheets()" id="loadBtn" class="connect-btn" disabled>
+					טען מהענן
 				</button>
 				<span id="statusText">לא מחובר</span>
 			</div>
@@ -531,7 +537,7 @@
                 <button onclick="showSection('visit')" class="nav-btn">טיפול חדש</button>
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
                 <button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
             </nav>
         </header>
 
@@ -745,12 +751,19 @@
 				console.log('Connecting to Google Sheets...');
 				showSuccess('מתחבר ל-Google Sheets...');
 				
+				document.getElementById('statusText').textContent = 'מחובר';
+				document.getElementById('statusText').classList.add('connected');
+				document.getElementById('saveBtn').disabled = false;
+				document.getElementById('loadBtn').disabled = false;
+				
 				const tokenClient = google.accounts.oauth2.initTokenClient({
 					client_id: CLIENT_ID,
 					scope: SCOPES,
 					callback: (response) => {
 						access_token = response.access_token;
 						showSuccess('התחברת בהצלחה ל-Google Sheets!');
+						document.getElementById('statusText').textContent = 'מחובר';
+						document.getElementById('statusText').classList.add('connected');
 						loadAllDataFromSheets();
 					},
 				});
@@ -950,6 +963,62 @@
 				throw error;
 			}
 		}
+
+		// תוספה - שמירת כל הנתונים לענן
+		async function saveAllToSheets() {
+			try {
+				showLoading('שומר נתונים לענן...');
+				
+				// שמירת כל הלקוחות
+				for (const location of locations) {
+					await saveLocationToSheets(location);
+				}
+				
+				// שמירת כל הביקורים
+				for (const visit of visits) {
+					await saveVisitToSheets(visit);
+				}
+				
+				// שמירת כל הקבלות
+				for (const receipt of receipts) {
+					await saveReceiptToSheets(receipt);
+				}
+				
+				hideLoading();
+				showSuccess('כל הנתונים נשמרו בהצלחה לענן!');
+				
+			} catch (error) {
+				console.error('Error saving all data:', error);
+				hideLoading();
+				showError('שגיאה בשמירת הנתונים לענן');
+			}
+		}
+
+		// תוספה - טעינת כל הנתונים מהענן
+		async function loadAllFromSheets() {
+			try {
+				showLoading('טוען נתונים מהענן...');
+				
+				await loadLocationsFromSheets();
+				await loadVisitsFromSheets(); 
+				await loadReceiptsFromSheets();
+				
+				// עדכון התצוגה
+				loadLocationsForSelect();
+				loadLocationsTable();
+				loadReceiptsTable();
+				loadPlanningData();
+				
+				hideLoading();
+				showSuccess('נתונים נטענו בהצלחה מהענן!');
+				
+			} catch (error) {
+				console.error('Error loading all data:', error);
+				hideLoading();
+				showError('שגיאה בטעינת הנתונים מהענן');
+			}
+		}
+
 
 		// Local Storage functions
 		function saveToLocalStorage() {
