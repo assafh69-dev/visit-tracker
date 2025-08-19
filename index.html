@@ -683,7 +683,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -968,6 +968,14 @@
 		const CLIENT_ID = '1040357646874-4sbkrokgjn4dd7a0e9rkrtjt8d9l3vie.apps.googleusercontent.com';
 		const API_KEY = 'AIzaSyB25ms_UzbgfY9FnduMwMhGhlvwfVPaTg8';
 
+//////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   למחיקה
+		// בדיקה זמנית - תמחק אחרי הבדיקה
+		console.log('Spreadsheet ID:', SPREADSHEET_ID);
+		console.log('API Key:', API_KEY);
+		console.log('Client ID:', CLIENT_ID);
+//////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
 		let gapi_loaded = false;
 		let google_loaded = false;
 		let access_token = null;
@@ -1001,13 +1009,19 @@
 				callback: handleCredentialResponse,
 			});
 		}
-
+		
 		async function initializeGapiClient() {
-			await gapi.client.init({
-				apiKey: API_KEY,
-				discoveryDocs: [DISCOVERY_DOC],
-			});
-			gapi_loaded = true;
+			try {
+				await gapi.client.init({
+					apiKey: API_KEY,
+					discoveryDocs: [DISCOVERY_DOC],
+				});
+				gapi_loaded = true;
+				console.log('GAPI client initialized successfully');
+			} catch (error) {
+				console.error('Error initializing GAPI client:', error);
+				showToast('שגיאה באתחול Google API', 'error');
+			}
 		}
 
 		function handleCredentialResponse(response) {
@@ -1017,6 +1031,11 @@
 
 		// תוספה - פונקציה שנקראת אחרי ההתחברות
 		async function loadAllDataFromSheets() {
+			if (!await validateToken()) {
+				showToast('אין חיבור לגוגל - טוען נתונים מקומיים', 'warning');
+				return;
+			}
+			
 			try {
 				showLoading('טוען נתונים מ-Google Sheets...');
 				
@@ -1035,7 +1054,14 @@
 				
 			} catch (error) {
 				console.error('Error loading data from sheets:', error);
-				showError('שגיאה בטעינת נתונים מ-Google Sheets');
+				
+				if (error.status === 401) {
+					access_token = null;
+					showToast('⚠️ החיבור פג במהלך טעינה', 'warning');
+				} else {
+					showError('שגיאה בטעינת נתונים מ-Google Sheets');
+				}
+				throw error;
 			}
 		}
 
@@ -1164,6 +1190,12 @@
 		
 		// תוספה - שמירת מיקום חדש לשיטס
 		async function saveLocationToSheets(locationData) {
+		
+			if (!await validateToken()) {
+				showToast('החיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
+				return;
+			}
+    
 			try {
 				const values = [[
 					locationData.ID,
@@ -1192,7 +1224,17 @@
 				
 			} catch (error) {
 				console.error('Error saving location to sheets:', error);
+				
+				if (error.status === 401) {
+					access_token = null;
+					showToast('⚠️ החיבור פג - התחבר מחדש', 'warning');
+					document.getElementById('statusText').textContent = '🔓 נותק';
+				} else {
+					// שגיאות אחרות (לא קשורות לאסימון)
+					showToast('⚠️ שגיאה בשמירה לענן', 'error');
+				}
 				throw error;
+
 			}
 		}
 
@@ -2283,9 +2325,9 @@
 		}
 	   
 	   
-	   // יצירת טבלת עזר לייבוא
+	    // יצירת טבלת עזר לייבוא
 		async function createImportTable() {
-			if (!access_token) {
+			if (!await validateToken()) {
 				showToast('התחבר לגוגל קודם', 'warning');
 				return;
 			}
@@ -2293,7 +2335,7 @@
 			try {
 				showToast('יוצר טבלת עזר לייבוא...', 'info');
 				
-				// יצירת טבלה חדשה
+				// יצירת טבלה חדשה עם access_token במקום API key
 				const response = await gapi.client.sheets.spreadsheets.create({
 					resource: {
 						properties: {
@@ -2324,7 +2366,15 @@
 				
 			} catch (error) {
 				console.error('Error creating import table:', error);
-				showToast('שגיאה ביצירת טבלת עזר', 'error');
+				
+				if (error.status === 401) {
+					access_token = null;
+					showToast('⚠️ החיבור פג במהלך יצירת הטבלה', 'warning');
+				} else {
+					showToast(`שגיאה ביצירת טבלת עזר: ${error.result?.error?.message || error.message}`, 'error');
+				}
+				throw error;
+				
 			}
 		}
 
@@ -2882,6 +2932,65 @@
 				showToast('טיפול נמחק בהצלחה!', 'success');
 			}
 		}
+	   
+	   // תוספה - בדיקת רשאות
+		async function checkPermissions() {
+			if (!access_token) {
+				showToast('לא מחובר לגוגל - התחבר קודם', 'warning');
+				return false;
+			}
+			
+			try {
+				// נסה לגשת לטבלה הראשית
+				await gapi.client.sheets.spreadsheets.get({
+					spreadsheetId: SPREADSHEET_ID
+				});
+				return true;
+			} catch (error) {
+				if (error.status === 401) {
+					showToast('החיבור פג - התחבר מחדש', 'warning');
+					access_token = null;
+				} else if (error.status === 403) {
+					showToast('אין הרשאה לטבלה - בדוק שיתוף', 'error');
+				}
+				return false;
+			}
+		}
+	   
+	   // תוספה - בדיקת תקינות אסימון
+		async function validateToken() {
+			if (!access_token || !gapi.client) {
+				return false;
+			}
+			
+			try {
+				// בדיקה פשוטה - נסה לקרוא מהטבלה
+				await gapi.client.sheets.spreadsheets.get({
+					spreadsheetId: SPREADSHEET_ID || 'test'
+				});
+				return true;
+			} catch (error) {
+				if (error.status === 401) {
+					console.log('Google token expired');
+					access_token = null;
+					document.getElementById('statusText').textContent = '🔓 נדרש חיבור מחדש';
+					document.getElementById('statusText').classList.remove('connected');
+					showToast('⚠️ החיבור לגוגל פג - התחבר מחדש', 'warning');
+					return false;
+				}
+				return false;
+			}
+		}
+	   
+	   // תוספה - בדיקה תקופתית של חיבור
+		setInterval(async () => {
+			if (access_token) {
+				const isValid = await validateToken();
+				if (!isValid) {
+					console.log('Token expired - disconnected');
+				}
+			}
+		}, 300000); // בדיקה כל 5 דקות
 	   
    </script>
 </body>
