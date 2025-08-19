@@ -338,13 +338,18 @@
             }
             
             .nav-buttons {
-                gap: 5px;
-            }
-            
-            .nav-btn {
-                padding: 10px 15px;
-                font-size: 13px;
-            }
+				gap: 3px;
+				overflow-x: auto;
+				padding: 5px 0;
+			}
+
+			.nav-btn {
+				padding: 8px 12px;
+				font-size: 12px;
+				white-space: nowrap;
+				min-width: 80px;
+				flex-shrink: 0;
+			}
             
             .timer-display {
                 font-size: 1.5em;
@@ -370,14 +375,7 @@
         }
 
         @media (max-width: 480px) {
-            .nav-buttons {
-                flex-direction: column;
-            }
-            
-            .nav-btn {
-                width: 100%;
-            }
-            
+                        
             .filter-buttons {
                 flex-direction: column;
             }
