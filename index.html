@@ -683,7 +683,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
 			</nav>
         </header>
 
@@ -2386,29 +2386,29 @@
 			}
 
 			try {
-				const locationHeaders = [['ID', 'שם לקוח', 'רחוב', 'בית', 'עיר', 'תדירות', 'איש קשר', 'סכום בסיסי']];
-				const visitHeaders = [['ID', 'שנה', 'חודש', 'יום', 'לקוח', 'איש קשר', 'טיפול', 'תאריך', 'מה בוצע', 'משך', 'סכום', 'שולם', 'הוצאה', 'הערות']];
-				const receiptHeaders = [['ID', 'XK', 'פנקס', 'קבלה', 'שנה', 'חודש', 'יום', 'כתובת', 'סכום', 'סוג', 'קודX', 'הערות', 'פירוט']];
+				// הסר ID מכל הטבלאות
+				const locationHeaders = [['שם לקוח', 'רחוב', 'בית', 'עיר', 'תדירות', 'איש קשר', 'סכום בסיסי']];
+				const visitHeaders = [['שנה', 'חודש', 'יום', 'לקוח', 'איש קשר', 'טיפול', 'תאריך', 'מה בוצע', 'משך', 'סכום', 'שולם', 'הוצאה', 'הערות']];
+				const receiptHeaders = [['XK', 'פנקס', 'קבלה', 'שנה', 'חודש', 'יום', 'כתובת', 'סכום', 'סוג', 'קודX', 'הערות', 'פירוט']];
 				
-				// המתן קצת לטבלה להיווצר
 				await new Promise(resolve => setTimeout(resolve, 1000));
 				
 				await Promise.all([
 					gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: spreadsheetId,
-						range: 'Locations!A1:H1',
+						range: 'Locations!A1:G1', // G במקום H
 						valueInputOption: 'RAW',
 						resource: { values: locationHeaders }
 					}),
 					gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: spreadsheetId,
-						range: 'Visits!A1:N1',
+						range: 'Visits!A1:M1', // M במקום N
 						valueInputOption: 'RAW', 
 						resource: { values: visitHeaders }
 					}),
 					gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: spreadsheetId,
-						range: 'Receipts!A1:M1',
+						range: 'Receipts!A1:L1', // L במקום M
 						valueInputOption: 'RAW',
 						resource: { values: receiptHeaders }
 					})
@@ -2428,6 +2428,7 @@
 				throw error;
 			}
 		}
+		
 		
 		// תוספה - פיענוח כתובת מלאה לחלקים
 		function parseFullAddress(fullAddress) {
@@ -2471,8 +2472,8 @@
 				let importedCount = 0;
 				
 				for (const row of rows) {
-					if (row.length > 1 && row[1]) { // יש שם לקוח
-						const customerName = row[1].trim();
+					if (row.length > 0 && row[0]) { // יש שם לקוח
+						const customerName = row[0].trim(); // עמודה 0 במקום 1
 						
 						// בדוק אם לקוח כבר קיים
 						const existingCustomer = locations.find(loc => 
@@ -2486,9 +2487,9 @@
 						}
 						
 						// אם יש רחוב ובית נפרדים - השתמש בהם
-						let street = row[2] || '';
-						let houseNumber = row[3] || '';
-						let city = row[4] || '';
+						let street = row[1] || '';      // עמודה 1 במקום 2
+						let houseNumber = row[2] || ''; // עמודה 2 במקום 3
+						let city = row[3] || '';        // עמודה 3 במקום 4
 						
 						// אם לא - פענח מהשם
 						if (!street && !houseNumber && !city) {
@@ -2499,17 +2500,17 @@
 						}
 						
 						const locationData = {
-							ID: Date.now() + importedCount,
+							ID: Date.now() + importedCount, // ID אוטומטי
 							name: customerName, // שם הלקוח הוא הכתובת המלאה
 							full_address: customerName, // זה המזהה הייחודי
 							neighborhood: '', // ריק - ימולא בהמשך
 							city: city,
-							contact_person: row[6] || '', // איש קשר
+							contact_person: row[5] || '', // עמודה 5 במקום 6 - איש קשר
 							phone: '',
 							allowed_day: 'כל יום',
-							interval_weeks: parseInt(row[5]) || 4, // תדירות
+							interval_weeks: parseInt(row[4]) || 4, // עמודה 4 במקום 5 - תדירות
 							temp_addition: 0,
-							base_amount: parseFloat(row[7]) || 0, // סכום בסיסי
+							base_amount: parseFloat(row[6]) || 0, // עמודה 6 במקום 7 - סכום בסיסי
 							active: 'כן',
 							notes: 'יובא מטבלת לקוחות',
 							last_visit: '',
@@ -2545,7 +2546,7 @@
 				
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: importTableId,
-					range: 'Visits!A2:N1000'
+					range: 'Visits!A2:M1000' // M במקום N
 				});
 				
 				const rows = response.result.values || [];
@@ -2553,8 +2554,8 @@
 				let notFoundCustomers = [];
 				
 				for (const row of rows) {
-					if (row.length > 4 && row[4]) { // יש לקוח
-						const customerAddress = row[4].trim(); // עמודה "לקוח"
+					if (row.length > 3 && row[3]) { // יש לקוח - עמודה 3 במקום 4
+						const customerAddress = row[3].trim(); // עמודה "לקוח"
 						
 						// מצא לקוח קיים לפי כתובת מלאה
 						const existingCustomer = locations.find(loc => 
@@ -2571,28 +2572,28 @@
 						
 						// בניית תאריך מהעמודות שנה/חודש/יום או מעמודה "תאריך"
 						let visitDate = '';
-						if (row[7]) { // יש תאריך בפורמט DD/MM/YYYY
-							visitDate = convertDateFormat(row[7]);
-						} else if (row[1] && row[2] && row[3]) { // יש שנה/חודש/יום
-							const year = row[1];
-							const month = String(row[2]).padStart(2, '0');
-							const day = String(row[3]).padStart(2, '0');
+						if (row[6]) { // יש תאריך בפורמט DD/MM/YYYY - עמודה 6 במקום 7
+							visitDate = convertDateFormat(row[6]);
+						} else if (row[0] && row[1] && row[2]) { // יש שנה/חודש/יום - עמודות 0,1,2 במקום 1,2,3
+							const year = row[0];
+							const month = String(row[1]).padStart(2, '0');
+							const day = String(row[2]).padStart(2, '0');
 							visitDate = `${year}-${month}-${day}`;
 						}
 						
 						const visitData = {
-							ID: Date.now() + importedCount,
+							ID: Date.now() + importedCount, // ID אוטומטי
 							date: visitDate,
 							location_id: existingCustomer.ID,
-							visit_type: row[6] || 'מלא', // עמודה "טיפול"
-							work_done: row[8] || '', // עמודה "מה בוצע"
-							duration_minutes: parseFloat(row[9]) * 60 || 0, // משך בשעות → דקות
+							visit_type: row[5] || 'מלא', // עמודה "טיפול" - עמודה 5 במקום 6
+							work_done: row[7] || '', // עמודה "מה בוצע" - עמודה 7 במקום 8
+							duration_minutes: parseFloat(row[8]) * 60 || 0, // משך בשעות → דקות - עמודה 8 במקום 9
 							start_time: '',
 							end_time: '',
-							amount: parseFloat(row[10]) || 0, // סכום
-							expense: parseFloat(row[12]) || 0, // הוצאה
-							paid: row[11] === 'כן' ? 'כן' : 'לא', // שולם
-							notes: row[13] || '' // הערות
+							amount: parseFloat(row[9]) || 0, // סכום - עמודה 9 במקום 10
+							expense: parseFloat(row[11]) || 0, // הוצאה - עמודה 11 במקום 12
+							paid: row[10] === 'כן' ? 'כן' : 'לא', // שולם - עמודה 10 במקום 11
+							notes: row[12] || '' // הערות - עמודה 12 במקום 13
 						};
 						
 						visits.push(visitData);
@@ -2629,7 +2630,7 @@
 				
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: importTableId,
-					range: 'Receipts!A2:M1000'
+					range: 'Receipts!A2:L1000' // L במקום M
 				});
 				
 				const rows = response.result.values || [];
@@ -2637,8 +2638,8 @@
 				let notFoundCustomers = [];
 				
 				for (const row of rows) {
-					if (row.length > 7 && row[7]) { // יש כתובת
-						const customerAddress = row[7].trim(); // עמודה "כתובת"
+					if (row.length > 6 && row[6]) { // יש כתובת - עמודה 6 במקום 7
+						const customerAddress = row[6].trim(); // עמודה "כתובת"
 						
 						// מצא לקוח קיים לפי כתובת מלאה
 						const existingCustomer = locations.find(loc => 
@@ -2655,24 +2656,24 @@
 						
 						// בניית תאריך מהעמודות שנה/חודש/יום
 						let receiptDate = '';
-						if (row[4] && row[5] && row[6]) {
-							const year = row[4];
-							const month = String(row[5]).padStart(2, '0');
-							const day = String(row[6]).padStart(2, '0');
+						if (row[3] && row[4] && row[5]) { // עמודות 3,4,5 במקום 4,5,6
+							const year = row[3];
+							const month = String(row[4]).padStart(2, '0');
+							const day = String(row[5]).padStart(2, '0');
 							receiptDate = `${year}-${month}-${day}`;
 						}
 						
 						const receiptData = {
-							ID: Date.now() + importedCount,
-							book_number: row[2] || '', // פנקס
-							receipt_number: row[3] || '', // קבלה
+							ID: Date.now() + importedCount, // ID אוטומטי
+							book_number: row[1] || '', // פנקס - עמודה 1 במקום 2
+							receipt_number: row[2] || '', // קבלה - עמודה 2 במקום 3
 							date: receiptDate,
 							location_id: existingCustomer.ID,
 							location_name: customerAddress,
-							amount: parseFloat(row[8]) || 0, // סכום
-							payment_type: row[9] || '', // סוג
-							codeX: row[1] || '', // XK → קודX
-							notes: `${row[11] || ''} ${row[12] || ''}`.trim() // הערות + פירוט
+							amount: parseFloat(row[7]) || 0, // סכום - עמודה 7 במקום 8
+							payment_type: row[8] || '', // סוג - עמודה 8 במקום 9
+							codeX: row[0] || '', // XK → קודX - עמודה 0 במקום 1
+							notes: `${row[10] || ''} ${row[11] || ''}`.trim() // הערות + פירוט - עמודות 10,11 במקום 11,12
 						};
 						
 						receipts.push(receiptData);
