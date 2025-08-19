@@ -537,7 +537,7 @@
                 <button onclick="showSection('visit')" class="nav-btn">טיפול חדש</button>
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
                 <button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
             </nav>
         </header>
 
@@ -1086,7 +1086,9 @@
             document.getElementById(sectionName).classList.add('active');
             
             // Add active class to clicked button
-            event.target.classList.add('active');
+            if (event && event.target) {
+				event.target.classList.add('active');
+			}
             
             // Load section-specific data
             switch(sectionName) {
@@ -1574,6 +1576,8 @@
 				next_visit: document.getElementById('locationNextVisit').value
 			};
            
+			locations.push(locationData);
+		   
             if (access_token) {
 				await saveLocationToSheets(locationData);
 				showSuccess('לקוח נשמר בהצלחה ל-Google Sheets!');
@@ -1741,19 +1745,18 @@
 				notes: document.getElementById('receiptNotes').value
 			};
            
-           receipts.push(receiptData);
+            receipts.push(receiptData);
 		   
-		    if (access_token) {
+			if (access_token) {
 				await saveReceiptToSheets(receiptData);
 				showSuccess('קבלה נשמרה בהצלחה ל-Google Sheets!');
 			} else {
 				showSuccess('קבלה נשמרה מקומית!');
 			}
-           
-           closeModal('receiptModal');
-           loadReceiptsTable();
-           showSuccess('קבלה נוספה בהצלחה!');
-		   saveToLocalStorage();
+
+			closeModal('receiptModal');
+			loadReceiptsTable();
+			saveToLocalStorage();
        }
 
        // Utility functions
