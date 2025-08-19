@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ניהול טיפולי גינות</title>
+    <title>ניהול טיפולים ולקוחות</title>
 	
 	<script src="https://apis.google.com/js/api.js"></script>
 	<script src="https://accounts.google.com/gsi/client"></script>
@@ -537,7 +537,7 @@
                 <button onclick="showSection('visit')" class="nav-btn">טיפול חדש</button>
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
                 <button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
             </nav>
         </header>
 
@@ -646,21 +646,76 @@
                 <div class="table-container">
                     <table id="receiptsTable" class="data-table">
                         <thead>
-                            <tr>
-                                <th>פנקס</th>
-                                <th>קבלה</th>
-                                <th>תאריך</th>
-                                <th>גינה</th>
-                                <th>סכום</th>
-                                <th>סוג תשלום</th>
-                                <th>פעולות</th>
-                            </tr>
-                        </thead>
+							<tr>
+								<th>פנקס</th>
+								<th>קבלה</th>
+								<th>תאריך</th>
+								<th>בינה</th>
+								<th>סכום</th>
+								<th>סוג תשלום</th>
+								<th>קודX</th>  
+								<th>פעולות</th>
+							</tr>
+						</thead>
                         <tbody id="receiptsTableBody">
                         </tbody>
                     </table>
                 </div>
             </section>
+
+			<!-- System Section -->
+			<section id="system" class="section">
+				<h2>🛠️ מערכת v2.5</h2>
+				
+				<!-- Import Section -->
+				<div class="form-section">
+					<h3>📥 ייבוא נתונים</h3>
+					
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+						<button class="btn btn-primary" onclick="createImportTable()">
+							🔗 צור טבלת עזר לייבוא
+						</button>
+						<button class="btn btn-success" onclick="importFromHelper()">
+							📥 ייבא הכל מטבלת העזר
+						</button>
+					</div>
+
+					<!-- ייבוא חלקי - מקופל -->
+					<details style="margin-top: 15px;">
+						<summary style="cursor: pointer; color: #666; font-size: 14px;">⚙️ ייבוא חלקי (למתקדמים)</summary>
+						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;">
+							<button class="btn btn-info" onclick="importCustomersFromHelper()">👥 רק לקוחות</button>
+							<button class="btn btn-primary" onclick="importVisitsFromHelper()">🔧 רק טיפולים</button>
+							<button class="btn btn-warning" onclick="importReceiptsFromHelper()">🧾 רק קבלות</button>
+						</div>
+						<p style="font-size: 12px; color: #666; margin-top: 8px;">
+							השתמש בזה רק אם אתה צריך לייבא סוג נתונים ספציפי
+						</p>
+					</details>
+					
+					<div style="text-align: center; margin: 15px 0;">
+						<span style="color: #666;">או</span>
+					</div>
+					
+					<div style="text-align: center;">
+						<button class="btn btn-warning" onclick="document.getElementById('importFileInput').click()">
+							📁 ייבוא מהיר מקובץ
+						</button>
+						<input type="file" id="importFileInput" accept=".csv,.xlsx" style="display: none;" onchange="handleImportFile(event)">
+					</div>
+					
+					<p style="text-align: center; font-size: 12px; color: #666; margin-top: 15px;">
+						ייבוא לקוחות, ביקורים וקבלות מקובץ Excel או Google Sheets
+					</p>
+				</div>
+				
+				<!-- Additional System Features -->
+				<div class="form-section">
+					<h3>⚙️ הגדרות מערכת</h3>
+					<p>תכונות נוספות יתווספו כאן בהמשך...</p>
+				</div>
+			</section>
+			
         </main>
     </div>
 
@@ -1359,6 +1414,7 @@
 					<td>${receipt.location_name}</td>
 					<td>${receipt.amount}</td>
 					<td>${receipt.payment_type}</td>
+					<td>${receipt.codeX || ''}</td>
 					<td>
 						<button class="action-btn edit-btn" onclick="editReceipt(${receipt.ID})">ערוך</button>
 						<button class="action-btn delete-btn" onclick="deleteReceipt(${receipt.ID})">מחק</button>
@@ -1410,6 +1466,25 @@
 					paid: 'לא',
 					notes: ''
 				};
+				
+				// בדיקת תקינות
+				const visitErrors = validateVisitData(visitData);
+				if (showValidationErrors(visitErrors)) {
+					return;
+				}
+				
+				// בדיקת כפילויות ביקור
+				const existingVisit = visits.find(visit => 
+					visit.location_id === visitData.location_id &&
+					visit.date === visitData.date &&
+					Math.abs(new Date(`${visit.date} ${visit.start_time}`) - new Date(`${visitData.date} ${visitData.start_time}`)) < 60000 // פחות מדקה הפרש
+				);
+
+				if (existingVisit) {
+					if (!confirm(`כבר קיים ביקור באותה כתובת באותו תאריך ושעה דומה.\n\nהאם להוסיף בכל זאת?`)) {
+						return; // ביטול הוספה
+					}
+				}
 				
 				visits.push(newVisit);
 
@@ -1576,13 +1651,41 @@
 				next_visit: document.getElementById('locationNextVisit').value
 			};
            
-			locations.push(locationData);
+		    // בדיקת כפילויות לפני הוספה
+			const existingLocation = locations.find(loc => 
+				loc.full_address && locationData.full_address &&
+				loc.full_address.toLowerCase().trim() === locationData.full_address.toLowerCase().trim()
+			);
+
+			if (existingLocation) {
+				if (!confirm(`לקוח עם כתובת "${locationData.full_address}" כבר קיים.\n\nהאם להוסיף בכל זאת?`)) {
+					return; // ביטול הוספה
+				}
+			}
 		   
-            if (access_token) {
-				await saveLocationToSheets(locationData);
-				showSuccess('לקוח נשמר בהצלחה ל-Google Sheets!');
+            // שמירה לזיכרון מקומי
+			locations.push(locationData);
+
+			// שמירה אוטומטית לענן
+			if (access_token && spreadsheet_id) {
+				document.getElementById('statusText').textContent = '🔄 שומר לקוח...';
+				try {
+					await saveLocationToSheets(locationData);
+					document.getElementById('statusText').textContent = 'מחובר';
+					showSuccess('לקוח נשמר בהצלחה ל-Google Sheets!');
+				} catch (error) {
+					if (error.status === 401) {
+						document.getElementById('statusText').textContent = '🔓 נדרש חיבור מחדש';
+						document.getElementById('statusText').classList.remove('connected');
+						showToast('⚠️ החיבור לגוגל פג - התחבר מחדש', 'warning');
+						access_token = null;
+					} else {
+						document.getElementById('statusText').textContent = '⚠️ שגיאה בשמירה';
+						showToast('⚠️ הלקוח נשמר מקומית בלבד', 'warning');
+					}
+				}
 			} else {
-				showSuccess('לקוח נשמר מקומית!');
+				showToast('🔓 לקוח נשמר מקומית - התחבר לענן לשמירה', 'warning');
 			}
 
 			closeModal('locationModal');
@@ -1745,6 +1848,24 @@
 				notes: document.getElementById('receiptNotes').value
 			};
            
+		   // תוספה - בדיקת תקינות לפני שמירה
+			const errors = validateReceiptData(receiptData);
+			if (showValidationErrors(errors)) {
+				return; // יש שגיאות - עצור כאן
+			}
+		   
+		   // בדיקת כפילויות קבלה
+			const existingReceipt = receipts.find(receipt => 
+				(receipt.book_number === receiptData.book_number && receipt.receipt_number === receiptData.receipt_number) ||
+				(receipt.location_id === receiptData.location_id && receipt.date === receiptData.date && receipt.amount === receiptData.amount)
+			);
+
+			if (existingReceipt) {
+				if (!confirm(`כבר קיימת קבלה עם אותו מספר או באותה כתובת/תאריך/סכום.\n\nהאם להוסיף בכל זאת?`)) {
+					return; // ביטול הוספה
+				}
+			}
+		   
             receipts.push(receiptData);
 		   
 			if (access_token) {
@@ -1866,6 +1987,482 @@
 				showSuccess('קבלה נמחקה בהצלחה!');
 			}
 		}
+	   
+	   // תוספה - הודעות Toast מתקדמות
+		function showToast(message, type = 'info', duration = 3000) {
+			// הסר toast קיים
+			const existingToast = document.querySelector('.toast');
+			if (existingToast) {
+				existingToast.remove();
+			}
+			
+			// צור toast חדש
+			const toast = document.createElement('div');
+			toast.className = `toast toast-${type}`;
+			toast.textContent = message;
+			
+			// הוסף styles
+			toast.style.cssText = `
+				position: fixed;
+				top: 20px;
+				right: 20px;
+				padding: 12px 20px;
+				border-radius: 6px;
+				color: white;
+				font-weight: bold;
+				z-index: 10000;
+				max-width: 400px;
+				box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+				transform: translateX(100%);
+				transition: transform 0.3s ease;
+			`;
+			
+			// צבעים לפי סוג
+			const colors = {
+				success: '#27ae60',
+				error: '#e74c3c',
+				warning: '#f39c12',
+				info: '#3498db'
+			};
+			
+			toast.style.backgroundColor = colors[type] || colors.info;
+			
+			document.body.appendChild(toast);
+			
+			// אנימציה כניסה
+			setTimeout(() => {
+				toast.style.transform = 'translateX(0)';
+			}, 10);
+			
+			// הסרה אוטומטית
+			setTimeout(() => {
+				toast.style.transform = 'translateX(100%)';
+				setTimeout(() => toast.remove(), 300);
+			}, duration);
+		}
+	   
+	   
+	   // יצירת טבלת עזר לייבוא
+		async function createImportTable() {
+			if (!access_token) {
+				showToast('התחבר לגוגל קודם', 'warning');
+				return;
+			}
+			
+			try {
+				showToast('יוצר טבלת עזר לייבוא...', 'info');
+				
+				// יצירת טבלה חדשה
+				const response = await gapi.client.sheets.spreadsheets.create({
+					resource: {
+						properties: {
+							title: `Import_Helper_${new Date().toISOString().split('T')[0]}`
+						},
+						sheets: [{
+							properties: { title: 'Locations' },
+						}, {
+							properties: { title: 'Visits' },
+						}, {
+							properties: { title: 'Receipts' }
+						}]
+					}
+				});
+				
+				const newSpreadsheetId = response.result.spreadsheetId;
+				
+				// הוספת כותרות לכל גליון
+				await addImportHeaders(newSpreadsheetId);
+				
+				// פתיחת הטבלה
+				window.open(`https://docs.google.com/spreadsheets/d/${newSpreadsheetId}/edit`, '_blank');
+				
+				// שמירת ID לייבוא מאוחר יותר
+				localStorage.setItem('importTableId', newSpreadsheetId);
+				
+				showToast('טבלת עזר נוצרה! הדבק את הנתונים שלך החל משורה 2', 'success');
+				
+			} catch (error) {
+				console.error('Error creating import table:', error);
+				showToast('שגיאה ביצירת טבלת עזר', 'error');
+			}
+		}
+
+		// הוספת כותרות לטבלת עזר
+		async function addImportHeaders(spreadsheetId) {
+			const locationHeaders = [['ID', 'שם לקוח', 'רחוב', 'בית', 'עיר', 'תדירות', 'איש קשר', 'סכום בסיסי']];
+			
+			const visitHeaders = [['ID', 'שנה', 'חודש', 'יום', 'לקוח', 'איש קשר', 'טיפול', 'תאריך', 'מה בוצע', 'משך', 'סכום', 'שולם', 'הוצאה', 'הערות']];
+
+			const receiptHeaders = [['ID', 'XK', 'פנקס', 'קבלה', 'שנה', 'חודש', 'יום', 'כתובת', 'סכום', 'סוג', 'קודX', 'הערות', 'פירוט']];
+			
+			await Promise.all([
+				gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: spreadsheetId,
+					range: 'Locations!A1:N1',
+					valueInputOption: 'RAW',
+					values: locationHeaders
+				}),
+				gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: spreadsheetId,
+					range: 'Visits!A1:L1',
+					valueInputOption: 'RAW',
+					values: visitHeaders
+				}),
+				gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: spreadsheetId,
+					range: 'Receipts!A1:I1',
+					valueInputOption: 'RAW',
+					values: receiptHeaders
+				})
+			]);
+		}
+		
+		// תוספה - פיענוח כתובת מלאה לחלקים
+		function parseFullAddress(fullAddress) {
+			if (!fullAddress) return { street: '', houseNumber: '', city: '' };
+			
+			const parts = fullAddress.trim().split(' ');
+			
+			if (parts.length >= 3) {
+				// העיר היא החלק האחרון
+				const city = parts[parts.length - 1];
+				
+				// מספר הבית הוא החלק הלפני אחרון
+				const houseNumber = parts[parts.length - 2];
+				
+				// הרחוב הוא כל השאר
+				const street = parts.slice(0, -2).join(' ');
+				
+				return { street, houseNumber, city };
+			} else if (parts.length === 2) {
+				return { street: parts[0], houseNumber: '', city: parts[1] };
+			} else {
+				return { street: fullAddress, houseNumber: '', city: '' };
+			}
+		}
+	   
+	   // תוספה - ייבוא לקוחות מטבלת עזר
+		async function importCustomersFromHelper() {
+			try {
+				const importTableId = localStorage.getItem('importTableId');
+				if (!importTableId) {
+					showToast('טבלת עזר לא נמצאה - צור קודם', 'warning');
+					return;
+				}
+				
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: importTableId,
+					range: 'Locations!A2:H1000'
+				});
+				
+				const rows = response.result.values || [];
+				let importedCount = 0;
+				
+				for (const row of rows) {
+					if (row.length > 1 && row[1]) { // יש שם לקוח
+						const customerName = row[1].trim();
+						
+						// בדוק אם לקוח כבר קיים
+						const existingCustomer = locations.find(loc => 
+							loc.full_address && 
+							loc.full_address.toLowerCase() === customerName.toLowerCase()
+						);
+						
+						if (existingCustomer) {
+							showToast(`לקוח ${customerName} כבר קיים - דולג`, 'warning');
+							continue;
+						}
+						
+						// אם יש רחוב ובית נפרדים - השתמש בהם
+						let street = row[2] || '';
+						let houseNumber = row[3] || '';
+						let city = row[4] || '';
+						
+						// אם לא - פענח מהשם
+						if (!street && !houseNumber && !city) {
+							const parsed = parseFullAddress(customerName);
+							street = parsed.street;
+							houseNumber = parsed.houseNumber;
+							city = parsed.city;
+						}
+						
+						const locationData = {
+							ID: Date.now() + importedCount,
+							name: customerName, // שם הלקוח הוא הכתובת המלאה
+							full_address: customerName, // זה המזהה הייחודי
+							neighborhood: '', // ריק - ימולא בהמשך
+							city: city,
+							contact_person: row[6] || '', // איש קשר
+							phone: '',
+							allowed_day: 'כל יום',
+							interval_weeks: parseInt(row[5]) || 4, // תדירות
+							temp_addition: 0,
+							base_amount: parseFloat(row[7]) || 0, // סכום בסיסי
+							active: 'כן',
+							notes: 'יובא מטבלת לקוחות',
+							last_visit: '',
+							next_visit: ''
+						};
+						
+						locations.push(locationData);
+						importedCount++;
+					}
+				}
+				
+				// שמירה
+				await saveAllToSheets();
+				loadLocationsTable();
+				loadLocationsForSelect();
+				
+				showToast(`יובאו ${importedCount} לקוחות בהצלחה!`, 'success');
+				
+			} catch (error) {
+				console.error('Error importing customers:', error);
+				showToast('שגיאה בייבוא לקוחות', 'error');
+			}
+		}
+	   
+	   // תוספה - ייבוא טיפולים מטבלת עזר
+		async function importVisitsFromHelper() {
+			try {
+				const importTableId = localStorage.getItem('importTableId');
+				if (!importTableId) {
+					showToast('טבלת עזר לא נמצאה - צור קודם', 'warning');
+					return;
+				}
+				
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: importTableId,
+					range: 'Visits!A2:N1000'
+				});
+				
+				const rows = response.result.values || [];
+				let importedCount = 0;
+				let notFoundCustomers = [];
+				
+				for (const row of rows) {
+					if (row.length > 4 && row[4]) { // יש לקוח
+						const customerAddress = row[4].trim(); // עמודה "לקוח"
+						
+						// מצא לקוח קיים לפי כתובת מלאה
+						const existingCustomer = locations.find(loc => 
+							loc.full_address && 
+							loc.full_address.toLowerCase() === customerAddress.toLowerCase()
+						);
+						
+						if (!existingCustomer) {
+							if (!notFoundCustomers.includes(customerAddress)) {
+								notFoundCustomers.push(customerAddress);
+							}
+							continue;
+						}
+						
+						// בניית תאריך מהעמודות שנה/חודש/יום או מעמודה "תאריך"
+						let visitDate = '';
+						if (row[7]) { // יש תאריך בפורמט DD/MM/YYYY
+							visitDate = convertDateFormat(row[7]);
+						} else if (row[1] && row[2] && row[3]) { // יש שנה/חודש/יום
+							const year = row[1];
+							const month = String(row[2]).padStart(2, '0');
+							const day = String(row[3]).padStart(2, '0');
+							visitDate = `${year}-${month}-${day}`;
+						}
+						
+						const visitData = {
+							ID: Date.now() + importedCount,
+							date: visitDate,
+							location_id: existingCustomer.ID,
+							visit_type: row[6] || 'מלא', // עמודה "טיפול"
+							work_done: row[8] || '', // עמודה "מה בוצע"
+							duration_minutes: parseFloat(row[9]) * 60 || 0, // משך בשעות → דקות
+							start_time: '',
+							end_time: '',
+							amount: parseFloat(row[10]) || 0, // סכום
+							expense: parseFloat(row[12]) || 0, // הוצאה
+							paid: row[11] === 'כן' ? 'כן' : 'לא', // שולם
+							notes: row[13] || '' // הערות
+						};
+						
+						visits.push(visitData);
+						importedCount++;
+					}
+				}
+				
+				// שמירה
+				await saveAllToSheets();
+				loadPlanningData();
+				
+				let message = `יובאו ${importedCount} טיפולים בהצלחה!`;
+				if (notFoundCustomers.length > 0) {
+					message += `\n⚠️ ${notFoundCustomers.length} לקוחות לא נמצאו: ${notFoundCustomers.slice(0, 3).join(', ')}${notFoundCustomers.length > 3 ? '...' : ''}`;
+				}
+				
+				showToast(message, 'success');
+				
+			} catch (error) {
+				console.error('Error importing visits:', error);
+				showToast('שגיאה בייבוא טיפולים', 'error');
+			}
+		}
+	   
+	   
+	   // תוספה - ייבוא קבלות מטבלת עזר
+		async function importReceiptsFromHelper() {
+			try {
+				const importTableId = localStorage.getItem('importTableId');
+				if (!importTableId) {
+					showToast('טבלת עזר לא נמצאה - צור קודם', 'warning');
+					return;
+				}
+				
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: importTableId,
+					range: 'Receipts!A2:M1000'
+				});
+				
+				const rows = response.result.values || [];
+				let importedCount = 0;
+				let notFoundCustomers = [];
+				
+				for (const row of rows) {
+					if (row.length > 7 && row[7]) { // יש כתובת
+						const customerAddress = row[7].trim(); // עמודה "כתובת"
+						
+						// מצא לקוח קיים לפי כתובת מלאה
+						const existingCustomer = locations.find(loc => 
+							loc.full_address && 
+							loc.full_address.toLowerCase() === customerAddress.toLowerCase()
+						);
+						
+						if (!existingCustomer) {
+							if (!notFoundCustomers.includes(customerAddress)) {
+								notFoundCustomers.push(customerAddress);
+							}
+							continue;
+						}
+						
+						// בניית תאריך מהעמודות שנה/חודש/יום
+						let receiptDate = '';
+						if (row[4] && row[5] && row[6]) {
+							const year = row[4];
+							const month = String(row[5]).padStart(2, '0');
+							const day = String(row[6]).padStart(2, '0');
+							receiptDate = `${year}-${month}-${day}`;
+						}
+						
+						const receiptData = {
+							ID: Date.now() + importedCount,
+							book_number: row[2] || '', // פנקס
+							receipt_number: row[3] || '', // קבלה
+							date: receiptDate,
+							location_id: existingCustomer.ID,
+							location_name: customerAddress,
+							amount: parseFloat(row[8]) || 0, // סכום
+							payment_type: row[9] || '', // סוג
+							codeX: row[1] || '', // XK → קודX
+							notes: `${row[11] || ''} ${row[12] || ''}`.trim() // הערות + פירוט
+						};
+						
+						receipts.push(receiptData);
+						importedCount++;
+					}
+				}
+				
+				// שמירה
+				await saveAllToSheets();
+				loadReceiptsTable();
+				
+				let message = `יובאו ${importedCount} קבלות בהצלחה!`;
+				if (notFoundCustomers.length > 0) {
+					message += `\n⚠️ ${notFoundCustomers.length} לקוחות לא נמצאו: ${notFoundCustomers.slice(0, 3).join(', ')}${notFoundCustomers.length > 3 ? '...' : ''}`;
+				}
+				
+				showToast(message, 'success');
+				
+			} catch (error) {
+				console.error('Error importing receipts:', error);
+				showToast('שגיאה בייבוא קבלות', 'error');
+			}
+		}
+	   
+	   // תוספה - המרת פורמט תאריך מ-DD/MM/YYYY ל-YYYY-MM-DD
+		function convertDateFormat(dateStr) {
+			if (!dateStr) return '';
+			
+			const parts = dateStr.split('/');
+			if (parts.length === 3) {
+				const day = parts[0].padStart(2, '0');
+				const month = parts[1].padStart(2, '0');
+				const year = parts[2];
+				return `${year}-${month}-${day}`;
+			}
+			
+			return dateStr;
+		}
+	   
+	   
+	   // תוספה - ייבוא מלא מטבלת העזר
+		async function importFromHelper() {
+			try {
+				const importTableId = localStorage.getItem('importTableId');
+				if (!importTableId) {
+					showToast('טבלת עזר לא נמצאה - צור קודם', 'warning');
+					return;
+				}
+				
+				showToast('מתחיל ייבוא מלא...', 'info');
+				
+				// ייבוא בסדר: לקוחות → טיפולים → קבלות
+				await importCustomersFromHelper();
+				await new Promise(resolve => setTimeout(resolve, 1000)); // המתנה קצרה
+				
+				await importVisitsFromHelper();
+				await new Promise(resolve => setTimeout(resolve, 1000)); // המתנה קצרה
+				
+				await importReceiptsFromHelper();
+				
+				showToast('🎉 ייבוא מלא הושלם בהצלחה!', 'success', 5000);
+				
+				setTimeout(() => {
+					if (confirm('ייבוא הושלם בהצלחה!\n\nהאם למחוק את טבלת העזר מה-Google Drive?')) {
+						showToast('💡 ניתן למחוק את טבלת העזר ידנית בגוגל דרייב', 'info');
+						localStorage.removeItem('importTableId');
+					}
+				}, 2000);
+				
+			} catch (error) {
+				console.error('Error in full import:', error);
+				showToast('שגיאה בייבוא מלא', 'error');
+			}
+		}
+	   
+	   // תוספה - בדיקת תקינות נתונים
+		function validateReceiptData(receiptData) {
+			const errors = [];
+			
+			if (!receiptData.location_id) {
+				errors.push('חובה לבחור לקוח');
+			}
+			
+			if (!receiptData.amount || receiptData.amount <= 0) {
+				errors.push('חובה להזין סכום חיובי');
+			}
+			
+			if (!receiptData.date) {
+				errors.push('חובה להזין תאריך');
+			}
+			
+			return errors;
+		}
+
+		function showValidationErrors(errors) {
+			if (errors.length > 0) {
+				showToast(errors.join('\n'), 'error');
+				return true; // יש שגיאות
+			}
+			return false; // אין שגיאות
+		}
+	   
 	   
    </script>
 </body>
