@@ -683,7 +683,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
 			</nav>
         </header>
 
@@ -2380,32 +2380,53 @@
 
 		// הוספת כותרות לטבלת עזר
 		async function addImportHeaders(spreadsheetId) {
-			const locationHeaders = [['ID', 'שם לקוח', 'רחוב', 'בית', 'עיר', 'תדירות', 'איש קשר', 'סכום בסיסי']];
-			
-			const visitHeaders = [['ID', 'שנה', 'חודש', 'יום', 'לקוח', 'איש קשר', 'טיפול', 'תאריך', 'מה בוצע', 'משך', 'סכום', 'שולם', 'הוצאה', 'הערות']];
+			if (!await validateToken()) {
+				showToast('בעיה בחיבור לגוגל במהלך הוספת כותרות', 'error');
+				return;
+			}
 
-			const receiptHeaders = [['ID', 'XK', 'פנקס', 'קבלה', 'שנה', 'חודש', 'יום', 'כתובת', 'סכום', 'סוג', 'קודX', 'הערות', 'פירוט']];
-			
-			await Promise.all([
-				gapi.client.sheets.spreadsheets.values.update({
-					spreadsheetId: spreadsheetId,
-					range: 'Locations!A1:N1',
-					valueInputOption: 'RAW',
-					values: locationHeaders
-				}),
-				gapi.client.sheets.spreadsheets.values.update({
-					spreadsheetId: spreadsheetId,
-					range: 'Visits!A1:L1',
-					valueInputOption: 'RAW',
-					values: visitHeaders
-				}),
-				gapi.client.sheets.spreadsheets.values.update({
-					spreadsheetId: spreadsheetId,
-					range: 'Receipts!A1:I1',
-					valueInputOption: 'RAW',
-					values: receiptHeaders
-				})
-			]);
+			try {
+				const locationHeaders = [['ID', 'שם לקוח', 'רחוב', 'בית', 'עיר', 'תדירות', 'איש קשר', 'סכום בסיסי']];
+				const visitHeaders = [['ID', 'שנה', 'חודש', 'יום', 'לקוח', 'איש קשר', 'טיפול', 'תאריך', 'מה בוצע', 'משך', 'סכום', 'שולם', 'הוצאה', 'הערות']];
+				const receiptHeaders = [['ID', 'XK', 'פנקס', 'קבלה', 'שנה', 'חודש', 'יום', 'כתובת', 'סכום', 'סוג', 'קודX', 'הערות', 'פירוט']];
+				
+				// המתן קצת לטבלה להיווצר
+				await new Promise(resolve => setTimeout(resolve, 1000));
+				
+				await Promise.all([
+					gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: spreadsheetId,
+						range: 'Locations!A1:H1',
+						valueInputOption: 'RAW',
+						resource: { values: locationHeaders }
+					}),
+					gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: spreadsheetId,
+						range: 'Visits!A1:N1',
+						valueInputOption: 'RAW', 
+						resource: { values: visitHeaders }
+					}),
+					gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: spreadsheetId,
+						range: 'Receipts!A1:M1',
+						valueInputOption: 'RAW',
+						resource: { values: receiptHeaders }
+					})
+				]);
+				
+				console.log('Headers added successfully to import table');
+				
+			} catch (error) {
+				console.error('Error adding headers:', error);
+				
+				if (error.status === 401) {
+					access_token = null;
+					showToast('⚠️ החיבור פג במהלך הוספת כותרות', 'warning');
+				} else {
+					showToast('⚠️ שגיאה בהוספת כותרות לטבלה', 'error');
+				}
+				throw error;
+			}
 		}
 		
 		// תוספה - פיענוח כתובת מלאה לחלקים
