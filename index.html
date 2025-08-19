@@ -304,12 +304,12 @@
             background: #c0392b;
         }
 
-        .start-treatment-btn {
+        .start-visit-btn {
             background: #27ae60;
             color: white;
         }
 
-        .start-treatment-btn:hover {
+        .start-visit-btn:hover {
             background: #229954;
         }
 
@@ -471,7 +471,7 @@
 		
 		/* Hide connection for now */
 		.connection-status {
-			display: none;
+			display: block;
 		}
 		
 		.connection-status {
@@ -530,8 +530,8 @@
 			</div>
             <nav class="nav-buttons">
                 <button onclick="showSection('planning')" class="nav-btn active">תכנון יומי</button>
-                <button onclick="showSection('treatment')" class="nav-btn">טיפול חדש</button>
-                <button onclick="showSection('gardens')" class="nav-btn">ניהול גינות</button>
+                <button onclick="showSection('visit')" class="nav-btn">טיפול חדש</button>
+                <button onclick="showSection('locations')" class="nav-btn">ניהול גינות</button>
                 <button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
             </nav>
         </header>
@@ -541,9 +541,9 @@
             <section id="planning" class="section active">
                 <h2>תכנון יומי - גינות לטיפול</h2>
                 <div class="filter-buttons">
-					<button onclick="filterTreatments('today')" class="filter-btn active">היום</button>
-					<button onclick="filterTreatments('week')" class="filter-btn">השבוע</button>
-					<button onclick="filterTreatments('overdue')" class="filter-btn">מאחרות</button>
+					<button onclick="filterVisits('today')" class="filter-btn active">היום</button>
+					<button onclick="filterVisits('week')" class="filter-btn">השבוע</button>
+					<button onclick="filterVisits('overdue')" class="filter-btn">מאחרות</button>
 				</div>
                 <div class="table-container">
                     <table id="planningTable" class="data-table">
@@ -562,20 +562,20 @@
                 </div>
             </section>
 
-            <!-- Treatment Section -->
-            <section id="treatment" class="section">
+            <!-- VisitSection -->
+            <section id="visit" class="section">
                 <h2>טיפול חדש</h2>
                 <div class="form-container">
-                    <form id="treatmentForm">
+                    <form id="visitForm">
                         <div class="form-group">
-                            <label for="gardenSelect">בחר גינה:</label>
-                            <select id="gardenSelect" required>
+                            <label for="locationSelect">בחר גינה:</label>
+                            <select id="locationSelect" required>
                                 <option value="">בחר גינה...</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="treatmentType">סוג טיפול:</label>
-                            <select id="treatmentType" required>
+                            <label for="visitType">סוג טיפול:</label>
+                            <select id="visitType" required>
                                 <option value="מלא">מלא</option>
                                 <option value="חלקי">חלקי</option>
                             </select>
@@ -589,9 +589,9 @@
                                 <span id="timerDisplay">00:00:00</span>
                             </div>
                             <div class="timer-buttons">
-                                <button type="button" id="startBtn" onclick="startTreatment()">התחל טיפול</button>
-                                <button type="button" id="pauseBtn" onclick="pauseTreatment()" disabled>הפסקה</button>
-                                <button type="button" id="stopBtn" onclick="stopTreatment()" disabled>סיום טיפול</button>
+                                <button type="button" id="startBtn" onclick="startVisit()">התחל טיפול</button>
+                                <button type="button" id="pauseBtn" onclick="pauseVisit()" disabled>הפסקה</button>
+                                <button type="button" id="stopBtn" onclick="stopVisit()" disabled>סיום טיפול</button>
                             </div>
                         </div>
                         <div class="form-group">
@@ -611,12 +611,12 @@
                 </div>
             </section>
 
-            <!-- Gardens Section -->
-            <section id="gardens" class="section">
+            <!-- locations Section -->
+            <section id="locations" class="section">
                 <h2>ניהול גינות</h2>
-                <button onclick="showAddGardenForm()" class="add-btn">הוסף גינה חדשה</button>
+                <button onclick="showAddLocationForm()" class="add-btn">הוסף גינה חדשה</button>
                 <div class="table-container">
-                    <table id="gardensTable" class="data-table">
+                    <table id="locationsTable" class="data-table">
                         <thead>
                             <tr>
                                 <th>שם</th>
@@ -628,7 +628,7 @@
                                 <th>פעולות</th>
                             </tr>
                         </thead>
-                        <tbody id="gardensTableBody">
+                        <tbody id="locationsTableBody">
                         </tbody>
                     </table>
                 </div>
@@ -677,14 +677,14 @@
         
         // Sheet names
         const SHEETS = {
-            GARDENS: 'gardens',
-            TREATMENTS: 'treatments',
-            RECEIPTS: 'receipts'
-        };
+			LOCATIONS: 'locations',  
+			VISITS: 'visits',          
+			RECEIPTS: 'receipts'     
+		};
 
         // Global variables
-        let gardens = [];
-        let treatments = [];
+        let locations = [];
+        let visits = [];
         let receipts = [];
         let currentFilter = 'today';
         let timer = {
@@ -717,6 +717,30 @@
 			showSuccess('התחברת בהצלחה ל-Google!');
 		}
 
+		// תוספה - פונקציה שנקראת אחרי ההתחברות
+		async function loadAllDataFromSheets() {
+			try {
+				showLoading('טוען נתונים מ-Google Sheets...');
+				
+				await loadLocationsFromSheets();
+				await loadVisitsFromSheets(); 
+				await loadReceiptsFromSheets();
+				
+				// Update UI
+				loadLocationsForSelect();
+				loadLocationsTable();
+				loadReceiptsTable();
+				loadPlanningData();
+				
+				hideLoading();
+				showSuccess('נתונים נטענו בהצלחה מ-Google Sheets!');
+				
+			} catch (error) {
+				console.error('Error loading data from sheets:', error);
+				showError('שגיאה בטעינת נתונים מ-Google Sheets');
+			}
+		}
+
 		async function connectToGoogleSheets() {
 			try {
 				console.log('Connecting to Google Sheets...');
@@ -740,11 +764,199 @@
 			}
 		}
 
+		// תוספה - טעינת מיקומים (גינות)
+		async function loadLocationsFromSheets() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${SHEETS.LOCATIONS}!A:O`
+				});
+				
+				const rows = response.result.values;
+				if (rows && rows.length > 1) {
+					locations = rows.slice(1).map(row => ({
+						ID: row[0] || '',
+						name: row[1] || '',
+						full_address: row[2] || '',
+						neighborhood: row[3] || '',
+						city: row[4] || '',
+						contact_person: row[5] || '',
+						phone: row[6] || '',
+						allowed_day: row[7] || '',
+						interval_weeks: row[8] || '',
+						temp_addition: row[9] || 0,
+						base_amount: row[10] || '',
+						active: row[11] || '',
+						notes: row[12] || '',
+						last_visit: row[13] || '',
+						next_visit: row[14] || ''
+					}));
+				}
+				
+			} catch (error) {
+				console.error('Error loading locations:', error);
+			}
+		}
+
+		// תוספה - טעינת ביקורים (טיפולים)
+		async function loadVisitsFromSheets() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${SHEETS.VISITS}!A:L`
+				});
+				
+				const rows = response.result.values;
+				if (rows && rows.length > 1) {
+					visits = rows.slice(1).map(row => ({
+						ID: row[0] || '',
+						date: row[1] || '',
+						location_id: row[2] || '',
+						visit_type: row[3] || '',
+						work_done: row[4] || '',
+						duration_minutes: row[5] || 0,
+						start_time: row[6] || '',
+						end_time: row[7] || '',
+						amount: row[8] || 0,
+						expense: row[9] || 0,
+						paid: row[10] || 'לא',
+						notes: row[11] || ''
+					}));
+				}
+				
+			} catch (error) {
+				console.error('Error loading visits:', error);
+			}
+		}
+
+		// תוספה - טעינת קבלות
+		async function loadReceiptsFromSheets() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${SHEETS.RECEIPTS}!A:I`
+				});
+				
+				const rows = response.result.values;
+				if (rows && rows.length > 1) {
+					receipts = rows.slice(1).map(row => ({
+						ID: row[0] || '',
+						book_number: row[1] || '',
+						receipt_number: row[2] || '',
+						date: row[3] || '',
+						location_id: row[4] || '',
+						location_name: row[5] || '',
+						amount: row[6] || 0,
+						payment_type: row[7] || '',
+						notes: row[8] || ''
+					}));
+				}
+				
+			} catch (error) {
+				console.error('Error loading receipts:', error);
+			}
+		}
+		
+		// תוספה - שמירת מיקום חדש לשיטס
+		async function saveLocationToSheets(locationData) {
+			try {
+				const values = [[
+					locationData.ID,
+					locationData.name,
+					locationData.full_address,
+					locationData.neighborhood,
+					locationData.city,
+					locationData.contact_person,
+					locationData.phone,
+					locationData.allowed_day,
+					locationData.interval_weeks,
+					locationData.temp_addition,
+					locationData.base_amount,
+					locationData.active,
+					locationData.notes,
+					locationData.last_visit,
+					locationData.next_visit
+				]];
+				
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${SHEETS.LOCATIONS}!A:O`,
+					valueInputOption: 'USER_ENTERED',
+					resource: { values: values }
+				});
+				
+			} catch (error) {
+				console.error('Error saving location to sheets:', error);
+				throw error;
+			}
+		}
+
+		// תוספה - שמירת ביקור חדש לשיטס
+		async function saveVisitToSheets(visitData) {
+			try {
+				const values = [[
+					visitData.ID,
+					visitData.date,
+					visitData.location_id,
+					visitData.visit_type,
+					visitData.work_done,
+					visitData.duration_minutes,
+					visitData.start_time,
+					visitData.end_time,
+					visitData.amount,
+					visitData.expense,
+					visitData.paid,
+					visitData.notes
+				]];
+				
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${SHEETS.VISITS}!A:L`,
+					valueInputOption: 'USER_ENTERED',
+					resource: { values: values }
+				});
+				
+			} catch (error) {
+				console.error('Error saving visit to sheets:', error);
+				throw error;
+			}
+		}
+		
+		// תוספה - שמירת קבלה חדשה לשיטס
+		async function saveReceiptToSheets(receiptData) {
+			try {
+				const values = [[
+					receiptData.ID,
+					receiptData.book_number,
+					receiptData.receipt_number,
+					receiptData.date,
+					receiptData.location_id,
+					receiptData.location_name,
+					receiptData.amount,
+					receiptData.payment_type,
+					receiptData.notes
+				]];
+				
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${SHEETS.RECEIPTS}!A:I`,
+					valueInputOption: 'USER_ENTERED',
+					resource: { values: values }
+				});
+				
+				console.log('Receipt saved to sheets');
+				
+			} catch (error) {
+				console.error('Error saving receipt to sheets:', error);
+				throw error;
+			}
+		}
+
 		// Local Storage functions
 		function saveToLocalStorage() {
 			try {
-				localStorage.setItem('gardens_data', JSON.stringify(gardens));
-				localStorage.setItem('treatments_data', JSON.stringify(treatments));
+				localStorage.setItem('locations_data', JSON.stringify(locations));  // שונה
+				localStorage.setItem('visits_data', JSON.stringify(visits));        // שונה
 				localStorage.setItem('receipts_data', JSON.stringify(receipts));
 				console.log('Data saved to local storage');
 			} catch (error) {
@@ -754,15 +966,15 @@
 
 		function loadFromLocalStorage() {
 			try {
-				const savedGardens = localStorage.getItem('gardens_data');
-				const savedTreatments = localStorage.getItem('treatments_data');
+				const savedLocations = localStorage.getItem('locations_data');     // שונה
+				const savedVisits = localStorage.getItem('visits_data');          // שונה
 				const savedReceipts = localStorage.getItem('receipts_data');
 				
-				if (savedGardens) {
-					gardens = JSON.parse(savedGardens);
+				if (savedLocations) {
+					locations = JSON.parse(savedLocations);  // שונה
 				}
-				if (savedTreatments) {
-					treatments = JSON.parse(savedTreatments);
+				if (savedVisits) {
+					visits = JSON.parse(savedVisits);        // שונה
 				}
 				if (savedReceipts) {
 					receipts = JSON.parse(savedReceipts);
@@ -786,8 +998,8 @@
 
         // Setup event listeners
         function setupEventListeners() {
-            // Treatment form submission
-            document.getElementById('treatmentForm').addEventListener('submit', handleTreatmentSubmit);
+            // Visitform submission
+            document.getElementById('visitForm').addEventListener('submit', handleVisitSubmit);
         }
 
         // Navigation
@@ -813,11 +1025,11 @@
                 case 'planning':
                     loadPlanningData();
                     break;
-                case 'treatment':
-                    loadGardensForSelect();
+                case 'visit':
+                    loadLocationsForSelect();
                     break;
-                case 'gardens':
-                    loadGardensTable();
+                case 'locations':
+                    loadLocationsTable();
                     break;
                 case 'receipts':
                     loadReceiptsTable();
@@ -826,7 +1038,7 @@
         }
 
         // Timer functions
-        function startTreatment() {
+        function startVisit() {
             timer.startTime = Date.now() - timer.pauseTime;
             timer.isRunning = true;
             timer.isPaused = false;
@@ -838,7 +1050,7 @@
             timer.interval = setInterval(updateTimerDisplay, 1000);
         }
 
-        function pauseTreatment() {
+        function pauseVisit() {
             if (timer.isPaused) {
                 // Resume
                 timer.startTime = Date.now() - timer.pauseTime;
@@ -854,7 +1066,7 @@
             }
         }
 
-        function stopTreatment() {
+        function stopVisit() {
             clearInterval(timer.interval);
             const totalDuration = Math.floor((Date.now() - timer.startTime) / 60000); // minutes
             
@@ -899,9 +1111,9 @@
 			}
 		}
 
-        async function loadGardens() {
+        async function loadlocations() {
             // For now, we'll use dummy data until we set up the Google Sheets API
-            gardens = [
+            locations = [
                 {
                     ID: 1,
                     name: "גינת דוגמה 1",
@@ -916,8 +1128,8 @@
                     base_amount: 300,
                     active: "כן",
                     notes: "",
-                    last_treatment: "2024-01-15",
-                    next_treatment: "2024-02-12"
+                    last_visit: "2024-01-15",
+                    next_visit: "2024-02-12"
                 },
                 {
                     ID: 2,
@@ -933,14 +1145,14 @@
                     base_amount: 400,
                     active: "כן",
                     notes: "",
-                    last_treatment: "2024-01-10",
-                    next_treatment: "2024-02-21"
+                    last_visit: "2024-01-10",
+                    next_visit: "2024-02-21"
                 }
             ];
         }
 
-        async function loadTreatments() {
-            treatments = []; // Will be loaded from Google Sheets
+        async function loadVisits() {
+            visits = []; // Will be loaded from Google Sheets
         }
 
         async function loadReceipts() {
@@ -949,10 +1161,10 @@
 
         // Display functions
         function loadPlanningData() {
-            filterTreatments(currentFilter);
+            filterVisits(currentFilter);
         }
 
-        function filterTreatments(filter) {
+        function filterVisits(filter) {
 			currentFilter = filter;
 			
 			// Update filter buttons - fix the event.target issue
@@ -966,57 +1178,57 @@
 				}
 			});
 			
-			// Filter gardens based on next_treatment date
+			// Filter locations based on next_visitdate
 			const today = new Date();
 			const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 			
-			let filteredGardens = gardens.filter(garden => garden.active === "כן");
+			let filteredlocations = locations.filter(location => location.active === "כן");
 			
 			switch(filter) {
 				case 'today':
-					filteredGardens = filteredGardens.filter(garden => {
-						const nextTreatment = new Date(garden.next_treatment);
-						return nextTreatment <= today;
+					filteredlocations = filteredlocations.filter(location => {
+						const nextVisit= new Date(location.next_visit);
+						return nextVisit<= today;
 					});
 					break;
 				case 'week':
-					filteredGardens = filteredGardens.filter(garden => {
-						const nextTreatment = new Date(garden.next_treatment);
-						return nextTreatment <= weekFromNow;
+					filteredlocations = filteredlocations.filter(location => {
+						const nextVisit= new Date(location.next_visit);
+						return nextVisit<= weekFromNow;
 					});
 					break;
 				case 'overdue':
-					filteredGardens = filteredGardens.filter(garden => {
-						const nextTreatment = new Date(garden.next_treatment);
-						return nextTreatment < today;
+					filteredlocations = filteredlocations.filter(location => {
+						const nextVisit= new Date(location.next_visit);
+						return nextVisit< today;
 					});
 					break;
 			}
 			
-			displayPlanningTable(filteredGardens);
+			displayPlanningTable(filteredLocations);
 		}
 
-        function displayPlanningTable(gardensToShow) {
+        function displayPlanningTable(locationsToShow) {
             const tbody = document.getElementById('planningTableBody');
             tbody.innerHTML = '';
             
-            if (gardensToShow.length === 0) {
+            if (locationsToShow.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">אין גינות לטיפול</td></tr>';
                 return;
             }
             
-            gardensToShow.forEach(garden => {
+            locationsToShow.forEach(location => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${garden.name}</td>
-                    <td>${garden.full_address}</td>
-                    <td>${garden.allowed_day}</td>
-                    <td>${formatDate(garden.next_treatment)}</td>
+                    <td>${location.name}</td>
+                    <td>${location.full_address}</td>
+                    <td>${location.allowed_day}</td>
+                    <td>${formatDate(location.next_visit)}</td>
                     <td>
-                        <button class="action-btn start-treatment-btn" onclick="startTreatmentForGarden(${garden.ID})">
+                        <button class="action-btn start-visit-btn" onclick="startVisitForlocation(${location.ID})">
                             התחל טיפול
                         </button>
-                        <button class="action-btn edit-btn" onclick="postponeTreatment(${garden.ID})">
+                        <button class="action-btn edit-btn" onclick="postponeVisit(${location.ID})">
                             דחה
                         </button>
                     </td>
@@ -1025,34 +1237,34 @@
             });
         }
 
-        function loadGardensForSelect() {
-            const select = document.getElementById('gardenSelect');
+        function loadLocationsForSelect() {
+            const select = document.getElementById('locationSelect');
             select.innerHTML = '<option value="">בחר גינה...</option>';
             
-            gardens.filter(garden => garden.active === "כן").forEach(garden => {
+            locations.filter(location => location.active === "כן").forEach(location => {
                 const option = document.createElement('option');
-                option.value = garden.ID;
-                option.textContent = `${garden.name} - ${garden.full_address}`;
+                option.value = location.ID;
+                option.textContent = `${location.name} - ${location.full_address}`;
                 select.appendChild(option);
             });
         }
 
-        function loadGardensTable() {
-            const tbody = document.getElementById('gardensTableBody');
+        function loadLocationsTable() {
+            const tbody = document.getElementById('locationsTableBody');
             tbody.innerHTML = '';
             
-            gardens.forEach(garden => {
+            locations.forEach(location => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${garden.name}</td>
-                    <td>${garden.full_address}</td>
-                    <td>${garden.contact_person}</td>
-                    <td>${garden.allowed_day}</td>
-                    <td>${garden.interval_weeks} שבועות</td>
-                    <td>${garden.active}</td>
+                    <td>${location.name}</td>
+                    <td>${location.full_address}</td>
+                    <td>${location.contact_person}</td>
+                    <td>${location.allowed_day}</td>
+                    <td>${location.interval_weeks} שבועות</td>
+                    <td>${location.active}</td>
                     <td>
-                        <button class="action-btn edit-btn" onclick="editGarden(${garden.ID})">ערוך</button>
-                        <button class="action-btn delete-btn" onclick="deleteGarden(${garden.ID})">מחק</button>
+                        <button class="action-btn edit-btn" onclick="editLocation(${location.ID})">ערוך</button>
+                        <button class="action-btn delete-btn" onclick="deleteLocation(${location.ID})">מחק</button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -1074,7 +1286,7 @@
 					<td>${receipt.book_number}</td>
 					<td>${receipt.receipt_number}</td>
 					<td>${formatDate(receipt.date)}</td>
-					<td>${receipt.garden_name}</td>
+					<td>${receipt.location_name}</td>
 					<td>${receipt.amount}</td>
 					<td>${receipt.payment_type}</td>
 					<td>
@@ -1086,96 +1298,103 @@
 			});
 		}
 
-        // Treatment handling
-        function startTreatmentForGarden(gardenId) {
-            const garden = gardens.find(g => g.ID === gardenId);
-            if (garden) {
-                showSection('treatment');
-                document.getElementById('gardenSelect').value = gardenId;
+        // Visithandling
+        function startVisitForlocation(locationId) {
+            const location = locations.find(g => g.ID === locationId);
+            if (location) {
+                showSection('visit');
+                document.getElementById('locationSelect').value = locationId;
             }
         }
 
-        function handleTreatmentSubmit(event) {
+        function handleVisitSubmit(event) {
             event.preventDefault();
             
             const formData = new FormData(event.target);
-            const treatmentData = {
-                garden_id: document.getElementById('gardenSelect').value,
-                treatment_type: document.getElementById('treatmentType').value,
-                work_done: document.getElementById('workDone').value,
-                duration_minutes: document.getElementById('manualDuration').value || 0,
-                amount: document.getElementById('amount').value || 0,
-                expense: document.getElementById('expense').value || 0,
-                date: new Date().toISOString().split('T')[0],
-                start_time: new Date().toTimeString().split(' ')[0],
-                end_time: new Date().toTimeString().split(' ')[0]
-            };
+      
+			const visitData = {
+				location_id: document.getElementById('locationSelect').value,  
+				visit_type: document.getElementById('visitType').value,
+				work_done: document.getElementById('workDone').value,
+				duration_minutes: document.getElementById('manualDuration').value || 0,
+				amount: document.getElementById('amount').value || 0,
+				expense: document.getElementById('expense').value || 0,
+				date: new Date().toISOString().split('T')[0],
+				start_time: new Date().toTimeString().split(' ')[0],
+				end_time: new Date().toTimeString().split(' ')[0]
+			};
             
-            console.log('Treatment data:', treatmentData);
+            console.log('Visitdata:', visitData);
             
             // Here we would save to Google Sheets
-            saveTreatment(treatmentData);
+            saveVisit(visitData);
         }
 
-		async function saveTreatment(treatmentData) {
-            try {
-                // For now, just add to local array
-                const newTreatment = {
-                    ID: treatments.length + 1,
-                    ...treatmentData,
-                    paid: 'לא',
-                    notes: ''
-                };
-                
-                treatments.push(newTreatment);
+		// לשנות בפונקציה הקיימת - להוסיף שמירה לשיטס
+		async function saveVisit(visitData) {
+			try {
+				// For now, just add to local array
+				const newVisit= {
+					ID: visits.length + 1,
+					...visitData,
+					paid: 'לא',
+					notes: ''
+				};
+				
+				visits.push(newVisit);
 
-				// Update next treatment date if it's a full treatment
-			    if (treatmentData.treatment_type === 'מלא') {
-				   updateNextTreatmentDate(treatmentData.garden_id);
-			    }
+				// תוספה - שמירה לגוגל שיטס
+				if (access_token) {
+					await saveVisitToSheets(newVisit);
+				}
+
+				// Update next visitdate if it's a full visit
+				if (visitData.visit_type === 'מלא') {
+				   updateNextVisitDate(visitData.location_id);
+				}
 			   
-			    showSuccess('טיפול נשמר בהצלחה!');
-			    
-			    // Reset form
-			    document.getElementById('treatmentForm').reset();
+				showSuccess('טיפול נשמר בהצלחה!');
+				
+				// Reset form
+				document.getElementById('visitForm').reset();
 			   
-			    // Reset timer display
-			    document.getElementById('timerDisplay').textContent = '00:00:00';
+				// Reset timer display
+				document.getElementById('timerDisplay').textContent = '00:00:00';
 			   
-			    // Reload planning data
-			    loadPlanningData();
+				// Reload planning data
+				loadPlanningData();
 				saveToLocalStorage();
-               
-            } catch (error) {
-                console.error('Error saving treatment:', error);
-                showError('שגיאה בשמירת הטיפול');
-            }
-		}
-
-		function updateNextTreatmentDate(gardenId) {
-			const garden = gardens.find(g => g.ID == gardenId);
-			if (garden) {
-               const lastTreatment = new Date();
-               const intervalWeeks = parseInt(garden.interval_weeks) + parseInt(garden.temp_addition || 0);
-               const nextTreatment = new Date(lastTreatment.getTime() + (intervalWeeks * 7 * 24 * 60 * 60 * 1000));
-               
-               garden.last_treatment = lastTreatment.toISOString().split('T')[0];
-               garden.next_treatment = nextTreatment.toISOString().split('T')[0];
-               garden.temp_addition = 0; // Reset temporary addition
-               
-               // Here we would update Google Sheets
-               console.log(`Updated next treatment for ${garden.name}: ${garden.next_treatment}`);
+				   
+			} catch (error) {
+				console.error('Error saving visit:', error);
+				showError('שגיאה בשמירת הטיפול');
 			}
 		}
 
-		function postponeTreatment(gardenId) {
-			const garden = gardens.find(g => g.ID == gardenId);
-			if (garden) {
+		function updateNextVisitDate(locationId) {
+			const location = locations.find(g => g.ID == locationId);
+			if (location) {
+               const lastVisit= new Date();
+               const intervalWeeks = parseInt(location.interval_weeks) + parseInt(location.temp_addition || 0);
+               const nextVisit= new Date(lastVisit.getTime() + (intervalWeeks * 7 * 24 * 60 * 60 * 1000));
+               
+               location.last_visit= lastVisit.toISOString().split('T')[0];
+               location.next_visit= nextVisit.toISOString().split('T')[0];
+               location.temp_addition = 0; // Reset temporary addition
+               
+               // Here we would update Google Sheets
+               console.log(`Updated next visitfor ${location.name}: ${location.next_visit}`);
+			}
+		}
+
+		function postponeVisit(locationId) {
+			const location = locations.find(g => g.ID == locationId);
+			if (location) {
 				const weeks = prompt('כמה שבועות לדחות?', '1');
 				if (weeks && !isNaN(weeks)) {
-					const currentNext = new Date(garden.next_treatment);
+					const currentNext = new Date(location.next_visit);
 					const newNext = new Date(currentNext.getTime() + (parseInt(weeks) * 7 * 24 * 60 * 60 * 1000));
-					garden.next_treatment = newNext.toISOString().split('T')[0];
+					location.next_visit= newNext.toISOString().split('T')[0];
 
 					loadPlanningData();
 					showSuccess(`טיפול נדחה ב-${weeks} שבועות`);
@@ -1183,43 +1402,43 @@
 			}
 		}
 
-       // Garden management
-       function showAddGardenForm() {
+       // location management
+       function showAddLocationForm() {
            const modalHTML = `
-               <div class="modal" id="gardenModal">
+               <div class="modal" id="locationModal">
                    <div class="modal-content">
                        <div class="modal-header">
                            <h3>הוספת גינה חדשה</h3>
-                           <span class="close" onclick="closeModal('gardenModal')">&times;</span>
+                           <span class="close" onclick="closeModal('locationModal')">&times;</span>
                        </div>
-                       <form id="gardenForm" onsubmit="handleGardenSubmit(event)">
+                       <form id="locationForm" onsubmit="handleLocationSubmit(event)">
                            <div class="form-group">
-                               <label for="gardenName">שם גינה:</label>
-                               <input type="text" id="gardenName" required>
+                               <label for="locationName">שם גינה:</label>
+                               <input type="text" id="locationName" required>
                            </div>
                            <div class="form-group">
-                               <label for="gardenAddress">כתובת מלאה:</label>
-                               <input type="text" id="gardenAddress" required>
+                               <label for="locationAddress">כתובת מלאה:</label>
+                               <input type="text" id="locationAddress" required>
                            </div>
                            <div class="form-group">
-                               <label for="gardenNeighborhood">שכונה:</label>
-                               <input type="text" id="gardenNeighborhood">
+                               <label for="locationNeighborhood">שכונה:</label>
+                               <input type="text" id="locationNeighborhood">
                            </div>
                            <div class="form-group">
-                               <label for="gardenCity">עיר:</label>
-                               <input type="text" id="gardenCity">
+                               <label for="locationCity">עיר:</label>
+                               <input type="text" id="locationCity">
                            </div>
                            <div class="form-group">
-                               <label for="gardenContact">איש קשר:</label>
-                               <input type="text" id="gardenContact" required>
+                               <label for="locationContact">איש קשר:</label>
+                               <input type="text" id="locationContact" required>
                            </div>
                            <div class="form-group">
-                               <label for="gardenPhone">טלפון:</label>
-                               <input type="tel" id="gardenPhone">
+                               <label for="locationPhone">טלפון:</label>
+                               <input type="tel" id="locationPhone">
                            </div>
                            <div class="form-group">
-                               <label for="gardenDay">יום מותר:</label>
-                               <select id="gardenDay" required>
+                               <label for="locationDay">יום מותר:</label>
+                               <select id="locationDay" required>
                                    <option value="">בחר יום...</option>
                                    <option value="א'">ראשון</option>
                                    <option value="ב'">שני</option>
@@ -1231,27 +1450,27 @@
                                </select>
                            </div>
                            <div class="form-group">
-                               <label for="gardenInterval">מרווח שבועות:</label>
-                               <input type="number" id="gardenInterval" required min="1" max="52">
+                               <label for="locationInterval">מרווח שבועות:</label>
+                               <input type="number" id="locationInterval" required min="1" max="52">
                            </div>
                            <div class="form-group">
-                               <label for="gardenAmount">סכום בסיסי:</label>
-                               <input type="number" id="gardenAmount">
+                               <label for="locationAmount">סכום בסיסי:</label>
+                               <input type="number" id="locationAmount">
                            </div>
                            <div class="form-group">
-                               <label for="gardenActive">פעילה:</label>
-                               <select id="gardenActive" required>
+                               <label for="locationActive">פעילה:</label>
+                               <select id="locationActive" required>
                                    <option value="כן">כן</option>
                                    <option value="לא">לא</option>
                                </select>
                            </div>
                            <div class="form-group">
-                               <label for="gardenNextTreatment">תאריך לטיפול הבא:</label>
-                               <input type="date" id="gardenNextTreatment" required>
+                               <label for="locationNextVisit">תאריך לטיפול הבא:</label>
+                               <input type="date" id="locationNextVisit" required>
                            </div>
                            <div class="form-group">
-                               <label for="gardenNotes">הערות:</label>
-                               <textarea id="gardenNotes"></textarea>
+                               <label for="locationNotes">הערות:</label>
+                               <textarea id="locationNotes"></textarea>
                            </div>
                            <button type="submit">שמור גינה</button>
                        </form>
@@ -1260,103 +1479,110 @@
            `;
            
            document.getElementById('modalContainer').innerHTML = modalHTML;
-           document.getElementById('gardenModal').style.display = 'block';
+           document.getElementById('locationModal').style.display = 'block';
            
-           // Set default next treatment date to today
-           document.getElementById('gardenNextTreatment').value = new Date().toISOString().split('T')[0];
+           // Set default next visitdate to today
+           document.getElementById('locationNextVisit').value = new Date().toISOString().split('T')[0];
        }
 
-       function handleGardenSubmit(event) {
-           event.preventDefault();
+        function handleLocationSubmit(event) {
+            event.preventDefault();
            
-           const gardenData = {
-               ID: gardens.length + 1,
-               name: document.getElementById('gardenName').value,
-               full_address: document.getElementById('gardenAddress').value,
-               neighborhood: document.getElementById('gardenNeighborhood').value,
-               city: document.getElementById('gardenCity').value,
-               contact_person: document.getElementById('gardenContact').value,
-               phone: document.getElementById('gardenPhone').value,
-               allowed_day: document.getElementById('gardenDay').value,
-               interval_weeks: parseInt(document.getElementById('gardenInterval').value),
-               temp_addition: 0,
-               base_amount: parseFloat(document.getElementById('gardenAmount').value) || 0,
-               active: document.getElementById('gardenActive').value,
-               notes: document.getElementById('gardenNotes').value,
-               last_treatment: '',
-               next_treatment: document.getElementById('gardenNextTreatment').value
-           };
+			const locationData = {
+				ID: locations.length + 1,
+				name: document.getElementById('locationName').value,
+				full_address: document.getElementById('locationAddress').value,
+				neighborhood: document.getElementById('locationNeighborhood').value,
+				city: document.getElementById('locationCity').value,
+				contact_person: document.getElementById('locationContact').value,
+				phone: document.getElementById('locationPhone').value,
+				allowed_day: document.getElementById('locationDay').value,
+				interval_weeks: parseInt(document.getElementById('locationInterval').value),
+				temp_addition: 0,
+				base_amount: parseFloat(document.getElementById('locationAmount').value) || 0,
+				active: document.getElementById('locationActive').value,
+				notes: document.getElementById('locationNotes').value,
+				last_visit: '',
+				next_visit: document.getElementById('locationNextVisit').value
+			};
            
-           gardens.push(gardenData);
+            locations.push(locationData);
            
-           closeModal('gardenModal');
-           loadGardensTable();
-           loadGardensForSelect();
+		    if (access_token) {
+				await saveLocationToSheets(locationData);
+				showSuccess('מיקום נשמר בהצלחה ל-Google Sheets!');
+			} else {
+				showSuccess('מיקום נשמר מקומית!');
+			}
+		   
+           closeModal('locationModal');
+           loadLocationsTable();
+           loadLocationsForSelect();
            showSuccess('גינה נוספה בהצלחה!');
 		   saveToLocalStorage();
-       }
+        }
 
-       function editGarden(gardenId) {
-           const garden = gardens.find(g => g.ID == gardenId);
-           if (!garden) return;
-           
-           showAddGardenForm();
-           
-           // Populate form with existing data
-           setTimeout(() => {
-               document.getElementById('gardenName').value = garden.name;
-               document.getElementById('gardenAddress').value = garden.full_address;
-               document.getElementById('gardenNeighborhood').value = garden.neighborhood || '';
-               document.getElementById('gardenCity').value = garden.city || '';
-               document.getElementById('gardenContact').value = garden.contact_person;
-               document.getElementById('gardenPhone').value = garden.phone || '';
-               document.getElementById('gardenDay').value = garden.allowed_day;
-               document.getElementById('gardenInterval').value = garden.interval_weeks;
-               document.getElementById('gardenAmount').value = garden.base_amount;
-               document.getElementById('gardenActive').value = garden.active;
-               document.getElementById('gardenNextTreatment').value = garden.next_treatment;
-               document.getElementById('gardenNotes').value = garden.notes || '';
-               
-               // Change form submission to update instead of add
-               document.getElementById('gardenForm').onsubmit = function(event) {
-                   event.preventDefault();
-                   updateGarden(gardenId);
-               };
-               
-               document.querySelector('.modal-header h3').textContent = 'עריכת גינה';
-           }, 100);
-       }
+		function editLocation(locationId) {
+			const location = locations.find(g => g.ID == locationId);
+			if (!location) return;
 
-       function updateGarden(gardenId) {
-           const garden = gardens.find(g => g.ID == gardenId);
-           if (!garden) return;
+			showAddLocationForm();
+
+			// Populate form with existing data
+			setTimeout(() => {
+			    document.getElementById('locationName').value = location.name;
+			    document.getElementById('locationAddress').value = location.full_address;
+			    document.getElementById('locationNeighborhood').value = location.neighborhood || '';
+			    document.getElementById('locationCity').value = location.city || '';
+			    document.getElementById('locationContact').value = location.contact_person;
+			    document.getElementById('locationPhone').value = location.phone || '';
+			    document.getElementById('locationDay').value = location.allowed_day;
+			    document.getElementById('locationInterval').value = location.interval_weeks;
+			    document.getElementById('locationAmount').value = location.base_amount;
+			    document.getElementById('locationActive').value = location.active;
+			    document.getElementById('locationNextVisit').value = location.next_visit;
+			    document.getElementById('locationNotes').value = location.notes || '';
+			   
+			    // Change form submission to update instead of add
+			    document.getElementById('locationForm').onsubmit = function(event) {
+				   event.preventDefault();
+				   updatelocation(locationId);
+			    };
+			   
+			   document.querySelector('.modal-header h3').textContent = 'עריכת גינה';
+			}, 100);
+		}
+        
+       function updatelocation(locationId) {
+           const location = locations.find(g => g.ID == locationId);
+           if (!location) return;
            
-           garden.name = document.getElementById('gardenName').value;
-           garden.full_address = document.getElementById('gardenAddress').value;
-           garden.neighborhood = document.getElementById('gardenNeighborhood').value;
-           garden.city = document.getElementById('gardenCity').value;
-           garden.contact_person = document.getElementById('gardenContact').value;
-           garden.phone = document.getElementById('gardenPhone').value;
-           garden.allowed_day = document.getElementById('gardenDay').value;
-           garden.interval_weeks = parseInt(document.getElementById('gardenInterval').value);
-           garden.base_amount = parseFloat(document.getElementById('gardenAmount').value) || 0;
-           garden.active = document.getElementById('gardenActive').value;
-           garden.next_treatment = document.getElementById('gardenNextTreatment').value;
-           garden.notes = document.getElementById('gardenNotes').value;
+           location.name = document.getElementById('locationName').value;
+           location.full_address = document.getElementById('locationAddress').value;
+           location.neighborhood = document.getElementById('locationNeighborhood').value;
+           location.city = document.getElementById('locationCity').value;
+           location.contact_person = document.getElementById('locationContact').value;
+           location.phone = document.getElementById('locationPhone').value;
+           location.allowed_day = document.getElementById('locationDay').value;
+           location.interval_weeks = parseInt(document.getElementById('locationInterval').value);
+           location.base_amount = parseFloat(document.getElementById('locationAmount').value) || 0;
+           location.active = document.getElementById('locationActive').value;
+           location.next_visit= document.getElementById('locationNextVisit').value;
+           location.notes = document.getElementById('locationNotes').value;
            
-           closeModal('gardenModal');
-           loadGardensTable();
-           loadGardensForSelect();
+           closeModal('locationModal');
+           loadLocationsTable();
+           loadLocationsForSelect();
            loadPlanningData();
            showSuccess('גינה עודכנה בהצלחה!');
 		   saveToLocalStorage();
        }
 
-       function deleteGarden(gardenId) {
+       function deleteLocation(locationId) {
            if (confirm('האם אתה בטוח שברצונך למחוק את הגינה?')) {
-               gardens = gardens.filter(g => g.ID != gardenId);
-               loadGardensTable();
-               loadGardensForSelect();
+               locations = locations.filter(g => g.ID != locationId);
+               loadLocationsTable();
+               loadLocationsForSelect();
                loadPlanningData();
                showSuccess('גינה נמחקה בהצלחה!');
 			   saveToLocalStorage();
@@ -1386,8 +1612,8 @@
                                <input type="date" id="receiptDate" required>
                            </div>
                            <div class="form-group">
-                               <label for="receiptGarden">גינה:</label>
-                               <select id="receiptGarden" required>
+                               <label for="receiptlocations">גינה:</label>
+                               <select id="receiptlocations" required>
                                    <option value="">בחר גינה...</option>
                                </select>
                            </div>
@@ -1422,12 +1648,12 @@
            // Set default date to today
            document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
            
-           // Populate gardens select
-           const select = document.getElementById('receiptGarden');
-           gardens.forEach(garden => {
+           // Populate locations select
+           const select = document.getElementById('receiptlocations');
+           locations.forEach(location => {
                const option = document.createElement('option');
-               option.value = garden.ID;
-               option.textContent = `${garden.name} - ${garden.full_address}`;
+               option.value = location.ID;
+               option.textContent = `${location.name} - ${location.full_address}`;
                select.appendChild(option);
            });
        }
@@ -1435,22 +1661,29 @@
        function handleReceiptSubmit(event) {
            event.preventDefault();
            
-           const gardenId = document.getElementById('receiptGarden').value;
-           const garden = gardens.find(g => g.ID == gardenId);
+           const locationId = document.getElementById('receiptlocation').value;
+           const location = locations.find(g => g.ID == locationId);
            
            const receiptData = {
-               ID: receipts.length + 1,
-               book_number: document.getElementById('receiptBook').value,
-               receipt_number: document.getElementById('receiptNumber').value,
-               date: document.getElementById('receiptDate').value,
-               garden_id: gardenId,
-               garden_name: garden ? garden.name : '',
-               amount: parseFloat(document.getElementById('receiptAmount').value),
-               payment_type: document.getElementById('receiptPaymentType').value,
-               notes: document.getElementById('receiptNotes').value
-           };
+				ID: receipts.length + 1,
+				book_number: document.getElementById('receiptBook').value,
+				receipt_number: document.getElementById('receiptNumber').value,
+				date: document.getElementById('receiptDate').value,
+				location_id: locationId,        
+				location_name: location ? location.name : '',  // שונה מ-location_name
+				amount: parseFloat(document.getElementById('receiptAmount').value),
+				payment_type: document.getElementById('receiptPaymentType').value,
+				notes: document.getElementById('receiptNotes').value
+			};
            
            receipts.push(receiptData);
+		   
+		    if (access_token) {
+				await saveReceiptToSheets(receiptData);
+				showSuccess('קבלה נשמרה בהצלחה ל-Google Sheets!');
+			} else {
+				showSuccess('קבלה נשמרה מקומית!');
+			}
            
            closeModal('receiptModal');
            loadReceiptsTable();
@@ -1520,7 +1753,7 @@
 				document.getElementById('receiptBook').value = receipt.book_number;
 				document.getElementById('receiptNumber').value = receipt.receipt_number;
 				document.getElementById('receiptDate').value = receipt.date;
-				document.getElementById('receiptGarden').value = receipt.garden_id;
+				document.getElementById('receiptLocation').value = receipt.location_id;
 				document.getElementById('receiptAmount').value = receipt.amount;
 				document.getElementById('receiptPaymentType').value = receipt.payment_type;
 				document.getElementById('receiptNotes').value = receipt.notes || '';
@@ -1539,14 +1772,14 @@
 			const receipt = receipts.find(r => r.ID == receiptId);
 			if (!receipt) return;
 			
-			const gardenId = document.getElementById('receiptGarden').value;
-			const garden = gardens.find(g => g.ID == gardenId);
+			const locationId = document.getElementById('receiptLocation').value;
+			const location = locations.find(g => g.ID == locationId);
 			
 			receipt.book_number = document.getElementById('receiptBook').value;
 			receipt.receipt_number = document.getElementById('receiptNumber').value;
 			receipt.date = document.getElementById('receiptDate').value;
-			receipt.garden_id = gardenId;
-			receipt.garden_name = garden ? garden.name : '';
+			receipt.location_id = locationId;
+			receipt.location_name = location ? location.name : '';
 			receipt.amount = parseFloat(document.getElementById('receiptAmount').value);
 			receipt.payment_type = document.getElementById('receiptPaymentType').value;
 			receipt.notes = document.getElementById('receiptNotes').value;
