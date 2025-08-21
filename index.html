@@ -658,6 +658,41 @@
 			}
 		}
 		
+		.stats-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+			gap: 15px;
+		}
+
+		.stat-item {
+			background: rgba(255,255,255,0.7);
+			padding: 15px;
+			border-radius: 8px;
+			border-left: 4px solid #27ae60;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+			backdrop-filter: blur(5px);
+		}
+
+		.stat-label {
+			display: block;
+			font-weight: bold;
+			color: #495057;
+			margin-bottom: 5px;
+			font-size: 14px;
+		}
+
+		.stat-value {
+			font-size: 1.4em;
+			font-weight: bold;
+			color: #2c3e50;
+		}
+
+		@media (max-width: 768px) {
+			.stats-grid {
+				grid-template-columns: repeat(2, 1fr);
+			}
+		}
+
 	</style>
    
 </head>
@@ -683,14 +718,40 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
         <main class="main-content">
             <!-- Planning Section -->
             <section id="planning" class="section active">
-                <h2>תכנון יומי - גינות לטיפול</h2>
+                <h2>📅 תכנון יומי</h2>
+				<!-- Statistics Panel -->
+					<div class="stats-section" style="background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c8 100%); border: 2px solid #27ae60; padding: 20px; margin: 20px 0; border-radius: 12px;">
+						<h3 style="color: #2c3e50; margin-bottom: 15px; text-align: center;">📊 סטטיסטיקות</h3>
+						<div class="stats-grid">
+							<div class="stat-item">
+								<span class="stat-label">סה"כ לקוחות:</span>
+								<span id="totalLocations" class="stat-value">0</span>
+							</div>
+							<div class="stat-item">
+								<span class="stat-label">לקוחות פעילים:</span>
+								<span id="activeLocations" class="stat-value">0</span>
+							</div>
+							<div class="stat-item">
+								<span class="stat-label">טיפולים השבוע:</span>
+								<span id="weeklyVisits" class="stat-value">0</span>
+							</div>
+							<div class="stat-item">
+								<span class="stat-label">הכנסה השבוע:</span>
+								<span id="weeklyIncome" class="stat-value">₪0</span>
+							</div>
+							<div class="stat-item">
+								<span class="stat-label">חובות פתוחים:</span>
+								<span id="openDebts" class="stat-value">₪0</span>
+							</div>
+						</div>
+					</div>
                 <div class="filter-buttons">
 					<button onclick="filterVisits('today')" class="filter-btn active">היום</button>
 					<button onclick="filterVisits('week')" class="filter-btn">השבוע</button>
@@ -1240,6 +1301,11 @@
 
 		// תוספה - שמירת ביקור חדש לשיטס
 		async function saveVisitToSheets(visitData) {
+			if (!await validateToken()) {
+				showToast('החיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
+				return;
+			}
+			
 			try {
 				const values = [[
 					visitData.ID,
@@ -1265,12 +1331,21 @@
 				
 			} catch (error) {
 				console.error('Error saving visit to sheets:', error);
+				if (error.status === 401) {
+					access_token = null;
+					showToast('⚠️ החיבור פג - התחבר מחדש', 'warning');
+				}
 				throw error;
 			}
 		}
 		
-		// תוספה - שמירת קבלה חדשה לשיטס
+		// שמירת קבלה חדשה לשיטס
 		async function saveReceiptToSheets(receiptData) {
+			if (!await validateToken()) {
+				showToast('החיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
+				return;
+			}
+			
 			try {
 				const values = [[
 					receiptData.ID,
@@ -1295,6 +1370,10 @@
 				
 			} catch (error) {
 				console.error('Error saving receipt to sheets:', error);
+				if (error.status === 401) {
+					access_token = null;
+					showToast('⚠️ החיבור פג - התחבר מחדש', 'warning');
+				}
 				throw error;
 			}
 		}
@@ -1569,8 +1648,42 @@
 
         // Display functions
         function loadPlanningData() {
-            filterVisits(currentFilter);
-        }
+			// חישוב סטטיסטיקות
+			updatePlanningStats();
+			
+			// סינון רגיל
+			filterVisits(currentFilter);
+		}
+
+		// תוספה - עדכון סטטיסטיקות
+		function updatePlanningStats() {
+			// לקוחות
+			const totalLocations = locations.length;
+			const activeLocations = locations.filter(loc => loc.active === 'כן').length;
+			
+			// טיפולים השבוע
+			const today = new Date();
+			const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+			const weeklyVisits = visits.filter(visit => {
+				const visitDate = new Date(visit.date);
+				return visitDate >= weekAgo && visitDate <= today;
+			});
+			
+			// הכנסה השבוע
+			const weeklyIncome = weeklyVisits.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
+			
+			// חובות פתוחים
+			const openDebts = visits
+				.filter(visit => visit.paid === 'לא')
+				.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
+			
+			// עדכון התצוגה
+			document.getElementById('totalLocations').textContent = totalLocations;
+			document.getElementById('activeLocations').textContent = `${activeLocations} (${totalLocations > 0 ? Math.round((activeLocations / totalLocations) * 100) : 0}%)`;
+			document.getElementById('weeklyVisits').textContent = weeklyVisits.length;
+			document.getElementById('weeklyIncome').textContent = `₪${weeklyIncome.toLocaleString()}`;
+			document.getElementById('openDebts').textContent = `₪${openDebts.toLocaleString()}`;
+		}
 
         function filterVisits(filter) {
 			currentFilter = filter;
@@ -2389,7 +2502,7 @@
 				// הסר ID מכל הטבלאות
 				const locationHeaders = [['שם לקוח', 'רחוב', 'בית', 'עיר', 'תדירות', 'איש קשר', 'סכום בסיסי']];
 				const visitHeaders = [['שנה', 'חודש', 'יום', 'לקוח', 'איש קשר', 'טיפול', 'תאריך', 'מה בוצע', 'משך', 'סכום', 'שולם', 'הוצאה', 'הערות']];
-				const receiptHeaders = [['XK', 'פנקס', 'קבלה', 'שנה', 'חודש', 'יום', 'כתובת', 'סכום', 'סוג', 'קודX', 'הערות', 'פירוט']];
+				const receiptHeaders = [['XK', 'פנקס', 'קבלה', 'שנה', 'חודש', 'יום', 'כתובת', 'סכום', 'סוג', 'הערות', 'פירוט']];
 				
 				await new Promise(resolve => setTimeout(resolve, 1000));
 				
@@ -2408,7 +2521,7 @@
 					}),
 					gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: spreadsheetId,
-						range: 'Receipts!A1:L1', // L במקום M
+						range: 'Receipts!A1:K1', // K עמודות
 						valueInputOption: 'RAW',
 						resource: { values: receiptHeaders }
 					})
@@ -2630,7 +2743,7 @@
 				
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: importTableId,
-					range: 'Receipts!A2:L1000' // L במקום M
+					range: 'Receipts!A2:K1000'
 				});
 				
 				const rows = response.result.values || [];
@@ -2638,7 +2751,7 @@
 				let notFoundCustomers = [];
 				
 				for (const row of rows) {
-					if (row.length > 6 && row[6]) { // יש כתובת - עמודה 6 במקום 7
+					if (row.length > 6 && row[6]) { // יש כתובת - עמודה 6
 						const customerAddress = row[6].trim(); // עמודה "כתובת"
 						
 						// מצא לקוח קיים לפי כתובת מלאה
@@ -2656,7 +2769,7 @@
 						
 						// בניית תאריך מהעמודות שנה/חודש/יום
 						let receiptDate = '';
-						if (row[3] && row[4] && row[5]) { // עמודות 3,4,5 במקום 4,5,6
+						if (row[3] && row[4] && row[5]) { // עמודות 3,4,5
 							const year = row[3];
 							const month = String(row[4]).padStart(2, '0');
 							const day = String(row[5]).padStart(2, '0');
@@ -2664,16 +2777,16 @@
 						}
 						
 						const receiptData = {
-							ID: Date.now() + importedCount, // ID אוטומטי
-							book_number: row[1] || '', // פנקס - עמודה 1 במקום 2
-							receipt_number: row[2] || '', // קבלה - עמודה 2 במקום 3
+							ID: Date.now() + importedCount,
+							book_number: row[1] || '', // פנקס - עמודה 1
+							receipt_number: row[2] || '', // קבלה - עמודה 2
 							date: receiptDate,
 							location_id: existingCustomer.ID,
 							location_name: customerAddress,
-							amount: parseFloat(row[7]) || 0, // סכום - עמודה 7 במקום 8
-							payment_type: row[8] || '', // סוג - עמודה 8 במקום 9
-							codeX: row[0] || '', // XK → קודX - עמודה 0 במקום 1
-							notes: `${row[10] || ''} ${row[11] || ''}`.trim() // הערות + פירוט - עמודות 10,11 במקום 11,12
+							amount: parseFloat(row[7]) || 0, // סכום - עמודה 7
+							payment_type: row[8] || '', // סוג - עמודה 8
+							codeX: row[0] || '', // XK - עמודה 0
+							notes: `${row[9] || ''} ${row[10] || ''}`.trim() // הערות + פירוט - עמודות 9,10
 						};
 						
 						receipts.push(receiptData);
