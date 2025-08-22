@@ -2604,7 +2604,7 @@
 						range: 'Receipts!A1:K1', // K עמודות
 						valueInputOption: 'RAW',
 						resource: { values: receiptHeaders }
-					})
+					}),
 					gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: spreadsheetId,
 						range: 'SystemSettings!A1:B1',
