@@ -718,7 +718,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -727,31 +727,33 @@
             <section id="planning" class="section active">
                 <h2>📅 תכנון יומי</h2>
 				<!-- Statistics Panel -->
-					<div class="stats-section" style="background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c8 100%); border: 2px solid #27ae60; padding: 20px; margin: 20px 0; border-radius: 12px;">
-						<h3 style="color: #2c3e50; margin-bottom: 15px; text-align: center;">📊 סטטיסטיקות</h3>
-						<div class="stats-grid">
-							<div class="stat-item">
-								<span class="stat-label">סה"כ לקוחות:</span>
-								<span id="totalLocations" class="stat-value">0</span>
-							</div>
-							<div class="stat-item">
-								<span class="stat-label">לקוחות פעילים:</span>
-								<span id="activeLocations" class="stat-value">0</span>
-							</div>
-							<div class="stat-item">
-								<span class="stat-label">טיפולים השבוע:</span>
-								<span id="weeklyVisits" class="stat-value">0</span>
-							</div>
-							<div class="stat-item">
-								<span class="stat-label">הכנסה השבוע:</span>
-								<span id="weeklyIncome" class="stat-value">₪0</span>
-							</div>
-							<div class="stat-item">
-								<span class="stat-label">חובות פתוחים:</span>
-								<span id="openDebts" class="stat-value">₪0</span>
-							</div>
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+					<div style="background: rgba(52, 152, 219, 0.1); border: 2px solid #3498db; border-radius: 8px; padding: 12px;">
+						<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+							<span style="font-size: 13px; color: #2c3e50;">לקוחות:</span>
+							<span id="totalLocations" style="font-weight: bold; color: #2c3e50;">0</span>
+						</div>
+						<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+							<span style="font-size: 13px; color: #2c3e50;">פעילים:</span>
+							<span id="activeLocations" style="font-weight: bold; color: #27ae60;">0</span>
+						</div>
+						<div style="display: flex; justify-content: space-between;">
+							<span style="font-size: 13px; color: #2c3e50;">טיפולים השבוע:</span>
+							<span id="weeklyVisits" style="font-weight: bold; color: #2c3e50;">0</span>
 						</div>
 					</div>
+					
+					<div style="background: rgba(39, 174, 96, 0.1); border: 2px solid #27ae60; border-radius: 8px; padding: 12px;">
+						<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+							<span style="font-size: 13px; color: #2c3e50;">הכנסה השבוע:</span>
+							<span id="weeklyIncome" style="font-weight: bold; color: #27ae60;">₪0</span>
+						</div>
+						<div style="display: flex; justify-content: space-between;">
+							<span style="font-size: 13px; color: #2c3e50;">חובות פתוחים:</span>
+							<span id="openDebts" style="font-weight: bold; color: #e74c3c;">₪0</span>
+						</div>
+					</div>
+				</div>
                 <div class="filter-buttons">
 					<button onclick="filterVisits('today')" class="filter-btn active">היום</button>
 					<button onclick="filterVisits('week')" class="filter-btn">השבוע</button>
@@ -780,11 +782,22 @@
                 <div class="form-container">
                     <form id="visitForm">
                         <div class="form-group">
-                            <label for="locationSelect">בחר גינה:</label>
-                            <select id="locationSelect" required>
-                                <option value="">בחר גינה...</option>
-                            </select>
-                        </div>
+							<label for="locationSelect">בחר לקוח:</label>
+							<select id="locationSelect" required>
+								<option value="">בחר לקוח...</option>
+							</select>
+						</div>
+
+						<!-- הוסף כאן -->
+						<div class="form-group">
+							<label for="visitDate">תאריך טיפול:</label>
+							<input type="date" id="visitDate" required>
+						</div>
+
+						<div class="form-group">
+							<label for="visitTime">שעת התחלה:</label>
+							<input type="time" id="visitTime" required>
+						</div>
                         <div class="form-group">
                             <label for="visitType">סוג טיפול:</label>
                             <select id="visitType" required>
@@ -796,28 +809,38 @@
                             <label for="workDone">מה בוצע:</label>
                             <textarea id="workDone" placeholder="תיאור העבודה שבוצעה"></textarea>
                         </div>
-                        <div class="timer-section">
-                            <div class="timer-display">
-                                <span id="timerDisplay">00:00:00</span>
-                            </div>
-                            <div class="timer-buttons">
-                                <button type="button" id="startBtn" onclick="startVisit()">התחל טיפול</button>
-                                <button type="button" id="pauseBtn" onclick="pauseVisit()" disabled>הפסקה</button>
-                                <button type="button" id="stopBtn" onclick="stopVisit()" disabled>סיום טיפול</button>
-                            </div>
-                        </div>
                         <div class="form-group">
-                            <label for="manualDuration">משך ידני (דקות):</label>
-                            <input type="number" id="manualDuration" placeholder="עריכה ידנית">
-                        </div>
+							<label for="manualDurationMinutes">משך הטיפול (דקות):</label>
+							<div style="display: flex; gap: 10px; align-items: center;">
+								<input type="number" id="manualDurationMinutes" placeholder="90" min="0" onchange="updateHoursDisplay()" style="flex: 1;">
+								<span style="color: #666; font-size: 14px;">שעות:</span>
+								<input type="text" id="calculatedHours" readonly style="width: 80px; background: #f8f9fa; color: #666; border: 2px solid #e9ecef; border-radius: 6px; padding: 8px; text-align: center;" placeholder="1.5">
+							</div>
+						</div>
                         <div class="form-group">
-                            <label for="amount">סכום:</label>
-                            <input type="number" id="amount" placeholder="סכום הטיפול">
-                        </div>
+							<label for="numberOfWorkersVisit">מספר עובדים בטיפול:</label>
+							<div style="display: flex; gap: 10px; align-items: center;">
+								<input type="number" id="numberOfWorkersVisit" value="1" min="1" onchange="calculateTreatmentCost()" style="width: 80px;">
+								<span style="color: #666; font-size: 14px;">עובדים (כולל אותך)</span>
+							</div>
+						</div>
+
+						<div class="form-group">
+							<label for="amount">סכום:</label>
+							<div style="display: flex; gap: 10px; align-items: center;">
+								<input type="number" id="amount" placeholder="סכום הטיפול" style="flex: 1;">
+								<button type="button" onclick="calculateTreatmentCost()" style="background: #f39c12; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
+									🔄 חשב
+								</button>
+							</div>
+							<div id="costBreakdown" style="font-size: 12px; color: #666; margin-top: 5px;">
+								<!-- כאן יופיע פירוט החישוב -->
+							</div>
+						</div>
                         <div class="form-group">
-                            <label for="expense">הוצאה:</label>
-                            <input type="number" id="expense" placeholder="הוצאות נלוות">
-                        </div>
+							<label for="expense">הוצאה:</label>
+							<input type="number" id="expense" placeholder="הוצאות נילוות" onchange="calculateTreatmentCost()">
+						</div>
                         <button type="submit">שמור טיפול</button>
                     </form>
                 </div>
@@ -1009,10 +1032,26 @@
 				</div>
 				
 				<!-- Additional System Features -->
-				<div class="form-section">
-					<h3>⚙️ הגדרות מערכת</h3>
-					<p>תכונות נוספות יתווספו כאן בהמשך...</p>
-				</div>
+					<div class="form-section">
+						<h3>⚙️ הגדרות מערכת</h3>
+						
+						<!-- Cost Settings -->
+						<div style="background: rgba(39, 174, 96, 0.1); border: 2px solid #27ae60; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+							<h4 style="color: #27ae60; margin-bottom: 10px;">💰 הגדרות עלות טיפול</h4>
+							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+								<div class="form-group">
+									<label for="hourlyRate">שעת עבודה (₪):</label>
+									<input type="number" id="hourlyRate" value="150" min="0" onchange="saveCostSettings()">
+								</div>
+								<div class="form-group">
+									<label for="workerCost">תוספת לפועל (₪):</label>
+									<input type="number" id="workerCost" value="50" min="0" onchange="saveCostSettings()">
+								</div>
+							</div>
+						</div>
+						
+						<p style="color: #666;">תכונות נוספות יתווספו כאן בהמשך...</p>
+					</div>
 			</section>
 			
         </main>
@@ -1044,9 +1083,10 @@
         
         // Sheet names
         const SHEETS = {
-			LOCATIONS: 'locations',  
-			VISITS: 'visits',          
-			RECEIPTS: 'receipts'     
+			LOCATIONS: 'Locations',
+			VISITS: 'Visits',
+			RECEIPTS: 'Receipts',
+			SETTINGS: 'SystemSettings'
 		};
 
         // Global variables
@@ -1145,6 +1185,7 @@
 						document.getElementById('statusText').textContent = 'מחובר';
 						document.getElementById('statusText').classList.add('connected');
 						loadAllDataFromSheets();
+						ensureAllSheets().then(() => loadSettingsFromCloud());
 					},
 				});
 				
@@ -1448,20 +1489,32 @@
 
 		function loadFromLocalStorage() {
 			try {
-				const savedLocations = localStorage.getItem('locations_data');     // שונה
-				const savedVisits = localStorage.getItem('visits_data');          // שונה
+				const savedLocations = localStorage.getItem('locations_data');
+				const savedVisits = localStorage.getItem('visits_data');
 				const savedReceipts = localStorage.getItem('receipts_data');
+				const savedCostSettings = localStorage.getItem('cost_settings'); // הוסף זה
 				
 				if (savedLocations) {
-					locations = JSON.parse(savedLocations);  // שונה
+					locations = JSON.parse(savedLocations);
 				}
 				if (savedVisits) {
-					visits = JSON.parse(savedVisits);        // שונה
+					visits = JSON.parse(savedVisits);
 				}
 				if (savedReceipts) {
 					receipts = JSON.parse(savedReceipts);
 				}
+				if (savedCostSettings) { // הוסף את הבלוק הזה
+					costSettings = JSON.parse(savedCostSettings);
+					document.getElementById('hourlyRate').value = costSettings.hourlyRate;
+					document.getElementById('workerCost').value = costSettings.workerCost;
+				}
 				
+				if (savedCostSettings) {
+					costSettings = JSON.parse(savedCostSettings);
+					document.getElementById('hourlyRate').value = costSettings.hourlyRate;
+					document.getElementById('workerCost').value = costSettings.workerCost;
+				}
+
 				console.log('Data loaded from local storage');
 				
 			} catch (error) {
@@ -1830,27 +1883,52 @@
         }
 
         function handleVisitSubmit(event) {
-            event.preventDefault();
-            
-            const formData = new FormData(event.target);
-      
+			event.preventDefault();
+			
+			const formData = new FormData(event.target);
+			const selectedLocationId = document.getElementById('locationSelect').value;
+			const visitDate = document.getElementById('visitDate').value; // התאריך הנוכחי
+			
+			// בדיקות בסיסיות
+			if (!selectedLocationId) {
+				showError('אנא בחר לקוח');
+				return;
+			}
+			
+			// בדיקת כפילות
+			const duplicateVisit = checkDuplicateVisit(selectedLocationId, visitDate);
+			if (duplicateVisit) {
+				const location = locations.find(loc => loc.ID == selectedLocationId);
+				const locationName = location ? location.name : 'לקוח לא ידוע';
+				
+				const confirmMessage = `כבר קיים טיפול ללקוח "${locationName}" היום (${formatDate(visitDate)}).\n\nהאם להוסיף טיפול נוסף בכל זאת?`;
+				
+				if (!confirm(confirmMessage)) {
+					return; // ביטול הוספה
+				}
+			}
+
 			const visitData = {
-				location_id: document.getElementById('locationSelect').value,  
+				ID: Date.now(), // הוסף ID
+				location_id: selectedLocationId,  
 				visit_type: document.getElementById('visitType').value,
 				work_done: document.getElementById('workDone').value,
-				duration_minutes: document.getElementById('manualDuration').value || 0,
+				duration_minutes: parseFloat(document.getElementById('manualDurationMinutes').value) || 0,
+				workers_count: parseInt(document.getElementById('numberOfWorkersVisit').value) || 1,		
 				amount: document.getElementById('amount').value || 0,
 				expense: document.getElementById('expense').value || 0,
-				date: new Date().toISOString().split('T')[0],
-				start_time: new Date().toTimeString().split(' ')[0],
-				end_time: new Date().toTimeString().split(' ')[0]
+				paid: document.getElementById('paid') ? document.getElementById('paid').value : 'לא', // הוסף אם קיים
+				notes: document.getElementById('notes') ? document.getElementById('notes').value : '', // הוסף אם קיים
+				date: visitDate,
+				start_time: document.getElementById('visitTime').value,
+				end_time: document.getElementById('visitTime').value
 			};
-            
-            console.log('Visitdata:', visitData);
-            
-            // Here we would save to Google Sheets
-            saveVisit(visitData);
-        }
+			
+			console.log('Visitdata:', visitData);
+			
+			// Here we would save to Google Sheets
+			saveVisit(visitData);
+		}
 
 		// לשנות בפונקציה הקיימת - להוסיף שמירה לשיטס
 		async function saveVisit(visitData) {
@@ -2460,6 +2538,8 @@
 							properties: { title: 'Visits' },
 						}, {
 							properties: { title: 'Receipts' }
+						}, {
+							properties: { title: 'SystemSettings' }
 						}]
 					}
 				});
@@ -2525,7 +2605,13 @@
 						valueInputOption: 'RAW',
 						resource: { values: receiptHeaders }
 					})
-				]);
+					gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: spreadsheetId,
+						range: 'SystemSettings!A1:B1',
+						valueInputOption: 'RAW',
+						resource: { values: [['Setting', 'Value']] }
+					})
+				]);			
 				
 				console.log('Headers added successfully to import table');
 				
@@ -3126,6 +3212,213 @@
 				}
 			}
 		}, 300000); // בדיקה כל 5 דקות
+	   
+	   // תוספה - חישוב שעות מדקות
+		function updateHoursDisplay() {
+			const minutes = parseFloat(document.getElementById('manualDurationMinutes').value) || 0;
+			const hours = (minutes / 60).toFixed(2);
+			document.getElementById('calculatedHours').value = hours > 0 ? hours : '';
+		}
+	   
+	   // חישוב עלות טיפול מעודכן
+		function calculateTreatmentCost() {
+			const minutes = parseFloat(document.getElementById('manualDurationMinutes').value) || 0;
+			const workers = parseInt(document.getElementById('numberOfWorkersVisit').value) || 1;
+			const expense = parseFloat(document.getElementById('expense').value) || 0;
+			
+			if (minutes > 0) {
+				const hours = minutes / 60;
+				const baseCost = costSettings.hourlyRate * hours;
+				const workersCost = (workers - 1) * costSettings.workerCost * hours;
+				const laborCost = baseCost + workersCost;
+				const totalCost = laborCost + expense;
+				
+				// עדכן את שדה הסכום
+				document.getElementById('amount').value = Math.round(totalCost);
+				
+				// הצג פירוט
+				const breakdown = `
+					${hours.toFixed(2)} שעות × ₪${costSettings.hourlyRate} + 
+					${workers - 1} פועלים × ₪${costSettings.workerCost} = 
+					₪${Math.round(laborCost)} + הוצאות ₪${expense} = ₪${Math.round(totalCost)}
+				`;
+				document.getElementById('costBreakdown').textContent = breakdown;
+			} else {
+				document.getElementById('costBreakdown').textContent = '';
+			}
+		}
+
+		// שמירת הגדרות עלות פשוטה יותר
+		function saveCostSettings() {
+			costSettings.hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 150;
+			costSettings.workerCost = parseFloat(document.getElementById('workerCost').value) || 50;
+			
+			localStorage.setItem('cost_settings', JSON.stringify(costSettings));
+			
+			if (access_token) {
+				saveSettingsToCloud().then(success => {
+					if (success) {
+						showToast('הגדרות עלות נשמרו בענן', 'success');
+					} else {
+						showToast('הגדרות נשמרו מקומית בלבד', 'warning');
+					}
+				});
+			} else {
+				showToast('הגדרות נשמרו מקומית', 'success');
+			}
+		}
+	   
+	   // תוספה - בדיקת טיפול כפול
+		function checkDuplicateVisit(locationId, visitDate) {
+			const existingVisit = visits.find(visit => 
+				visit.location_id == locationId && 
+				visit.date === visitDate
+			);
+			
+			return existingVisit;
+		}
+	   
+	   // תוספה - אתחול תאריך ושעה נוכחיים
+		function initializeVisitForm() {
+			const now = new Date();
+			document.getElementById('visitDate').value = now.toISOString().split('T')[0];
+			document.getElementById('visitTime').value = now.toTimeString().split(':').slice(0,2).join(':');
+		}
+
+		// קריאה לאתחול כשהדף נטען
+		document.addEventListener('DOMContentLoaded', function() {
+			initializeVisitForm();
+		});
+	   
+	   // פונקציה לשמירת הגדרות לענן
+		async function saveSettingsToCloud() {
+			if (!await validateToken()) {
+				return false;
+			}
+			
+			try {
+				const settingsData = [
+					['Setting', 'Value'],
+					['hourly_rate', costSettings.hourlyRate],
+					['worker_cost', costSettings.workerCost],
+					['last_updated', new Date().toISOString()]
+				];
+				
+				await gapi.client.sheets.spreadsheets.values.clear({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${SHEETS.SETTINGS}!A:B`
+				});
+				
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${SHEETS.SETTINGS}!A1:B4`,
+					valueInputOption: 'RAW',
+					resource: { values: settingsData }
+				});
+				
+				return true;
+			} catch (error) {
+				console.error('Error saving settings:', error);
+				return false;
+			}
+		}
+
+		// פונקציה לטעינת הגדרות מהענן
+		async function loadSettingsFromCloud() {
+			if (!await validateToken()) {
+				return false;
+			}
+			
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${SHEETS.SETTINGS}!A:B`
+				});
+				
+				const rows = response.result.values || [];
+				if (rows.length > 1) {
+					rows.slice(1).forEach(row => {
+						const [setting, value] = row;
+						if (setting === 'hourly_rate') {
+							costSettings.hourlyRate = parseFloat(value) || 150;
+						}
+						if (setting === 'worker_cost') {
+							costSettings.workerCost = parseFloat(value) || 50;
+						}
+					});
+					
+					document.getElementById('hourlyRate').value = costSettings.hourlyRate;
+					document.getElementById('workerCost').value = costSettings.workerCost;
+					
+					return true;
+				}
+			} catch (error) {
+				console.error('Error loading settings:', error);
+				return false;
+			}
+			
+			return false;
+		}
+	   
+	   // תוספה - בדיקה ויצירת כל הגיליונות הנדרשים
+		async function ensureAllSheets() {
+			if (!await validateToken()) {
+				return false;
+			}
+			
+			try {
+				// בדוק אילו גיליונות קיימים
+				const response = await gapi.client.sheets.spreadsheets.get({
+					spreadsheetId: SPREADSHEET_ID
+				});
+				
+				const existingSheets = response.result.sheets || [];
+				const existingSheetNames = existingSheets.map(sheet => sheet.properties.title);
+				
+				const requiredSheets = [
+					{ name: SHEETS.LOCATIONS, headers: [['ID', 'שם', 'כתובת מלאה', 'שכונה', 'עיר', 'איש קשר', 'טלפון', 'יום מותר', 'מרווח שבועות', 'תוספת זמנית', 'סכום בסיסי', 'פעיל', 'הערות', 'ביקור אחרון', 'ביקור הבא']] },
+					{ name: SHEETS.VISITS, headers: [['ID', 'תאריך', 'מזהה מיקום', 'סוג ביקור', 'עבודה שבוצעה', 'משך דקות', 'מספר עובדים', 'זמן התחלה', 'זמן סיום', 'סכום', 'הוצאה', 'שולם', 'הערות']] },
+					{ name: SHEETS.RECEIPTS, headers: [['ID', 'מספר פנקס', 'מספר קבלה', 'תאריך', 'מזהה מיקום', 'שם מיקום', 'סכום', 'סוג תשלום', 'קודX', 'הערות']] },
+					{ name: SHEETS.SETTINGS, headers: [['Setting', 'Value']] }
+				];
+				
+				const sheetsToCreate = requiredSheets.filter(sheet => 
+					!existingSheetNames.includes(sheet.name)
+				);
+				
+				if (sheetsToCreate.length > 0) {
+					// צור גיליונות חסרים
+					const requests = sheetsToCreate.map(sheet => ({
+						addSheet: {
+							properties: { title: sheet.name }
+						}
+					}));
+					
+					await gapi.client.sheets.spreadsheets.batchUpdate({
+						spreadsheetId: SPREADSHEET_ID,
+						resource: { requests }
+					});
+					
+					// הוסף כותרות לגיליונות החדשים
+					for (const sheet of sheetsToCreate) {
+						await gapi.client.sheets.spreadsheets.values.update({
+							spreadsheetId: SPREADSHEET_ID,
+							range: `${sheet.name}!A1:${String.fromCharCode(64 + sheet.headers[0].length)}1`,
+							valueInputOption: 'RAW',
+							resource: { values: sheet.headers }
+						});
+					}
+					
+					showToast(`נוצרו ${sheetsToCreate.length} גיליונות חסרים`, 'success');
+				}
+				
+				return true;
+			} catch (error) {
+				console.error('Error ensuring sheets:', error);
+				showToast('שגיאה ביצירת גיליונות', 'error');
+				return false;
+			}
+		}
 	   
    </script>
 </body>
