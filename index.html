@@ -718,7 +718,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
 			</nav>
         </header>
 
@@ -3376,37 +3376,35 @@
 				const existingSheetNames = existingSheets.map(sheet => sheet.properties.title);
 				
 				const requiredSheets = [
-					{ name: SHEETS.LOCATIONS, headers: [['ID', 'שם', 'כתובת מלאה', 'שכונה', 'עיר', 'איש קשר', 'טלפון', 'יום מותר', 'מרווח שבועות', 'תוספת זמנית', 'סכום בסיסי', 'פעיל', 'הערות', 'ביקור אחרון', 'ביקור הבא']] },
-					{ name: SHEETS.VISITS, headers: [['ID', 'תאריך', 'מזהה מיקום', 'סוג ביקור', 'עבודה שבוצעה', 'משך דקות', 'מספר עובדים', 'זמן התחלה', 'זמן סיום', 'סכום', 'הוצאה', 'שולם', 'הערות']] },
-					{ name: SHEETS.RECEIPTS, headers: [['ID', 'מספר פנקס', 'מספר קבלה', 'תאריך', 'מזהה מיקום', 'שם מיקום', 'סכום', 'סוג תשלום', 'קודX', 'הערות']] },
-					{ name: SHEETS.SETTINGS, headers: [['Setting', 'Value']] }
+					'Locations',
+					'Visits', 
+					'Receipts',
+					'SystemSettings'
 				];
 				
-				const sheetsToCreate = requiredSheets.filter(sheet => 
-					!existingSheetNames.includes(sheet.name)
+				const sheetsToCreate = requiredSheets.filter(sheetName => 
+					!existingSheetNames.includes(sheetName)
 				);
 				
 				if (sheetsToCreate.length > 0) {
-					// צור גיליונות חסרים
-					const requests = sheetsToCreate.map(sheet => ({
-						addSheet: {
-							properties: { title: sheet.name }
+					// צור גיליונות חסרים אחד אחד
+					for (const sheetName of sheetsToCreate) {
+						try {
+							await gapi.client.sheets.spreadsheets.batchUpdate({
+								spreadsheetId: SPREADSHEET_ID,
+								resource: {
+									requests: [{
+										addSheet: {
+											properties: { title: sheetName }
+										}
+									}]
+								}
+							});
+							
+							console.log(`Created sheet: ${sheetName}`);
+						} catch (sheetError) {
+							console.error(`Error creating sheet ${sheetName}:`, sheetError);
 						}
-					}));
-					
-					await gapi.client.sheets.spreadsheets.batchUpdate({
-						spreadsheetId: SPREADSHEET_ID,
-						resource: { requests }
-					});
-					
-					// הוסף כותרות לגיליונות החדשים
-					for (const sheet of sheetsToCreate) {
-						await gapi.client.sheets.spreadsheets.values.update({
-							spreadsheetId: SPREADSHEET_ID,
-							range: `${sheet.name}!A1:${String.fromCharCode(64 + sheet.headers[0].length)}1`,
-							valueInputOption: 'RAW',
-							resource: { values: sheet.headers }
-						});
 					}
 					
 					showToast(`נוצרו ${sheetsToCreate.length} גיליונות חסרים`, 'success');
@@ -3423,4 +3421,3 @@
    </script>
 </body>
 </html>
-
