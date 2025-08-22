@@ -718,7 +718,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -1094,6 +1094,12 @@
         let visits = [];
         let receipts = [];
         let currentFilter = 'today';
+		// הגדרות עלות
+		let costSettings = {
+			hourlyRate: 150,
+			workerCost: 50
+		};
+		
         let timer = {
             startTime: null,
             pauseTime: 0,
@@ -3417,6 +3423,16 @@
 				return false;
 			}
 		}
+		
+		// שמירת הגדרות עלות
+		function saveCostSettings() {
+			costSettings.hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 150;
+			costSettings.workerCost = parseFloat(document.getElementById('workerCost').value) || 50;
+			
+			localStorage.setItem('cost_settings', JSON.stringify(costSettings));
+			showToast('הגדרות עלות נשמרו', 'success');
+		}
+		
 	   
    </script>
 </body>
