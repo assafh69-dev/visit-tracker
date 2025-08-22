@@ -718,7 +718,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -3367,13 +3367,14 @@
 		}
 	   
 	   // תוספה - בדיקה ויצירת כל הגיליונות הנדרשים
+		// תוספה - בדיקה ויצירת כל הגיליונות הנדרשים
 		async function ensureAllSheets() {
 			if (!await validateToken()) {
 				return false;
 			}
 			
 			try {
-				// בדוק אילו גיליונות קיימים
+				// בדוק איזה גיליונות קיימים
 				const response = await gapi.client.sheets.spreadsheets.get({
 					spreadsheetId: SPREADSHEET_ID
 				});
@@ -3388,43 +3389,78 @@
 					{ name: 'SystemSettings', headers: [['Setting', 'Value']] }
 				];
 				
+				let sheetsCreated = 0;
+				
 				for (const requiredSheet of requiredSheets) {
 					if (!existingSheetNames.includes(requiredSheet.name)) {
-						// צור גליון
-						await gapi.client.sheets.spreadsheets.batchUpdate({
-							spreadsheetId: SPREADSHEET_ID,
-							resource: {
-								requests: [{
-									addSheet: {
-										properties: { title: requiredSheet.name }
-									}
-								}]
-							}
-						});
-						
-						console.log(`Created sheet: ${requiredSheet.name}`);
+						try {
+							// צור גליון חדש
+							await gapi.client.sheets.spreadsheets.batchUpdate({
+								spreadsheetId: SPREADSHEET_ID,
+								resource: {
+									requests: [{
+										addSheet: {
+											properties: { title: requiredSheet.name }
+										}
+									}]
+								}
+							});
+							
+							console.log(`Created sheet: ${requiredSheet.name}`);
+							sheetsCreated++;
+							
+							// המתן קצר אחרי יצירת גליון
+							await new Promise(resolve => setTimeout(resolve, 500));
+							
+						} catch (createError) {
+							console.warn(`Sheet ${requiredSheet.name} might already exist or creation failed:`, createError);
+							// המשך למרות השגיאה - אולי הגליון קיים
+						}
 					}
 					
-					// תמיד וודא שיש כותרות (גם אם הגליון קיים אבל ריק)
+					// נסה להוסיף כותרות (בין אם הגליון חדש או קיים)
 					try {
-						await gapi.client.sheets.spreadsheets.values.update({
+						// קודם בדוק אם יש כבר תוכן בגליון
+						const existingData = await gapi.client.sheets.spreadsheets.values.get({
 							spreadsheetId: SPREADSHEET_ID,
-							range: `${requiredSheet.name}!A1:${String.fromCharCode(64 + requiredSheet.headers[0].length)}1`,
-							valueInputOption: 'RAW',
-							resource: { values: requiredSheet.headers }
+							range: `${requiredSheet.name}!A1:A1`
 						});
 						
-						console.log(`Added headers to: ${requiredSheet.name}`);
+						// אם אין תוכן או השורה הראשונה ריקה - הוסף כותרות
+						if (!existingData.result.values || existingData.result.values.length === 0 || !existingData.result.values[0][0]) {
+							await gapi.client.sheets.spreadsheets.values.update({
+								spreadsheetId: SPREADSHEET_ID,
+								range: `${requiredSheet.name}!A1:${String.fromCharCode(64 + requiredSheet.headers[0].length)}1`,
+								valueInputOption: 'RAW',
+								resource: { values: requiredSheet.headers }
+							});
+							
+							console.log(`Added headers to: ${requiredSheet.name}`);
+						}
+						
 					} catch (headerError) {
-						console.error(`Error adding headers to ${requiredSheet.name}:`, headerError);
+						console.warn(`Headers already exist or error adding to ${requiredSheet.name}:`, headerError);
+						// זה לא קריטי - המשך
 					}
 				}
 				
-				showToast('כל הגיליונות והכותרות מוכנים', 'success');
+				if (sheetsCreated > 0) {
+					showToast(`נוצרו ${sheetsCreated} גיליונות חדשים`, 'success');
+				} else {
+					console.log('All required sheets already exist');
+				}
+				
 				return true;
 				
 			} catch (error) {
 				console.error('Error ensuring sheets:', error);
+				
+				// אם זו שגיאה של "גליון כבר קיים" - זה בעצם בסדר
+				if (error.result?.error?.message?.includes('already exists')) {
+					console.log('Sheets already exist - continuing normally');
+					return true;
+				}
+				
 				showToast('שגיאה ביצירת גיליונות', 'error');
 				return false;
 			}
