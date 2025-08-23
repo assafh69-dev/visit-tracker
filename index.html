@@ -742,7 +742,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
 			</nav>
         </header>
 
@@ -1011,7 +1011,7 @@
 
 			<!-- System Section -->
 			<section id="system" class="section">
-				h2>🛠️ מערכת</h2>
+				<h2>🛠️ מערכת</h2>
 				
 				<!-- Import Section -->
 				<div class="form-section">
@@ -3544,6 +3544,8 @@
 				return;
 			}
 			
+			console.log('🔍 Import Table ID:', importTableId); // לוג חדש
+			
 			try {
 				showLoading('מייבא נתונים מטבלת העזר...');
 				
@@ -3551,82 +3553,101 @@
 				
 				// ייבוא מיקומים
 				try {
+					console.log('📍 Starting locations import...'); // לוג חדש
+					
 					const locationsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
-						range: 'Locations!A2:O1000' // החל משורה 2 (דלג על כותרות)
+						range: 'Locations!A2:O1000'
 					});
 					
+					console.log('📍 Locations response:', locationsResponse.result); // לוג חדש
+					
 					if (locationsResponse.result.values && locationsResponse.result.values.length > 0) {
+						console.log('📍 Found', locationsResponse.result.values.length, 'location rows'); // לוג חדש
+						
 						for (const row of locationsResponse.result.values) {
-							if (row[0] && row[1]) { // אם יש ID ושם
+							if (row[0] && row[1]) {
 								const locationData = parseLocationFromRow(row);
 								locations.push(locationData);
 								importedCount++;
 								
-								// המתנה קצרה בין שורות
 								await new Promise(resolve => setTimeout(resolve, 200));
 							}
 						}
 						showToast(`יובאו ${importedCount} מיקומים`, 'success');
+					} else {
+						console.log('📍 No locations data found'); // לוג חדש
 					}
 				} catch (error) {
-					console.warn('No locations found in helper table');
+					console.error('📍 Locations import error:', error); // לוג חדש
 				}
 				
-				// המתנה לפני ייבוא ביקורים
 				await new Promise(resolve => setTimeout(resolve, 1000));
 				
 				// ייבוא ביקורים
 				try {
+					console.log('🔧 Starting visits import...'); // לוג חדש
+					
 					const visitsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
 						range: 'Visits!A2:M1000'
 					});
 					
+					console.log('🔧 Visits response:', visitsResponse.result); // לוג חדש
+					
 					let visitsCount = 0;
 					if (visitsResponse.result.values && visitsResponse.result.values.length > 0) {
+						console.log('🔧 Found', visitsResponse.result.values.length, 'visit rows'); // לוג חדש
+						
 						for (const row of visitsResponse.result.values) {
-							if (row[0] && row[1]) { // אם יש ID ותאריך
+							if (row[0] && row[1]) {
 								const visitData = parseVisitFromRow(row);
 								visits.push(visitData);
 								visitsCount++;
 								
-								// המתנה קצרה בין שורות
 								await new Promise(resolve => setTimeout(resolve, 200));
 							}
 						}
 						showToast(`יובאו ${visitsCount} ביקורים`, 'success');
+					} else {
+						console.log('🔧 No visits data found'); // לוג חדש
 					}
 				} catch (error) {
-					console.warn('No visits found in helper table');
+					console.error('🔧 Visits import error:', error); // לוג חדש
 				}
 				
-				// המתנה לפני ייבוא קבלות
 				await new Promise(resolve => setTimeout(resolve, 1000));
 				
 				// ייבוא קבלות
 				try {
+					console.log('🧾 Starting receipts import...'); // לוג חדש
+					
 					const receiptsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
 						range: 'Receipts!A2:J1000'
 					});
 					
+					console.log('🧾 Receipts response:', receiptsResponse.result); // לוג חדש
+					
 					let receiptsCount = 0;
 					if (receiptsResponse.result.values && receiptsResponse.result.values.length > 0) {
+						console.log('🧾 Found', receiptsResponse.result.values.length, 'receipt rows'); // לוג חדש
+						
 						for (const row of receiptsResponse.result.values) {
-							if (row[0] && row[3]) { // אם יש ID ותאריך
+							if (row[0] && row[3]) {
 								const receiptData = parseReceiptFromRow(row);
 								receipts.push(receiptData);
 								receiptsCount++;
 								
-								// המתנה קצרה בין שורות
 								await new Promise(resolve => setTimeout(resolve, 200));
 							}
 						}
 						showToast(`יובאו ${receiptsCount} קבלות`, 'success');
+					} else {
+						console.log('🧾 No receipts data found'); // לוג חדש
 					}
 				} catch (error) {
-					console.warn('No receipts found in helper table');
+					console.error('🧾 Receipts import error:', error); // לוג חדש
 				}
 				
 				// שמירה מקומית ועדכון תצוגה
