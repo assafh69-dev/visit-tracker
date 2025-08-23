@@ -4777,6 +4777,32 @@
 			return removedCount;
 		}
 	   
+	   function validateVisitData(visitData) {
+			const errors = [];
+			
+			if (!visitData.location_id) {
+				errors.push('חסר מזהה לקוח');
+			}
+			
+			if (!visitData.date) {
+				errors.push('חסר תאריך');
+			}
+			
+			if (!visitData.work_done || visitData.work_done.trim() === '') {
+				errors.push('חסר תיאור עבודה');
+			}
+			
+			return errors;
+		}
+
+		function showValidationErrors(errors) {
+			if (errors.length > 0) {
+				alert('בעיות בטופס:\n' + errors.join('\n'));
+				return true; // יש שגיאות
+			}
+			return false; // אין שגיאות
+		}
+	   
    </script>
 </body>
 </html>
