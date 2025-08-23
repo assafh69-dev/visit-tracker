@@ -742,7 +742,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
 			</nav>
         </header>
 
@@ -3586,68 +3586,82 @@
 				
 				// ייבוא ביקורים
 				try {
-					console.log('🔧 Starting visits import...'); // לוג חדש
+					console.log('🔧 Starting visits import...');
 					
 					const visitsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
 						range: 'Visits!A2:M1000'
 					});
 					
-					console.log('🔧 Visits response:', visitsResponse.result); // לוג חדש
+					console.log('🔧 Visits response:', visitsResponse.result);
 					
 					let visitsCount = 0;
 					if (visitsResponse.result.values && visitsResponse.result.values.length > 0) {
-						console.log('🔧 Found', visitsResponse.result.values.length, 'visit rows'); // לוג חדש
+						console.log('🔧 Found', visitsResponse.result.values.length, 'visit rows');
 						
-						for (const row of visitsResponse.result.values) {
+						for (let i = 0; i < visitsResponse.result.values.length; i++) {
+							const row = visitsResponse.result.values[i];
 							if (row[0] && row[1]) {
 								const visitData = parseVisitFromRow(row);
 								visits.push(visitData);
 								visitsCount++;
 								
-								await new Promise(resolve => setTimeout(resolve, 200));
+								// הצג התקדמות כל 50 רשומות
+								if (visitsCount % 50 === 0) {
+									console.log(`🔧 Processed ${visitsCount}/${visitsResponse.result.values.length} visits`);
+									showToast(`מעבד ביקור ${visitsCount}...`, 'info', 1000);
+								}
+								
+								await new Promise(resolve => setTimeout(resolve, 100)); // המתנה קצרה יותר
 							}
 						}
 						showToast(`יובאו ${visitsCount} ביקורים`, 'success');
 					} else {
-						console.log('🔧 No visits data found'); // לוג חדש
+						console.log('🔧 No visits data found');
 					}
 				} catch (error) {
-					console.error('🔧 Visits import error:', error); // לוג חדש
+					console.error('🔧 Visits import error:', error);
 				}
 				
 				await new Promise(resolve => setTimeout(resolve, 1000));
 				
 				// ייבוא קבלות
 				try {
-					console.log('🧾 Starting receipts import...'); // לוג חדש
+					console.log('🧾 Starting receipts import...');
 					
 					const receiptsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
 						range: 'Receipts!A2:J1000'
 					});
 					
-					console.log('🧾 Receipts response:', receiptsResponse.result); // לוג חדש
+					console.log('🧾 Receipts response:', receiptsResponse.result);
 					
 					let receiptsCount = 0;
 					if (receiptsResponse.result.values && receiptsResponse.result.values.length > 0) {
-						console.log('🧾 Found', receiptsResponse.result.values.length, 'receipt rows'); // לוג חדש
+						console.log('🧾 Found', receiptsResponse.result.values.length, 'receipt rows');
 						
-						for (const row of receiptsResponse.result.values) {
-							if (row[0] && row[3]) {
+						for (let i = 0; i < receiptsResponse.result.values.length; i++) {
+							const row = receiptsResponse.result.values[i];
+							if (row[0] && row[3]) { // ID ותאריך
 								const receiptData = parseReceiptFromRow(row);
 								receipts.push(receiptData);
 								receiptsCount++;
 								
-								await new Promise(resolve => setTimeout(resolve, 200));
+								// הצג התקדמות כל 25 רשומות (קבלות בדרך כלל פחות)
+								if (receiptsCount % 25 === 0) {
+									console.log(`🧾 Processed ${receiptsCount}/${receiptsResponse.result.values.length} receipts`);
+									showToast(`מעבד קבלה ${receiptsCount}...`, 'info', 1000);
+								}
+								
+								await new Promise(resolve => setTimeout(resolve, 100)); // המתנה קצרה יותר
 							}
 						}
 						showToast(`יובאו ${receiptsCount} קבלות`, 'success');
 					} else {
-						console.log('🧾 No receipts data found'); // לוג חדש
+						console.log('🧾 No receipts data found');
 					}
 				} catch (error) {
-					console.error('🧾 Receipts import error:', error); // לוג חדש
+					console.error('🧾 Receipts import error:', error);
 				}
 				
 				// שמירה מקומית ועדכון תצוגה
