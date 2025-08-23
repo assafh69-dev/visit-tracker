@@ -742,7 +742,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -1115,9 +1115,10 @@
 		 // Google Sheets API Configuration
 		const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
 		const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
-		const SPREADSHEET_ID = '1fSD5dh0bXRzFSeOZUwJ2bPjGRLqs2crGXPkebz6MpWc';
+		let SPREADSHEET_ID = '1fSD5dh0bXRzFSeOZUwJ2bPjGRLqs2crGXPkebz6MpWc';
 		const CLIENT_ID = '1040357646874-4sbkrokgjn4dd7a0e9rkrtjt8d9l3vie.apps.googleusercontent.com';
 		const API_KEY = 'AIzaSyB25ms_UzbgfY9FnduMwMhGhlvwfVPaTg8';
+		const SPREADSHEET_NAME = 'service_visits_data';
 
 //////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   למחיקה
 		// בדיקה זמנית - תמחק אחרי הבדיקה
@@ -3424,25 +3425,42 @@
 			try {
 				console.log('Starting findOrCreateMainSpreadsheet...');
 				
-				// חפש טבלה קיימת
+				// קודם נסה להשתמש ב-ID הקיים
+				if (SPREADSHEET_ID && SPREADSHEET_ID !== '') {
+					try {
+						console.log('Testing existing spreadsheet ID:', SPREADSHEET_ID);
+						
+						const testResponse = await gapi.client.sheets.spreadsheets.get({
+							spreadsheetId: SPREADSHEET_ID
+						});
+						
+						console.log('✅ Found existing spreadsheet by ID:', SPREADSHEET_ID);
+						showToast('טבלה קיימת נמצאה!', 'success');
+						return; // יציאה - הטבלה קיימת ועובדת
+						
+					} catch (error) {
+						console.log('❌ Cannot access spreadsheet with ID:', SPREADSHEET_ID, error);
+						showToast('לא ניתן לגשת לטבלה הקיימת, מחפש חלופות...', 'warning');
+					}
+				}
+				
+				// אם הגענו לכאן - ה-ID לא עובד, חפש לפי שם
+				console.log('Searching for spreadsheet by name...');
+				
 				const response = await gapi.client.request({
 					path: 'https://www.googleapis.com/drive/v3/files',
 					params: {
-						q: `name='Visit Tracker Data' and mimeType='application/vnd.google-apps.spreadsheet'`,
+						q: `name='${SPREADSHEET_NAME}' and mimeType='application/vnd.google-apps.spreadsheet'`,
 						access_token: access_token
 					}
 				});
 				
-				console.log('Response:', response.result.files);
+				console.log('Search response:', response.result.files);
 				
 				if (response.result.files.length > 0) {
-					console.log('Found existing spreadsheet');
-					SPREADSHEET_ID = response.result.files[0].id;
-					showToast('נמצאה טבלה קיימת!', 'success');
-					
-					// בדוק כותרות וכו'
-					await checkHeaders();
-					
+					console.log('Found existing spreadsheet by name');
+					SPREADSHEET_ID = response.result.files[0].id; // עדכן את ה-ID החדש
+					showToast('נמצאה טבלה לפי שם!', 'success');
 				} else {
 					console.log('No spreadsheet found, creating new one...');
 					await createNewMainSpreadsheet();
@@ -3466,7 +3484,7 @@
 					},
 					body: JSON.stringify({
 						properties: {
-							title: 'Visit Tracker Data'
+							title: SPREADSHEET_NAME
 						},
 						sheets: [
 							{ properties: { title: 'Locations' } },
