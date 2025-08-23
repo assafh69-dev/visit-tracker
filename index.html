@@ -742,7 +742,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
 			</nav>
         </header>
 
@@ -4171,6 +4171,11 @@
 				modal.remove();
 			}
 		}
+	   
+	    function generateID() {
+			return Date.now() + Math.random().toString(36).substr(2, 9);
+		}
+	   
 	   
    </script>
 </body>
