@@ -715,6 +715,29 @@
 			}
 		}
 
+		.debt-card .summary-value {
+			color: #e74c3c !important;
+			font-weight: bold;
+		}
+
+		.debts-table tr:hover {
+			background-color: #f8f9fa !important;
+		}
+
+		.action-btn {
+			margin: 1px;
+			padding: 4px 8px;
+			font-size: 12px;
+			border-radius: 3px;
+			border: none;
+			color: white;
+			cursor: pointer;
+		}
+
+		.action-btn:hover {
+			opacity: 0.8;
+		}
+
 	</style>
    
 </head>
@@ -742,7 +765,8 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -782,6 +806,9 @@
 					<button onclick="filterVisits('today')" class="filter-btn active">היום</button>
 					<button onclick="filterVisits('week')" class="filter-btn">השבוע</button>
 					<button onclick="filterVisits('overdue')" class="filter-btn">מאחרות</button>
+					<button onclick="showMonthlyReport()" class="btn" style="background: #17a2b8; margin: 10px;">
+						📊 דוח חודשי
+					</button>
 				</div>
                 <div class="table-container">
                     <table id="planningTable" class="data-table">
@@ -1009,6 +1036,72 @@
                 </div>
             </section>
 
+			<section id="debts" class="section">
+				<h2>💰 ניהול חובות</h2>
+				
+				<!-- סיכום כללי -->
+				<div class="summary-cards">
+					<div class="summary-card debt-card">
+						<h3>סה"כ חובות</h3>
+						<div id="totalDebt" class="summary-value">₪0</div>
+					</div>
+					<div class="summary-card">
+						<h3>לקוחות חייבים</h3>
+						<div id="debtorsCount" class="summary-value">0</div>
+					</div>
+					<div class="summary-card">
+						<h3>חוב ממוצע</h3>
+						<div id="averageDebt" class="summary-value">₪0</div>
+					</div>
+					<div class="summary-card">
+						<h3>חוב הכי ישן</h3>
+						<div id="oldestDebt" class="summary-value">-</div>
+					</div>
+				</div>
+				
+				<!-- רשימת חובות -->
+				<div class="filter-panel">
+					<div class="filter-header">
+						<h3>🔍 חובות פתוחים</h3>
+					</div>
+					<div class="filter-row">
+						<div class="filter-group">
+							<label>מיון לפי:</label>
+							<select id="debtSortBy" onchange="displayDebts()">
+								<option value="amount_desc">סכום (גבוה לנמוך)</option>
+								<option value="amount_asc">סכום (נמוך לגבוה)</option>
+								<option value="date_old">תאריך (הכי ישן)</option>
+								<option value="date_new">תאריך (הכי חדש)</option>
+								<option value="location">לקוח (א-ב)</option>
+							</select>
+						</div>
+						<div class="filter-group">
+							<label>סכום מינימלי:</label>
+							<input type="number" id="minDebtAmount" placeholder="0" onchange="displayDebts()">
+						</div>
+					</div>
+				</div>
+				
+				<div class="table-container">
+					<table id="debtsTable" class="data-table">
+						<thead>
+							<tr>
+								<th>לקוח</th>
+								<th>כתובת</th>
+								<th>טלפון</th>
+								<th>מספר טיפולים</th>
+								<th>סה"כ חוב</th>
+								<th>טיפול אחרון</th>
+								<th>ימים</th>
+								<th>פעולות</th>
+							</tr>
+						</thead>
+						<tbody id="debtsTableBody">
+						</tbody>
+					</table>
+				</div>
+			</section>
+
 			<!-- System Section -->
 			<section id="system" class="section">
 				<h2>🛠️ מערכת</h2>
@@ -1216,6 +1309,7 @@
 				
 				hideLoading();
 				showSuccess('נתונים נטענו בהצלחה מ-Google Sheets!');
+				setTimeout(checkCriticalDebts, 2000); // התראה אחרי 2 שניות
 				
 			} catch (error) {
 				console.error('Error loading data from sheets:', error);
@@ -1687,6 +1781,9 @@
                 case 'receipts':
                     loadReceiptsTable();
                     break;
+				case 'debts':
+                    displayDebts();
+                    break;
             }
         }
 
@@ -2084,7 +2181,7 @@
 				if (visitData.visit_type === 'מלא') {
 				   updateNextVisitDate(visitData.location_id);
 				}
-			   
+		
 				showSuccess('טיפול נשמר בהצלחה!');
 				
 				// Reset form
@@ -3189,7 +3286,12 @@
 					<td>${visit.visit_type}</td>
 					<td>${visit.work_done}</td>
 					<td>${(visit.duration_minutes / 60).toFixed(2)}</td>
-					<td>₪${visit.amount}</td>
+					<td>
+						<div style="display: flex; flex-direction: column; align-items: center;">
+							<span style="font-weight: bold; color: #27ae60;">₪${visit.amount}</span>
+							${getVisitCostBreakdown(visit)}
+						</div>
+					</td>
 					<td>
 						<span class="payment-status payment-${visit.paid}">
 							${visit.paid === 'כן' ? '✅ שולם' : visit.paid === 'לא' ? '❌ לא שולם' : '⚪ ללא'}
@@ -3202,6 +3304,21 @@
 				`;
 				tbody.appendChild(row);
 			});
+		}
+
+		// הוסף פונקציה חדשה להצגת פירוט עלויות:
+		function getVisitCostBreakdown(visit) {
+			if (!visit.duration_minutes) return '<span style="font-size: 11px; color: #999;">ללא פירוט</span>';
+			
+			const hours = (visit.duration_minutes / 60).toFixed(2);
+			const workers = visit.num_workers || 1;
+			const expense = visit.expense || 0;
+			
+			let breakdown = `${hours}ש`;
+			if (workers > 1) breakdown += ` × ${workers}ע`;
+			if (expense > 0) breakdown += ` + ₪${expense}`;
+			
+			return `<span style="font-size: 11px; color: #666;">${breakdown}</span>`;
 		}
 
 		// תוספה - עדכון פאנל המידע
@@ -3227,7 +3344,21 @@
 				debtElement.style.color = '#27ae60';
 				debtElement.style.fontWeight = 'bold';
 			}
+			
+			// חישוב נתונים מפורטים יותר על חובות
+			const unpaidVisits = filteredVisits.filter(visit => visit.paid === 'לא');
+			const uniqueDebtors = new Set(unpaidVisits.map(visit => visit.location_id)).size;
+			
+			// הצגת מידע נוסף בכרטיסי הסיכום
+			if (outstandingDebt > 0) {
+				const avgDebtPerClient = uniqueDebtors > 0 ? Math.round(outstandingDebt / uniqueDebtors) : 0;
+				document.getElementById('outstandingDebt').title = 
+					`${uniqueDebtors} לקוחות חייבים | ממוצע ₪${avgDebtPerClient} ללקוח`;
+			}
+	
 		}
+
+
 
 		// תוספה - טעינה ראשונית של הטאב
 		function loadVisitsHistory() {
@@ -3317,7 +3448,7 @@
 			document.getElementById('calculatedHours').value = hours > 0 ? hours : '';
 		}
 	   
-	   // חישוב עלות טיפול מעודכן
+	    // חישוב עלות טיפול מעודכן
 		function calculateTreatmentCost() {
 			const minutes = parseFloat(document.getElementById('manualDurationMinutes').value) || 0;
 			const workers = parseInt(document.getElementById('numberOfWorkersVisit').value) || 1;
@@ -3326,6 +3457,7 @@
 			if (minutes > 0) {
 				const hours = minutes / 60;
 				const baseCost = costSettings.hourlyRate * hours;
+				// תיקון: עלות עובדים נוספים (לא כולל אותך)
 				const workersCost = (workers - 1) * costSettings.workerCost * hours;
 				const laborCost = baseCost + workersCost;
 				const totalCost = laborCost + expense;
@@ -3333,16 +3465,34 @@
 				// עדכן את שדה הסכום
 				document.getElementById('amount').value = Math.round(totalCost);
 				
-				// הצג פירוט
-				const breakdown = `
-					${hours.toFixed(2)} שעות × ₪${costSettings.hourlyRate} + 
-					${workers - 1} פועלים × ₪${costSettings.workerCost} = 
-					₪${Math.round(laborCost)} + הוצאות ₪${expense} = ₪${Math.round(totalCost)}
-				`;
+				// הצג פירוט מפורט יותר
+				let breakdown = `${hours.toFixed(2)} שעות × ₪${costSettings.hourlyRate} = ₪${Math.round(baseCost)}`;
+				
+				if (workers > 1) {
+					breakdown += `\n+ ${workers - 1} עובדים × ₪${costSettings.workerCost}/שעה = ₪${Math.round(workersCost)}`;
+				}
+				
+				if (expense > 0) {
+					breakdown += `\n+ הוצאות: ₪${expense}`;
+				}
+				
+				breakdown += `\n= סה"כ: ₪${Math.round(totalCost)}`;
+				
 				document.getElementById('costBreakdown').textContent = breakdown;
+				document.getElementById('costBreakdown').style.whiteSpace = 'pre-line';
 			} else {
 				document.getElementById('costBreakdown').textContent = '';
 			}
+		}
+
+		// הוסף חישוב אוטומטי כשמקלידים משך זמן
+		function updateHoursDisplay() {
+			const minutes = parseFloat(document.getElementById('manualDurationMinutes').value) || 0;
+			const hours = minutes > 0 ? (minutes / 60).toFixed(2) : '';
+			document.getElementById('calculatedHours').value = hours;
+			
+			// חשב עלויות אוטומטית
+			calculateTreatmentCost();
 		}
 
 		// שמירת הגדרות עלות פשוטה יותר
@@ -4297,6 +4447,285 @@
 			} finally {
 				hideLoading();
 			}
+		}
+	   
+	   // פונקציה להצגת חובות
+		function displayDebts() {
+			const sortBy = document.getElementById('debtSortBy').value;
+			const minAmount = parseFloat(document.getElementById('minDebtAmount').value) || 0;
+			
+			// חישוב חובות לכל לקוח
+			const debtsByLocation = {};
+			
+			visits.forEach(visit => {
+				if (visit.paid === 'לא' && visit.amount > 0) {
+					if (!debtsByLocation[visit.location_id]) {
+						const location = locations.find(loc => loc.ID == visit.location_id);
+						debtsByLocation[visit.location_id] = {
+							location: location,
+							visits: [],
+							totalDebt: 0
+						};
+					}
+					debtsByLocation[visit.location_id].visits.push(visit);
+					debtsByLocation[visit.location_id].totalDebt += parseFloat(visit.amount);
+				}
+			});
+			
+			// המרה למערך וסינון
+			let debtsArray = Object.values(debtsByLocation)
+				.filter(debt => debt.totalDebt >= minAmount);
+			
+			// מיון
+			debtsArray.sort((a, b) => {
+				switch(sortBy) {
+					case 'amount_desc':
+						return b.totalDebt - a.totalDebt;
+					case 'amount_asc':
+						return a.totalDebt - b.totalDebt;
+					case 'date_old':
+						return new Date(a.visits[0].date) - new Date(b.visits[0].date);
+					case 'date_new':
+						return new Date(b.visits[0].date) - new Date(a.visits[0].date);
+					case 'location':
+						return a.location?.name.localeCompare(b.location?.name);
+					default:
+						return b.totalDebt - a.totalDebt;
+				}
+			});
+			
+			// הצגה בטבלה
+			const tbody = document.getElementById('debtsTableBody');
+			tbody.innerHTML = '';
+			
+			debtsArray.forEach(debt => {
+				const location = debt.location || { name: 'לא נמצא', full_address: '', phone: '' };
+				const lastVisit = debt.visits[debt.visits.length - 1];
+				const daysSinceLastVisit = Math.floor((new Date() - new Date(lastVisit.date)) / (1000 * 60 * 60 * 24));
+				
+				const row = document.createElement('tr');
+				
+				// הדגשת חובות ישנים
+				if (daysSinceLastVisit > 60) {
+					row.style.backgroundColor = '#ffebee'; // אדום עדין
+				} else if (daysSinceLastVisit > 30) {
+					row.style.backgroundColor = '#fff3e0'; // כתום עדין  
+				}
+				
+				row.innerHTML = `
+					<td>
+						<strong>${location.name}</strong>
+						<br><small style="color: #666;">${location.contact_person || ''}</small>
+					</td>
+					<td><small>${location.full_address || ''}</small></td>
+					<td>
+						${location.phone ? 
+							`<a href="tel:${location.phone}" style="color: #007bff; text-decoration: none;">
+								📞 ${location.phone}
+							</a>` : 
+							'<span style="color: #999;">-</span>'
+						}
+					</td>
+					<td style="text-align: center;">
+						<span style="background: #e3f2fd; padding: 2px 8px; border-radius: 12px; font-size: 12px;">
+							${debt.visits.length}
+						</span>
+					</td>
+					<td style="text-align: center;">
+						<strong style="color: #e74c3c; font-size: 16px;">₪${debt.totalDebt.toLocaleString()}</strong>
+					</td>
+					<td style="text-align: center;">${formatDate(lastVisit.date)}</td>
+					<td style="text-align: center;">
+						<span style="color: ${daysSinceLastVisit > 60 ? '#e74c3c' : daysSinceLastVisit > 30 ? '#f39c12' : '#666'}; font-weight: bold;">
+							${daysSinceLastVisit}
+						</span>
+					</td>
+					<td style="text-align: center;">
+						<button class="action-btn" onclick="showDebtDetails(${location.ID})" style="background: #007bff; margin: 2px;">
+							🔍 פירוט
+						</button>
+						<button class="action-btn" onclick="markDebtAsPaid(${location.ID})" style="background: #28a745; margin: 2px;">
+							✅ סולק
+						</button>
+					</td>
+				`;
+				
+				tbody.appendChild(row);
+			});
+			
+			// עדכון סיכום
+			updateDebtsSummary(debtsArray);
+		}
+
+		// עדכון כרטיסי סיכום
+		function updateDebtsSummary(debtsArray) {
+			const totalDebt = debtsArray.reduce((sum, debt) => sum + debt.totalDebt, 0);
+			const debtorsCount = debtsArray.length;
+			const averageDebt = debtorsCount > 0 ? totalDebt / debtorsCount : 0;
+			
+			// מציאת החוב הכי ישן
+			let oldestDebtDays = 0;
+			if (debtsArray.length > 0) {
+				const oldestVisit = debtsArray
+					.flatMap(debt => debt.visits)
+					.reduce((oldest, visit) => 
+						new Date(visit.date) < new Date(oldest.date) ? visit : oldest
+					);
+				oldestDebtDays = Math.floor((new Date() - new Date(oldestVisit.date)) / (1000 * 60 * 60 * 24));
+			}
+			
+			document.getElementById('totalDebt').textContent = `₪${totalDebt.toLocaleString()}`;
+			document.getElementById('totalDebt').style.color = totalDebt > 0 ? '#e74c3c' : '#27ae60';
+			
+			document.getElementById('debtorsCount').textContent = debtorsCount;
+			document.getElementById('averageDebt').textContent = `₪${Math.round(averageDebt).toLocaleString()}`;
+			document.getElementById('oldestDebt').textContent = oldestDebtDays > 0 ? `${oldestDebtDays} ימים` : '-';
+			
+			if (oldestDebtDays > 90) {
+				document.getElementById('oldestDebt').style.color = '#e74c3c';
+			} else if (oldestDebtDays > 30) {
+				document.getElementById('oldestDebt').style.color = '#f39c12';
+			}
+		}
+
+		// הצגת פירוט חוב ללקוח
+		function showDebtDetails(locationId) {
+			const location = locations.find(loc => loc.ID == locationId);
+			const locationVisits = visits.filter(v => v.location_id == locationId && v.paid === 'לא');
+			
+			let details = `פירוט חוב עבור: ${location?.name}\n\n`;
+			
+			locationVisits.forEach(visit => {
+				details += `📅 ${formatDate(visit.date)}\n`;
+				details += `🔧 ${visit.work_done}\n`;
+				details += `💰 ₪${visit.amount}\n`;
+				details += `---\n`;
+			});
+			
+			const totalDebt = locationVisits.reduce((sum, v) => sum + parseFloat(v.amount), 0);
+			details += `\nסה"כ חוב: ₪${totalDebt}`;
+			
+			alert(details);
+		}
+
+		// סימון חוב כמסולק
+		function markDebtAsPaid(locationId) {
+			if (confirm('לסמן את כל החובות של הלקוח הזה כמסולקים?')) {
+				visits.forEach(visit => {
+					if (visit.location_id == locationId && visit.paid === 'לא') {
+						visit.paid = 'כן';
+					}
+				});
+				
+				saveToLocalStorage();
+				displayDebts();
+				showToast('החובות סומנו כמסולקים!', 'success');
+			}
+		}
+
+	   
+	    // התראה על חובות חמורים
+		function checkCriticalDebts() {
+			const criticalDebts = visits.filter(visit => {
+				if (visit.paid !== 'לא') return false;
+				
+				const daysSince = Math.floor((new Date() - new Date(visit.date)) / (1000 * 60 * 60 * 24));
+				return daysSince > 90 || parseFloat(visit.amount) > 1000;
+			});
+			
+			if (criticalDebts.length > 0) {
+				const totalCritical = criticalDebts.reduce((sum, visit) => sum + parseFloat(visit.amount), 0);
+				
+				showToast(
+					`⚠️ יש ${criticalDebts.length} חובות דחופים (₪${totalCritical.toLocaleString()})`, 
+					'warning', 
+					8000
+				);
+			}
+		}
+	   
+	   
+	    // דוח הכנסות לחודש נוכחי
+		function generateMonthlyReport() {
+			const currentMonth = new Date().getMonth();
+			const currentYear = new Date().getFullYear();
+			
+			const monthlyVisits = visits.filter(visit => {
+				const visitDate = new Date(visit.date);
+				return visitDate.getMonth() === currentMonth && 
+					   visitDate.getFullYear() === currentYear;
+			});
+			
+			const totalRevenue = monthlyVisits.reduce((sum, visit) => 
+				sum + parseFloat(visit.amount || 0), 0);
+			
+			const paidRevenue = monthlyVisits
+				.filter(visit => visit.paid === 'כן')
+				.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
+			
+			const totalHours = monthlyVisits.reduce((sum, visit) => 
+				sum + (visit.duration_minutes || 0) / 60, 0);
+			
+			const monthNames = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+				'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+			
+			const report = {
+				month: monthNames[currentMonth],
+				year: currentYear,
+				totalVisits: monthlyVisits.length,
+				totalRevenue: totalRevenue,
+				paidRevenue: paidRevenue,
+				pendingRevenue: totalRevenue - paidRevenue,
+				totalHours: totalHours.toFixed(1),
+				avgPerVisit: monthlyVisits.length > 0 ? Math.round(totalRevenue / monthlyVisits.length) : 0
+			};
+			
+			return report;
+		}
+
+		// הצגת דוח במודל
+		function showMonthlyReport() {
+			const report = generateMonthlyReport();
+			
+			const reportHTML = `
+				<div style="background: white; padding: 20px; border-radius: 10px; max-width: 500px;">
+					<h3>📊 דוח ${report.month} ${report.year}</h3>
+					
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
+						<div style="text-align: center; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+							<div style="font-size: 24px; font-weight: bold; color: #1976d2;">${report.totalVisits}</div>
+							<div style="color: #666;">ביקורים</div>
+						</div>
+						
+						<div style="text-align: center; padding: 15px; background: #e8f5e8; border-radius: 8px;">
+							<div style="font-size: 24px; font-weight: bold; color: #2e7d32;">₪${report.totalRevenue.toLocaleString()}</div>
+							<div style="color: #666;">סה"כ הכנסות</div>
+						</div>
+						
+						<div style="text-align: center; padding: 15px; background: #f3e5f5; border-radius: 8px;">
+							<div style="font-size: 24px; font-weight: bold; color: #7b1fa2;">₪${report.paidRevenue.toLocaleString()}</div>
+							<div style="color: #666;">נגבה</div>
+						</div>
+						
+						<div style="text-align: center; padding: 15px; background: #fff3e0; border-radius: 8px;">
+							<div style="font-size: 24px; font-weight: bold; color: #f57c00;">₪${report.pendingRevenue.toLocaleString()}</div>
+							<div style="color: #666;">בהמתנה</div>
+						</div>
+					</div>
+					
+					<div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+						<div><strong>שעות עבודה:</strong> ${report.totalHours} שעות</div>
+						<div><strong>ממוצע לביקור:</strong> ₪${report.avgPerVisit}</div>
+						<div><strong>ממוצע לשעה:</strong> ₪${Math.round(report.paidRevenue / parseFloat(report.totalHours) || 0)}</div>
+					</div>
+					
+					<button onclick="closeModal()" style="margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; width: 100%;">
+						סגור
+					</button>
+				</div>
+			`;
+			
+			showModal(reportHTML);
 		}
 	   
    </script>
