@@ -742,7 +742,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -1226,23 +1226,30 @@
 		async function connectToGoogleSheets() {
 			try {
 				console.log('Connecting to Google Sheets...');
-				showSuccess('מתחבר ל-Google Sheets...');
-				
-				document.getElementById('statusText').textContent = 'מחובר';
-				document.getElementById('statusText').classList.add('connected');
-				document.getElementById('saveBtn').disabled = false;
-				document.getElementById('loadBtn').disabled = false;
+				showToast('מתחבר ל-Google Sheets...', 'info');
 				
 				const tokenClient = google.accounts.oauth2.initTokenClient({
 					client_id: CLIENT_ID,
 					scope: SCOPES,
-					callback: (response) => {
+					callback: async (response) => {
 						access_token = response.access_token;
-						showSuccess('התחברת בהצלחה ל-Google Sheets!');
+						
+						// עדכון סטטוס
 						document.getElementById('statusText').textContent = 'מחובר';
 						document.getElementById('statusText').classList.add('connected');
-						loadAllDataFromSheets();
-						ensureAllSheets().then(() => loadSettingsFromCloud());
+						document.getElementById('saveBtn').disabled = false;
+						document.getElementById('loadBtn').disabled = false;
+						
+						showToast('התחברת בהצלחה ל-Google Sheets!', 'success');
+						
+						// כעת חפש או צור טבלה - כמו בטריידים
+						await findOrCreateMainSpreadsheet();
+						
+						// טען נתונים ממש אחרי החיבור
+						await loadAllDataFromSheets();
+						
+						// טען הגדרות אחרון
+						await loadSettingsFromCloud();
 					},
 				});
 				
@@ -1250,7 +1257,7 @@
 				
 			} catch (error) {
 				console.error('Error connecting to Google Sheets:', error);
-				showError('שגיאה בחיבור ל-Google Sheets');
+				showToast('שגיאה בחיבור ל-Google Sheets', 'error');
 			}
 		}
 
@@ -3413,110 +3420,99 @@
 			return false;
 		}
 	   
-		// בדיקה ויצירת כל הגיליונות הנדרשים	   
-		async function ensureAllSheets() {
-			if (!await validateToken()) {
-				return false;
-			}
-			
+	   async function findOrCreateMainSpreadsheet() {
 			try {
-				// בדוק איזה גיליונות קיימים
-				const response = await gapi.client.sheets.spreadsheets.get({
-					spreadsheetId: SPREADSHEET_ID
+				console.log('Starting findOrCreateMainSpreadsheet...');
+				
+				// חפש טבלה קיימת
+				const response = await gapi.client.request({
+					path: 'https://www.googleapis.com/drive/v3/files',
+					params: {
+						q: `name='Visit Tracker Data' and mimeType='application/vnd.google-apps.spreadsheet'`,
+						access_token: access_token
+					}
 				});
 				
-				const existingSheets = response.result.sheets || [];
-				const existingSheetNames = existingSheets.map(sheet => sheet.properties.title);
+				console.log('Response:', response.result.files);
 				
-				console.log('Existing sheets:', existingSheetNames);
-				
-				const requiredSheets = [
-					{ name: 'Locations', headers: [['ID', 'שם', 'כתובת מלאה', 'שכונה', 'עיר', 'איש קשר', 'טלפון', 'יום מותר', 'מרווח שבועות', 'תוספת זמנית', 'סכום בסיסי', 'פעיל', 'הערות', 'ביקור אחרון', 'ביקור הבא']] },
-					{ name: 'Visits', headers: [['ID', 'תאריך', 'מזהה מיקום', 'סוג ביקור', 'עבודה שבוצעה', 'משך דקות', 'מספר עובדים', 'זמן התחלה', 'זמן סיום', 'סכום', 'הוצאה', 'שולם', 'הערות']] },
-					{ name: 'Receipts', headers: [['ID', 'מספר פנקס', 'מספר קבלה', 'תאריך', 'מזהה מיקום', 'שם מיקום', 'סכום', 'סוג תשלום', 'הערות']] },
-					{ name: 'SystemSettings', headers: [['Setting', 'Value']] }
-				];
-				
-				let sheetsCreated = 0;
-				
-				for (const requiredSheet of requiredSheets) {
-					// רק אם הגליון לא קיים - נסה ליצור
-					if (!existingSheetNames.includes(requiredSheet.name)) {
-						try {
-							console.log(`Creating sheet: ${requiredSheet.name}`);
-							
-							await gapi.client.sheets.spreadsheets.batchUpdate({
-								spreadsheetId: SPREADSHEET_ID,
-								resource: {
-									requests: [{
-										addSheet: {
-											properties: { title: requiredSheet.name }
-										}
-									}]
-								}
-							});
-							
-							console.log(`✅ Created sheet: ${requiredSheet.name}`);
-							sheetsCreated++;
-							
-							// המתן אחרי יצירת גליון
-							await new Promise(resolve => setTimeout(resolve, 1000));
-							
-						} catch (createError) {
-							console.warn(`❌ Failed to create ${requiredSheet.name}:`, createError);
-							// אל תזרוק שגיאה - המשך למרות הכישלון
-						}
-					} else {
-						console.log(`✅ Sheet ${requiredSheet.name} already exists`);
-					}
+				if (response.result.files.length > 0) {
+					console.log('Found existing spreadsheet');
+					SPREADSHEET_ID = response.result.files[0].id;
+					showToast('נמצאה טבלה קיימת!', 'success');
 					
-					// בכל מקרה - נסה להוסיף כותרות אם הן לא קיימות
-					try {
-						// בדוק אם יש כבר כותרות
-						const existingData = await gapi.client.sheets.spreadsheets.values.get({
-							spreadsheetId: SPREADSHEET_ID,
-							range: `${requiredSheet.name}!A1:A1`
-						});
-						
-						// אם אין תוכן או השורה הראשונה ריקה - הוסף כותרות
-						if (!existingData.result.values || 
-							existingData.result.values.length === 0 || 
-							!existingData.result.values[0][0]) {
-							
-							await gapi.client.sheets.spreadsheets.values.update({
-								spreadsheetId: SPREADSHEET_ID,
-								range: `${requiredSheet.name}!A1:${String.fromCharCode(64 + requiredSheet.headers[0].length)}1`,
-								valueInputOption: 'RAW',
-								resource: { values: requiredSheet.headers }
-							});
-							
-							console.log(`✅ Added headers to: ${requiredSheet.name}`);
-						}
-						
-						// המתנה קצרה בין פעולות
-						await new Promise(resolve => setTimeout(resolve, 500));
-						
-					} catch (headerError) {
-						console.warn(`Headers might exist in ${requiredSheet.name}:`, headerError);
-						// לא קריטי - המשך
-					}
-				}
-				
-				if (sheetsCreated > 0) {
-					showToast(`נוצרו ${sheetsCreated} גליונות חדשים`, 'success');
+					// בדוק כותרות וכו'
+					await checkHeaders();
+					
 				} else {
-					console.log('✅ All required sheets already exist');
+					console.log('No spreadsheet found, creating new one...');
+					await createNewMainSpreadsheet();
 				}
-				
-				return true;
 				
 			} catch (error) {
-				console.error('Error in ensureAllSheets:', error);
-				showToast('שגיאה בבדיקת גליונות', 'error');
-				return false;
+				console.error('Error in findOrCreateMainSpreadsheet:', error);
+				showToast('שגיאה בחיפוש טבלה', 'error');
 			}
 		}
-		
+
+		async function createNewMainSpreadsheet() {
+			console.log('Creating new main spreadsheet...');
+			try {
+				const response = await gapi.client.request({
+					path: 'https://sheets.googleapis.com/v4/spreadsheets',
+					method: 'POST',
+					headers: {
+						'Authorization': `Bearer ${access_token}`,
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						properties: {
+							title: 'Visit Tracker Data'
+						},
+						sheets: [
+							{ properties: { title: 'Locations' } },
+							{ properties: { title: 'Visits' } },
+							{ properties: { title: 'Receipts' } },
+							{ properties: { title: 'SystemSettings' } }
+						]
+					})
+				});
+				
+				SPREADSHEET_ID = response.result.spreadsheetId;
+				
+				// הוסף כותרות לכל הגליונות
+				await addAllHeaders();
+				
+				showToast('נוצרה טבלה חדשה!', 'success');
+				
+			} catch (error) {
+				console.error('Error creating spreadsheet:', error);
+				showToast('שגיאה ביצירת טבלה', 'error');
+			}
+		}
+
+		async function checkHeaders() {
+			// פונקציה פשוטה לבדיקה שכותרות קיימות
+			// בדומה לטריידים
+			console.log('Checking headers...');
+			
+			try {
+				const locationsCheck = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Locations!A1:A1'
+				});
+				
+				if (!locationsCheck.result.values || !locationsCheck.result.values[0][0]) {
+					await addAllHeaders();
+				}
+				
+				console.log('✅ Headers verified');
+				
+			} catch (error) {
+				console.log('Headers check failed, will add them:', error);
+				await addAllHeaders();
+			}
+		}
+	   
 	   
 	   async function importFromHelperTable() {
 			if (!await validateToken()) {
