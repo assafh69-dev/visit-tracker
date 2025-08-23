@@ -766,7 +766,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -3269,7 +3269,8 @@
 			
 			filteredVisits.forEach(visit => {
 				const location = locations.find(loc => loc.ID == visit.location_id);
-				const locationName = location ? location.name : 'לא נמצא';
+				const locationName = location ? location.name : `לא נמצא (ID: ${visit.location_id})`;
+				console.log(`Visit location_id: ${visit.location_id}, Found location:`, location);
 				
 				const row = document.createElement('tr');
 				
@@ -3789,7 +3790,12 @@
 							const row = visitsResponse.result.values[i];
 							if (row[0] && row[1]) {
 								const visitData = parseVisitFromRow(row);
-								visits.push(visitData);
+								if (!isDuplicateVisit(visitData)) {
+									visits.push(visitData);
+									visitsCount++;
+								} else {
+									console.log('⚠️ Duplicate visit skipped:', visitData.date, visitData.location_id);
+								}
 								visitsCount++;
 								
 								// הצג התקדמות כל 50 רשומות
@@ -3830,8 +3836,14 @@
 							const row = receiptsResponse.result.values[i];
 							if (row[0] && row[3]) { // ID ותאריך
 								const receiptData = parseReceiptFromRow(row);
-								receipts.push(receiptData);
-								receiptsCount++;
+								
+								
+								if (!isDuplicateReceipt(receiptData)) {
+									receipts.push(receiptData);
+									receiptsCount++;
+								} else {
+									console.log('⚠️ Duplicate receipt skipped:', receiptData.date, receiptData.location_id);
+								}
 								
 								// הצג התקדמות כל 25 רשומות (קבלות בדרך כלל פחות)
 								if (receiptsCount % 25 === 0) {
@@ -4726,6 +4738,43 @@
 			`;
 			
 			showModal(reportHTML);
+		}
+	   
+	    function isDuplicateVisit(newVisit) {
+			return visits.some(existing => 
+				existing.location_id === newVisit.location_id &&
+				existing.date === newVisit.date &&
+				existing.work_done === newVisit.work_done &&
+				existing.amount === newVisit.amount
+			);
+		}
+	   
+	    function isDuplicateReceipt(newReceipt) {
+			return receipts.some(existing => 
+				existing.receipt_number === newReceipt.receipt_number &&
+				existing.booklet_number === newReceipt.booklet_number &&
+				existing.date === newReceipt.date
+			);
+		}
+		
+		
+		function removeDuplicates() {
+			const uniqueVisits = [];
+			const seen = new Set();
+			
+			visits.forEach(visit => {
+				const key = `${visit.location_id}-${visit.date}-${visit.work_done}-${visit.amount}`;
+				if (!seen.has(key)) {
+					seen.add(key);
+					uniqueVisits.push(visit);
+				}
+			});
+			
+			const removedCount = visits.length - uniqueVisits.length;
+			visits = uniqueVisits;
+			
+			console.log(`Removed ${removedCount} duplicate visits`);
+			return removedCount;
 		}
 	   
    </script>
