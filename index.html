@@ -742,7 +742,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -3851,8 +3851,13 @@
 					if (allParsedVisits.length > 0) {
 						showToast(`נמצאו ${allParsedVisits.length} ביקורים מ-${files.length} קבצים`, 'success');
 						
-						// הצג תצוגה מקדימה לאישור
-						showTelegramPreview(allParsedVisits);
+						// פתרון פשוט - אישור ישיר
+						if (confirm(`נמצאו ${allParsedVisits.length} ביקורים מטלגרם.\n\nהאם לייבא אותם למערכת?`)) {
+							window.pendingTelegramVisits = allParsedVisits;
+							await confirmTelegramImport();
+						} else {
+							showToast('ייבוא בוטל', 'info');
+						}
 					} else {
 						showToast('לא נמצאו ביקורים בקבצים', 'warning');
 					}
