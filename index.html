@@ -742,7 +742,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -1011,7 +1011,7 @@
 
 			<!-- System Section -->
 			<section id="system" class="section">
-				<h2>🛠️ מערכת v2.5</h2>
+				h2>🛠️ מערכת</h2>
 				
 				<!-- Import Section -->
 				<div class="form-section">
@@ -1021,7 +1021,7 @@
 						<button class="btn btn-primary" onclick="createImportTable()">
 							🔗 צור טבלת עזר לייבוא
 						</button>
-						<button class="btn btn-success" onclick="importFromHelper()">
+						<button class="btn btn-success" onclick="importFromHelperTable()">
 							📥 ייבא הכל מטבלת העזר
 						</button>
 					</div>
@@ -1053,6 +1053,33 @@
 					<p style="text-align: center; font-size: 12px; color: #666; margin-top: 15px;">
 						ייבוא לקוחות, ביקורים וקבלות מקובץ Excel או Google Sheets
 					</p>
+				</div>
+				
+				<!-- ניהול נתונים -->
+				<div class="form-section">
+					<h3>🗂️ ניהול נתונים</h3>
+					
+					<div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+						<h4 style="color: #856404; margin-bottom: 10px;">⚠️ ניקוי נתונים</h4>
+						<p style="font-size: 14px; color: #856404; margin-bottom: 10px;">
+							נקה את כל הנתונים המקומיים לפני ייבוא חדש (לא משפיע על הענן)
+						</p>
+						
+						<button class="btn" onclick="clearAllDataBeforeImport()" 
+								style="background: #dc3545; color: white; border: none;">
+							🗑️ נקה את כל הנתונים המקומיים
+						</button>
+					</div>
+					
+					<!-- סטטוס טבלת עזר -->
+					<div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px;">
+						<h4 style="color: #495057; margin-bottom: 10px;">📊 טבלת עזר לייבוא</h4>
+						<div id="importTableStatus">
+							<span style="font-size: 13px; color: #666;">
+								בודק סטטוס טבלת עזר...
+							</span>
+						</div>
+					</div>
 				</div>
 				
 				<!-- Additional System Features -->
@@ -1370,10 +1397,9 @@
 			}
 		}
 
-		// תוספה - שמירת ביקור חדש לשיטס
+		// שמירת ביקור חדש לשיטס
 		async function saveVisitToSheets(visitData) {
 			if (!await validateToken()) {
-				showToast('החיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
 				return;
 			}
 			
@@ -1385,97 +1411,113 @@
 					visitData.visit_type,
 					visitData.work_done,
 					visitData.duration_minutes,
+					visitData.num_workers || 1,
 					visitData.start_time,
 					visitData.end_time,
 					visitData.amount,
-					visitData.expense,
+					visitData.expense || 0,
 					visitData.paid,
 					visitData.notes
 				]];
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.VISITS}!A:L`,
+					range: `${SHEETS.VISITS}!A:M`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: values }
 				});
 				
 			} catch (error) {
 				console.error('Error saving visit to sheets:', error);
-				if (error.status === 401) {
-					access_token = null;
-					showToast('⚠️ החיבור פג - התחבר מחדש', 'warning');
-				}
 				throw error;
 			}
 		}
-		
-		// שמירת קבלה חדשה לשיטס
+
+		// תוספה - שמירת קבלה לשיטס
 		async function saveReceiptToSheets(receiptData) {
 			if (!await validateToken()) {
-				showToast('החיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
 				return;
 			}
 			
 			try {
 				const values = [[
 					receiptData.ID,
-					receiptData.book_number,
-					receiptData.receipt_number,
+					receiptData.booklet_number || '',
+					receiptData.receipt_number || '',
 					receiptData.date,
 					receiptData.location_id,
-					receiptData.location_name,
+					receiptData.location_name || '',
 					receiptData.amount,
-					receiptData.payment_type,
-					receiptData.notes
+					receiptData.payment_type || '',
+					receiptData.tax_code || '',
+					receiptData.notes || ''
 				]];
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.RECEIPTS}!A:I`,
+					range: `${SHEETS.RECEIPTS}!A:J`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: values }
 				});
 				
-				console.log('Receipt saved to sheets');
-				
 			} catch (error) {
 				console.error('Error saving receipt to sheets:', error);
-				if (error.status === 401) {
-					access_token = null;
-					showToast('⚠️ החיבור פג - התחבר מחדש', 'warning');
-				}
 				throw error;
 			}
 		}
 
 		// תוספה - שמירת כל הנתונים לענן
 		async function saveAllToSheets() {
+			if (!await validateToken()) {
+				showToast('חיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
+				return;
+			}
+			
 			try {
 				showLoading('שומר נתונים לענן...');
 				
-				// שמירת כל הלקוחות
-				for (const location of locations) {
-					await saveLocationToSheets(location);
+				// שמירת מיקומים עם המתנה
+				for (let i = 0; i < locations.length; i++) {
+					await saveLocationToSheets(locations[i]);
+					if (i < locations.length - 1) {
+						await new Promise(resolve => setTimeout(resolve, 500)); // המתנה של חצי שנייה
+					}
 				}
 				
-				// שמירת כל הביקורים
-				for (const visit of visits) {
-					await saveVisitToSheets(visit);
+				// המתנה לפני מעבר לביקורים
+				await new Promise(resolve => setTimeout(resolve, 1000));
+				
+				// שמירת ביקורים עם המתנה
+				for (let i = 0; i < visits.length; i++) {
+					await saveVisitToSheets(visits[i]);
+					if (i < visits.length - 1) {
+						await new Promise(resolve => setTimeout(resolve, 500)); // המתנה של חצי שנייה
+					}
 				}
 				
-				// שמירת כל הקבלות
-				for (const receipt of receipts) {
-					await saveReceiptToSheets(receipt);
+				// המתנה לפני מעבר לקבלות
+				await new Promise(resolve => setTimeout(resolve, 1000));
+				
+				// שמירת קבלות עם המתנה
+				for (let i = 0; i < receipts.length; i++) {
+					await saveReceiptToSheets(receipts[i]);
+					if (i < receipts.length - 1) {
+						await new Promise(resolve => setTimeout(resolve, 500)); // המתנה של חצי שנייה
+					}
 				}
 				
-				hideLoading();
-				showSuccess('כל הנתונים נשמרו בהצלחה לענן!');
+				showToast('כל הנתונים נשמרו לענן!', 'success');
 				
 			} catch (error) {
 				console.error('Error saving all data:', error);
+				
+				if (error.status === 429) {
+					showToast('יותר מדי בקשות - נסה שוב בעוד כמה דקות', 'warning');
+				} else {
+					showToast('שגיאה בשמירה לענן', 'error');
+				}
+			} finally {
 				hideLoading();
-				showError('שגיאה בשמירת הנתונים לענן');
 			}
 		}
 
@@ -1843,7 +1885,7 @@
 
         function loadLocationsForSelect() {
             const select = document.getElementById('locationSelect');
-            select.innerHTML = '<option value="">בחר גינה...</option>';
+            select.innerHTML = '<option value="">בחר לקוח...</option>';
             
             locations.filter(location => location.active === "כן").forEach(location => {
                 const option = document.createElement('option');
@@ -2519,6 +2561,22 @@
 	   
 	   
 	    // יצירת טבלת עזר לייבוא
+		async function clearAllDataBeforeImport() {
+			if (confirm('האם אתה בטוח שברצונך למחוק את כל הנתונים הקיימים לפני הייבוא החדש?\n\nפעולה זו תמחק:\n- את כל המיקומים\n- את כל הביקורים\n- את כל הקבלות\n\nהנתונים בגוגל שיטס לא יימחקו.')) {
+				locations = [];
+				visits = [];
+				receipts = [];
+				saveToLocalStorage();
+				updateDashboard();
+				loadFilterOptions();
+				displayFilteredLocations([]);
+				showToast('כל הנתונים נוקו בהצלחה', 'success');
+				return true;
+			}
+			return false;
+		}
+
+		// שיפור לפונקציה הקיימת
 		async function createImportTable() {
 			if (!await validateToken()) {
 				showToast('התחבר לגוגל קודם', 'warning');
@@ -2526,13 +2584,12 @@
 			}
 			
 			try {
-				showToast('יוצר טבלת עזר לייבוא...', 'info');
+				showLoading('יוצר טבלת עזר לייבוא...');
 				
-				// יצירת טבלה חדשה עם access_token במקום API key
 				const response = await gapi.client.sheets.spreadsheets.create({
 					resource: {
 						properties: {
-							title: `Import_Helper_${new Date().toISOString().split('T')[0]}`
+							title: `ייבוא_נתונים_${new Date().toISOString().split('T')[0]}`
 						},
 						sheets: [{
 							properties: { title: 'Locations' },
@@ -2557,19 +2614,13 @@
 				// שמירת ID לייבוא מאוחר יותר
 				localStorage.setItem('importTableId', newSpreadsheetId);
 				
-				showToast('טבלת עזר נוצרה! הדבק את הנתונים שלך החל משורה 2', 'success');
+				showToast('טבלת עזר נוצרה! מלא את הנתונים ואז חזור לייבא', 'success');
 				
 			} catch (error) {
 				console.error('Error creating import table:', error);
-				
-				if (error.status === 401) {
-					access_token = null;
-					showToast('⚠️ החיבור פג במהלך יצירת הטבלה', 'warning');
-				} else {
-					showToast(`שגיאה ביצירת טבלת עזר: ${error.result?.error?.message || error.message}`, 'error');
-				}
-				throw error;
-				
+				showToast('שגיאה ביצירת טבלת עזר', 'error');
+			} finally {
+				hideLoading();
 			}
 		}
 
@@ -3362,8 +3413,7 @@
 			return false;
 		}
 	   
-	   // תוספה - בדיקה ויצירת כל הגיליונות הנדרשים
-		// תוספה - בדיקה ויצירת כל הגיליונות הנדרשים
+		// בדיקה ויצירת כל הגיליונות הנדרשים	   
 		async function ensureAllSheets() {
 			if (!await validateToken()) {
 				return false;
@@ -3378,19 +3428,23 @@
 				const existingSheets = response.result.sheets || [];
 				const existingSheetNames = existingSheets.map(sheet => sheet.properties.title);
 				
+				console.log('Existing sheets:', existingSheetNames);
+				
 				const requiredSheets = [
 					{ name: 'Locations', headers: [['ID', 'שם', 'כתובת מלאה', 'שכונה', 'עיר', 'איש קשר', 'טלפון', 'יום מותר', 'מרווח שבועות', 'תוספת זמנית', 'סכום בסיסי', 'פעיל', 'הערות', 'ביקור אחרון', 'ביקור הבא']] },
 					{ name: 'Visits', headers: [['ID', 'תאריך', 'מזהה מיקום', 'סוג ביקור', 'עבודה שבוצעה', 'משך דקות', 'מספר עובדים', 'זמן התחלה', 'זמן סיום', 'סכום', 'הוצאה', 'שולם', 'הערות']] },
-					{ name: 'Receipts', headers: [['ID', 'מספר פנקס', 'מספר קבלה', 'תאריך', 'מזהה מיקום', 'שם מיקום', 'סכום', 'סוג תשלום', 'קודX', 'הערות']] },
+					{ name: 'Receipts', headers: [['ID', 'מספר פנקס', 'מספר קבלה', 'תאריך', 'מזהה מיקום', 'שם מיקום', 'סכום', 'סוג תשלום', 'הערות']] },
 					{ name: 'SystemSettings', headers: [['Setting', 'Value']] }
 				];
 				
 				let sheetsCreated = 0;
 				
 				for (const requiredSheet of requiredSheets) {
+					// רק אם הגליון לא קיים - נסה ליצור
 					if (!existingSheetNames.includes(requiredSheet.name)) {
 						try {
-							// צור גליון חדש
+							console.log(`Creating sheet: ${requiredSheet.name}`);
+							
 							await gapi.client.sheets.spreadsheets.batchUpdate({
 								spreadsheetId: SPREADSHEET_ID,
 								resource: {
@@ -3402,28 +3456,33 @@
 								}
 							});
 							
-							console.log(`Created sheet: ${requiredSheet.name}`);
+							console.log(`✅ Created sheet: ${requiredSheet.name}`);
 							sheetsCreated++;
 							
-							// המתן קצר אחרי יצירת גליון
-							await new Promise(resolve => setTimeout(resolve, 500));
+							// המתן אחרי יצירת גליון
+							await new Promise(resolve => setTimeout(resolve, 1000));
 							
 						} catch (createError) {
-							console.warn(`Sheet ${requiredSheet.name} might already exist or creation failed:`, createError);
-							// המשך למרות השגיאה - אולי הגליון קיים
+							console.warn(`❌ Failed to create ${requiredSheet.name}:`, createError);
+							// אל תזרוק שגיאה - המשך למרות הכישלון
 						}
+					} else {
+						console.log(`✅ Sheet ${requiredSheet.name} already exists`);
 					}
 					
-					// נסה להוסיף כותרות (בין אם הגליון חדש או קיים)
+					// בכל מקרה - נסה להוסיף כותרות אם הן לא קיימות
 					try {
-						// קודם בדוק אם יש כבר תוכן בגליון
+						// בדוק אם יש כבר כותרות
 						const existingData = await gapi.client.sheets.spreadsheets.values.get({
 							spreadsheetId: SPREADSHEET_ID,
 							range: `${requiredSheet.name}!A1:A1`
 						});
 						
 						// אם אין תוכן או השורה הראשונה ריקה - הוסף כותרות
-						if (!existingData.result.values || existingData.result.values.length === 0 || !existingData.result.values[0][0]) {
+						if (!existingData.result.values || 
+							existingData.result.values.length === 0 || 
+							!existingData.result.values[0][0]) {
+							
 							await gapi.client.sheets.spreadsheets.values.update({
 								spreadsheetId: SPREADSHEET_ID,
 								range: `${requiredSheet.name}!A1:${String.fromCharCode(64 + requiredSheet.headers[0].length)}1`,
@@ -3431,37 +3490,229 @@
 								resource: { values: requiredSheet.headers }
 							});
 							
-							console.log(`Added headers to: ${requiredSheet.name}`);
+							console.log(`✅ Added headers to: ${requiredSheet.name}`);
 						}
 						
+						// המתנה קצרה בין פעולות
+						await new Promise(resolve => setTimeout(resolve, 500));
+						
 					} catch (headerError) {
-						console.warn(`Headers already exist or error adding to ${requiredSheet.name}:`, headerError);
-						// זה לא קריטי - המשך
+						console.warn(`Headers might exist in ${requiredSheet.name}:`, headerError);
+						// לא קריטי - המשך
 					}
 				}
 				
 				if (sheetsCreated > 0) {
-					showToast(`נוצרו ${sheetsCreated} גיליונות חדשים`, 'success');
+					showToast(`נוצרו ${sheetsCreated} גליונות חדשים`, 'success');
 				} else {
-					console.log('All required sheets already exist');
+					console.log('✅ All required sheets already exist');
 				}
 				
 				return true;
 				
 			} catch (error) {
-				console.error('Error ensuring sheets:', error);
-				
-				// אם זו שגיאה של "גליון כבר קיים" - זה בעצם בסדר
-				if (error.result?.error?.message?.includes('already exists')) {
-					console.log('Sheets already exist - continuing normally');
-					return true;
-				}
-				
-				showToast('שגיאה ביצירת גיליונות', 'error');
+				console.error('Error in ensureAllSheets:', error);
+				showToast('שגיאה בבדיקת גליונות', 'error');
 				return false;
 			}
 		}
 		
+	   
+	   async function importFromHelperTable() {
+			if (!await validateToken()) {
+				showToast('התחבר לגוגל קודם', 'warning');
+				return;
+			}
+			
+			const importTableId = localStorage.getItem('importTableId');
+			if (!importTableId) {
+				showToast('לא נמצא ID של טבלת העזר', 'warning');
+				return;
+			}
+			
+			try {
+				showLoading('מייבא נתונים מטבלת העזר...');
+				
+				let importedCount = 0;
+				
+				// ייבוא מיקומים
+				try {
+					const locationsResponse = await gapi.client.sheets.spreadsheets.values.get({
+						spreadsheetId: importTableId,
+						range: 'Locations!A2:O1000' // החל משורה 2 (דלג על כותרות)
+					});
+					
+					if (locationsResponse.result.values && locationsResponse.result.values.length > 0) {
+						for (const row of locationsResponse.result.values) {
+							if (row[0] && row[1]) { // אם יש ID ושם
+								const locationData = parseLocationFromRow(row);
+								locations.push(locationData);
+								importedCount++;
+								
+								// המתנה קצרה בין שורות
+								await new Promise(resolve => setTimeout(resolve, 200));
+							}
+						}
+						showToast(`יובאו ${importedCount} מיקומים`, 'success');
+					}
+				} catch (error) {
+					console.warn('No locations found in helper table');
+				}
+				
+				// המתנה לפני ייבוא ביקורים
+				await new Promise(resolve => setTimeout(resolve, 1000));
+				
+				// ייבוא ביקורים
+				try {
+					const visitsResponse = await gapi.client.sheets.spreadsheets.values.get({
+						spreadsheetId: importTableId,
+						range: 'Visits!A2:M1000'
+					});
+					
+					let visitsCount = 0;
+					if (visitsResponse.result.values && visitsResponse.result.values.length > 0) {
+						for (const row of visitsResponse.result.values) {
+							if (row[0] && row[1]) { // אם יש ID ותאריך
+								const visitData = parseVisitFromRow(row);
+								visits.push(visitData);
+								visitsCount++;
+								
+								// המתנה קצרה בין שורות
+								await new Promise(resolve => setTimeout(resolve, 200));
+							}
+						}
+						showToast(`יובאו ${visitsCount} ביקורים`, 'success');
+					}
+				} catch (error) {
+					console.warn('No visits found in helper table');
+				}
+				
+				// המתנה לפני ייבוא קבלות
+				await new Promise(resolve => setTimeout(resolve, 1000));
+				
+				// ייבוא קבלות
+				try {
+					const receiptsResponse = await gapi.client.sheets.spreadsheets.values.get({
+						spreadsheetId: importTableId,
+						range: 'Receipts!A2:J1000'
+					});
+					
+					let receiptsCount = 0;
+					if (receiptsResponse.result.values && receiptsResponse.result.values.length > 0) {
+						for (const row of receiptsResponse.result.values) {
+							if (row[0] && row[3]) { // אם יש ID ותאריך
+								const receiptData = parseReceiptFromRow(row);
+								receipts.push(receiptData);
+								receiptsCount++;
+								
+								// המתנה קצרה בין שורות
+								await new Promise(resolve => setTimeout(resolve, 200));
+							}
+						}
+						showToast(`יובאו ${receiptsCount} קבלות`, 'success');
+					}
+				} catch (error) {
+					console.warn('No receipts found in helper table');
+				}
+				
+				// שמירה מקומית ועדכון תצוגה
+				saveToLocalStorage();
+				updateDashboard();
+				loadFilterOptions();
+				displayFilteredLocations(locations.filter(l => l.active === "כן"));
+				
+				showToast('ייבוא הושלם בהצלחה!', 'success');
+				
+			} catch (error) {
+				console.error('Import error:', error);
+				showToast('שגיאה בייבוא נתונים', 'error');
+			} finally {
+				hideLoading();
+			}
+		}
+
+		// פונקציות עזר לפרסור שורות
+		function parseVisitFromRow(row) {
+			return {
+				ID: row[0] || generateID(),
+				date: row[1] || '',
+				location_id: row[2] || '',
+				visit_type: row[3] || '',
+				work_done: row[4] || '',
+				duration_minutes: parseInt(row[5]) || 0,
+				num_workers: parseInt(row[6]) || 1,
+				start_time: row[7] || '',
+				end_time: row[8] || '',
+				amount: parseFloat(row[9]) || 0,
+				expense: parseFloat(row[10]) || 0,
+				paid: row[11] || 'לא',
+				notes: row[12] || ''
+			};
+		}
+
+		function parseReceiptFromRow(row) {
+			return {
+				ID: row[0] || generateID(),
+				booklet_number: row[1] || '',
+				receipt_number: row[2] || '',
+				date: row[3] || '',
+				location_id: row[4] || '',
+				location_name: row[5] || '',
+				amount: parseFloat(row[6]) || 0,
+				payment_type: row[7] || '',
+				tax_code: row[8] || '',
+				notes: row[9] || ''
+			};
+		}
+	   
+	   // הוסף את זה לסוף הקוד
+		function updateImportTableStatus() {
+			const importTableId = localStorage.getItem('importTableId');
+			const statusDiv = document.getElementById('importTableStatus');
+			
+			if (importTableId && statusDiv) {
+				statusDiv.innerHTML = `
+					<span style="font-size: 13px; color: #28a745;">
+						✅ טבלת עזר זמינה: 
+						<a href="https://docs.google.com/spreadsheets/d/${importTableId}/edit" 
+						   target="_blank" style="color: #007bff; text-decoration: underline;">
+						   פתח טבלה
+						</a>
+					</span>
+					<br>
+					<button onclick="localStorage.removeItem('importTableId'); updateImportTableStatus();" 
+							style="background: none; border: none; color: #dc3545; font-size: 12px; cursor: pointer; margin-top: 5px;">
+						🗑️ מחק קישור לטבלת עזר
+					</button>
+				`;
+			} else if (statusDiv) {
+				statusDiv.innerHTML = `
+					<span style="font-size: 13px; color: #666;">
+						❌ לא נמצאה טבלת עזר שמורה
+					</span>
+					<br>
+					<span style="font-size: 12px; color: #999;">
+						צור טבלת עזר חדשה כדי לייבא נתונים
+					</span>
+				`;
+			}
+		}
+
+		// הרץ את זה כשהדף נטען
+		document.addEventListener('DOMContentLoaded', function() {
+			updateImportTableStatus();
+		});
+
+		// הרץ גם כשעוברים לטאב המערכת
+		function showTab(event, tabName) {
+			// הקוד הקיים שלך...
+			
+			// הוסף את זה בסוף הפונקציה
+			if (tabName === 'system') {
+				setTimeout(updateImportTableStatus, 100);
+			}
+		}
+	   
 	   
    </script>
 </body>
