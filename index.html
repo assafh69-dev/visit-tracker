@@ -742,7 +742,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -1023,6 +1023,12 @@
 						</button>
 						<button class="btn btn-success" onclick="importFromHelperTable()">
 							📥 ייבא הכל מטבלת העזר
+						</button>
+					</div>
+					
+					<div style="text-align: center; margin-top: 15px;">
+						<button class="btn btn-info" onclick="importFromTelegram()">
+							💬 ייבוא מטקסט טלגרם
 						</button>
 					</div>
 
@@ -3774,6 +3780,343 @@
 			}
 		}
 	   
+	   
+	   // ייבוא מטקסט טלגרם - פונקציה ראשית
+		async function importFromTelegram() {
+			const fileInput = document.createElement('input');
+			fileInput.type = 'file';
+			fileInput.accept = '.txt';
+			
+			fileInput.onchange = async (event) => {
+				const file = event.target.files[0];
+				if (!file) return;
+				
+				try {
+					showLoading('מפרסר טקסט טלגרם...');
+					
+					const text = await file.text();
+					console.log('📄 File content length:', text.length);
+					console.log('📄 First 500 chars:', text.substring(0, 500));
+					
+					const parsedVisits = parseTelegramText(text);
+					
+					if (parsedVisits.length > 0) {
+						showToast(`נמצאו ${parsedVisits.length} ביקורים פוטנציאליים`, 'info');
+						
+						// הצג תצוגה מקדימה לאישור
+						showTelegramPreview(parsedVisits);
+					} else {
+						showToast('לא נמצאו ביקורים בקובץ', 'warning');
+					}
+					
+				} catch (error) {
+					console.error('Error parsing telegram file:', error);
+					showToast('שגיאה בפרסור קובץ טלגרם', 'error');
+				} finally {
+					hideLoading();
+				}
+			};
+			
+			fileInput.click();
+		}
+
+		// פונקציה ראשית לפרסור הטקסט
+		function parseTelegramText(text) {
+			const lines = text.split('\n');
+			const visits = [];
+			
+			let currentDate = '';
+			let currentTime = '';
+			let currentAddress = '';
+			let currentClient = null;
+			let workDone = '';
+			let duration = 0;
+			
+			console.log('🔍 Parsing', lines.length, 'lines...');
+			
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i].trim();
+				if (!line) continue;
+				
+				// זיהוי תאריך
+				if (isDateLine(line)) {
+					currentDate = parseTelegramDate(line);
+					console.log('📅 Found date:', currentDate);
+					continue;
+				}
+				
+				// זיהוי שעה
+				if (isTimeLine(line)) {
+					currentTime = line;
+					console.log('🕐 Found time:', currentTime);
+					continue;
+				}
+				
+				// זיהוי כתובת לקוח
+				const foundClient = findClientInText(line);
+				if (foundClient) {
+					currentClient = foundClient;
+					currentAddress = foundClient.full_address;
+					console.log('👤 Found client:', foundClient.name, 'at', currentAddress);
+					continue;
+				}
+				
+				// זיהוי סיום עבודה
+				if (line.startsWith('סיום')) {
+					workDone = line.replace('סיום', '').trim();
+					console.log('🔧 Found work:', workDone);
+					
+					// חפש זמן בשורות הבאות
+					for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+						const nextLine = lines[j].trim();
+						const foundDuration = parseWorkDuration(nextLine);
+						if (foundDuration > 0) {
+							duration = foundDuration;
+							console.log('⏱️ Found duration:', duration, 'minutes');
+							break;
+						}
+					}
+					
+					// צור ביקור אם יש מספיק מידע
+					if (currentDate && currentClient && workDone) {
+						const visit = {
+							date: currentDate,
+							time: currentTime,
+							client_name: currentClient.name,
+							client_id: currentClient.ID,
+							address: currentAddress,
+							work_done: workDone,
+							duration_minutes: duration || 60, // ברירת מחדל שעה
+							raw_text: `${line}\n${lines.slice(i+1, i+3).join('\n')}`
+						};
+						
+						visits.push(visit);
+						console.log('✅ Created visit:', visit);
+					}
+					
+					// איפוס למצב הבא
+					workDone = '';
+					duration = 0;
+				}
+			}
+			
+			console.log('📊 Total parsed visits:', visits.length);
+			return visits;
+		}
+
+		// פונקציות עזר לזיהוי דפוסים
+		function isDateLine(line) {
+			// זיהוי תאריך כמו "15 August 2024"
+			const dateRegex = /^\d{1,2}\s+[A-Za-z]+\s+\d{4}$/;
+			return dateRegex.test(line);
+		}
+
+		function isTimeLine(line) {
+			// זיהוי שעה כמו "13:39"
+			const timeRegex = /^\d{1,2}:\d{2}$/;
+			return timeRegex.test(line);
+		}
+
+		function parseTelegramDate(dateStr) {
+			// המר "15 August 2024" ל-"2024-08-15"
+			const months = {
+				'January': '01', 'February': '02', 'March': '03', 'April': '04',
+				'May': '05', 'June': '06', 'July': '07', 'August': '08',
+				'September': '09', 'October': '10', 'November': '11', 'December': '12'
+			};
+			
+			const parts = dateStr.split(' ');
+			if (parts.length === 3) {
+				const day = parts[0].padStart(2, '0');
+				const month = months[parts[1]] || '01';
+				const year = parts[2];
+				return `${year}-${month}-${day}`;
+			}
+			
+			return '';
+		}
+
+		function findClientInText(text) {
+			// חפש לקוח לפי כתובת או שם מהרשימה הקיימת
+			for (const location of locations) {
+				// התאמה מדויקת לשם
+				if (location.name && text.includes(location.name)) {
+					return location;
+				}
+				
+				// התאמה לרחוב
+				if (location.street && text.includes(location.street)) {
+					return location;
+				}
+				
+				// התאמה לכתובת מלאה
+				if (location.full_address && text.toLowerCase().includes(location.full_address.toLowerCase())) {
+					return location;
+				}
+				
+				// חיפוש גמיש יותר - לפי חלקי כתובת
+				if (location.full_address) {
+					const addressParts = location.full_address.split(' ');
+					if (addressParts.length >= 2) {
+						const street = addressParts.slice(0, -1).join(' ');
+						const number = addressParts[addressParts.length - 1];
+						
+						if (text.includes(street) && text.includes(number)) {
+							return location;
+						}
+					}
+				}
+			}
+			
+			return null;
+		}
+
+		function parseWorkDuration(text) {
+			const patterns = {
+				'שעתיים וחצי': 150,
+				'שעה ורבע נטו': 75,
+				'שעה ורבע': 75,
+				'שעה וחצי': 90,
+				'שעתיים': 120,
+				'שעה': 60,
+				'חצי שעה': 30
+			};
+			
+			for (const [pattern, minutes] of Object.entries(patterns)) {
+				if (text.includes(pattern)) {
+					return minutes;
+				}
+			}
+			
+			return 0;
+		}
+
+		// תצוגה מקדימה של הביקורים שנמצאו
+		function showTelegramPreview(parsedVisits) {
+			let previewHTML = `
+				<div style="background: white; padding: 20px; border-radius: 10px; max-width: 800px; max-height: 600px; overflow-y: auto;">
+					<h3 style="margin-bottom: 20px;">📋 תצוגה מקדימה - ביקורים שנמצאו</h3>
+					
+					<div style="margin-bottom: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+						<p><strong>נמצאו ${parsedVisits.length} ביקורים פוטנציאליים</strong></p>
+						<p style="font-size: 14px; color: #666;">בדוק את הנתונים ואשר ייבוא</p>
+					</div>
+					
+					<div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px;">
+						<table style="width: 100%; border-collapse: collapse;">
+							<thead style="background: #f8f9fa; position: sticky; top: 0;">
+								<tr>
+									<th style="padding: 10px; border: 1px solid #ddd;">תאריך</th>
+									<th style="padding: 10px; border: 1px solid #ddd;">שעה</th>
+									<th style="padding: 10px; border: 1px solid #ddd;">לקוח</th>
+									<th style="padding: 10px; border: 1px solid #ddd;">עבודה</th>
+									<th style="padding: 10px; border: 1px solid #ddd;">זמן (דק')</th>
+								</tr>
+							</thead>
+							<tbody>
+			`;
+			
+			parsedVisits.forEach((visit, index) => {
+				previewHTML += `
+					<tr style="background: ${index % 2 === 0 ? '#f8f9fa' : 'white'};">
+						<td style="padding: 8px; border: 1px solid #ddd;">${visit.date}</td>
+						<td style="padding: 8px; border: 1px solid #ddd;">${visit.time}</td>
+						<td style="padding: 8px; border: 1px solid #ddd;">${visit.client_name}</td>
+						<td style="padding: 8px; border: 1px solid #ddd;">${visit.work_done}</td>
+						<td style="padding: 8px; border: 1px solid #ddd;">${visit.duration_minutes}</td>
+					</tr>
+				`;
+			});
+			
+			previewHTML += `
+							</tbody>
+						</table>
+					</div>
+					
+					<div style="margin-top: 20px; text-align: center; gap: 10px; display: flex; justify-content: center;">
+						<button class="btn btn-success" onclick="confirmTelegramImport()">
+							✅ אשר ייבוא (${parsedVisits.length} ביקורים)
+						</button>
+						<button class="btn btn-secondary" onclick="closeTelegramPreview()">
+							❌ ביטול
+						</button>
+					</div>
+				</div>
+			`;
+			
+			// שמור את הנתונים למשתנה גלובלי לייבוא
+			window.pendingTelegramVisits = parsedVisits;
+			
+			// הצג מודל
+			showModal(previewHTML);
+		}
+
+		// אישור ייבוא הביקורים מטלגרם
+		async function confirmTelegramImport() {
+			if (!window.pendingTelegramVisits || window.pendingTelegramVisits.length === 0) {
+				showToast('אין ביקורים לייבוא', 'warning');
+				return;
+			}
+			
+			try {
+				showLoading('מייבא ביקורים מטלגרם...');
+				
+				let importedCount = 0;
+				
+				for (const telegramVisit of window.pendingTelegramVisits) {
+					// צור ביקור חדש במבנה המערכת
+					const visitData = {
+						ID: generateID(),
+						date: telegramVisit.date,
+						location_id: telegramVisit.client_id,
+						visit_type: 'גינון', // ברירת מחדל
+						work_done: telegramVisit.work_done,
+						duration_minutes: telegramVisit.duration_minutes,
+						start_time: telegramVisit.time || '',
+						end_time: '',
+						amount: 0, // יחושב לפי זמן ותעריף
+						expense: 0,
+						paid: 'לא',
+						notes: `יובא מטלגרם: ${telegramVisit.raw_text}`
+					};
+					
+					// הוסף למערכת
+					visits.push(visitData);
+					importedCount++;
+				}
+				
+				// שמור הכל
+				saveToLocalStorage();
+				
+				// עדכן תצוגות
+				loadReceiptsTable(); // זה מעדכן גם טבלת ביקורים
+				loadFilterOptions();
+				
+				// שמור לענן
+				await saveAllToSheets();
+				
+				showToast(`✅ יובאו ${importedCount} ביקורים מטלגרם!`, 'success');
+				
+				// נקה ונסגור
+				window.pendingTelegramVisits = null;
+				closeTelegramPreview();
+				
+			} catch (error) {
+				console.error('Error importing telegram visits:', error);
+				showToast('שגיאה בייבוא מטלגרם', 'error');
+			} finally {
+				hideLoading();
+			}
+		}
+
+		// סגירת תצוגה מקדימה
+		function closeTelegramPreview() {
+			window.pendingTelegramVisits = null;
+			closeModal();
+		}
+
+
+
 	   
    </script>
 </body>
