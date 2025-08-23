@@ -708,7 +708,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -2188,7 +2188,7 @@
             event.preventDefault();
            
 			const locationData = {
-				ID: Date.now(),
+				ID: generateID(),
 				name: document.getElementById('locationName').value,
 				full_address: document.getElementById('locationAddress').value,
 				neighborhood: document.getElementById('locationNeighborhood').value,
@@ -2763,7 +2763,7 @@
 						}
 						
 						const locationData = {
-							ID: Date.now() + importedCount, // ID אוטומטי
+							ID: generateID(),
 							name: customerName, // שם הלקוח הוא הכתובת המלאה
 							full_address: customerName, // זה המזהה הייחודי
 							neighborhood: '', // ריק - ימולא בהמשך
@@ -3140,7 +3140,7 @@
 			filteredVisits.forEach(visit => {
 				const location = locations.find(loc => loc.ID == visit.location_id);
 				const locationName = location ? location.name : `לא נמצא (ID: ${visit.location_id})`;
-				console.log(`Visit location_id: ${visit.location_id}, Found location:`, location);
+				//////////console.log(`Visit location_id: ${visit.location_id}, Found location:`, location);   //////>>>>>>>>>>>>>
 				
 				const row = document.createElement('tr');
 				
