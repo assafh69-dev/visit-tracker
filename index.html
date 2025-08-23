@@ -742,7 +742,7 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -3669,11 +3669,20 @@
 				
 				// שמירה מקומית ועדכון תצוגה
 				saveToLocalStorage();
-				updateDashboard();
+				loadLocationsTable();
+				loadReceiptsTable();
 				loadFilterOptions();
-				displayFilteredLocations(locations.filter(l => l.active === "כן"));
-				
-				showToast('ייבוא הושלם בהצלחה!', 'success');
+
+				// תוספה חשובה - שמירה לענן!
+				showToast('שומר נתונים חדשים לענן...', 'info');
+
+				try {
+					await saveAllToSheets();
+					showToast('ייבוא הושלם ונשמר לענן!', 'success');
+				} catch (error) {
+					console.error('Error saving imported data to cloud:', error);
+					showToast('ייבוא הושלם מקומית, אבל שגיאה בשמירה לענן', 'warning');
+				}
 				
 			} catch (error) {
 				console.error('Import error:', error);
