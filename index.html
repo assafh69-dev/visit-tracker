@@ -708,7 +708,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.11</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -1056,8 +1056,8 @@
 						<button class="btn btn-primary" onclick="createImportTable()">
 							🔗 צור טבלת עזר לייבוא
 						</button>
-						<button class="btn btn-success" onclick="importFromHelperTable()">
-							📥 ייבא הכל מטבלת העזר
+						<button class="btn btn-success" onclick="importFromHelperTableFast()">
+							🚀 ייבוא מהיר וכולל מטבלת העזר
 						</button>
 					</div>
 					
@@ -4901,6 +4901,383 @@
 				return true;
 			} catch (error) {
 				console.error('Error in batch save receipts:', error);
+				return false;
+			}
+		}
+	   
+	   
+	    // פונקציה חדשה לייבוא מהיר וכולל של כל הנתונים
+		async function importFromHelperTableFast() {
+			if (!await validateToken()) {
+				showToast('התחבר לגוגל קודם', 'warning');
+				return;
+			}
+			
+			const importTableId = localStorage.getItem('importTableId');
+			if (!importTableId) {
+				showToast('לא נמצא ID של טבלת העזר', 'warning');
+				return;
+			}
+			
+			console.log('🚀 Starting FAST complete import from helper table...');
+			
+			try {
+				showLoading('מייבא נתונים מהר מטבלת העזר...');
+				
+				// מעקב סטטיסטיקות
+				const stats = {
+					locations: { imported: 0, skipped: 0 },
+					visits: { imported: 0, skipped: 0 },
+					receipts: { imported: 0, skipped: 0 }
+				};
+				
+				// מערכים לנתונים חדשים בלבד
+				const newLocations = [];
+				const newVisits = [];
+				const newReceipts = [];
+				
+				// ======== שלב 1: ייבוא מקבילי של כל הנתונים ========
+				const [locationsResponse, visitsResponse, receiptsResponse] = await Promise.all([
+					gapi.client.sheets.spreadsheets.values.get({
+						spreadsheetId: importTableId,
+						range: 'Locations!A2:G1000'
+					}).catch(e => ({ result: { values: [] } })),
+					
+					gapi.client.sheets.spreadsheets.values.get({
+						spreadsheetId: importTableId,
+						range: 'Visits!A2:M1000'
+					}).catch(e => ({ result: { values: [] } })),
+					
+					gapi.client.sheets.spreadsheets.values.get({
+						spreadsheetId: importTableId,
+						range: 'Receipts!A2:K1000'
+					}).catch(e => ({ result: { values: [] } }))
+				]);
+				
+				console.log('📊 Raw data loaded:', {
+					locations: locationsResponse.result.values?.length || 0,
+					visits: visitsResponse.result.values?.length || 0,
+					receipts: receiptsResponse.result.values?.length || 0
+				});
+				
+				// ======== שלב 2: עיבוד לקוחות ========
+				if (locationsResponse.result.values?.length > 0) {
+					showToast('מעבד לקוחות...', 'info', 1500);
+					
+					for (const row of locationsResponse.result.values) {
+						if (row.length > 0 && row[0]) { // יש שם לקוח
+							const customerName = row[0].trim();
+							const street = row[1] || '';
+							const houseNumber = row[2] || '';
+							const city = row[3] || '';
+							const fullAddress = `${street} ${houseNumber} ${city}`.trim();
+							
+							// בדיקת כפילות לפי שם ו/או כתובת
+							const isDuplicate = locations.some(existing =>
+								existing.name.toLowerCase() === customerName.toLowerCase() ||
+								(fullAddress && existing.full_address && 
+								 existing.full_address.toLowerCase() === fullAddress.toLowerCase())
+							);
+							
+							if (isDuplicate) {
+								stats.locations.skipped++;
+								console.log(`⚠️ Duplicate customer skipped: ${customerName}`);
+								continue;
+							}
+							
+							const locationData = {
+								ID: generateID(),
+								name: customerName,
+								full_address: fullAddress,
+								neighborhood: '',
+								city: city,
+								contact_person: row[5] || '',
+								phone: '',
+								allowed_day: '',
+								interval_weeks: parseInt(row[4]) || 4,
+								temp_addition: 0,
+								base_amount: parseFloat(row[6]) || 0,
+								active: true,
+								notes: '',
+								last_visit: '',
+								next_visit: ''
+							};
+							
+							locations.push(locationData);
+							newLocations.push(locationData);
+							stats.locations.imported++;
+						}
+					}
+				}
+				
+				// ======== שלב 3: עיבוד ביקורים ========
+				if (visitsResponse.result.values?.length > 0) {
+					showToast('מעבד ביקורים...', 'info', 1500);
+					
+					let notFoundCustomers = [];
+					
+					for (const row of visitsResponse.result.values) {
+						if (row.length > 3 && row[3]) { // יש לקוח בעמודה 3
+							const customerName = row[3].trim();
+							
+							// מצא לקוח קיים
+							const existingCustomer = locations.find(loc =>
+								loc.name && loc.name.toLowerCase() === customerName.toLowerCase()
+							);
+							
+							if (!existingCustomer) {
+								if (!notFoundCustomers.includes(customerName)) {
+									notFoundCustomers.push(customerName);
+								}
+								stats.visits.skipped++;
+								continue;
+							}
+							
+							// בניית תאריך מ-3 עמודות: year, month, day
+							const year = row[0];
+							const month = String(row[1]).padStart(2, '0');
+							const day = String(row[2]).padStart(2, '0');
+							const visitDate = `${year}-${month}-${day}`;
+							
+							const workDone = row[7] || '';
+							const amount = parseFloat(row[9]) || 0;
+							
+							// בדיקת כפילות ביקור
+							const isDuplicateVisit = visits.some(existing =>
+								existing.location_id === existingCustomer.ID &&
+								existing.date === visitDate &&
+								existing.work_done === workDone &&
+								Math.abs(existing.amount - amount) < 0.01
+							);
+							
+							if (isDuplicateVisit) {
+								stats.visits.skipped++;
+								console.log(`⚠️ Duplicate visit skipped: ${customerName} on ${visitDate}`);
+								continue;
+							}
+							
+							const visitData = {
+								ID: generateID(),
+								date: visitDate,
+								location_id: existingCustomer.ID,
+								visit_type: row[5] || 'regular',
+								work_done: workDone,
+								duration_minutes: (parseFloat(row[8]) || 0) * 60,
+								num_workers: 1,
+								start_time: '',
+								end_time: '',
+								amount: amount,
+								expense: parseFloat(row[11]) || 0,
+								paid: row[10] === 'כן' || row[10] === 'yes' || row[10] === '1',
+								notes: row[12] || ''
+							};
+							
+							visits.push(visitData);
+							newVisits.push(visitData);
+							stats.visits.imported++;
+						}
+					}
+					
+					if (notFoundCustomers.length > 0) {
+						console.log(`⚠️ ${notFoundCustomers.length} customers not found for visits:`, notFoundCustomers.slice(0, 5));
+					}
+				}
+				
+				// ======== שלב 4: עיבוד קבלות ========
+				if (receiptsResponse.result.values?.length > 0) {
+					showToast('מעבד קבלות...', 'info', 1500);
+					
+					let notFoundAddresses = [];
+					
+					for (const row of receiptsResponse.result.values) {
+						if (row.length > 6 && row[6]) { // יש כתובת בעמודה 6
+							const customerAddress = row[6].trim();
+							
+							// מצא לקוח לפי כתובת
+							const existingCustomer = locations.find(loc =>
+								loc.full_address &&
+								loc.full_address.toLowerCase().includes(customerAddress.toLowerCase())
+							);
+							
+							if (!existingCustomer) {
+								if (!notFoundAddresses.includes(customerAddress)) {
+									notFoundAddresses.push(customerAddress);
+								}
+								stats.receipts.skipped++;
+								continue;
+							}
+							
+							// בניית תאריך
+							const year = row[3];
+							const month = String(row[4]).padStart(2, '0');
+							const day = String(row[5]).padStart(2, '0');
+							const receiptDate = `${year}-${month}-${day}`;
+							
+							const bookNumber = row[1] || '';
+							const receiptNumber = row[2] || '';
+							
+							// בדיקת כפילות קבלה
+							const isDuplicateReceipt = receipts.some(existing =>
+								existing.book_number === bookNumber &&
+								existing.receipt_number === receiptNumber &&
+								existing.date === receiptDate
+							);
+							
+							if (isDuplicateReceipt) {
+								stats.receipts.skipped++;
+								console.log(`⚠️ Duplicate receipt skipped: ${bookNumber}/${receiptNumber}`);
+								continue;
+							}
+							
+							const receiptData = {
+								ID: generateID(),
+								book_number: bookNumber,
+								receipt_number: receiptNumber,
+								date: receiptDate,
+								location_id: existingCustomer.ID,
+								location_name: customerAddress,
+								amount: parseFloat(row[7]) || 0,
+								payment_type: row[8] || '',
+								notes: `${row[9] || ''} ${row[10] || ''}`.trim()
+							};
+							
+							receipts.push(receiptData);
+							newReceipts.push(receiptData);
+							stats.receipts.imported++;
+						}
+					}
+					
+					if (notFoundAddresses.length > 0) {
+						console.log(`⚠️ ${notFoundAddresses.length} addresses not found for receipts:`, notFoundAddresses.slice(0, 5));
+					}
+				}
+				
+				// ======== שלב 5: שמירה מקבצית לענן ========
+				showToast('שומר נתונים חדשים לענן...', 'info');
+				
+				const savePromises = [];
+				
+				if (newLocations.length > 0) {
+					savePromises.push(saveLocationsBatchNew(newLocations));
+				}
+				if (newVisits.length > 0) {
+					savePromises.push(saveVisitsBatchNew(newVisits));
+				}
+				if (newReceipts.length > 0) {
+					savePromises.push(saveReceiptsBatchNew(newReceipts));
+				}
+				
+				const saveResults = await Promise.all(savePromises);
+				const allSaved = saveResults.every(result => result === true);
+				
+				// ======== שלב 6: עדכון ממשק ========
+				saveToLocalStorage();
+				loadLocationsTable();
+				loadReceiptsTable();
+				loadLocationsForSelect();
+				loadFilterOptions();
+				
+				hideLoading();
+				
+				// ======== דיווח סופי ========
+				console.log('📊 Import completed:', stats);
+				
+				const totalImported = stats.locations.imported + stats.visits.imported + stats.receipts.imported;
+				const totalSkipped = stats.locations.skipped + stats.visits.skipped + stats.receipts.skipped;
+				
+				if (totalImported > 0) {
+					const message = `🎉 ייבוא הושלם בהצלחה!
+					
+		✅ יובאו: ${stats.locations.imported} לקוחות, ${stats.visits.imported} ביקורים, ${stats.receipts.imported} קבלות
+		${totalSkipped > 0 ? `⚠️ דולגו (כפילויות): ${totalSkipped} רשומות` : ''}
+		${allSaved ? '☁️ נשמר לענן בהצלחה' : '⚠️ חלק מהנתונים לא נשמרו לענן'}`;
+					
+					showToast(message, 'success', 8000);
+				} else {
+					showToast('לא נמצאו נתונים חדשים לייבוא', 'info');
+				}
+				
+			} catch (error) {
+				console.error('Error in fast import:', error);
+				hideLoading();
+				showToast('שגיאה בייבוא מהיר', 'error');
+			}
+		}
+
+		// פונקציות עזר חדשות ומעודכנות לשמירה מקבצית
+		async function saveLocationsBatchNew(locationsArray) {
+			if (!locationsArray.length) return true;
+			
+			try {
+				const values = locationsArray.map(loc => [
+					loc.ID, loc.name, loc.full_address, loc.neighborhood, loc.city,
+					loc.contact_person, loc.phone, loc.allowed_day, loc.interval_weeks,
+					loc.temp_addition, loc.base_amount, loc.active, loc.notes,
+					loc.last_visit, loc.next_visit
+				]);
+				
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Locations!A2:O2',
+					valueInputOption: 'USER_ENTERED',
+					resource: { values }
+				});
+				
+				console.log(`✅ Saved ${locationsArray.length} locations to cloud`);
+				return true;
+			} catch (error) {
+				console.error('Error saving locations batch:', error);
+				return false;
+			}
+		}
+
+		async function saveVisitsBatchNew(visitsArray) {
+			if (!visitsArray.length) return true;
+			
+			try {
+				// הסרנו את location_name שלא קיים בביקורים
+				const values = visitsArray.map(visit => [
+					visit.ID, visit.date, visit.location_id, visit.visit_type, visit.work_done,
+					visit.duration_minutes, visit.num_workers, visit.start_time, visit.end_time,
+					visit.amount, visit.expense, visit.paid, visit.notes
+				]);
+				
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Visits!A2:M2',
+					valueInputOption: 'USER_ENTERED',
+					resource: { values }
+				});
+				
+				console.log(`✅ Saved ${visitsArray.length} visits to cloud`);
+				return true;
+			} catch (error) {
+				console.error('Error saving visits batch:', error);
+				return false;
+			}
+		}
+
+		async function saveReceiptsBatchNew(receiptsArray) {
+			if (!receiptsArray.length) return true;
+			
+			try {
+				const values = receiptsArray.map(receipt => [
+					receipt.ID, receipt.book_number, receipt.receipt_number, receipt.date,
+					receipt.location_id, receipt.location_name, receipt.amount,
+					receipt.payment_type, receipt.notes
+				]);
+				
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Receipts!A2:I2',
+					valueInputOption: 'USER_ENTERED',
+					resource: { values }
+				});
+				
+				console.log(`✅ Saved ${receiptsArray.length} receipts to cloud`);
+				return true;
+			} catch (error) {
+				console.error('Error saving receipts batch:', error);
 				return false;
 			}
 		}
