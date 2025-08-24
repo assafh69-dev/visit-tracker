@@ -708,7 +708,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
 			</nav>
         </header>
 
@@ -4906,7 +4906,7 @@
 		}
 	   
 	   
-	    // פונקציה חדשה לייבוא מהיר וכולל של כל הנתונים
+		// פונקציה חדשה לייבוא מהיר וכולל של כל הנתונים
 		async function importFromHelperTableFast() {
 			if (!await validateToken()) {
 				showToast('התחבר לגוגל קודם', 'warning');
@@ -4936,23 +4936,41 @@
 				const newVisits = [];
 				const newReceipts = [];
 				
-				// ======== שלב 1: ייבוא מקבילי של כל הנתונים ========
-				const [locationsResponse, visitsResponse, receiptsResponse] = await Promise.all([
-					gapi.client.sheets.spreadsheets.values.get({
+				// ======== שלב 1: קריאת נתונים ברצף (כמו בפונקציות שעובדות) ========
+				let locationsResponse, visitsResponse, receiptsResponse;
+				
+				try {
+					console.log('📊 Loading locations data...');
+					locationsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
 						range: 'Locations!A2:G1000'
-					}).catch(e => ({ result: { values: [] } })),
-					
-					gapi.client.sheets.spreadsheets.values.get({
+					});
+				} catch (error) {
+					console.log('📊 Locations sheet not found or empty');
+					locationsResponse = { result: { values: [] } };
+				}
+				
+				try {
+					console.log('🔧 Loading visits data...');
+					visitsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
 						range: 'Visits!A2:M1000'
-					}).catch(e => ({ result: { values: [] } })),
-					
-					gapi.client.sheets.spreadsheets.values.get({
+					});
+				} catch (error) {
+					console.log('🔧 Visits sheet not found or empty');
+					visitsResponse = { result: { values: [] } };
+				}
+				
+				try {
+					console.log('🧾 Loading receipts data...');
+					receiptsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
 						range: 'Receipts!A2:K1000'
-					}).catch(e => ({ result: { values: [] } }))
-				]);
+					});
+				} catch (error) {
+					console.log('🧾 Receipts sheet not found or empty');
+					receiptsResponse = { result: { values: [] } };
+				}
 				
 				console.log('📊 Raw data loaded:', {
 					locations: locationsResponse.result.values?.length || 0,
@@ -5281,7 +5299,6 @@
 				return false;
 			}
 		}
-	   
 	   
    </script>
 </body>
