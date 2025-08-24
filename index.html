@@ -708,7 +708,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
 			</nav>
         </header>
 
@@ -5006,7 +5006,7 @@
 							const locationData = {
 								ID: generateID(),
 								name: customerName,
-								full_address: fullAddress,
+								full_address: fullAddress || customerName, // ← תיקון: גם שם הלקוח אם אין כתובת נפרדת
 								neighborhood: '',
 								city: city,
 								contact_person: row[5] || '',
@@ -5111,10 +5111,10 @@
 						if (row.length > 6 && row[6]) { // יש כתובת בעמודה 6
 							const customerAddress = row[6].trim();
 							
-							// מצא לקוח לפי כתובת
+							// מצא לקוח לפי כתובת - גם בשם וגם בכתובת מלאה
 							const existingCustomer = locations.find(loc =>
-								loc.full_address &&
-								loc.full_address.toLowerCase().includes(customerAddress.toLowerCase())
+								(loc.name && loc.name.toLowerCase().includes(customerAddress.toLowerCase())) ||
+								(loc.full_address && loc.full_address.toLowerCase().includes(customerAddress.toLowerCase()))
 							);
 							
 							if (!existingCustomer) {
