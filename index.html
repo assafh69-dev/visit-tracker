@@ -708,7 +708,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -1258,6 +1258,7 @@
 			}
 		}
 
+		// תחליף את הפונקציה connectToGoogleSheets הנוכחית
 		async function connectToGoogleSheets() {
 			try {
 				console.log('Connecting to Google Sheets...');
@@ -1277,14 +1278,17 @@
 						
 						showToast('התחברת בהצלחה ל-Google Sheets!', 'success');
 						
-						// כעת חפש או צור טבלה - כמו בטריידים
+						// מציאה או יצירת הטבלה הראשית
 						await findOrCreateMainSpreadsheet();
 						
-						// טען נתונים ממש אחרי החיבור
-						await loadAllDataFromSheets();
-						
-						// טען הגדרות אחרון
-						await loadSettingsFromCloud();
+						// טעינה אוטומטית של נתונים אם קיימים
+						if (SPREADSHEET_ID) {
+							try {
+								await loadAllDataFromSheets();
+							} catch (error) {
+								console.log('Could not auto-load data:', error);
+							}
+						}
 					},
 				});
 				
@@ -3508,46 +3512,26 @@
 			return false;
 		}
 	   
-	   async function findOrCreateMainSpreadsheet() {
+	   // פונקציה חדשה לבדיקה ויצירת הטבלה הראשית
+		async function findOrCreateMainSpreadsheet() {
 			try {
-				console.log('Starting findOrCreateMainSpreadsheet...');
+				console.log('Searching for existing main spreadsheet...');
 				
-				// קודם נסה להשתמש ב-ID הקיים
-				if (SPREADSHEET_ID && SPREADSHEET_ID !== '') {
-					try {
-						console.log('Testing existing spreadsheet ID:', SPREADSHEET_ID);
-						
-						const testResponse = await gapi.client.sheets.spreadsheets.get({
-							spreadsheetId: SPREADSHEET_ID
-						});
-						
-						console.log('✅ Found existing spreadsheet by ID:', SPREADSHEET_ID);
-						showToast('טבלה קיימת נמצאה!', 'success');
-						return; // יציאה - הטבלה קיימת ועובדת
-						
-					} catch (error) {
-						console.log('❌ Cannot access spreadsheet with ID:', SPREADSHEET_ID, error);
-						showToast('לא ניתן לגשת לטבלה הקיימת, מחפש חלופות...', 'warning');
-					}
-				}
-				
-				// אם הגענו לכאן - ה-ID לא עובד, חפש לפי שם
-				console.log('Searching for spreadsheet by name...');
-				
+				// חיפוש טבלה קיימת
 				const response = await gapi.client.request({
 					path: 'https://www.googleapis.com/drive/v3/files',
 					params: {
 						q: `name='${SPREADSHEET_NAME}' and mimeType='application/vnd.google-apps.spreadsheet'`,
-						access_token: access_token
 					}
 				});
 				
-				console.log('Search response:', response.result.files);
-				
 				if (response.result.files.length > 0) {
-					console.log('Found existing spreadsheet by name');
-					SPREADSHEET_ID = response.result.files[0].id; // עדכן את ה-ID החדש
-					showToast('נמצאה טבלה לפי שם!', 'success');
+					console.log('Found existing spreadsheet');
+					SPREADSHEET_ID = response.result.files[0].id;
+					showToast('נמצאה טבלה קיימת!', 'success');
+					
+					// בדיקה ותיקון של מבנה הטבלה
+					await checkAndFixTableStructure();
 				} else {
 					console.log('No spreadsheet found, creating new one...');
 					await createNewMainSpreadsheet();
@@ -3559,6 +3543,7 @@
 			}
 		}
 
+		// פונקציה חדשה ליצירת טבלה ראשית חדשה
 		async function createNewMainSpreadsheet() {
 			console.log('Creating new main spreadsheet...');
 			try {
@@ -3584,7 +3569,7 @@
 				
 				SPREADSHEET_ID = response.result.spreadsheetId;
 				
-				// הוסף כותרות לכל הגליונות
+				// הוסף כותרות לכל הגיליונות
 				await addAllHeaders();
 				
 				showToast('נוצרה טבלה חדשה!', 'success');
@@ -3594,30 +3579,106 @@
 				showToast('שגיאה ביצירת טבלה', 'error');
 			}
 		}
-
-		async function checkHeaders() {
-			// פונקציה פשוטה לבדיקה שכותרות קיימות
-			// בדומה לטריידים
-			console.log('Checking headers...');
+		
+		// פונקציה חדשה לבדיקה ותיקון מבנה הטבלה
+		async function checkAndFixTableStructure() {
+			console.log('Checking and fixing table structure...');
 			
 			try {
-				const locationsCheck = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A1:A1'
-				});
+				// בדיקת כותרות בכל גיליון
+				const sheetsToCheck = ['Locations', 'Visits', 'Receipts'];
 				
-				if (!locationsCheck.result.values || !locationsCheck.result.values[0][0]) {
-					await addAllHeaders();
+				for (const sheetName of sheetsToCheck) {
+					try {
+						const response = await gapi.client.sheets.spreadsheets.values.get({
+							spreadsheetId: SPREADSHEET_ID,
+							range: `${sheetName}!A1:A1`
+						});
+						
+						if (!response.result.values || !response.result.values[0][0]) {
+							console.log(`Headers missing in ${sheetName}, adding them...`);
+							await addHeadersToSheet(sheetName);
+						}
+					} catch (error) {
+						console.log(`Sheet ${sheetName} missing or error, will add headers:`, error);
+						await addHeadersToSheet(sheetName);
+					}
 				}
 				
-				console.log('✅ Headers verified');
+				console.log('✅ Table structure verified');
 				
 			} catch (error) {
-				console.log('Headers check failed, will add them:', error);
+				console.log('Headers check failed, will force add them:', error);
 				await addAllHeaders();
 			}
 		}
-	   
+		
+		// פונקציה חדשה להוספת כותרות לגיליון ספציפי
+		async function addHeadersToSheet(sheetName) {
+			try {
+				let headers = [];
+				
+				switch (sheetName) {
+					case 'Locations':
+						headers = [
+							'ID', 'name', 'full_address', 'neighborhood', 'city', 
+							'contact_person', 'phone', 'allowed_day', 'interval_weeks', 
+							'temp_addition', 'base_amount', 'active', 'notes', 
+							'last_visit', 'next_visit'
+						];
+						break;
+					case 'Visits':
+						headers = [
+							'ID', 'date', 'location_id', 'visit_type', 'work_done', 
+							'duration_minutes', 'num_workers', 'start_time', 'end_time', 
+							'amount', 'expense', 'paid', 'notes'
+						];
+						break;
+					case 'Receipts':
+						headers = [
+							'ID', 'book_number', 'receipt_number', 'date', 'location_id', 
+							'location_name', 'amount', 'payment_type', 'notes'
+						];
+						break;
+				}
+				
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${sheetName}!A1:${String.fromCharCode(64 + headers.length)}1`,
+					valueInputOption: 'RAW',
+					values: [headers]
+				});
+				
+				console.log(`✅ Added headers to ${sheetName}`);
+				
+			} catch (error) {
+				console.error(`Error adding headers to ${sheetName}:`, error);
+			}
+		}
+		
+		// פונקציה משופרת להוספת כותרות לכל הגיליונות
+		async function addAllHeaders() {
+			try {
+				console.log('Adding headers to all sheets...');
+				
+				await addHeadersToSheet('Locations');
+				await addHeadersToSheet('Visits');
+				await addHeadersToSheet('Receipts');
+				
+				// הוספת כותרות ל-SystemSettings
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'SystemSettings!A1:B1',
+					valueInputOption: 'RAW',
+					values: [['setting_key', 'setting_value']]
+				});
+				
+				console.log('✅ All headers added successfully');
+				
+			} catch (error) {
+				console.error('Error adding all headers:', error);
+			}
+		}  
 	   
 	   async function importFromHelperTable() {
 			if (!await validateToken()) {
