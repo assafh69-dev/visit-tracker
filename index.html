@@ -708,7 +708,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -1927,8 +1927,8 @@
                     <td>${location.interval_weeks} שבועות</td>
                     <td>${location.active}</td>
                     <td>
-                        <button class="action-btn edit-btn" onclick="editLocation(${location.ID})">ערוך</button>
-                        <button class="action-btn delete-btn" onclick="deleteLocation(${location.ID})">מחק</button>
+                        <button class="action-btn edit-btn" onclick="editLocation('${location.ID}')">ערוך</button>
+                        <button class="action-btn delete-btn" onclick="deleteLocation('${location.ID}')">מחק</button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -1955,8 +1955,8 @@
 					<td>${receipt.payment_type}</td>
 					<td>${receipt.codeX || ''}</td>
 					<td>
-						<button class="action-btn edit-btn" onclick="editReceipt(${receipt.ID})">ערוך</button>
-						<button class="action-btn delete-btn" onclick="deleteReceipt(${receipt.ID})">מחק</button>
+						<button class="action-btn edit-btn" onclick="editReceipt('${receipt.ID}')">ערוך</button>
+						<button class="action-btn delete-btn" onclick="deleteReceipt('${receipt.ID}')">מחק</button>
 					</td>
 				`;
 				tbody.appendChild(row);
@@ -3275,7 +3275,7 @@
 		}
 
 		async function editVisit(visitId) {
-			console.log(`✅ editVisit ${visitId} `);
+			console.log(`✅ editVisit ('${visitId}') `);
 			const visit = visits.find(v => v.ID == visitId);
 			if (!visit) {
 				showToast('ביקור לא נמצא', 'error');
@@ -3345,7 +3345,7 @@
 						</div>
 						
 						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
-							<button type="button" onclick="saveEditedVisit(${visitId})" class="btn btn-success">
+							<button type="button" onclick="saveEditedVisit('${visitId}')" class="btn btn-success">
 								💾 שמור שינויים
 							</button>
 							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">
@@ -3402,7 +3402,7 @@
 		}
 
 		async function saveEditedVisit(visitId) {
-			console.log(`✅ saveEditedVisit ${visitId} `);
+			console.log(`✅ saveEditedVisit ('${visitId}') `);
 			const visitIndex = visits.findIndex(v => v.ID == visitId);
 			if (visitIndex === -1) {
 				showToast('ביקור לא נמצא', 'error');
@@ -3507,7 +3507,7 @@
 		}
 
 		function deleteVisit(visitId) {
-			console.log(`✅ deleteVisit ${visitId} `);
+			console.log(`✅ deleteVisit ('${visitId}') `);
 			if (confirm('האם אתה בטוח שברצונך למחוק את הטיפול?')) {
 				visits = visits.filter(visit => visit.ID != visitId);
 				applyVisitFilters(); // רענן תצוגה
