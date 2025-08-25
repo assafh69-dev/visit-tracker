@@ -708,7 +708,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -3275,6 +3275,7 @@
 		}
 
 		async function editVisit(visitId) {
+			console.log(`✅ editVisit ${visitId} `);
 			const visit = visits.find(v => v.ID == visitId);
 			if (!visit) {
 				showToast('ביקור לא נמצא', 'error');
@@ -3401,6 +3402,7 @@
 		}
 
 		async function saveEditedVisit(visitId) {
+			console.log(`✅ saveEditedVisit ${visitId} `);
 			const visitIndex = visits.findIndex(v => v.ID == visitId);
 			if (visitIndex === -1) {
 				showToast('ביקור לא נמצא', 'error');
@@ -3505,6 +3507,7 @@
 		}
 
 		function deleteVisit(visitId) {
+			console.log(`✅ deleteVisit ${visitId} `);
 			if (confirm('האם אתה בטוח שברצונך למחוק את הטיפול?')) {
 				visits = visits.filter(visit => visit.ID != visitId);
 				applyVisitFilters(); // רענן תצוגה
