@@ -708,7 +708,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -1339,7 +1339,7 @@
 			try {
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.VISITS}!A:L`
+					range: `${SHEETS.VISITS}!A:N` // ← שנה מ-A:L ל-A:N
 				});
 				
 				const rows = response.result.values;
@@ -1348,15 +1348,17 @@
 						ID: row[0] || '',
 						date: row[1] || '',
 						location_id: row[2] || '',
-						visit_type: row[3] || '',
-						work_done: row[4] || '',
-						duration_minutes: row[5] || 0,
-						start_time: row[6] || '',
-						end_time: row[7] || '',
-						amount: row[8] || 0,
-						expense: row[9] || 0,
-						paid: row[10] || 'לא',
-						notes: row[11] || ''
+						location_name: row[3] || '', // ← הוסף את השדה החדש!
+						visit_type: row[4] || '',    // ← הזזה של כל השדות
+						work_done: row[5] || '',
+						duration_minutes: row[6] || 0,
+						num_workers: row[7] || 1,    // ← השדה הזה היה חסר!
+						start_time: row[8] || '',
+						end_time: row[9] || '',
+						amount: row[10] || 0,
+						expense: row[11] || 0,
+						paid: row[12] || 'לא',
+						notes: row[13] || ''         // ← עכשיו זה עמודה 13
 					}));
 				}
 				
@@ -1454,6 +1456,7 @@
 					visitData.ID,
 					visitData.date,
 					visitData.location_id,
+					visitData.location_name || '', // ← הוסף את השדה החדש!
 					visitData.visit_type,
 					visitData.work_done,
 					visitData.duration_minutes,
@@ -1468,7 +1471,7 @@
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.VISITS}!A:M`,
+					range: `${SHEETS.VISITS}!A:N`, // ← שנה מ-A:M ל-A:N
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: values }
 				});
@@ -1996,7 +1999,6 @@
 			}
 
 			const visitData = {
-				ID: Date.now(), // הוסף ID
 				location_id: selectedLocationId,  
 				visit_type: document.getElementById('visitType').value,
 				work_done: document.getElementById('workDone').value,
@@ -2022,7 +2024,7 @@
 			try {
 				// For now, just add to local array
 				const newVisit= {
-					ID: Date.now(),
+					ID: generateID(),
 					...visitData,
 					paid: 'לא',
 					notes: ''
@@ -3173,7 +3175,7 @@
 			
 			filteredVisits.forEach(visit => {
 				const location = locations.find(loc => loc.ID == visit.location_id);
-				const locationName = location ? location.name : `לא נמצא (ID: ${visit.location_id})`;
+				const locationName = visit.location_name || (location ? location.name : `לא נמצא (ID: ${visit.location_id})`);
 				//////////console.log(`Visit location_id: ${visit.location_id}, Found location:`, location);   //////>>>>>>>>>>>>>
 				
 				const row = document.createElement('tr');
@@ -3272,10 +3274,234 @@
 			updateVisitsInfo(visits);
 		}
 
-		// תוספה - פונקציות עריכה ומחיקה
-		function editVisit(visitId) {
-			// כאן תוכל להוסיף מודל עריכה
-			showToast('עריכת טיפול - יתווסף בהמשך', 'info');
+		async function editVisit(visitId) {
+			const visit = visits.find(v => v.ID == visitId);
+			if (!visit) {
+				showToast('ביקור לא נמצא', 'error');
+				return;
+			}
+			
+			// מצא את הלקוח
+			const location = locations.find(loc => loc.ID == visit.location_id);
+			const locationName = location ? location.name : 'לקוח לא נמצא';
+			
+			// צור חלון עריכה
+			const editModalHTML = `
+				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90vw; max-height: 80vh; overflow-y: auto;">
+					<h3 style="margin-bottom: 20px; color: #2c3e50;">✏️ עריכת ביקור - ${locationName}</h3>
+					
+					<form id="editVisitForm">
+						<div class="form-group">
+							<label>תאריך:</label>
+							<input type="date" id="editVisitDate" value="${visit.date}" required>
+						</div>
+						
+						<div class="form-group">
+							<label>סוג טיפול:</label>
+							<select id="editVisitType">
+								<option value="מלא" ${visit.visit_type === 'מלא' ? 'selected' : ''}>מלא</option>
+								<option value="חלקי" ${visit.visit_type === 'חלקי' ? 'selected' : ''}>חלקי</option>
+								<option value="ביקורת" ${visit.visit_type === 'ביקורת' ? 'selected' : ''}>ביקורת</option>
+							</select>
+						</div>
+						
+						<div class="form-group">
+							<label>עבודה שבוצעה:</label>
+							<textarea id="editWorkDone" rows="3">${visit.work_done || ''}</textarea>
+						</div>
+						
+						<div class="form-group">
+							<label>משך זמן (דקות):</label>
+							<input type="number" id="editDuration" value="${visit.duration_minutes || 0}">
+						</div>
+						
+						<div class="form-group">
+							<label>שעת התחלה:</label>
+							<input type="time" id="editStartTime" value="${visit.start_time || ''}">
+						</div>
+						
+						<div class="form-group">
+							<label>סכום (₪):</label>
+							<input type="number" step="0.01" id="editAmount" value="${visit.amount || 0}">
+						</div>
+						
+						<div class="form-group">
+							<label>הוצאות (₪):</label>
+							<input type="number" step="0.01" id="editExpense" value="${visit.expense || 0}">
+						</div>
+						
+						<div class="form-group">
+							<label>סטטוס תשלום:</label>
+							<select id="editPaid">
+								<option value="כן" ${visit.paid === 'כן' ? 'selected' : ''}>שולם</option>
+								<option value="לא" ${visit.paid === 'לא' ? 'selected' : ''}>לא שולם</option>
+							</select>
+						</div>
+						
+						<div class="form-group">
+							<label>הערות:</label>
+							<textarea id="editNotes" rows="3">${visit.notes || ''}</textarea>
+						</div>
+						
+						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
+							<button type="button" onclick="saveEditedVisit(${visitId})" class="btn btn-success">
+								💾 שמור שינויים
+							</button>
+							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+								❌ ביטול
+							</button>
+						</div>
+					</form>
+				</div>
+			`;
+			
+			// הצג את המודל
+			showEditModal(editModalHTML);
+		}
+
+		function showEditModal(content) {
+			// הסר מודל קיים אם יש
+			const existingModal = document.getElementById('editModal');
+			if (existingModal) {
+				existingModal.remove();
+			}
+			
+			// צור מודל חדש
+			const modal = document.createElement('div');
+			modal.id = 'editModal';
+			modal.style.cssText = `
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0,0,0,0.5);
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				z-index: 1000;
+			`;
+			
+			modal.innerHTML = content;
+			document.body.appendChild(modal);
+			
+			// סגירה בלחיצה על הרקע
+			modal.addEventListener('click', (e) => {
+				if (e.target === modal) {
+					closeEditModal();
+				}
+			});
+		}
+
+		function closeEditModal() {
+			const modal = document.getElementById('editModal');
+			if (modal) {
+				modal.remove();
+			}
+		}
+
+		async function saveEditedVisit(visitId) {
+			const visitIndex = visits.findIndex(v => v.ID == visitId);
+			if (visitIndex === -1) {
+				showToast('ביקור לא נמצא', 'error');
+				return;
+			}
+			
+			try {
+				// עדכן את הביקור במערך המקומי
+				const updatedVisit = {
+					...visits[visitIndex], // שמור נתונים קיימים
+					date: document.getElementById('editVisitDate').value,
+					visit_type: document.getElementById('editVisitType').value,
+					work_done: document.getElementById('editWorkDone').value,
+					duration_minutes: parseInt(document.getElementById('editDuration').value) || 0,
+					start_time: document.getElementById('editStartTime').value,
+					amount: parseFloat(document.getElementById('editAmount').value) || 0,
+					expense: parseFloat(document.getElementById('editExpense').value) || 0,
+					paid: document.getElementById('editPaid').value,
+					notes: document.getElementById('editNotes').value
+				};
+				
+				visits[visitIndex] = updatedVisit;
+				
+				// שמור מקומית
+				saveToLocalStorage();
+				
+				// שמור לענן אם מחובר
+				if (access_token && SPREADSHEET_ID) {
+					await updateVisitInCloud(updatedVisit);
+					showToast('ביקור עודכן בהצלחה במערכת ובענן!', 'success');
+				} else {
+					showToast('ביקור עודכן מקומית, אך לא נשמר לענן', 'warning');
+				}
+				
+				// עדכן תצוגה
+				applyVisitFilters();
+				closeEditModal();
+				
+			} catch (error) {
+				console.error('Error updating visit:', error);
+				showToast('שגיאה בעדכון הביקור', 'error');
+			}
+		}
+
+		// פונקציה לעדכון הביקור בענן
+		async function updateVisitInCloud(updatedVisit) {
+			if (!await validateToken()) return;
+			
+			try {
+				// קריאת כל הנתונים מהענן
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Visits!A:N'
+				});
+				
+				const rows = response.result.values || [];
+				
+				// מציאת השורה לעדכון
+				let rowToUpdate = -1;
+				for (let i = 1; i < rows.length; i++) {
+					if (rows[i][0] == updatedVisit.ID) {
+						rowToUpdate = i + 1; // +1 כי Google Sheets מתחיל מ-1
+						break;
+					}
+				}
+				
+				if (rowToUpdate > 0) {
+					// עדכון השורה
+					const updatedRow = [
+						updatedVisit.ID,
+						updatedVisit.date,
+						updatedVisit.location_id,
+						updatedVisit.location_name || '',
+						updatedVisit.visit_type,
+						updatedVisit.work_done,
+						updatedVisit.duration_minutes,
+						updatedVisit.num_workers || 1,
+						updatedVisit.start_time,
+						updatedVisit.end_time || '',
+						updatedVisit.amount,
+						updatedVisit.expense,
+						updatedVisit.paid,
+						updatedVisit.notes
+					];
+					
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: `Visits!A${rowToUpdate}:N${rowToUpdate}`,
+						valueInputOption: 'USER_ENTERED',
+						resource: {
+							values: [updatedRow]
+						}
+					});
+					
+					console.log(`✅ Updated visit ${updatedVisit.ID} in cloud`);
+				}
+				
+			} catch (error) {
+				console.error('Error updating visit in cloud:', error);
+				throw error;
+			}
 		}
 
 		function deleteVisit(visitId) {
@@ -3629,7 +3855,7 @@
 						break;
 					case 'Visits':
 						headers = [
-							'ID', 'date', 'location_id', 'visit_type', 'work_done', 
+							'ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 
 							'duration_minutes', 'num_workers', 'start_time', 'end_time', 
 							'amount', 'expense', 'paid', 'notes'
 						];
@@ -4401,15 +4627,15 @@
 					showToast(`שומר ${visits.length} ביקורים בבת אחת...`, 'info', 2000);
 					
 					const visitValues = visits.map(visit => [
-						visit.ID, visit.date, visit.location_id, visit.visit_type,
+						visit.ID, visit.date, visit.location_id, visit.location_name, visit.visit_type, // ← location_name הוא עמודה D
 						visit.work_done, visit.duration_minutes, visit.num_workers || 1,
 						visit.start_time, visit.end_time, visit.amount, visit.expense || 0,
 						visit.paid, visit.notes
 					]);
-					
+
 					await gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: SPREADSHEET_ID,
-						range: `Visits!A2:M${visitValues.length + 1}`,
+						range: `Visits!A2:N${visitValues.length + 1}`, // ← שנה מ-M ל-N
 						valueInputOption: 'USER_ENTERED',
 						resource: { values: visitValues }
 					});
@@ -5078,6 +5304,7 @@
 								ID: generateID(),
 								date: visitDate,
 								location_id: existingCustomer.ID,
+								location_name: customerName, // ← הוספנו את השם!
 								visit_type: row[5] || 'regular',
 								work_done: workDone,
 								duration_minutes: (parseFloat(row[8]) || 0) * 60,
@@ -5253,16 +5480,16 @@
 			if (!visitsArray.length) return true;
 			
 			try {
-				// הסרנו את location_name שלא קיים בביקורים
+				// הסרנו את location_name שלא קיים בביקורים - אופס, זה כן צריך להיות!
 				const values = visitsArray.map(visit => [
-					visit.ID, visit.date, visit.location_id, visit.visit_type, visit.work_done,
+					visit.ID, visit.date, visit.location_id, visit.location_name, visit.visit_type, visit.work_done,
 					visit.duration_minutes, visit.num_workers, visit.start_time, visit.end_time,
 					visit.amount, visit.expense, visit.paid, visit.notes
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Visits!A2:M2',
+					range: 'Visits!A2:N2', // ← עכשיו N כי יש עמודה נוספת
 					valueInputOption: 'USER_ENTERED',
 					resource: { values }
 				});
