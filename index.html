@@ -680,6 +680,19 @@
 			opacity: 0.8;
 		}
 
+		#statusText {
+			transition: all 0.3s ease;
+			padding: 8px 12px;
+			border-radius: 6px;
+			font-size: 14px;
+		}
+
+		#statusText.connected {
+			background: linear-gradient(45deg, #28a745, #20c997);
+			color: white;
+			box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+		}
+
 	</style>
    
 </head>
@@ -700,6 +713,7 @@
 					טען מהענן
 				</button>
 				<span id="statusText">לא מחובר</span>
+				<div id="lastSaved" style="font-size: 12px; color: #666; margin-top: 4px;"></div>
 			</div>
             <nav class="nav-buttons">
 				<button onclick="showSection('planning')" class="nav-btn active">תכנון יומי</button>
@@ -708,7 +722,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -1258,47 +1272,7 @@
 			}
 		}
 
-		// תחליף את הפונקציה connectToGoogleSheets הנוכחית
-		async function connectToGoogleSheets() {
-			try {
-				console.log('Connecting to Google Sheets...');
-				showToast('מתחבר ל-Google Sheets...', 'info');
-				
-				const tokenClient = google.accounts.oauth2.initTokenClient({
-					client_id: CLIENT_ID,
-					scope: SCOPES,
-					callback: async (response) => {
-						access_token = response.access_token;
-						
-						// עדכון סטטוס
-						document.getElementById('statusText').textContent = 'מחובר';
-						document.getElementById('statusText').classList.add('connected');
-						document.getElementById('saveBtn').disabled = false;
-						document.getElementById('loadBtn').disabled = false;
-						
-						showToast('התחברת בהצלחה ל-Google Sheets!', 'success');
-						
-						// מציאה או יצירת הטבלה הראשית
-						await findOrCreateMainSpreadsheet();
-						
-						// טעינה אוטומטית של נתונים אם קיימים
-						if (SPREADSHEET_ID) {
-							try {
-								await loadAllDataFromSheets();
-							} catch (error) {
-								console.log('Could not auto-load data:', error);
-							}
-						}
-					},
-				});
-				
-				tokenClient.requestAccessToken();
-				
-			} catch (error) {
-				console.error('Error connecting to Google Sheets:', error);
-				showToast('שגיאה בחיבור ל-Google Sheets', 'error');
-			}
-		}
+		
 
 		// תוספה - טעינת מיקומים (גינות)
 		async function loadLocationsFromSheets() {
@@ -1515,88 +1489,7 @@
 			}
 		}
 
-		// תוספה - שמירת כל הנתונים לענן
-		async function saveAllToSheets() {
-			if (!await validateToken()) {
-				showToast('חיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
-				return;
-			}
-			
-			try {
-				showLoading('שומר נתונים לענן...');
-				
-				let savedCount = 0;
-				const totalItems = locations.length + visits.length + receipts.length;
-				
-				// שמירת מיקומים עם מעקב
-				showToast(`שומר ${locations.length} מיקומים לענן...`, 'info', 2000);
-				for (let i = 0; i < locations.length; i++) {
-					await saveLocationToSheets(locations[i]);
-					savedCount++;
-					
-					if (i % 10 === 0 && i > 0) {
-						showToast(`נשמרו ${savedCount}/${totalItems} רשומות...`, 'info', 1000);
-					}
-					
-					if (i < locations.length - 1) {
-						await new Promise(resolve => setTimeout(resolve, 500));
-					}
-				}
-				
-				// המתנה לפני ביקורים
-				await new Promise(resolve => setTimeout(resolve, 1000));
-				
-				// שמירת ביקורים עם מעקב
-				showToast(`שומר ${visits.length} ביקורים לענן...`, 'info', 2000);
-				for (let i = 0; i < visits.length; i++) {
-					await saveVisitToSheets(visits[i]);
-					savedCount++;
-					
-					if (i % 10 === 0 && i > 0) {
-						showToast(`נשמרו ${savedCount}/${totalItems} רשומות...`, 'info', 1000);
-					}
-					
-					if (i < visits.length - 1) {
-						await new Promise(resolve => setTimeout(resolve, 500));
-					}
-				}
-				
-				// המתנה לפני קבלות
-				await new Promise(resolve => setTimeout(resolve, 1000));
-				
-				// שמירת קבלות עם מעקב
-				showToast(`שומר ${receipts.length} קבלות לענן...`, 'info', 2000);
-				for (let i = 0; i < receipts.length; i++) {
-					await saveReceiptToSheets(receipts[i]);
-					savedCount++;
-					
-					if (i % 5 === 0 && i > 0) {
-						showToast(`נשמרו ${savedCount}/${totalItems} רשומות...`, 'info', 1000);
-					}
-					
-					if (i < receipts.length - 1) {
-						await new Promise(resolve => setTimeout(resolve, 500));
-					}
-				}
-				
-				showToast(`🎉 שמירה הושלמה! 
-		✅ ${savedCount} רשומות נשמרו לענן
-		📊 כל הנתונים מסונכרנים`, 'success', 5000);
-				
-			} catch (error) {
-				console.error('Error saving all data:', error);
-				
-				if (error.status === 429) {
-					showToast('יותר מדי בקשות - נסה שוב בעוד כמה דקות', 'warning');
-				} else {
-					showToast('שגיאה בשמירה לענן', 'error');
-				}
-			} finally {
-				hideLoading();
-			}
-		}
-
-
+		
 		// תוספה - טעינת כל הנתונים מהענן
 		async function loadAllFromSheets() {
 			try {
@@ -2358,57 +2251,6 @@
 			showEditModal(editModalHTML);
 		}
 
-		// פונקציה לשמירת שינויי לקוח
-		function saveEditedLocation(locationId) {
-			console.log(`✅ saveEditedLocation ('${locationId}')`);
-			const locationIndex = locations.findIndex(g => g.ID == locationId);
-			if (locationIndex === -1) {
-				showToast('לקוח לא נמצא', 'error');
-				return;
-			}
-			
-			try {
-				// עדכן את הלקוח במערך המקומי
-				const updatedLocation = {
-					...locations[locationIndex], // שמור נתונים קיימים
-					name: document.getElementById('editLocationName').value,
-					full_address: document.getElementById('editLocationAddress').value,
-					neighborhood: document.getElementById('editLocationNeighborhood').value,
-					city: document.getElementById('editLocationCity').value,
-					contact_person: document.getElementById('editLocationContact').value,
-					phone: document.getElementById('editLocationPhone').value,
-					allowed_day: document.getElementById('editLocationDay').value,
-					interval_weeks: parseInt(document.getElementById('editLocationInterval').value) || 4,
-					base_amount: parseFloat(document.getElementById('editLocationAmount').value) || 0,
-					active: document.getElementById('editLocationActive').value,
-					next_visit: document.getElementById('editLocationNextVisit').value,
-					notes: document.getElementById('editLocationNotes').value
-				};
-				
-				locations[locationIndex] = updatedLocation;
-				
-				// שמור מקומית
-				saveToLocalStorage();
-				
-				// שמור לענן אם מחובר
-				if (access_token && SPREADSHEET_ID) {
-					updateLocationInCloud(updatedLocation);
-					showToast('לקוח עודכן בהצלחה במערכת ובענן!', 'success');
-				} else {
-					showToast('לקוח עודכן מקומית בהצלחה!', 'success');
-				}
-				
-				// עדכן תצוגה
-				loadLocationsTable();
-				loadLocationsForSelect();
-				closeEditModal();
-				
-			} catch (error) {
-				console.error('Error updating location:', error);
-				showToast('שגיאה בעדכון הלקוח', 'error');
-			}
-		}
-
 		// פונקציה לעדכון הלקוח בענן (אופציונלית)
 		async function updateLocationInCloud(updatedLocation) {
 			if (!await validateToken()) return;
@@ -2707,55 +2549,7 @@
 			showEditModal(editModalHTML);
 		}
 
-		// פונקציה לשמירת שינויי קבלה
-		function saveEditedReceipt(receiptId) {
-			console.log(`✅ saveEditedReceipt ('${receiptId}')`);
-			const receiptIndex = receipts.findIndex(r => r.ID == receiptId);
-			if (receiptIndex === -1) {
-				showToast('קבלה לא נמצאה', 'error');
-				return;
-			}
-			
-			try {
-				const locationId = document.getElementById('editReceiptLocation').value;
-				const location = locations.find(g => g.ID == locationId);
-				
-				// עדכן את הקבלה במערך המקומי
-				const updatedReceipt = {
-					...receipts[receiptIndex], // שמור נתונים קיימים
-					book_number: document.getElementById('editReceiptBook').value,
-					receipt_number: document.getElementById('editReceiptNumber').value,
-					date: document.getElementById('editReceiptDate').value,
-					location_id: locationId,
-					location_name: location ? location.name : '',
-					amount: parseFloat(document.getElementById('editReceiptAmount').value) || 0,
-					payment_type: document.getElementById('editReceiptPaymentType').value,
-					notes: document.getElementById('editReceiptNotes').value
-				};
-				
-				receipts[receiptIndex] = updatedReceipt;
-				
-				// שמור מקומית
-				saveToLocalStorage();
-				
-				// שמור לענן אם מחובר
-				if (access_token && SPREADSHEET_ID) {
-					updateReceiptInCloud(updatedReceipt);
-					showToast('קבלה עודכנה בהצלחה במערכת ובענן!', 'success');
-				} else {
-					showToast('קבלה עודכנה מקומית בהצלחה!', 'success');
-				}
-				
-				// עדכן תצוגה
-				loadReceiptsTable();
-				closeEditModal();
-				
-			} catch (error) {
-				console.error('Error updating receipt:', error);
-				showToast('שגיאה בעדכון הקבלה', 'error');
-			}
-		}
-
+		
 		// פונקציה לעדכון הקבלה בענן (אופציונלית)
 		async function updateReceiptInCloud(updatedReceipt) {
 			if (!await validateToken()) return;
@@ -3699,52 +3493,7 @@
 			}
 		}
 
-		async function saveEditedVisit(visitId) {
-			console.log(`✅ saveEditedVisit ('${visitId}') `);
-			const visitIndex = visits.findIndex(v => v.ID == visitId);
-			if (visitIndex === -1) {
-				showToast('ביקור לא נמצא', 'error');
-				return;
-			}
-			
-			try {
-				// עדכן את הביקור במערך המקומי
-				const updatedVisit = {
-					...visits[visitIndex], // שמור נתונים קיימים
-					date: document.getElementById('editVisitDate').value,
-					visit_type: document.getElementById('editVisitType').value,
-					work_done: document.getElementById('editWorkDone').value,
-					duration_minutes: parseInt(document.getElementById('editDuration').value) || 0,
-					start_time: document.getElementById('editStartTime').value,
-					amount: parseFloat(document.getElementById('editAmount').value) || 0,
-					expense: parseFloat(document.getElementById('editExpense').value) || 0,
-					paid: document.getElementById('editPaid').value,
-					notes: document.getElementById('editNotes').value
-				};
-				
-				visits[visitIndex] = updatedVisit;
-				
-				// שמור מקומית
-				saveToLocalStorage();
-				
-				// שמור לענן אם מחובר
-				if (access_token && SPREADSHEET_ID) {
-					await updateVisitInCloud(updatedVisit);
-					showToast('ביקור עודכן בהצלחה במערכת ובענן!', 'success');
-				} else {
-					showToast('ביקור עודכן מקומית, אך לא נשמר לענן', 'warning');
-				}
-				
-				// עדכן תצוגה
-				applyVisitFilters();
-				closeEditModal();
-				
-			} catch (error) {
-				console.error('Error updating visit:', error);
-				showToast('שגיאה בעדכון הביקור', 'error');
-			}
-		}
-
+		
 		// פונקציה לעדכון הביקור בענן
 		async function updateVisitInCloud(updatedVisit) {
 			if (!await validateToken()) return;
@@ -3838,30 +3587,6 @@
 			}
 		}
 	   
-	   // תוספה - בדיקת תקינות אסימון
-		async function validateToken() {
-			if (!access_token || !gapi.client) {
-				return false;
-			}
-			
-			try {
-				// בדיקה פשוטה - נסה לקרוא מהטבלה
-				await gapi.client.sheets.spreadsheets.get({
-					spreadsheetId: SPREADSHEET_ID || 'test'
-				});
-				return true;
-			} catch (error) {
-				if (error.status === 401) {
-					console.log('Google token expired');
-					access_token = null;
-					document.getElementById('statusText').textContent = '🔓 נדרש חיבור מחדש';
-					document.getElementById('statusText').classList.remove('connected');
-					showToast('⚠️ החיבור לגוגל פג - התחבר מחדש', 'warning');
-					return false;
-				}
-				return false;
-			}
-		}
 	   
 	   // תוספה - בדיקה תקופתית של חיבור
 		setInterval(async () => {
@@ -5827,6 +5552,401 @@
 				return false;
 			}
 		}
+
+	   
+	   ////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	   
+	   // החלף את validateToken בפונקציה זו:
+		async function validateToken() {
+			if (!access_token || !gapi.client) {
+				updateCloudStatus('🔐 לא מחובר לענן', 'נותק');
+				return false;
+			}
+			
+			try {
+				// בדיקה פשוטה - נסה לקרוא מהטבלה
+				await gapi.client.sheets.spreadsheets.get({
+					spreadsheetId: SPREADSHEET_ID || 'test'
+				});
+				return true;
+			} catch (error) {
+				if (error.status === 401) {
+					console.log('Google token expired');
+					access_token = null;
+					updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
+					document.getElementById('statusText').classList.remove('connected');
+					document.getElementById('saveBtn').disabled = true;
+					document.getElementById('loadBtn').disabled = true;
+					showToast('⚠️ החיבור לגוגל פג - התחבר מחדש', 'warning');
+					return false;
+				}
+				updateCloudStatus('⚠️ בעיית חיבור לענן', 'שגיאה');
+				return false;
+			}
+		}
+
+		// החלף את saveEditedLocation בפונקציה זו:
+		function saveEditedLocation(locationId) {
+			console.log(`✅ saveEditedLocation ('${locationId}')`);
+			const locationIndex = locations.findIndex(g => g.ID == locationId);
+			if (locationIndex === -1) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			try {
+				// עדכן את הלקוח במערך המקומי
+				const updatedLocation = {
+					...locations[locationIndex], // שמור נתונים קיימים
+					name: document.getElementById('editLocationName').value,
+					full_address: document.getElementById('editLocationAddress').value,
+					neighborhood: document.getElementById('editLocationNeighborhood').value,
+					city: document.getElementById('editLocationCity').value,
+					contact_person: document.getElementById('editLocationContact').value,
+					phone: document.getElementById('editLocationPhone').value,
+					allowed_day: document.getElementById('editLocationDay').value,
+					interval_weeks: parseInt(document.getElementById('editLocationInterval').value) || 4,
+					base_amount: parseFloat(document.getElementById('editLocationAmount').value) || 0,
+					active: document.getElementById('editLocationActive').value,
+					next_visit: document.getElementById('editLocationNextVisit').value,
+					notes: document.getElementById('editLocationNotes').value
+				};
+				
+				locations[locationIndex] = updatedLocation;
+				
+				// שמור מקומית תמיד
+				saveToLocalStorage();
+				updateCloudStatus('💾 שומר...', 'מעדכן');
+				
+				// נסה לשמור בענן
+				if (access_token && SPREADSHEET_ID) {
+					// שמור בענן עם בדיקת חיבור
+					updateLocationInCloud(updatedLocation).then(() => {
+						updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
+						showToast('לקוח עודכן בהצלחה במערכת ובענן!', 'success');
+					}).catch(error => {
+						if (error.status === 401) {
+							updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
+							showToast('⚠️ החיבור לגוגל פג - הלקוח נשמר מקומית בלבד', 'warning');
+							access_token = null;
+							document.getElementById('saveBtn').disabled = true;
+							document.getElementById('loadBtn').disabled = true;
+						} else {
+							updateCloudStatus('⚠️ שגיאה בשמירה', 'שגיאה');
+							showToast('⚠️ הלקוח נשמר מקומית, אבל לא הצליח לשמור בענן', 'warning');
+						}
+					});
+				} else {
+					updateCloudStatus('🔐 שינויים לא נשמרו בענן', 'מקומי');
+					showToast('🔐 לקוח נשמר מקומית - התחבר לענן לשמירה מלאה', 'warning');
+				}
+				
+				// עדכן תצוגה
+				loadLocationsTable();
+				loadLocationsForSelect();
+				closeEditModal();
+				
+			} catch (error) {
+				console.error('Error updating location:', error);
+				updateCloudStatus('❌ שגיאה במערכת', 'שגיאה');
+				showToast('שגיאה בעדכון הלקוח', 'error');
+			}
+		}
+
+		// החלף את saveEditedReceipt בפונקציה זו:
+		function saveEditedReceipt(receiptId) {
+			console.log(`✅ saveEditedReceipt ('${receiptId}')`);
+			const receiptIndex = receipts.findIndex(r => r.ID == receiptId);
+			if (receiptIndex === -1) {
+				showToast('קבלה לא נמצאה', 'error');
+				return;
+			}
+			
+			try {
+				const locationId = document.getElementById('editReceiptLocation').value;
+				const location = locations.find(g => g.ID == locationId);
+				
+				// עדכן את הקבלה במערך המקומי
+				const updatedReceipt = {
+					...receipts[receiptIndex], // שמור נתונים קיימים
+					book_number: document.getElementById('editReceiptBook').value,
+					receipt_number: document.getElementById('editReceiptNumber').value,
+					date: document.getElementById('editReceiptDate').value,
+					location_id: locationId,
+					location_name: location ? location.name : '',
+					amount: parseFloat(document.getElementById('editReceiptAmount').value) || 0,
+					payment_type: document.getElementById('editReceiptPaymentType').value,
+					notes: document.getElementById('editReceiptNotes').value
+				};
+				
+				receipts[receiptIndex] = updatedReceipt;
+				
+				// שמור מקומית תמיד
+				saveToLocalStorage();
+				updateCloudStatus('💾 שומר קבלה...', 'מעדכן');
+				
+				// נסה לשמור בענן
+				if (access_token && SPREADSHEET_ID) {
+					updateReceiptInCloud(updatedReceipt).then(() => {
+						updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
+						showToast('קבלה עודכנה בהצלחה במערכת ובענן!', 'success');
+					}).catch(error => {
+						if (error.status === 401) {
+							updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
+							showToast('⚠️ החיבור לגוגל פג - הקבלה נשמרה מקומית בלבד', 'warning');
+							access_token = null;
+						} else {
+							updateCloudStatus('⚠️ שגיאה בשמירה', 'שגיאה');
+							showToast('⚠️ הקבלה נשמרה מקומית, אבל לא הצליחה לשמור בענן', 'warning');
+						}
+					});
+				} else {
+					updateCloudStatus('🔐 שינויים לא נשמרו בענן', 'מקומי');
+					showToast('🔐 קבלה נשמרה מקומית - התחבר לענן לשמירה מלאה', 'warning');
+				}
+				
+				// עדכן תצוגה
+				loadReceiptsTable();
+				closeEditModal();
+				
+			} catch (error) {
+				console.error('Error updating receipt:', error);
+				updateCloudStatus('❌ שגיאה במערכת', 'שגיאה');
+				showToast('שגיאה בעדכון הקבלה', 'error');
+			}
+		}
+
+		// החלף את saveEditedVisit בפונקציה זו:
+		async function saveEditedVisit(visitId) {
+			console.log(`✅ saveEditedVisit ('${visitId}')`);
+			const visitIndex = visits.findIndex(v => v.ID == visitId);
+			if (visitIndex === -1) {
+				showToast('ביקור לא נמצא', 'error');
+				return;
+			}
+			
+			try {
+				// עדכן את הביקור במערך המקומי
+				const updatedVisit = {
+					...visits[visitIndex], // שמור נתונים קיימים
+					date: document.getElementById('editVisitDate').value,
+					visit_type: document.getElementById('editVisitType').value,
+					work_done: document.getElementById('editWorkDone').value,
+					duration_minutes: parseInt(document.getElementById('editDuration').value) || 0,
+					start_time: document.getElementById('editStartTime').value,
+					amount: parseFloat(document.getElementById('editAmount').value) || 0,
+					expense: parseFloat(document.getElementById('editExpense').value) || 0,
+					paid: document.getElementById('editPaid').value,
+					notes: document.getElementById('editNotes').value
+				};
+				
+				visits[visitIndex] = updatedVisit;
+				
+				// שמור מקומית תמיד
+				saveToLocalStorage();
+				updateCloudStatus('💾 שומר ביקור...', 'מעדכן');
+				
+				// נסה לשמור בענן
+				if (access_token && SPREADSHEET_ID) {
+					try {
+						await updateVisitInCloud(updatedVisit);
+						updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
+						showToast('ביקור עודכן בהצלחה במערכת ובענן!', 'success');
+					} catch (error) {
+						if (error.status === 401) {
+							updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
+							showToast('⚠️ החיבור לגוגל פג - הביקור נשמר מקומית בלבד', 'warning');
+							access_token = null;
+						} else {
+							updateCloudStatus('⚠️ שגיאה בשמירה', 'שגיאה');
+							showToast('⚠️ הביקור נשמר מקומית, אבל לא הצליח לשמור בענן', 'warning');
+						}
+					}
+				} else {
+					updateCloudStatus('🔐 שינויים לא נשמרו בענן', 'מקומי');
+					showToast('🔐 ביקור נשמר מקומית - התחבר לענן לשמירה מלאה', 'warning');
+				}
+				
+				// עדכן תצוגה
+				applyVisitFilters();
+				closeEditModal();
+				
+			} catch (error) {
+				console.error('Error updating visit:', error);
+				updateCloudStatus('❌ שגיאה במערכת', 'שגיאה');
+				showToast('שגיאה בעדכון הביקור', 'error');
+			}
+		}
+
+		// החלף את connectToGoogleSheets בפונקציה זו:
+		async function connectToGoogleSheets() {
+			try {
+				console.log('Connecting to Google Sheets...');
+				updateCloudStatus('🔗 מתחבר...', 'מתחבר');
+				showToast('מתחבר ל-Google Sheets...', 'info');
+				
+				const tokenClient = google.accounts.oauth2.initTokenClient({
+					client_id: CLIENT_ID,
+					scope: SCOPES,
+					callback: async (response) => {
+						access_token = response.access_token;
+						
+						// עדכון סטטוס
+						updateCloudStatus('✅ מחובר ומסונכרן', 'התחבר');
+						document.getElementById('statusText').classList.add('connected');
+						document.getElementById('saveBtn').disabled = false;
+						document.getElementById('loadBtn').disabled = false;
+						
+						showToast('התחברת בהצלחה ל-Google Sheets!', 'success');
+						
+						// מציאה או יצירת הטבלה הראשית
+						await findOrCreateMainSpreadsheet();
+						
+						// טעינה אוטומטית של נתונים אם קיימים
+						if (SPREADSHEET_ID) {
+							try {
+								await loadAllDataFromSheets();
+							} catch (error) {
+								console.log('Could not auto-load data:', error);
+							}
+						}
+					},
+				});
+				
+				tokenClient.requestAccessToken();
+				
+			} catch (error) {
+				console.error('Error connecting to Google Sheets:', error);
+				updateCloudStatus('❌ שגיאה בחיבור', 'שגיאה');
+				showToast('שגיאה בחיבור ל-Google Sheets', 'error');
+			}
+		}
+
+		// החלף את saveAllToSheets בפונקציה זו:
+		async function saveAllToSheets() {
+			if (!await validateToken()) {
+				showToast('🔐 אין חיבור לגוגל - שמירה מקומית בלבד', 'warning');
+				return;
+			}
+			
+			try {
+				updateCloudStatus('💾 שומר נתונים לענן...', 'מעדכן');
+				showLoading('שומר נתונים לענן...');
+				
+				let savedCount = 0;
+				const totalItems = locations.length + visits.length + receipts.length;
+				
+				// שמירת מיקומים עם מעקב
+				if (locations.length > 0) {
+					showToast(`שומר ${locations.length} מיקומים לענן...`, 'info', 2000);
+					for (let i = 0; i < locations.length; i++) {
+						await saveLocationToSheets(locations[i]);
+						savedCount++;
+						
+						if (i % 5 === 0 && i > 0) {
+							updateCloudStatus(`💾 שומר ${savedCount}/${totalItems}...`, 'מעדכן');
+						}
+						
+						if (i < locations.length - 1) {
+							await new Promise(resolve => setTimeout(resolve, 300));
+						}
+					}
+				}
+				
+				// המתנה לפני ביקורים
+				if (visits.length > 0) {
+					showToast(`שומר ${visits.length} ביקורים לענן...`, 'info', 2000);
+					await new Promise(resolve => setTimeout(resolve, 1000));
+					
+					for (let i = 0; i < visits.length; i++) {
+						await saveVisitToSheets(visits[i]);
+						savedCount++;
+						
+						if (i % 10 === 0 && i > 0) {
+							updateCloudStatus(`💾 שומר ${savedCount}/${totalItems}...`, 'מעדכן');
+						}
+						
+						if (i < visits.length - 1) {
+							await new Promise(resolve => setTimeout(resolve, 200));
+						}
+					}
+				}
+				
+				// שמירת קבלות
+				if (receipts.length > 0) {
+					showToast(`שומר ${receipts.length} קבלות לענן...`, 'info', 2000);
+					await new Promise(resolve => setTimeout(resolve, 500));
+					
+					for (let i = 0; i < receipts.length; i++) {
+						await saveReceiptToSheets(receipts[i]);
+						savedCount++;
+						
+						if (i % 10 === 0 && i > 0) {
+							updateCloudStatus(`💾 שומר ${savedCount}/${totalItems}...`, 'מעדכן');
+						}
+					}
+				}
+				
+				hideLoading();
+				updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
+				showToast(`🎉 כל הנתונים נשמרו בענן בהצלחה!
+				📍 ${locations.length} מיקומים
+				🏠 ${visits.length} ביקורים  
+				🧾 ${receipts.length} קבלות`, 'success', 5000);
+				
+			} catch (error) {
+				console.error('Error saving all data to cloud:', error);
+				hideLoading();
+				
+				if (error.status === 401) {
+					access_token = null;
+					updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
+					showToast('⚠️ החיבור פג במהלך השמירה - התחבר מחדש', 'warning');
+				} else {
+					updateCloudStatus('⚠️ שגיאה בשמירה לענן', 'שגיאה');
+					showToast('❌ שגיאה בשמירה לענן - הנתונים נשמרו מקומית', 'error');
+				}
+			}
+		}
+
+		// הוסף את פונקציית updateCloudStatus החדשה:
+		function updateCloudStatus(status, lastAction) {
+			const statusElement = document.getElementById('statusText');
+			const lastSavedElement = document.getElementById('lastSaved');
+			
+			if (statusElement) {
+				statusElement.textContent = status;
+				
+				// עדכון צבעים לפי סטטוס
+				if (status.includes('מחובר') || status.includes('מסונכרן')) {
+					statusElement.style.color = '#28a745'; // ירוק
+					statusElement.style.fontWeight = 'bold';
+					statusElement.classList.add('connected');
+				} else if (status.includes('שומר') || status.includes('מעדכן')) {
+					statusElement.style.color = '#ffc107'; // צהוב
+					statusElement.style.fontWeight = 'bold';
+				} else if (status.includes('שגיאה')) {
+					statusElement.style.color = '#dc3545'; // אדום
+					statusElement.style.fontWeight = 'bold';
+					statusElement.classList.remove('connected');
+				} else if (status.includes('נדרש חיבור')) {
+					statusElement.style.color = '#fd7e14'; // כתום
+					statusElement.style.fontWeight = 'bold';
+					statusElement.classList.remove('connected');
+				}
+			}
+			
+			// עדכון זמן פעולה אחרונה
+			if (lastSavedElement && lastAction) {
+				lastSavedElement.textContent = `${lastAction}: ${new Date().toLocaleTimeString('he-IL')}`;
+			}
+		}
+	   
+	   
+	   
+	   //////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	   
+	   
 	   
    </script>
 </body>
