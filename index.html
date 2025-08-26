@@ -708,7 +708,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -2023,11 +2023,12 @@
 		async function saveVisit(visitData) {
 			try {
 				// For now, just add to local array
-				const newVisit= {
+				const newVisit = {
 					ID: generateID(),
-					...visitData,
-					paid: 'לא',
-					notes: ''
+					location_name: location ? location.name : '',
+					paid: visitData.paid || 'לא',     // משתמש בערך מהטופס
+					notes: visitData.notes || '',     // משתמש בערך מהטופס
+					...visitData                      // שאר הנתונים
 				};
 				
 				// בדיקת תקינות
@@ -3332,10 +3333,11 @@
 						</div>
 						
 						<div class="form-group">
-							<label>סטטוס תשלום:</label>
-							<select id="editPaid">
-								<option value="כן" ${visit.paid === 'כן' ? 'selected' : ''}>שולם</option>
-								<option value="לא" ${visit.paid === 'לא' ? 'selected' : ''}>לא שולם</option>
+							<label for="visitPaid">סטטוס תשלום:</label>
+							<select id="visitPaid">
+								<option value="לא שולם">לא שולם</option>
+								<option value="שולם">שולם</option>
+								<option value="ללא תשלום">ללא תשלום</option>
 							</select>
 						</div>
 						
