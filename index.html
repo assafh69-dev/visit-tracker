@@ -708,7 +708,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -2469,54 +2469,189 @@
            }
        }
 	   
-	   function editReceipt(receiptId) {
+	  function editReceipt(receiptId) {
+			console.log(`✅ editReceipt ('${receiptId}')`);
 			const receipt = receipts.find(r => r.ID == receiptId);
-			if (!receipt) return;
+			if (!receipt) {
+				showToast('קבלה לא נמצאה', 'error');
+				return;
+			}
 			
-			showAddReceiptForm();
+			// בניית אפשרויות הלקוחות
+			let locationOptions = '<option value="">בחר לקוח</option>';
+			locations.forEach(location => {
+				const selected = location.ID == receipt.location_id ? 'selected' : '';
+				locationOptions += `<option value="${location.ID}" ${selected}>${location.name} - ${location.full_address}</option>`;
+			});
 			
-			// Populate form with existing data
-			setTimeout(() => {
-				document.getElementById('receiptBook').value = receipt.book_number;
-				document.getElementById('receiptNumber').value = receipt.receipt_number;
-				document.getElementById('receiptDate').value = receipt.date;
-				document.getElementById('receiptLocation').value = receipt.location_id;
-				document.getElementById('receiptAmount').value = receipt.amount;
-				document.getElementById('receiptPaymentType').value = receipt.payment_type;
-				document.getElementById('receiptNotes').value = receipt.notes || '';
+			// צור חלון עריכה
+			const editModalHTML = `
+				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90vw; max-height: 80vh; overflow-y: auto;">
+					<h3 style="margin-bottom: 20px; color: #2c3e50;">🧾 עריכת קבלה</h3>
+					
+					<form id="editReceiptForm">
+						<div class="form-group">
+							<label>מספר פנקס:</label>
+							<input type="text" id="editReceiptBook" value="${receipt.book_number || ''}" required>
+						</div>
+						
+						<div class="form-group">
+							<label>מספר קבלה:</label>
+							<input type="text" id="editReceiptNumber" value="${receipt.receipt_number || ''}" required>
+						</div>
+						
+						<div class="form-group">
+							<label>תאריך:</label>
+							<input type="date" id="editReceiptDate" value="${receipt.date}" required>
+						</div>
+						
+						<div class="form-group">
+							<label>לקוח:</label>
+							<select id="editReceiptLocation" required>
+								${locationOptions}
+							</select>
+						</div>
+						
+						<div class="form-group">
+							<label>סכום (₪):</label>
+							<input type="number" step="0.01" id="editReceiptAmount" value="${receipt.amount || 0}" required>
+						</div>
+						
+						<div class="form-group">
+							<label>סוג תשלום:</label>
+							<select id="editReceiptPaymentType">
+								<option value="מזומן" ${receipt.payment_type === 'מזומן' ? 'selected' : ''}>מזומן</option>
+								<option value="העברה" ${receipt.payment_type === 'העברה' ? 'selected' : ''}>העברה</option>
+								<option value="צ׳ק" ${receipt.payment_type === 'צ׳ק' ? 'selected' : ''}>צ׳ק</option>
+								<option value="כרטיס אשראי" ${receipt.payment_type === 'כרטיס אשראי' ? 'selected' : ''}>כרטיס אשראי</option>
+							</select>
+						</div>
+						
+						<div class="form-group">
+							<label>הערות:</label>
+							<textarea id="editReceiptNotes" rows="3">${receipt.notes || ''}</textarea>
+						</div>
+						
+						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
+							<button type="button" onclick="saveEditedReceipt('${receiptId}')" class="btn btn-success">
+								💾 שמור שינויים
+							</button>
+							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+								❌ ביטול
+							</button>
+						</div>
+					</form>
+				</div>
+			`;
+			
+			// הצג את המודל
+			showEditModal(editModalHTML);
+		}
+
+		// פונקציה לשמירת שינויי קבלה
+		function saveEditedReceipt(receiptId) {
+			console.log(`✅ saveEditedReceipt ('${receiptId}')`);
+			const receiptIndex = receipts.findIndex(r => r.ID == receiptId);
+			if (receiptIndex === -1) {
+				showToast('קבלה לא נמצאה', 'error');
+				return;
+			}
+			
+			try {
+				const locationId = document.getElementById('editReceiptLocation').value;
+				const location = locations.find(g => g.ID == locationId);
 				
-				// Change form submission to update instead of add
-				document.getElementById('receiptForm').onsubmit = function(event) {
-					event.preventDefault();
-					updateReceipt(receiptId);
+				// עדכן את הקבלה במערך המקומי
+				const updatedReceipt = {
+					...receipts[receiptIndex], // שמור נתונים קיימים
+					book_number: document.getElementById('editReceiptBook').value,
+					receipt_number: document.getElementById('editReceiptNumber').value,
+					date: document.getElementById('editReceiptDate').value,
+					location_id: locationId,
+					location_name: location ? location.name : '',
+					amount: parseFloat(document.getElementById('editReceiptAmount').value) || 0,
+					payment_type: document.getElementById('editReceiptPaymentType').value,
+					notes: document.getElementById('editReceiptNotes').value
 				};
 				
-				document.querySelector('.modal-header h3').textContent = 'עריכת קבלה';
-			}, 100);
+				receipts[receiptIndex] = updatedReceipt;
+				
+				// שמור מקומית
+				saveToLocalStorage();
+				
+				// שמור לענן אם מחובר
+				if (access_token && SPREADSHEET_ID) {
+					updateReceiptInCloud(updatedReceipt);
+					showToast('קבלה עודכנה בהצלחה במערכת ובענן!', 'success');
+				} else {
+					showToast('קבלה עודכנה מקומית בהצלחה!', 'success');
+				}
+				
+				// עדכן תצוגה
+				loadReceiptsTable();
+				closeEditModal();
+				
+			} catch (error) {
+				console.error('Error updating receipt:', error);
+				showToast('שגיאה בעדכון הקבלה', 'error');
+			}
 		}
 
-		function updateReceipt(receiptId) {
-			const receipt = receipts.find(r => r.ID == receiptId);
-			if (!receipt) return;
+		// פונקציה לעדכון הקבלה בענן (אופציונלית)
+		async function updateReceiptInCloud(updatedReceipt) {
+			if (!await validateToken()) return;
 			
-			const locationId = document.getElementById('receiptLocation').value;
-			const location = locations.find(g => g.ID == locationId);
-			
-			receipt.book_number = document.getElementById('receiptBook').value;
-			receipt.receipt_number = document.getElementById('receiptNumber').value;
-			receipt.date = document.getElementById('receiptDate').value;
-			receipt.location_id = locationId;
-			receipt.location_name = location ? location.name : '';
-			receipt.amount = parseFloat(document.getElementById('receiptAmount').value);
-			receipt.payment_type = document.getElementById('receiptPaymentType').value;
-			receipt.notes = document.getElementById('receiptNotes').value;
-			
-			closeModal('receiptModal');
-			loadReceiptsTable();
-			saveToLocalStorage();
-			showSuccess('קבלה עודכנה בהצלחה!');
+			try {
+				// קריאת כל הנתונים מהענן
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Receipts!A:I'
+				});
+				
+				const rows = response.result.values || [];
+				
+				// מציאת השורה לעדכון
+				let rowToUpdate = -1;
+				for (let i = 1; i < rows.length; i++) {
+					if (rows[i][0] == updatedReceipt.ID) {
+						rowToUpdate = i + 1; // +1 כי Google Sheets מתחיל מ-1
+						break;
+					}
+				}
+				
+				if (rowToUpdate > 0) {
+					// עדכון השורה
+					const updatedRow = [
+						updatedReceipt.ID,
+						updatedReceipt.book_number,
+						updatedReceipt.receipt_number,
+						updatedReceipt.date,
+						updatedReceipt.location_id,
+						updatedReceipt.location_name,
+						updatedReceipt.amount,
+						updatedReceipt.payment_type,
+						updatedReceipt.notes
+					];
+					
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: `Receipts!A${rowToUpdate}:I${rowToUpdate}`,
+						valueInputOption: 'USER_ENTERED',
+						resource: {
+							values: [updatedRow]
+						}
+					});
+					
+					console.log(`✅ Updated receipt ${updatedReceipt.ID} in cloud`);
+				}
+				
+			} catch (error) {
+				console.error('Error updating receipt in cloud:', error);
+				throw error;
+			}
 		}
 
+		
 		function deleteReceipt(receiptId) {
 			if (confirm('האם אתה בטוח שברצונך למחוק את הקבלה?')) {
 				receipts = receipts.filter(r => r.ID != receiptId);
@@ -3333,11 +3468,11 @@
 						</div>
 						
 						<div class="form-group">
-							<label for="visitPaid">סטטוס תשלום:</label>
-							<select id="visitPaid">
-								<option value="לא שולם">לא שולם</option>
-								<option value="שולם">שולם</option>
-								<option value="ללא תשלום">ללא תשלום</option>
+							<label>סטטוס תשלום:</label>
+							<select id="editPaid">
+								<option value="לא" ${visit.paid === 'לא' ? 'selected' : ''}>לא שולם</option>
+								<option value="כן" ${visit.paid === 'כן' ? 'selected' : ''}>שולם</option>
+								<option value="ללא תשלום" ${visit.paid === 'ללא תשלום' ? 'selected' : ''}>ללא תשלום</option>
 							</select>
 						</div>
 						
