@@ -708,7 +708,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
 			</nav>
         </header>
 
@@ -3417,6 +3417,8 @@
 				showToast('ביקור לא נמצא', 'error');
 				return;
 			}
+			
+			console.log(`✅ editVisit second: ('${visitId}') `);
 			
 			// מצא את הלקוח
 			const location = locations.find(loc => loc.ID == visit.location_id);
