@@ -708,7 +708,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -2256,68 +2256,219 @@
         }
 
 		function editLocation(locationId) {
-		
-			console.log(`✅ editLocation ('${locationId}') `);
-					
+			console.log(`✅ editLocation ('${locationId}')`);
 			const location = locations.find(g => g.ID == locationId);
-			if (!location) return;
+			if (!location) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			console.log(`✅ editLocation second: ('${locationId}')`);
+			
+			// צור חלון עריכה
+			const editModalHTML = `
+				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90vw; max-height: 80vh; overflow-y: auto;">
+					<h3 style="margin-bottom: 20px; color: #2c3e50;">🏠 עריכת לקוח - ${location.name}</h3>
+					
+					<form id="editLocationForm">
+						<div class="form-group">
+							<label>שם הלקוח:</label>
+							<input type="text" id="editLocationName" value="${location.name || ''}" required>
+						</div>
+						
+						<div class="form-group">
+							<label>כתובת מלאה:</label>
+							<input type="text" id="editLocationAddress" value="${location.full_address || ''}" required>
+						</div>
+						
+						<div class="form-group">
+							<label>שכונה:</label>
+							<input type="text" id="editLocationNeighborhood" value="${location.neighborhood || ''}">
+						</div>
+						
+						<div class="form-group">
+							<label>עיר:</label>
+							<input type="text" id="editLocationCity" value="${location.city || ''}">
+						</div>
+						
+						<div class="form-group">
+							<label>איש קשר:</label>
+							<input type="text" id="editLocationContact" value="${location.contact_person || ''}">
+						</div>
+						
+						<div class="form-group">
+							<label>טלפון:</label>
+							<input type="tel" id="editLocationPhone" value="${location.phone || ''}">
+						</div>
+						
+						<div class="form-group">
+							<label>יום מועדף:</label>
+							<select id="editLocationDay">
+								<option value="כל יום" ${location.allowed_day === 'כל יום' ? 'selected' : ''}>כל יום</option>
+								<option value="ראשון" ${location.allowed_day === 'ראשון' ? 'selected' : ''}>ראשון</option>
+								<option value="שני" ${location.allowed_day === 'שני' ? 'selected' : ''}>שני</option>
+								<option value="שלישי" ${location.allowed_day === 'שלישי' ? 'selected' : ''}>שלישי</option>
+								<option value="רביעי" ${location.allowed_day === 'רביעי' ? 'selected' : ''}>רביעי</option>
+								<option value="חמישי" ${location.allowed_day === 'חמישי' ? 'selected' : ''}>חמישי</option>
+								<option value="שישי" ${location.allowed_day === 'שישי' ? 'selected' : ''}>שישי</option>
+							</select>
+						</div>
+						
+						<div class="form-group">
+							<label>מרווח בשבועות:</label>
+							<input type="number" id="editLocationInterval" value="${location.interval_weeks || 4}" min="1" required>
+						</div>
+						
+						<div class="form-group">
+							<label>סכום בסיס (₪):</label>
+							<input type="number" step="0.01" id="editLocationAmount" value="${location.base_amount || 0}">
+						</div>
+						
+						<div class="form-group">
+							<label>סטטוס:</label>
+							<select id="editLocationActive">
+								<option value="כן" ${location.active === 'כן' ? 'selected' : ''}>פעיל</option>
+								<option value="לא" ${location.active === 'לא' ? 'selected' : ''}>לא פעיל</option>
+							</select>
+						</div>
+						
+						<div class="form-group">
+							<label>טיפול הבא:</label>
+							<input type="date" id="editLocationNextVisit" value="${location.next_visit || ''}">
+						</div>
+						
+						<div class="form-group">
+							<label>הערות:</label>
+							<textarea id="editLocationNotes" rows="3">${location.notes || ''}</textarea>
+						</div>
+						
+						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
+							<button type="button" onclick="saveEditedLocation('${locationId}')" class="btn btn-success">
+								💾 שמור שינויים
+							</button>
+							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+								❌ ביטול
+							</button>
+						</div>
+					</form>
+				</div>
+			`;
+			
+			// הצג את המודל
+			showEditModal(editModalHTML);
+		}
 
-			console.log(`✅ editLocation second: ('${locationId}') `);
+		// פונקציה לשמירת שינויי לקוח
+		function saveEditedLocation(locationId) {
+			console.log(`✅ saveEditedLocation ('${locationId}')`);
+			const locationIndex = locations.findIndex(g => g.ID == locationId);
+			if (locationIndex === -1) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			try {
+				// עדכן את הלקוח במערך המקומי
+				const updatedLocation = {
+					...locations[locationIndex], // שמור נתונים קיימים
+					name: document.getElementById('editLocationName').value,
+					full_address: document.getElementById('editLocationAddress').value,
+					neighborhood: document.getElementById('editLocationNeighborhood').value,
+					city: document.getElementById('editLocationCity').value,
+					contact_person: document.getElementById('editLocationContact').value,
+					phone: document.getElementById('editLocationPhone').value,
+					allowed_day: document.getElementById('editLocationDay').value,
+					interval_weeks: parseInt(document.getElementById('editLocationInterval').value) || 4,
+					base_amount: parseFloat(document.getElementById('editLocationAmount').value) || 0,
+					active: document.getElementById('editLocationActive').value,
+					next_visit: document.getElementById('editLocationNextVisit').value,
+					notes: document.getElementById('editLocationNotes').value
+				};
+				
+				locations[locationIndex] = updatedLocation;
+				
+				// שמור מקומית
+				saveToLocalStorage();
+				
+				// שמור לענן אם מחובר
+				if (access_token && SPREADSHEET_ID) {
+					updateLocationInCloud(updatedLocation);
+					showToast('לקוח עודכן בהצלחה במערכת ובענן!', 'success');
+				} else {
+					showToast('לקוח עודכן מקומית בהצלחה!', 'success');
+				}
+				
+				// עדכן תצוגה
+				loadLocationsTable();
+				loadLocationsForSelect();
+				closeEditModal();
+				
+			} catch (error) {
+				console.error('Error updating location:', error);
+				showToast('שגיאה בעדכון הלקוח', 'error');
+			}
+		}
 
-			showAddLocationForm();
-
-			// Populate form with existing data
-			setTimeout(() => {
-			    document.getElementById('locationName').value = location.name;
-			    document.getElementById('locationAddress').value = location.full_address;
-			    document.getElementById('locationNeighborhood').value = location.neighborhood || '';
-			    document.getElementById('locationCity').value = location.city || '';
-			    document.getElementById('locationContact').value = location.contact_person;
-			    document.getElementById('locationPhone').value = location.phone || '';
-			    document.getElementById('locationDay').value = location.allowed_day;
-			    document.getElementById('locationInterval').value = location.interval_weeks;
-			    document.getElementById('locationAmount').value = location.base_amount;
-			    document.getElementById('locationActive').value = location.active;
-			    document.getElementById('locationNextVisit').value = location.next_visit;
-			    document.getElementById('locationNotes').value = location.notes || '';
-			   
-			    // Change form submission to update instead of add
-			    document.getElementById('locationForm').onsubmit = function(event) {
-				   event.preventDefault();
-				   updatelocation(locationId);
-			    };
-			   
-			    document.querySelector('.modal-header h3').textContent = 'עריכת לקוח';
-			}, 100);
+		// פונקציה לעדכון הלקוח בענן (אופציונלית)
+		async function updateLocationInCloud(updatedLocation) {
+			if (!await validateToken()) return;
+			
+			try {
+				// קריאת כל הנתונים מהענן
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Locations!A:O'
+				});
+				
+				const rows = response.result.values || [];
+				
+				// מציאת השורה לעדכון
+				let rowToUpdate = -1;
+				for (let i = 1; i < rows.length; i++) {
+					if (rows[i][0] == updatedLocation.ID) {
+						rowToUpdate = i + 1; // +1 כי Google Sheets מתחיל מ-1
+						break;
+					}
+				}
+				
+				if (rowToUpdate > 0) {
+					// עדכון השורה
+					const updatedRow = [
+						updatedLocation.ID,
+						updatedLocation.name,
+						updatedLocation.full_address,
+						updatedLocation.neighborhood,
+						updatedLocation.city,
+						updatedLocation.contact_person,
+						updatedLocation.phone,
+						updatedLocation.allowed_day,
+						updatedLocation.interval_weeks,
+						updatedLocation.temp_addition || 0,
+						updatedLocation.base_amount,
+						updatedLocation.active,
+						updatedLocation.notes,
+						updatedLocation.last_visit || '',
+						updatedLocation.next_visit || ''
+					];
+					
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: `Locations!A${rowToUpdate}:O${rowToUpdate}`,
+						valueInputOption: 'USER_ENTERED',
+						resource: {
+							values: [updatedRow]
+						}
+					});
+					
+					console.log(`✅ Updated location ${updatedLocation.ID} in cloud`);
+				}
+				
+			} catch (error) {
+				console.error('Error updating location in cloud:', error);
+				throw error;
+			}
 		}
         
-        function updatelocation(locationId) {
-			console.log(`✅ updatelocation ('${locationId}') `);
-           const location = locations.find(g => g.ID == locationId);
-           if (!location) return;
-		   
-		   console.log(`✅ updatelocation second: ('${locationId}') `);
-           
-           location.name = document.getElementById('locationName').value;
-           location.full_address = document.getElementById('locationAddress').value;
-           location.neighborhood = document.getElementById('locationNeighborhood').value;
-           location.city = document.getElementById('locationCity').value;
-           location.contact_person = document.getElementById('locationContact').value;
-           location.phone = document.getElementById('locationPhone').value;
-           location.allowed_day = document.getElementById('locationDay').value;
-           location.interval_weeks = parseInt(document.getElementById('locationInterval').value);
-           location.base_amount = parseFloat(document.getElementById('locationAmount').value) || 0;
-           location.active = document.getElementById('locationActive').value;
-           location.next_visit= document.getElementById('locationNextVisit').value;
-           location.notes = document.getElementById('locationNotes').value;
-           
-           closeModal('locationModal');
-           loadLocationsTable();
-           loadLocationsForSelect();
-           loadPlanningData();
-           showSuccess('לקוח עודכן בהצלחה!');
-		   saveToLocalStorage();
-       }
 
        function deleteLocation(locationId) {
            if (confirm('האם אתה בטוח שברצונך למחוק את הלקוח?')) {
