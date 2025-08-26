@@ -702,8 +702,7 @@
     <div class="container">
         <header class="header">
             <h1>טיפולים</h1>
-			<<div id="connectionStatus" class="connection-status">
-			<div style="display: flex; gap: 10px; margin-bottom: 10px;">
+			<div id="connectionStatus" class="connection-status">
 				<button onclick="connectToGoogleSheets()" id="connectBtn" class="connect-btn">
 					התחבר ל-Google Sheets
 				</button>
@@ -713,13 +712,9 @@
 				<button onclick="loadAllFromSheets()" id="loadBtn" class="connect-btn" disabled>
 					טען מהענן
 				</button>
-			</div>
-			
-			<div style="text-align: center;">
 				<span id="statusText" style="color: white; font-weight: bold; font-size: 16px;">לא מחובר</span>
-				<div id="lastSaved" style="font-size: 12px; color: #ccc; margin-top: 4px;"></div>
+				<div id="lastSaved" style="font-size: 12px; color: white; margin-top: 4px;"></div>
 			</div>
-		</div>
             <nav class="nav-buttons">
 				<button onclick="showSection('planning')" class="nav-btn active">תכנון יומי</button>
 				<button onclick="showSection('visit')" class="nav-btn">טיפול חדש</button>
@@ -727,7 +722,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -1071,24 +1066,17 @@
 				<div class="form-section">
 					<h3>📥 ייבוא נתונים</h3>
 					
-					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-						<button class="btn btn-primary" onclick="createImportTable()">
-							🔗 צור טבלת עזר לייבוא
-						</button>
-						<button class="btn btn-success" onclick="importFromHelperTableFast()">
-							🚀 ייבוא מהיר וכולל מטבלת העזר
-						</button>
+					<div class="import-main-buttons">
+						<button onclick="createImportTable()">📗 צור טבלת עזר לייבוא</button>
+						<button onclick="importFromHelperTableFast()">🚀 ייבוא מהיר וכולל</button>
 					</div>
 					
-					<div style="text-align: center; margin-top: 15px;">
-						<button class="btn btn-info" onclick="importFromTelegram()">
-							💬 ייבוא מטקסט טלגרם
-						</button>
+					<div class="import-other-buttons">
+						<button onclick="importFromTelegram()">💬 ייבוא מטלגרם</button>
 					</div>
-
-					<!-- ייבוא חלקי - מקופל -->
-					<details style="margin-top: 15px;">
-						<summary style="cursor: pointer; color: #666; font-size: 14px;">⚙️ ייבוא חלקי (למתקדמים)</summary>
+					
+					<details>
+						<summary>⚙️ ייבוא חלקי (למתקדמים)</summary>
 						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;">
 							<button class="btn btn-info" onclick="importCustomersFromHelper()">👥 רק לקוחות</button>
 							<button class="btn btn-primary" onclick="importVisitsFromHelper()">🔧 רק טיפולים</button>
