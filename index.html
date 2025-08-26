@@ -687,11 +687,6 @@
 			font-size: 14px;
 		}
 
-		#statusText.connected {
-			background: linear-gradient(45deg, #28a745, #20c997);
-			color: white;
-			box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
-		}
 
 	</style>
    
@@ -713,7 +708,7 @@
 					טען מהענן
 				</button>
 				<span id="statusText">לא מחובר</span>
-				<div id="lastSaved" style="font-size: 12px; color: #666; margin-top: 4px;"></div>
+				<div id="lastSaved" style="font-size: 12px; color: #333; margin-top: 4px;"></div>
 			</div>
             <nav class="nav-buttons">
 				<button onclick="showSection('planning')" class="nav-btn active">תכנון יומי</button>
@@ -722,7 +717,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -5921,6 +5916,7 @@
 				if (status.includes('מחובר') || status.includes('מסונכרן')) {
 					statusElement.style.color = '#28a745'; // ירוק
 					statusElement.style.fontWeight = 'bold';
+					statusElement.style.background = 'transparent'; // הסר רקע
 					statusElement.classList.add('connected');
 				} else if (status.includes('שומר') || status.includes('מעדכן')) {
 					statusElement.style.color = '#ffc107'; // צהוב
@@ -5939,6 +5935,7 @@
 			// עדכון זמן פעולה אחרונה
 			if (lastSavedElement && lastAction) {
 				lastSavedElement.textContent = `${lastAction}: ${new Date().toLocaleTimeString('he-IL')}`;
+				lastSavedElement.style.color = '#333'; // צבע כהה יותר
 			}
 		}
 	   
