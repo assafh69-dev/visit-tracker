@@ -708,7 +708,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
 			</nav>
         </header>
 
@@ -2114,12 +2114,12 @@
                <div class="modal" id="locationModal">
                    <div class="modal-content">
                        <div class="modal-header">
-                           <h3>הוספת גינה חדשה</h3>
+                           h3>הוספת לקוח חדש</h3>
                            <span class="close" onclick="closeModal('locationModal')">&times;</span>
                        </div>
                        <form id="locationForm" onsubmit="handleLocationSubmit(event)">
                            <div class="form-group">
-                               <label for="locationName">שם גינה:</label>
+                               <label for="locationName">שם לקוח:</label>
                                <input type="text" id="locationName" required>
                            </div>
                            <div class="form-group">
@@ -2178,7 +2178,7 @@
                                <label for="locationNotes">הערות:</label>
                                <textarea id="locationNotes"></textarea>
                            </div>
-                           <button type="submit">שמור גינה</button>
+                           <button type="submit">שמור לקוח</button>
                        </form>
                    </div>
                </div>
@@ -2256,8 +2256,13 @@
         }
 
 		function editLocation(locationId) {
+		
+			console.log(`✅ editLocation ('${locationId}') `);
+					
 			const location = locations.find(g => g.ID == locationId);
 			if (!location) return;
+
+			console.log(`✅ editLocation second: ('${locationId}') `);
 
 			showAddLocationForm();
 
@@ -2282,13 +2287,16 @@
 				   updatelocation(locationId);
 			    };
 			   
-			   document.querySelector('.modal-header h3').textContent = 'עריכת גינה';
+			    document.querySelector('.modal-header h3').textContent = 'עריכת לקוח';
 			}, 100);
 		}
         
-       function updatelocation(locationId) {
+        function updatelocation(locationId) {
+			console.log(`✅ updatelocation ('${locationId}') `);
            const location = locations.find(g => g.ID == locationId);
            if (!location) return;
+		   
+		   console.log(`✅ updatelocation second: ('${locationId}') `);
            
            location.name = document.getElementById('locationName').value;
            location.full_address = document.getElementById('locationAddress').value;
@@ -2307,17 +2315,17 @@
            loadLocationsTable();
            loadLocationsForSelect();
            loadPlanningData();
-           showSuccess('גינה עודכנה בהצלחה!');
+           showSuccess('לקוח עודכן בהצלחה!');
 		   saveToLocalStorage();
        }
 
        function deleteLocation(locationId) {
-           if (confirm('האם אתה בטוח שברצונך למחוק את הגינה?')) {
+           if (confirm('האם אתה בטוח שברצונך למחוק את הלקוח?')) {
                locations = locations.filter(g => g.ID != locationId);
                loadLocationsTable();
                loadLocationsForSelect();
                loadPlanningData();
-               showSuccess('גינה נמחקה בהצלחה!');
+               showSuccess('לקוח נמחק בהצלחה!');
 			   saveToLocalStorage();
            }
        }
