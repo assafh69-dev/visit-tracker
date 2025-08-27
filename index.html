@@ -722,7 +722,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -2967,6 +2967,8 @@
 						
 						visits.push(visitData);
 						newVisits.push(visitData); // הוסף למערך החדש
+						// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
+						await updateSingleLocationTreatmentDates(visitData.location_id);
 						importedCount++;
 					}
 				}
@@ -3998,6 +4000,8 @@
 								const visitData = parseVisitFromRow(row);
 								if (!isDuplicateVisit(visitData)) {
 									visits.push(visitData);
+									// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
+									await updateSingleLocationTreatmentDates(visitData.location_id);
 									visitsCount++;
 								} else {
 									console.log('⚠️ Duplicate visit skipped:', visitData.date, visitData.location_id);
@@ -4529,6 +4533,8 @@
 					
 					// הוסף למערכת
 					visits.push(visitData);
+					// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
+					await updateSingleLocationTreatmentDates(visitData.location_id);
 					importedCount++;
 				}
 				
@@ -5150,6 +5156,150 @@
 			}
 		}
 	   
+	   // פונקציה לחישוב ועדכון תאריכי טיפול אחרון וטיפול הבא
+		async function calculateTreatmentDates() {
+			console.log('🔄 מחשב תאריכי טיפול אחרון וטיפול הבא...');
+			
+			let updatedLocations = [];
+			
+			for (const location of locations) {
+				// מצא את כל הטיפולים של הלקוח הזה
+				const locationVisits = visits.filter(visit => visit.location_id === location.ID);
+				
+				if (locationVisits.length > 0) {
+					// מיין לפי תאריך (החדש ביותר ראשון)
+					locationVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
+					
+					// הטיפול האחרון
+					const lastVisit = locationVisits[0];
+					const lastVisitDate = lastVisit.date;
+					
+					// חישוב תאריך הטיפול הבא
+					const lastDate = new Date(lastVisitDate);
+					const intervalDays = (location.interval_weeks || 4) * 7; // ברירת מחדל 4 שבועות
+					const nextDate = new Date(lastDate);
+					nextDate.setDate(lastDate.getDate() + intervalDays);
+					
+					// פורמט התאריך ל-YYYY-MM-DD
+					const nextVisitDate = nextDate.toISOString().split('T')[0];
+					
+					// עדכון האובייקט המקומי
+					location.last_visit = lastVisitDate;
+					location.next_visit = nextVisitDate;
+					
+					updatedLocations.push(location);
+					
+					console.log(`📅 ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
+				}
+			}
+			
+			// עדכון בגוגל שיטס במקביל
+			if (updatedLocations.length > 0) {
+				await updateTreatmentDatesInSheets(updatedLocations);
+				console.log(`✅ עודכנו תאריכי טיפול עבור ${updatedLocations.length} לקוחות`);
+				showToast(`📅 תאריכי טיפול עודכנו עבור ${updatedLocations.length} לקוחות`, 'success', 2000);
+			}
+			
+			// רענן נתוני תכנון
+			refreshPlanningAfterTreatmentUpdate();
+			return updatedLocations.length;
+		}
+	   
+	   
+	   // פונקציה לעדכון תאריכי הטיפול בגוגל שיטס
+		async function updateTreatmentDatesInSheets(locationsToUpdate) {
+			if (!await validateToken()) return false;
+			
+			try {
+				// קרא את כל הנתונים הנוכחיים מהטבלה
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Locations!A:O'
+				});
+				
+				const allRows = response.result.values || [];
+				const updatedRows = [...allRows];
+				
+				// עבור כל לקוח שצריך עדכון
+				for (const location of locationsToUpdate) {
+					// מצא את השורה המתאימה בטבלה
+					for (let i = 1; i < allRows.length; i++) { // מתחיל מ-1 כדי לדלג על הכותרות
+						if (allRows[i][0] === location.ID) {
+							// עדכן את עמודות התאריכים (עמודות 13 ו-14)
+							updatedRows[i][13] = location.last_visit;   // last_visit
+							updatedRows[i][14] = location.next_visit;   // next_visit
+							break;
+						}
+					}
+				}
+				
+				// שמור את כל הטבלה המעודכנת
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Locations!A:O',
+					valueInputOption: 'USER_ENTERED',
+					resource: {
+						values: updatedRows
+					}
+				});
+				
+				return true;
+			} catch (error) {
+				console.error('Error updating treatment dates in sheets:', error);
+				return false;
+			}
+		}
+		
+		// פונקציה לעדכון תאריכי טיפול עבור לקוח אחד לאחר הוספת ביקור
+		async function updateSingleLocationTreatmentDates(locationId) {
+			const location = locations.find(loc => loc.ID === locationId);
+			if (!location) return;
+			
+			// מצא את כל הביקורים של הלקוח הזה
+			const locationVisits = visits.filter(visit => visit.location_id === locationId);
+			
+			if (locationVisits.length > 0) {
+				// מיין לפי תאריך (החדש ביותר ראשון)
+				locationVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
+				
+				// הטיפול האחרון
+				const lastVisit = locationVisits[0];
+				const lastVisitDate = lastVisit.date;
+				
+				// חישוב תאריך הטיפול הבא
+				const lastDate = new Date(lastVisitDate);
+				const intervalDays = (location.interval_weeks || 4) * 7; // ברירת מחדל 4 שבועות
+				const nextDate = new Date(lastDate);
+				nextDate.setDate(lastDate.getDate() + intervalDays);
+				
+				// פורמט התאריך ל-YYYY-MM-DD
+				const nextVisitDate = nextDate.toISOString().split('T')[0];
+				
+				// עדכון האובייקט המקומי
+				location.last_visit = lastVisitDate;
+				location.next_visit = nextVisitDate;
+				
+				// עדכון בגוגל שיטס
+				await updateTreatmentDatesInSheets([location]);
+				
+				console.log(`📅 עודכן לקוח ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
+				// רענן נתוני תכנון
+				refreshPlanningAfterTreatmentUpdate();
+			}
+		}
+	   
+	   // פונקציה לחידוש נתוני התכנון לאחר עדכון תאריכים
+		function refreshPlanningAfterTreatmentUpdate() {
+			// רענן את נתוני התכנון אם הטאב פתוח
+			const currentSection = document.querySelector('.section.active');
+			if (currentSection && currentSection.id === 'planning') {
+				loadPlanningData();
+			}
+			
+			// רענן גם את רשימת הלקוחות בטופס הביקור
+			loadLocationsForSelect();
+		}
+	   
 	   
 		// פונקציה חדשה לייבוא מהיר וכולל של כל הנתונים
 		async function importFromHelperTableFast() {
@@ -5338,6 +5488,8 @@
 							
 							visits.push(visitData);
 							newVisits.push(visitData);
+							// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
+							await updateSingleLocationTreatmentDates(visitData.location_id);
 							stats.visits.imported++;
 						}
 					}
@@ -5448,6 +5600,15 @@
 				
 				const totalImported = stats.locations.imported + stats.visits.imported + stats.receipts.imported;
 				const totalSkipped = stats.locations.skipped + stats.visits.skipped + stats.receipts.skipped;
+				
+				// חישוב ועדכון תאריכי טיפול (הוספה חדשה)
+				if (stats.visits.imported > 0) {
+					showToast('מחשב תאריכי טיפול...', 'info', 2000);
+					const updatedCount = await calculateTreatmentDates();
+					if (updatedCount > 0) {
+						showToast(`✅ עודכנו תאריכי טיפול עבור ${updatedCount} לקוחות`, 'success', 3000);
+					}
+				}
 				
 				if (totalImported > 0) {
 					const message = `🎉 ייבוא הושלם בהצלחה!
