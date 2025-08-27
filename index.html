@@ -722,7 +722,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -1730,55 +1730,43 @@
 				}
 			});
 			
-			// Debug: בדוק את נתוני הלקוחות
-			console.log(`🔍 מסנן לקוחות - סה"כ לקוחות: ${locations.length}`);
-			
 			// Filter locations based on next_visit date
 			const today = new Date();
-			today.setHours(23, 59, 59, 999); // סוף היום
+			today.setHours(0, 0, 0, 0); // תחילת היום
 			const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 			
 			let filteredlocations = locations.filter(location => {
-				// Debug: בדוק כל לקוח
-				console.log(`👤 ${location.name}: פעיל=${location.active}, טיפול_הבא=${location.next_visit}`);
-				
 				return location.active === "כן" && location.next_visit && location.next_visit.trim() !== '';
 			});
 			
-			console.log(`🔍 לקוחות פעילים עם תאריכי טיפול: ${filteredlocations.length}`);
-			
 			switch(filter) {
 				case 'today':
+					// לקוחות שהתאריך הבא שלהם הוא היום או עבר (צריכים טיפול)
 					filteredlocations = filteredlocations.filter(location => {
 						const nextVisit = new Date(location.next_visit);
-						const isToday = nextVisit <= today;
-						console.log(`📅 ${location.name}: ${location.next_visit} <= היום? ${isToday}`);
-						return isToday;
+						nextVisit.setHours(0, 0, 0, 0); // תחילת היום
+						return nextVisit <= today;
 					});
 					break;
 				case 'week':
+					// לקוחות שהתאריך הבא שלהם הוא השבוע הקרוב או עבר
 					filteredlocations = filteredlocations.filter(location => {
 						const nextVisit = new Date(location.next_visit);
-						const isThisWeek = nextVisit <= weekFromNow;
-						console.log(`📅 ${location.name}: ${location.next_visit} <= השבוע? ${isThisWeek}`);
-						return isThisWeek;
+						return nextVisit <= weekFromNow;
 					});
 					break;
 				case 'overdue':
-					const yesterday = new Date();
+					// לקוחות שהתאריך הבא שלהם עבר (מאוחרים)
+					const yesterday = new Date(today);
 					yesterday.setDate(yesterday.getDate() - 1);
-					yesterday.setHours(23, 59, 59, 999);
 					
 					filteredlocations = filteredlocations.filter(location => {
 						const nextVisit = new Date(location.next_visit);
-						const isOverdue = nextVisit < yesterday;
-						console.log(`📅 ${location.name}: ${location.next_visit} < אתמול? ${isOverdue}`);
-						return isOverdue;
+						return nextVisit <= yesterday;
 					});
 					break;
 			}
 			
-			console.log(`✅ תוצאות סינון "${filter}": ${filteredlocations.length} לקוחות`);
 			displayPlanningTable(filteredlocations);
 		}
 
