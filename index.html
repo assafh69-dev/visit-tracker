@@ -722,7 +722,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -1677,6 +1677,9 @@
 
         // Display functions
         function loadPlanningData() {
+			// Debug - בדיקת נתונים
+			debugPlanningData();
+			
 			// חישוב סטטיסטיקות
 			updatePlanningStats();
 			
@@ -1717,44 +1720,65 @@
         function filterVisits(filter) {
 			currentFilter = filter;
 			
-			// Update filter buttons - fix the event.target issue
+			// Update filter buttons
 			document.querySelectorAll('.filter-btn').forEach(btn => {
 				btn.classList.remove('active');
-				// Add active class to the button that matches the current filter
 				if ((filter === 'today' && btn.textContent === 'היום') ||
 					(filter === 'week' && btn.textContent === 'השבוע') ||
-					(filter === 'overdue' && btn.textContent === 'מאחרות')) {
+					(filter === 'overdue' && btn.textContent === 'מאוחרות')) {
 					btn.classList.add('active');
 				}
 			});
 			
-			// Filter locations based on next_visitdate
+			// Debug: בדוק את נתוני הלקוחות
+			console.log(`🔍 מסנן לקוחות - סה"כ לקוחות: ${locations.length}`);
+			
+			// Filter locations based on next_visit date
 			const today = new Date();
+			today.setHours(23, 59, 59, 999); // סוף היום
 			const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 			
-			let filteredlocations = locations.filter(location => location.active === "כן");
+			let filteredlocations = locations.filter(location => {
+				// Debug: בדוק כל לקוח
+				console.log(`👤 ${location.name}: פעיל=${location.active}, טיפול_הבא=${location.next_visit}`);
+				
+				return location.active === "כן" && location.next_visit && location.next_visit.trim() !== '';
+			});
+			
+			console.log(`🔍 לקוחות פעילים עם תאריכי טיפול: ${filteredlocations.length}`);
 			
 			switch(filter) {
 				case 'today':
 					filteredlocations = filteredlocations.filter(location => {
-						const nextVisit= new Date(location.next_visit);
-						return nextVisit<= today;
+						const nextVisit = new Date(location.next_visit);
+						const isToday = nextVisit <= today;
+						console.log(`📅 ${location.name}: ${location.next_visit} <= היום? ${isToday}`);
+						return isToday;
 					});
 					break;
 				case 'week':
 					filteredlocations = filteredlocations.filter(location => {
-						const nextVisit= new Date(location.next_visit);
-						return nextVisit<= weekFromNow;
+						const nextVisit = new Date(location.next_visit);
+						const isThisWeek = nextVisit <= weekFromNow;
+						console.log(`📅 ${location.name}: ${location.next_visit} <= השבוע? ${isThisWeek}`);
+						return isThisWeek;
 					});
 					break;
 				case 'overdue':
+					const yesterday = new Date();
+					yesterday.setDate(yesterday.getDate() - 1);
+					yesterday.setHours(23, 59, 59, 999);
+					
 					filteredlocations = filteredlocations.filter(location => {
-						const nextVisit= new Date(location.next_visit);
-						return nextVisit< today;
+						const nextVisit = new Date(location.next_visit);
+						const isOverdue = nextVisit < yesterday;
+						console.log(`📅 ${location.name}: ${location.next_visit} < אתמול? ${isOverdue}`);
+						return isOverdue;
 					});
 					break;
 			}
 			
+			console.log(`✅ תוצאות סינון "${filter}": ${filteredlocations.length} לקוחות`);
 			displayPlanningTable(filteredlocations);
 		}
 
@@ -2968,7 +2992,7 @@
 						visits.push(visitData);
 						newVisits.push(visitData); // הוסף למערך החדש
 						// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
-						await updateSingleLocationTreatmentDates(visitData.location_id);
+						// await updateSingleLocationTreatmentDates(visitData.location_id);
 						importedCount++;
 					}
 				}
@@ -4001,7 +4025,7 @@
 								if (!isDuplicateVisit(visitData)) {
 									visits.push(visitData);
 									// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
-									await updateSingleLocationTreatmentDates(visitData.location_id);
+									//await updateSingleLocationTreatmentDates(visitData.location_id);
 									visitsCount++;
 								} else {
 									console.log('⚠️ Duplicate visit skipped:', visitData.date, visitData.location_id);
@@ -4534,7 +4558,7 @@
 					// הוסף למערכת
 					visits.push(visitData);
 					// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
-					await updateSingleLocationTreatmentDates(visitData.location_id);
+					//await updateSingleLocationTreatmentDates(visitData.location_id);
 					importedCount++;
 				}
 				
@@ -5157,6 +5181,7 @@
 		}
 	   
 	   // פונקציה לחישוב ועדכון תאריכי טיפול אחרון וטיפול הבא
+		// פונקציה לחישוב ועדכון תאריכי טיפול אחרון וטיפול הבא - גרסה מתקנת
 		async function calculateTreatmentDates() {
 			console.log('🔄 מחשב תאריכי טיפול אחרון וטיפול הבא...');
 			
@@ -5193,22 +5218,25 @@
 				}
 			}
 			
-			// עדכון בגוגל שיטס במקביל
+			// עדכון בגוגל שיטס במקביל - קריאה אחת בלבד עבור כל הלקוחות
 			if (updatedLocations.length > 0) {
+				console.log(`🔄 מעדכן ${updatedLocations.length} לקוחות בגוגל שיטס...`);
 				await updateTreatmentDatesInSheets(updatedLocations);
-				console.log(`✅ עודכנו תאריכי טיפול עבור ${updatedLocations.length} לקוחות`);
 				showToast(`📅 תאריכי טיפול עודכנו עבור ${updatedLocations.length} לקוחות`, 'success', 2000);
 			}
 			
 			// רענן נתוני תכנון
 			refreshPlanningAfterTreatmentUpdate();
+			
 			return updatedLocations.length;
 		}
 	   
 	   
-	   // פונקציה לעדכון תאריכי הטיפול בגוגל שיטס
+	    // פונקציה לעדכון תאריכי הטיפול בגוגל שיטס
 		async function updateTreatmentDatesInSheets(locationsToUpdate) {
-			if (!await validateToken()) return false;
+			if (!await validateToken() || locationsToUpdate.length === 0) return false;
+			
+			console.log(`🔄 מעדכן תאריכי טיפול עבור ${locationsToUpdate.length} לקוחות בגוגל שיטס...`);
 			
 			try {
 				// קרא את כל הנתונים הנוכחיים מהטבלה
@@ -5219,6 +5247,7 @@
 				
 				const allRows = response.result.values || [];
 				const updatedRows = [...allRows];
+				let updatedCount = 0;
 				
 				// עבור כל לקוח שצריך עדכון
 				for (const location of locationsToUpdate) {
@@ -5228,12 +5257,13 @@
 							// עדכן את עמודות התאריכים (עמודות 13 ו-14)
 							updatedRows[i][13] = location.last_visit;   // last_visit
 							updatedRows[i][14] = location.next_visit;   // next_visit
+							updatedCount++;
 							break;
 						}
 					}
 				}
 				
-				// שמור את כל הטבלה המעודכנת
+				// שמור את כל הטבלה המעודכנת בקריאה אחת בלבד
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
 					range: 'Locations!A:O',
@@ -5243,6 +5273,7 @@
 					}
 				});
 				
+				console.log(`✅ עודכנו ${updatedCount} תאריכי טיפול בגוגל שיטס`);
 				return true;
 			} catch (error) {
 				console.error('Error updating treatment dates in sheets:', error);
@@ -5298,6 +5329,34 @@
 			
 			// רענן גם את רשימת הלקוחות בטופס הביקור
 			loadLocationsForSelect();
+		}
+	   
+	   // פונקציה לבדיקת מצב נתוני התכנון - לדיבוג
+		function debugPlanningData() {
+			console.log('=== Debug Planning Data ===');
+			console.log(`סה"כ לקוחות: ${locations.length}`);
+			
+			const activeLocations = locations.filter(loc => loc.active === "כן");
+			console.log(`לקוחות פעילים: ${activeLocations.length}`);
+			
+			const locationsWithDates = activeLocations.filter(loc => loc.next_visit && loc.next_visit.trim() !== '');
+			console.log(`לקוחות עם תאריכי טיפול: ${locationsWithDates.length}`);
+			
+			// הצג 5 לקוחות ראשונים
+			locationsWithDates.slice(0, 5).forEach(loc => {
+				console.log(`👤 ${loc.name}: אחרון=${loc.last_visit}, הבא=${loc.next_visit}`);
+			});
+			
+			const today = new Date();
+			const todayStr = today.toISOString().split('T')[0];
+			console.log(`תאריך היום: ${todayStr}`);
+			
+			const dueToday = locationsWithDates.filter(loc => {
+				return new Date(loc.next_visit) <= today;
+			});
+			console.log(`צריכים טיפול היום: ${dueToday.length}`);
+			
+			console.log('=== סיום Debug ===');
 		}
 	   
 	   
@@ -5488,8 +5547,8 @@
 							
 							visits.push(visitData);
 							newVisits.push(visitData);
-							// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
-							await updateSingleLocationTreatmentDates(visitData.location_id);
+							//** עדכון תאריכי טיפול לאחר הוספת ביקור חדש
+							//** await updateSingleLocationTreatmentDates(visitData.location_id);
 							stats.visits.imported++;
 						}
 					}
