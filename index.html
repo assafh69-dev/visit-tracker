@@ -722,7 +722,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
 			</nav>
         </header>
 
@@ -1736,7 +1736,8 @@
 			const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 			
 			let filteredlocations = locations.filter(location => {
-				return location.active === "כן" && location.next_visit && location.next_visit.trim() !== '';
+				//return location.active === "כן" && location.next_visit && location.next_visit.trim() !== '';
+				return (location.active === "כן" || location.active === true || location.active === "1") && location.next_visit && location.next_visit.trim() !== '';
 			});
 			
 			switch(filter) {
@@ -5324,7 +5325,10 @@
 			console.log('=== Debug Planning Data ===');
 			console.log(`סה"כ לקוחות: ${locations.length}`);
 			
-			const activeLocations = locations.filter(loc => loc.active === "כן");
+			// בדוק מה יש בשדה active
+			console.log('דוגמאות של שדה active:', locations.slice(0, 5).map(loc => ({ name: loc.name, active: loc.active, type: typeof loc.active })));
+
+			const activeLocations = locations.filter(loc => loc.active === "כן" || loc.active === true || loc.active === "1");
 			console.log(`לקוחות פעילים: ${activeLocations.length}`);
 			
 			const locationsWithDates = activeLocations.filter(loc => loc.next_visit && loc.next_visit.trim() !== '');
