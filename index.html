@@ -1002,7 +1002,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -2346,25 +2346,23 @@
 			return false;
 		}
 
-		// עדכון הפונקציה הקיימת loadPlanningData לקרוא למערכת החדשה
-		const originalLoadPlanningData = window.loadPlanningData;
-		
-		function loadPlanningData() {
-			// קריאה לפונקציה הקיימת אם יש
-			if (originalLoadPlanningData && typeof originalLoadPlanningData === 'function') {
-				originalLoadPlanningData();
-			}
+		// שמירת הפונקציה המקורית לפני ההחלפה
+		window.originalLoadPlanningData = window.loadPlanningData;
+
+		// החלפת הפונקציה loadPlanningData
+		window.loadPlanningData = function() {
+			console.log('🔄 loadPlanningData נקראה');
 			
 			// בדיקה אם יש את האלמנטים החדשים
 			if (document.getElementById('planningCardsContainer')) {
-				// אם יש - השתמש במערכת החדשה
+				console.log('📊 משתמש במערכת חדשה');
 				loadPlanningDataAdvanced();
 			} else {
-				// אם אין - השתמש במערכת הישנה
+				console.log('📊 משתמש במערכת ישנה');
 				updatePlanningStats();
-				filterVisits(currentFilter || 'today');
+				filterVisits(window.currentFilter || 'today');
 			}
-		}
+		};
 
 		// עדכון הפונקציה refreshPlanningAfterTreatmentUpdate לעבוד עם שתי המערכות
 		function refreshPlanningAfterTreatmentUpdate() {
