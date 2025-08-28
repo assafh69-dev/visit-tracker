@@ -972,6 +972,68 @@
 			animation: planningDropAnimation 0.3s ease;
 		}
 
+		/***************************************/
+		/* ייבוא נתונים - כפתורים אחידים */
+		.import-main-buttons,
+		.import-other-buttons {
+			display: flex;
+			gap: 10px;
+			margin: 15px 0;
+			flex-wrap: wrap;
+		}
+
+		.import-main-buttons button,
+		.import-other-buttons button {
+			flex: 1;
+			min-width: 200px;
+			padding: 12px 15px;
+			background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+			border: 2px solid #dee2e6;
+			border-radius: 8px;
+			color: #495057;
+			font-weight: 500;
+			font-size: 14px;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			text-align: center;
+		}
+
+		.import-main-buttons button:hover,
+		.import-other-buttons button:hover {
+			background: linear-gradient(145deg, #e9ecef, #dee2e6);
+			border-color: #6c757d;
+			transform: translateY(-1px);
+			box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+		}
+
+		/* כפתור הקובץ המרכזי */
+		.btn.btn-warning {
+			padding: 12px 20px;
+			font-size: 14px;
+			font-weight: 500;
+			min-width: 200px;
+		}
+
+		/* תגובה למובייל */
+		@media (max-width: 768px) {
+			.import-main-buttons,
+			.import-other-buttons {
+				flex-direction: column;
+			}
+			
+			.import-main-buttons button,
+			.import-other-buttons button {
+				min-width: 100%;
+				padding: 15px;
+				font-size: 16px;
+			}
+			
+			.btn.btn-warning {
+				padding: 15px 20px;
+				font-size: 16px;
+			}
+		}
+		/***************************************/
 
 	</style>
    
@@ -1002,7 +1064,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -5751,7 +5813,24 @@
 			if (!await validateToken() || locationsArray.length === 0) return false;
 			
 			try {
-				const values = locationsArray.map(location => [
+			
+			    // קרא את הנתונים הקיימים קודם
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Locations!A:A'
+				});
+				
+				const existingIDs = new Set(response.result.values?.slice(1).map(row => row[0]) || []);
+				
+				// סנן רק רשומות חדשות
+				const newLocations = locationsArray.filter(location => !existingIDs.has(location.ID));
+				
+				if (newLocations.length === 0) {
+					console.log('אין לקוחות חדשים לשמירה');
+					return true;
+				}
+			
+				const values = newLocations.map(location => [
 					location.ID,
 					location.name,
 					location.full_address,
@@ -5765,8 +5844,8 @@
 					location.base_amount,
 					location.active,
 					location.notes,
-					location.last_visit,
-					location.next_visit
+					formatDateForSheets(location.last_visit),
+					formatDateForSheets(location.next_visit)
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.append({
@@ -5779,7 +5858,7 @@
 					}
 				});
 				
-				console.log(`✅ Saved ${locationsArray.length} locations in batch`);
+				console.log(`✅ Saved ${newLocations.length} locations in batch - from ${locationsArray.length}`);
 				return true;
 			} catch (error) {
 				console.error('Error in batch save locations:', error);
@@ -5792,9 +5871,25 @@
 			if (!await validateToken() || visitsArray.length === 0) return false;
 			
 			try {
-				const values = visitsArray.map(visit => [
+				// קרא את הנתונים הקיימים קודם
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Visits!A:A'
+				});
+				
+				const existingIDs = new Set(response.result.values?.slice(1).map(row => row[0]) || []);
+				
+				// סנן רק רשומות חדשות
+				const newVisits = visitsArray.filter(visit => !existingIDs.has(visit.ID));
+				
+				if (newVisits.length === 0) {
+					console.log('✅ No new visits to save');
+					return true;
+				}
+				
+				const values = newVisits.map(visit => [
 					visit.ID,
-					visit.date,
+					formatDateForSheets(visit.date),
 					visit.location_id,
 					visit.location_name,
 					visit.visit_type,
@@ -5818,7 +5913,7 @@
 					}
 				});
 				
-				console.log(`✅ Saved ${visitsArray.length} visits in batch`);
+				console.log(`✅ Saved ${newVisits.length} visits in batch - from ${visitsArray.length}`);
 				return true;
 			} catch (error) {
 				console.error('Error in batch save visits:', error);
@@ -5831,11 +5926,27 @@
 			if (!await validateToken() || receiptsArray.length === 0) return false;
 			
 			try {
-				const values = receiptsArray.map(receipt => [
+				// קרא את הנתונים הקיימים קודם
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Receipts!A:A'
+				});
+				
+				const existingIDs = new Set(response.result.values?.slice(1).map(row => row[0]) || []);
+				
+				// סנן רק רשומות חדשות
+				const newReceipts = receiptsArray.filter(receipt => !existingIDs.has(receipt.ID));
+				
+				if (newReceipts.length === 0) {
+					console.log('✅ No new receipts to save');
+					return true;
+				}
+				
+				const values = newReceipts.map(receipt => [
 					receipt.ID,
 					receipt.book_number,
 					receipt.receipt_number,
-					receipt.date,
+					formatDateForSheets(receipt.date),
 					receipt.location_id,
 					receipt.location_name,
 					receipt.amount,
@@ -5853,7 +5964,7 @@
 					}
 				});
 				
-				console.log(`✅ Saved ${receiptsArray.length} receipts in batch`);
+				console.log(`✅ Saved ${newReceipts.length} receipts in batch - from ${receiptsArray.length}`);
 				return true;
 			} catch (error) {
 				console.error('Error in batch save receipts:', error);
@@ -6799,6 +6910,15 @@
 	   
 	   //////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	   
+	   
+	   function formatDateForSheets(dateString) {
+			if (!dateString) return '';
+			const date = new Date(dateString);
+			const day = String(date.getDate()).padStart(2, '0');
+			const month = String(date.getMonth() + 1).padStart(2, '0');
+			const year = date.getFullYear();
+			return `${day}/${month}/${year}`;
+		}
 	   
 	   
    </script>
