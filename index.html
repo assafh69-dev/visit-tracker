@@ -6722,87 +6722,41 @@
 		// החלף את saveAllToSheets בפונקציה זו:
 		async function saveAllToSheets() {
 			if (!await validateToken()) {
-				showToast('🔐 אין חיבור לגוגל - שמירה מקומית בלבד', 'warning');
+				showToast('אין חיבור לגוגל - שמירה מקומית בלבד', 'warning');
 				return;
 			}
 			
 			try {
-				updateCloudStatus('💾 שומר נתונים לענן...', 'מעדכן');
-				showLoading('שומר נתונים לענן...');
+				updateCloudStatus('שומר נתונים לענן...', 'מעדכן');
 				
-				let savedCount = 0;
-				const totalItems = locations.length + visits.length + receipts.length;
+				// שמירה בבאצ'ים (לא לולאות!)
+				const savePromises = [];
 				
-				// שמירת מיקומים עם מעקב
 				if (locations.length > 0) {
-					showToast(`שומר ${locations.length} מיקומים לענן...`, 'info', 2000);
-					for (let i = 0; i < locations.length; i++) {
-						await saveLocationToSheets(locations[i]);
-						savedCount++;
-						
-						if (i % 5 === 0 && i > 0) {
-							updateCloudStatus(`💾 שומר ${savedCount}/${totalItems}...`, 'מעדכן');
-						}
-						
-						if (i < locations.length - 1) {
-							await new Promise(resolve => setTimeout(resolve, 300));
-						}
-					}
+					showToast(`שומר ${locations.length} לקוחות בבת אחת...`, 'info', 2000);
+					savePromises.push(saveLocationsBatch(locations));
 				}
 				
-				// המתנה לפני ביקורים
 				if (visits.length > 0) {
-					showToast(`שומר ${visits.length} ביקורים לענן...`, 'info', 2000);
-					await new Promise(resolve => setTimeout(resolve, 1000));
-					
-					for (let i = 0; i < visits.length; i++) {
-						await saveVisitToSheets(visits[i]);
-						savedCount++;
-						
-						if (i % 10 === 0 && i > 0) {
-							updateCloudStatus(`💾 שומר ${savedCount}/${totalItems}...`, 'מעדכן');
-						}
-						
-						if (i < visits.length - 1) {
-							await new Promise(resolve => setTimeout(resolve, 200));
-						}
-					}
+					showToast(`שומר ${visits.length} ביקורים בבת אחת...`, 'info', 2000);
+					savePromises.push(saveVisitsBatch(visits));
 				}
 				
-				// שמירת קבלות
 				if (receipts.length > 0) {
-					showToast(`שומר ${receipts.length} קבלות לענן...`, 'info', 2000);
-					await new Promise(resolve => setTimeout(resolve, 500));
-					
-					for (let i = 0; i < receipts.length; i++) {
-						await saveReceiptToSheets(receipts[i]);
-						savedCount++;
-						
-						if (i % 10 === 0 && i > 0) {
-							updateCloudStatus(`💾 שומר ${savedCount}/${totalItems}...`, 'מעדכן');
-						}
-					}
+					showToast(`שומר ${receipts.length} קבלות בבת אחת...`, 'info', 2000);
+					savePromises.push(saveReceiptsBatch(receipts));
 				}
 				
-				hideLoading();
-				updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
-				showToast(`🎉 כל הנתונים נשמרו בענן בהצלחה!
-				📍 ${locations.length} מיקומים
-				🏠 ${visits.length} ביקורים  
-				🧾 ${receipts.length} קבלות`, 'success', 5000);
+				// המתן לכל השמירות במקביל
+				await Promise.all(savePromises);
+				
+				updateCloudStatus('מחובר ומסונכרן', 'נשמר');
+				showToast(`כל הנתונים נשמרו בענן בהצלחה!`, 'success', 3000);
 				
 			} catch (error) {
 				console.error('Error saving all data to cloud:', error);
-				hideLoading();
-				
-				if (error.status === 401) {
-					access_token = null;
-					updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
-					showToast('⚠️ החיבור פג במהלך השמירה - התחבר מחדש', 'warning');
-				} else {
-					updateCloudStatus('⚠️ שגיאה בשמירה לענן', 'שגיאה');
-					showToast('❌ שגיאה בשמירה לענן - הנתונים נשמרו מקומית', 'error');
-				}
+				updateCloudStatus('שגיאה בשמירה לענן', 'שגיאה');
+				showToast('שגיאה בשמירה לענן - הנתונים נשמרו מקומית', 'error');
 			}
 		}
 
