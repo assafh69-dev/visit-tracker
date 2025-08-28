@@ -1002,7 +1002,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -1995,7 +1995,7 @@
 			
 			// סינון לקוחות פעילים - תיקון לבעיית active = true
 			let filteredClients = locations.filter(location => {
-				const isActive = location.active === true || location.active === "כן" || location.active === "1";
+				const isActive = location.active === "1";
 				const hasNextVisit = location.next_visit && location.next_visit.trim() !== '';
 				const hasInterval = location.interval_weeks && location.interval_weeks > 0;
 				
@@ -2026,12 +2026,15 @@
 			// סינון לפי תצוגה נוכחית
 			switch (currentPlanningView) {
 				case 'daily':
-					planningClients = filteredClients.filter(client => client.daysOverdue >= 0 && client.daysOverdue <= 7);
+					// לקוחות שצריכים טיפול היום או שכבר מאחרים
+					planningClients = filteredClients.filter(client => client.daysOverdue >= 0);
 					break;
 				case 'weekly':
-					planningClients = filteredClients.filter(client => client.daysOverdue >= 0 && client.daysOverdue <= 30);
+					// לקוחות שצריכים טיפול השבוע הקרוב (כולל מי שכבר מאחר)
+					planningClients = filteredClients.filter(client => client.daysOverdue >= -7);
 					break;
 				case 'overdue':
+					// רק לקוחות שכבר מאחרים
 					planningClients = filteredClients.filter(client => client.daysOverdue > 0);
 					break;
 			}
@@ -2426,8 +2429,7 @@
 			const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 			
 			let filteredlocations = locations.filter(location => {
-				//return location.active === "כן" && location.next_visit && location.next_visit.trim() !== '';
-				return (location.active === "כן" || location.active === true || location.active === "1") && location.next_visit && location.next_visit.trim() !== '';
+				return location.active === "1" && location.next_visit && location.next_visit.trim() !== '';
 			});
 			
 			switch(filter) {
@@ -2494,7 +2496,7 @@
             const select = document.getElementById('locationSelect');
             select.innerHTML = '<option value="">בחר לקוח...</option>';
             
-            locations.filter(location => location.active === "כן").forEach(location => {
+            locations.filter(location => location.active === "1").forEach(location => {
                 const option = document.createElement('option');
                 option.value = location.ID;
                 option.textContent = `${location.name} - ${location.full_address}`;
@@ -2916,8 +2918,8 @@
 						<div class="form-group">
 							<label>סטטוס:</label>
 							<select id="editLocationActive">
-								<option value="כן" ${location.active === 'כן' ? 'selected' : ''}>פעיל</option>
-								<option value="לא" ${location.active === 'לא' ? 'selected' : ''}>לא פעיל</option>
+								<option value="1" ${location.active === '1' ? 'selected' : ''}>פעיל</option>
+								<option value="0" ${location.active === '0' ? 'selected' : ''}>לא פעיל</option>
 							</select>
 						</div>
 						
@@ -3563,7 +3565,7 @@
 							interval_weeks: parseInt(frequency) || 4,
 							temp_addition: 0,
 							base_amount: parseFloat(baseAmount) || 0,
-							active: 'כן',
+							active: "1",
 							notes: 'יובא מטבלת לקוחות',
 							last_visit: '',
 							next_visit: ''
@@ -6151,7 +6153,7 @@
 								interval_weeks: parseInt(row[4]) || 4,
 								temp_addition: 0,
 								base_amount: parseFloat(row[6]) || 0,
-								active: true,
+								active: "1",
 								notes: '',
 								last_visit: '',
 								next_visit: ''
