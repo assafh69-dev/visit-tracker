@@ -974,63 +974,83 @@
 
 		/***************************************/
 		/* ייבוא נתונים - כפתורים אחידים */
-		.import-main-buttons,
-		.import-other-buttons {
+		.import-main-buttons {
 			display: flex;
-			gap: 10px;
+			justify-content: center;
+			gap: 15px;
 			margin: 15px 0;
 			flex-wrap: wrap;
 		}
 
+		.import-other-buttons {
+			display: flex;
+			justify-content: center;
+			margin: 15px 0;
+		}
+
 		.import-main-buttons button,
 		.import-other-buttons button {
-			flex: 1;
-			min-width: 200px;
-			padding: 12px 15px;
-			background: linear-gradient(145deg, #f8f9fa, #e9ecef);
-			border: 2px solid #dee2e6;
-			border-radius: 8px;
-			color: #495057;
+			padding: 12px 20px;
+			background: #ffc107;
+			color: #212529;
+			border: 1px solid #ffc107;
+			border-radius: 5px;
 			font-weight: 500;
 			font-size: 14px;
 			cursor: pointer;
 			transition: all 0.3s ease;
-			text-align: center;
+			min-width: 200px;
+			white-space: nowrap;
 		}
 
 		.import-main-buttons button:hover,
 		.import-other-buttons button:hover {
-			background: linear-gradient(145deg, #e9ecef, #dee2e6);
-			border-color: #6c757d;
+			background: #e0a800;
+			border-color: #d39e00;
 			transform: translateY(-1px);
 			box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 		}
 
-		/* כפתור הקובץ המרכזי */
-		.btn.btn-warning {
-			padding: 12px 20px;
-			font-size: 14px;
-			font-weight: 500;
-			min-width: 200px;
+		/* כפתורי הייבוא החלקי */
+		details[open] > div {
+			display: flex !important;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin-top: 10px;
+			justify-content: center;
+		}
+
+		details[open] > div button {
+			flex: 1;
+			min-width: 120px;
+			max-width: 150px;
+			font-size: 13px;
+			padding: 10px 12px;
 		}
 
 		/* תגובה למובייל */
 		@media (max-width: 768px) {
-			.import-main-buttons,
-			.import-other-buttons {
+			.import-main-buttons {
 				flex-direction: column;
+				align-items: center;
 			}
 			
 			.import-main-buttons button,
 			.import-other-buttons button {
-				min-width: 100%;
-				padding: 15px;
+				min-width: 80%;
+				max-width: 300px;
+				padding: 15px 20px;
 				font-size: 16px;
 			}
 			
-			.btn.btn-warning {
-				padding: 15px 20px;
-				font-size: 16px;
+			details[open] > div {
+				flex-direction: column;
+			}
+			
+			details[open] > div button {
+				min-width: 80%;
+				max-width: 250px;
+				font-size: 14px;
 			}
 		}
 		/***************************************/
@@ -1064,7 +1084,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -2088,8 +2108,14 @@
 			// סינון לפי תצוגה נוכחית
 			switch (currentPlanningView) {
 				case 'daily':
-					// לקוחות שצריכים טיפול היום או שכבר מאחרים
-					planningClients = filteredClients.filter(client => client.daysOverdue >= 0);
+					const today = new Date();
+					const todayName = today.toLocaleDateString('he-IL', { weekday: 'long' });
+					
+					planningClients = filteredClients.filter(client => {
+						const isDueOrOverdue = client.daysOverdue >= 0;
+						const isRightDay = !client.allowed_day || client.allowed_day === 'כל יום' || client.allowed_day === todayName;
+						return isDueOrOverdue && isRightDay;
+					});
 					break;
 				case 'weekly':
 					// לקוחות שצריכים טיפול השבוע הקרוב (כולל מי שכבר מאחר)
