@@ -986,7 +986,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -3619,7 +3619,7 @@
 						const workDone = row[7] || '';          // work_done
 						const duration = row[8] || 0;           // duration
 						const amount = row[9] || 0;             // amount
-						const paid = row[10] || 'לא';           // paid
+						const paid = row[10] || '';           // paid
 						const expense = row[11] || 0;           // expense
 						const notes = row[12] || '';            // notes
 						
@@ -3955,9 +3955,9 @@
 				const row = document.createElement('tr');
 				
 				// הדגשת שורות לפי סטטוס תשלום
-				if (visit.paid === 'לא') {
+				if (visit.paid === '0') {
 					row.style.backgroundColor = '#fff2cc'; // צהוב עדין לחובות
-				} else if (visit.paid === 'כן') {
+				} else if (visit.paid === '1') {
 					row.style.backgroundColor = '#d4edda'; // ירוק עדין לשולם
 				}
 				
@@ -3975,7 +3975,7 @@
 					</td>
 					<td>
 						<span class="payment-status payment-${visit.paid}">
-							${visit.paid === 'כן' ? '✅ שולם' : visit.paid === 'לא' ? '❌ לא שולם' : '⚪ ללא'}
+							${getPaymentStatusText(visit.paid)}
 						</span>
 					</td>
 					<td>
@@ -4008,7 +4008,7 @@
 			const totalHours = filteredVisits.reduce((sum, visit) => sum + (visit.duration_minutes / 60), 0);
 			const totalIncome = filteredVisits.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			const outstandingDebt = filteredVisits
-				.filter(visit => visit.paid === 'לא')
+				.filter(visit => visit.paid === '0')
 				.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			
 			document.getElementById('visitsCount').textContent = visitsCount;
@@ -4027,7 +4027,7 @@
 			}
 			
 			// חישוב נתונים מפורטים יותר על חובות
-			const unpaidVisits = filteredVisits.filter(visit => visit.paid === 'לא');
+			const unpaidVisits = filteredVisits.filter(visit => visit.paid === '0');
 			const uniqueDebtors = new Set(unpaidVisits.map(visit => visit.location_id)).size;
 			
 			// הצגת מידע נוסף בכרטיסי הסיכום
@@ -4110,9 +4110,9 @@
 						<div class="form-group">
 							<label>סטטוס תשלום:</label>
 							<select id="editPaid">
-								<option value="לא" ${visit.paid === 'לא' ? 'selected' : ''}>לא שולם</option>
-								<option value="כן" ${visit.paid === 'כן' ? 'selected' : ''}>שולם</option>
-								<option value="ללא תשלום" ${visit.paid === 'ללא תשלום' ? 'selected' : ''}>ללא תשלום</option>
+								<option value="0" ${visit.paid === '0' ? 'selected' : ''}>לא שולם</option>
+								<option value="1" ${visit.paid === '1' ? 'selected' : ''}>שולם</option>
+								<option value="2" ${visit.paid === '2' ? 'selected' : ''}>ללא תשלום</option>
 							</select>
 						</div>
 						
@@ -5391,6 +5391,7 @@
 	   
 	   // פונקציה להצגת חובות
 		function displayDebts() {
+			console.log('דוגמאות ערכי paid:', visits.slice(0, 5).map(v => v.paid));
 			const sortBy = document.getElementById('debtSortBy').value;
 			const minAmount = parseFloat(document.getElementById('minDebtAmount').value) || 0;
 			
@@ -5552,8 +5553,8 @@
 		function markDebtAsPaid(locationId) {
 			if (confirm('לסמן את כל החובות של הלקוח הזה כמסולקים?')) {
 				visits.forEach(visit => {
-					if (visit.location_id == locationId && visit.paid === 'לא') {
-						visit.paid = 'כן';
+					if (visit.location_id == locationId && visit.paid === '0') {
+						visit.paid = '1';
 					}
 				});
 				
@@ -5567,7 +5568,7 @@
 	    // התראה על חובות חמורים
 		function checkCriticalDebts() {
 			const criticalDebts = visits.filter(visit => {
-				if (visit.paid !== 'לא') return false;
+				if (visit.paid !== '0') return false;
 				
 				const daysSince = Math.floor((new Date() - new Date(visit.date)) / (1000 * 60 * 60 * 24));
 				return daysSince > 90 || parseFloat(visit.amount) > 1000;
@@ -5600,7 +5601,7 @@
 				sum + parseFloat(visit.amount || 0), 0);
 			
 			const paidRevenue = monthlyVisits
-				.filter(visit => visit.paid === 'כן')
+				.filter(visit => visit.paid === '1')
 				.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			
 			const totalHours = monthlyVisits.reduce((sum, visit) => 
@@ -6848,28 +6849,20 @@
 	   
 	   // פונקציה להמרת סטטוס תשלום לקידוד מספרי
 		function mapPaymentStatus(value) {
-			if (!value || value.trim() === '') return "0"; // ערך ריק = לא שולם
+			if (!value || value.trim() === '') return "0";
 			const normalized = value.toString().toLowerCase().trim();
 			
-			switch(normalized) {
-				case "כן":
-				case "true": 
-					return "1"; // שולם
-				case "לא":
-				case "false":
-					return "0"; // לא שולם
-				case "ללא תשלום":
-					return "2"; // ללא תשלום
-				default:
-					return "0"; // ברירת מחדל = לא שולם
-			}
+			// המרה פשוטה לפי הערכים שיכולים להגיע מהייבוא
+			if (normalized === "כן" || normalized === "true" || normalized === "1") return "1";
+			if (normalized === "ללא תשלום" || normalized === "ללא") return "2";
+			return "0"; // כל השאר = לא שולם
 		}
 
 		// פונקציה להצגת טקסט ידידותי
 		function getPaymentStatusText(status) {
 			switch(status) {
-				case "1": return "שולם";
 				case "0": return "לא שולם";
+				case "1": return "שולם"; 
 				case "2": return "ללא תשלום";
 				default: return "לא שולם";
 			}
