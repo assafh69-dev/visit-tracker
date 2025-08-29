@@ -694,283 +694,185 @@
 		}
 
 
+		/* תצוגת תכנון - שורות כפולות */
+			.planning-cards-container {
+				min-height: 300px;
+				border: 2px dashed #ddd;
+				border-radius: 10px;
+				padding: 15px;
+				background: #fafafa;
+				margin-bottom: 20px;
+			}
 
-		/* ========== סטיילים למערכת תכנון משודרגת ========== */
+			.planning-client-row {
+				background: white;
+				border-radius: 8px;
+				margin-bottom: 12px;
+				box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+				transition: all 0.3s ease;
+			}
 
-		.planning-date-header {
-			text-align: center;
-			background: linear-gradient(45deg, #4CAF50, #45a049);
-			color: white;
-			padding: 15px;
-			border-radius: 10px;
-			margin-bottom: 20px;
-			box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-		}
+			.planning-client-row:hover {
+				transform: translateY(-1px);
+				box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+			}
 
-		.planning-date-header h3 {
-			margin: 0;
-			font-size: 24px;
-		}
+			/* צבעי רמזור */
+			.planning-status-green { border-right: 4px solid #4CAF50; }
+			.planning-status-yellow { border-right: 4px solid #FFC107; }
+			.planning-status-orange { border-right: 4px solid #FF9800; }
+			.planning-status-red { border-right: 4px solid #F44336; }
 
-		.planning-date-header p {
-			margin: 5px 0 0 0;
-			opacity: 0.9;
-			font-size: 16px;
-		}
+			.planning-row-main {
+				display: flex;
+				align-items: center;
+				padding: 12px 15px;
+				gap: 15px;
+			}
 
-		.planning-view-tabs {
-			display: flex;
-			justify-content: center;
-			gap: 10px;
-			margin-bottom: 20px;
-		}
-
-		.planning-tab-btn {
-			padding: 10px 20px;
-			border: 2px solid #ddd;
-			background: white;
-			border-radius: 25px;
-			cursor: pointer;
-			transition: all 0.3s ease;
-			font-weight: bold;
-			font-family: inherit;
-		}
-
-		.planning-tab-btn.active {
-			background: #4CAF50;
-			color: white;
-			border-color: #4CAF50;
-		}
-
-		.planning-tab-btn:hover:not(.active) {
-			border-color: #4CAF50;
-			color: #4CAF50;
-		}
-
-		.planning-cards-container {
-			min-height: 300px;
-			border: 2px dashed #ddd;
-			border-radius: 10px;
-			padding: 15px;
-			background: #fafafa;
-			margin-bottom: 20px;
-		}
-
-		.planning-client-card {
-			background: white;
-			border-radius: 10px;
-			padding: 15px;
-			margin-bottom: 10px;
-			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-			cursor: move;
-			transition: all 0.3s ease;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			min-height: 80px;
-		}
-
-		.planning-client-card:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-		}
-
-		.planning-client-card.planning-dragging {
-			opacity: 0.6;
-			transform: rotate(5deg);
-			z-index: 1000;
-		}
-
-		.planning-client-card.planning-drag-over {
-			border: 2px dashed #4CAF50;
-			background: #f0f8f0;
-		}
-
-		/* צבעי רמזור חלשים */
-		.planning-status-green {
-			border-right: 5px solid rgba(76, 175, 80, 0.6);
-			background: rgba(76, 175, 80, 0.05);
-		}
-
-		.planning-status-yellow {
-			border-right: 5px solid rgba(255, 193, 7, 0.6);
-			background: rgba(255, 193, 7, 0.05);
-		}
-
-		.planning-status-orange {
-			border-right: 5px solid rgba(255, 152, 0, 0.6);
-			background: rgba(255, 152, 0, 0.05);
-		}
-
-		.planning-status-red {
-			border-right: 5px solid rgba(244, 67, 54, 0.6);
-			background: rgba(244, 67, 54, 0.05);
-		}
-
-		.planning-client-info {
-			flex: 1;
-			display: grid;
-			grid-template-columns: 2fr 1fr 1fr;
-			gap: 15px;
-			align-items: center;
-		}
-
-		.planning-client-main {
-			text-align: right;
-		}
-
-		.planning-client-name {
-			font-weight: bold;
-			font-size: 16px;
-			color: #333;
-			margin-bottom: 4px;
-		}
-
-		.planning-client-address {
-			font-size: 12px;
-			color: #666;
-			margin-bottom: 2px;
-		}
-
-		.planning-client-notes {
-			font-size: 11px;
-			color: #888;
-			margin-bottom: 2px;
-		}
-
-		.planning-client-next-visit {
-			font-size: 12px;
-			color: #555;
-			font-weight: bold;
-		}
-
-		.planning-client-time {
-			text-align: center;
-			font-weight: bold;
-			color: #4CAF50;
-		}
-
-		.planning-time-picker {
-			border: 1px solid #ddd;
-			border-radius: 5px;
-			padding: 4px;
-			font-size: 14px;
-			background: #f9f9f9;
-			font-family: inherit;
-		}
-
-		.planning-interval {
-			font-size: 12px;
-			color: #666;
-			text-align: center;
-		}
-
-		.planning-client-amount {
-			text-align: center;
-			font-weight: bold;
-			color: #2196F3;
-			font-size: 16px;
-		}
-
-		.planning-client-actions {
-			display: flex;
-			gap: 8px;
-		}
-
-		.planning-action-btn {
-			width: 35px;
-			height: 35px;
-			border: none;
-			border-radius: 50%;
-			cursor: pointer;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 14px;
-			transition: all 0.3s ease;
-			font-family: inherit;
-		}
-
-		.planning-complete {
-			background: #4CAF50;
-			color: white;
-		}
-
-		.planning-complete:hover {
-			background: #45a049;
-			transform: scale(1.1);
-		}
-
-		.planning-postpone {
-			background: #FF9800;
-			color: white;
-		}
-
-		.planning-postpone:hover {
-			background: #f57c00;
-			transform: scale(1.1);
-		}
-
-		.planning-menu {
-			background: #607D8B;
-			color: white;
-		}
-
-		.planning-menu:hover {
-			background: #546E7A;
-			transform: scale(1.1);
-		}
-
-		.planning-empty-state {
-			text-align: center;
-			padding: 40px;
-			color: #666;
-		}
-
-		.planning-empty-state h3 {
-			margin-bottom: 10px;
-			color: #333;
-		}
-
-		/* תגובה למובייל */
-		@media (max-width: 768px) {
 			.planning-client-info {
-				grid-template-columns: 1fr;
-				gap: 8px;
+				flex: 1;
 				text-align: right;
 			}
-			
-			.planning-client-time, 
-			.planning-client-amount {
-				text-align: right;
-				font-size: 14px;
+
+			.planning-client-name {
+				font-weight: bold;
+				font-size: 16px;
+				color: #333;
+				margin-bottom: 3px;
 			}
-			
-			.planning-action-btn {
-				width: 30px;
-				height: 30px;
+
+			.planning-client-address {
 				font-size: 12px;
+				color: #666;
+				margin-bottom: 3px;
 			}
-			
+
+			.planning-client-date {
+				font-size: 12px;
+				color: #555;
+				font-weight: 500;
+			}
+
+			.planning-client-price {
+				font-weight: bold;
+				color: #2196F3;
+				font-size: 16px;
+				min-width: 80px;
+				text-align: center;
+			}
+
+			.planning-client-actions {
+				display: flex;
+				gap: 8px;
+			}
+
+			.planning-action-btn {
+				width: 32px;
+				height: 32px;
+				border: none;
+				border-radius: 50%;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 12px;
+				transition: all 0.3s ease;
+			}
+
+			.planning-complete {
+				background: #4CAF50;
+				color: white;
+			}
+
+			.planning-postpone {
+				background: #FF9800;
+				color: white;
+			}
+
+			.planning-menu {
+				background: #607D8B;
+				color: white;
+			}
+
+			.planning-action-btn:hover {
+				transform: scale(1.1);
+			}
+
+			.planning-row-details {
+				background: #f8f9fa;
+				padding: 8px 15px 12px 15px;
+				border-top: 1px solid #e9ecef;
+				font-size: 13px;
+			}
+
+			.client-requests {
+				color: #0066cc;
+				margin-bottom: 4px;
+				font-weight: 500;
+			}
+
+			.client-notes {
+				color: #666;
+				font-style: italic;
+			}
+
+			/* מובייל */
+			@media (max-width: 768px) {
+				.planning-row-main {
+					flex-direction: column;
+					align-items: stretch;
+					gap: 10px;
+				}
+				
+				.planning-client-info {
+					text-align: center;
+				}
+				
+				.planning-client-actions {
+					justify-content: center;
+				}
+				
+				.planning-action-btn {
+					width: 40px;
+					height: 40px;
+					font-size: 14px;
+				}
+			}
+
+			/* שאר הסטיילים הקיימים נשארים */
+			.planning-date-header {
+				text-align: center;
+				background: linear-gradient(45deg, #4CAF50, #45a049);
+				color: white;
+				padding: 15px;
+				border-radius: 10px;
+				margin-bottom: 20px;
+				box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+			}
+
 			.planning-view-tabs {
-				flex-wrap: wrap;
+				display: flex;
+				justify-content: center;
+				gap: 10px;
+				margin-bottom: 20px;
 			}
-			
+
 			.planning-tab-btn {
-				padding: 8px 15px;
-				font-size: 14px;
+				padding: 10px 20px;
+				border: 2px solid #ddd;
+				background: white;
+				border-radius: 25px;
+				cursor: pointer;
+				transition: all 0.3s ease;
+				font-weight: bold;
 			}
-		}
 
-		/* אנימציות גרירה */
-		@keyframes planningDropAnimation {
-			0% { transform: scale(1.1); }
-			100% { transform: scale(1); }
-		}
-
-		.planning-client-card.planning-dropped {
-			animation: planningDropAnimation 0.3s ease;
-		}
+			.planning-tab-btn.active {
+				background: #4CAF50;
+				color: white;
+				border-color: #4CAF50;
+			}
 
 		/***************************************/
 		/* ייבוא נתונים - כפתורים אחידים */
@@ -1084,7 +986,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -1649,8 +1551,9 @@
 						base_amount: row[10] || '',
 						active: row[11] || '',
 						notes: row[12] || '',
-						last_visit: row[13] || '',
-						next_visit: row[14] || ''
+						client_requests: row[13] || '',
+						last_visit: row[14] || '',
+						next_visit: row[15] || ''
 					}));
 				}
 				
@@ -2105,6 +2008,12 @@
 				};
 			});
 			
+			////////<<<<<<<<<<<<<<<<<<<<<<<<<
+			/// const today = new Date();
+			/// const todayName = today.toLocaleDateString('en-US', { weekday: 'long' });
+			/// console.log(todayName);
+			////////<<<<<<<<<<<<<<<<<<<<<<<<<
+			
 			// סינון לפי תצוגה נוכחית
 			switch (currentPlanningView) {
 				case 'daily':
@@ -2206,49 +2115,29 @@
 				const overdueDaysText = client.daysOverdue > 0 ? ` (איחור ${client.daysOverdue} ימים)` : '';
 				
 				return `
-					<div class="planning-client-card planning-status-${client.status}" 
-						 draggable="${currentPlanningView === 'daily' ? 'true' : 'false'}" 
-						 data-client-id="${client.ID}"
-						 data-index="${index}">
-						<div class="planning-client-info">
-							<div class="planning-client-main">
+					<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
+						<div class="planning-row-main">
+							<div class="planning-client-info">
 								<div class="planning-client-name">${client.name}</div>
 								<div class="planning-client-address">${client.full_address}</div>
-								${client.notes ? `<div class="planning-client-notes">💡 ${client.notes}</div>` : ''}
-								<div class="planning-client-next-visit">
-									📅 ${nextVisitFormatted}${overdueDaysText}
-								</div>
+								<div class="planning-client-date">📅 ${nextVisitFormatted}${overdueDaysText}</div>
 							</div>
-							<div class="planning-client-time">
-								${currentPlanningView === 'daily' ? `
-									<select class="planning-time-picker" onchange="updateClientScheduledTime('${client.ID}', this.value)">
-										${timeSlots.map(time => 
-											`<option value="${time}" ${time === client.scheduledTime ? 'selected' : ''}>${time}</option>`
-										).join('')}
-									</select>
-								` : `<div class="planning-interval">כל ${client.interval_weeks} שבועות</div>`}
+							<div class="planning-client-price">₪${client.base_amount || 0}</div>
+							<div class="planning-client-actions">
+								<button class="planning-action-btn planning-complete" title="התחלת טיפול" onclick="completePlanningVisit('${client.ID}')">▶</button>
+								<button class="planning-action-btn planning-postpone" title="דחיה" onclick="postponePlanningVisit('${client.ID}')">⏰</button>
+								<button class="planning-action-btn planning-menu" title="עוד פעולות" onclick="showPlanningClientMenu('${client.ID}')">⋮</button>
 							</div>
-							<div class="planning-client-amount">₪${client.base_amount || 0}</div>
 						</div>
-						<div class="planning-client-actions">
-							<button class="planning-action-btn planning-complete" title="סיום טיפול" onclick="completePlanningVisit('${client.ID}')">
-								✓
-							</button>
-							<button class="planning-action-btn planning-postpone" title="דחיה" onclick="postponePlanningVisit('${client.ID}')">
-								⏰
-							</button>
-							<button class="planning-action-btn planning-menu" title="עוד פעולות" onclick="showPlanningClientMenu('${client.ID}')">
-								⋮
-							</button>
-						</div>
+						${(client.notes || client.client_requests) ? `
+							<div class="planning-row-details">
+								${client.client_requests ? `<div class="client-requests">🔹 ${client.client_requests}</div>` : ''}
+								${client.notes ? `<div class="client-notes">💭 ${client.notes}</div>` : ''}
+							</div>
+						` : ''}
 					</div>
 				`;
 			}).join('');
-
-			// הוספת אירועי גרירה (רק בתצוגה יומית)
-			if (currentPlanningView === 'daily') {
-				addPlanningDragEvents();
-			}
 		}
 	
 		// עדכון שעה מתוכננת ללקוח
@@ -2349,7 +2238,7 @@
 			}
 			
 			const historyText = clientVisits.map(visit => 
-				`${formatDate(visit.date)} - ${visit.work_done || 'טיפול'} - ₪${visit.amount} (${visit.paid === 'כן' ? 'שולם' : 'לא שולם'})`
+				`${formatDate(visit.date)} - ${visit.work_done || 'טיפול'} - ₪${visit.amount} (${getPaymentStatusText(visit.paid)})`
 			).join('\n');
 			
 			alert(`היסטוריית טיפולים - ${client.name}:\n\n${historyText}`);
@@ -2489,7 +2378,7 @@
 			
 			// חובות פתוחים
 			const openDebts = visits
-				.filter(visit => visit.paid === 'לא')
+				.filter(visit => visit.paid === '0')
 				.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			
 			// עדכון התצוגה
@@ -2889,6 +2778,7 @@
 				base_amount: parseFloat(document.getElementById('locationAmount').value) || 0,
 				active: document.getElementById('locationActive').value,
 				notes: document.getElementById('locationNotes').value,
+				client_requests: document.getElementById('locationClientRequests').value || '', // שדה חדש
 				last_visit: '',
 				next_visit: document.getElementById('locationNextVisit').value
 			};
@@ -2986,12 +2876,12 @@
 							<label>יום מועדף:</label>
 							<select id="editLocationDay">
 								<option value="כל יום" ${location.allowed_day === 'כל יום' ? 'selected' : ''}>כל יום</option>
-								<option value="ראשון" ${location.allowed_day === 'ראשון' ? 'selected' : ''}>ראשון</option>
-								<option value="שני" ${location.allowed_day === 'שני' ? 'selected' : ''}>שני</option>
-								<option value="שלישי" ${location.allowed_day === 'שלישי' ? 'selected' : ''}>שלישי</option>
-								<option value="רביעי" ${location.allowed_day === 'רביעי' ? 'selected' : ''}>רביעי</option>
-								<option value="חמישי" ${location.allowed_day === 'חמישי' ? 'selected' : ''}>חמישי</option>
-								<option value="שישי" ${location.allowed_day === 'שישי' ? 'selected' : ''}>שישי</option>
+								<option value="יום ראשון" ${location.allowed_day === 'יום ראשון' ? 'selected' : ''}>יום ראשון</option>
+								<option value="יום שני" ${location.allowed_day === 'יום שני' ? 'selected' : ''}>יום שני</option>
+								<option value="יום שלישי" ${location.allowed_day === 'יום שלישי' ? 'selected' : ''}>יום שלישי</option>
+								<option value="יום רביעי" ${location.allowed_day === 'יום רביעי' ? 'selected' : ''}>יום רביעי</option>
+								<option value="יום חמישי" ${location.allowed_day === 'יום חמישי' ? 'selected' : ''}>יום חמישי</option>
+								<option value="יום שישי" ${location.allowed_day === 'יום שישי' ? 'selected' : ''}>יום שישי</option>
 							</select>
 						</div>
 						
@@ -3002,7 +2892,7 @@
 						
 						<div class="form-group">
 							<label>סכום בסיס (₪):</label>
-							<input type="number" step="0.01" id="editLocationAmount" value="${location.base_amount || 0}">
+							<input type="number" id="editLocationAmount" value="${location.base_amount || 0}" step="0.01">
 						</div>
 						
 						<div class="form-group">
@@ -3016,6 +2906,11 @@
 						<div class="form-group">
 							<label>טיפול הבא:</label>
 							<input type="date" id="editLocationNextVisit" value="${location.next_visit || ''}">
+						</div>
+						
+						<div class="form-group">
+							<label>בקשות לקוח:</label>
+							<textarea id="editLocationClientRequests" rows="2">${location.client_requests || ''}</textarea>
 						</div>
 						
 						<div class="form-group">
@@ -3756,7 +3651,7 @@
 							end_time: '',
 							amount: parseFloat(amount) || 0,
 							expense: parseFloat(expense) || 0,
-							paid: paid === 'כן' ? 'כן' : 'לא',
+							paid: mapPaymentStatus(paid),
 							notes: notes
 						};
 						
@@ -5503,7 +5398,7 @@
 			const debtsByLocation = {};
 			
 			visits.forEach(visit => {
-				if (visit.paid === 'לא' && visit.amount > 0) {
+				if (visit.paid === '0' && visit.amount > 0) {
 					if (!debtsByLocation[visit.location_id]) {
 						const location = locations.find(loc => loc.ID == visit.location_id);
 						debtsByLocation[visit.location_id] = {
@@ -5872,6 +5767,7 @@
 					location.base_amount,
 					location.active,
 					location.notes,
+					location.client_requests || '',
 					formatDateForSheets(location.last_visit),
 					formatDateForSheets(location.next_visit)
 				]);
@@ -6364,7 +6260,7 @@
 								end_time: '',
 								amount: amount,
 								expense: parseFloat(row[11]) || 0,
-								paid: row[10] === 'כן' || row[10] === 'yes' || row[10] === '1',
+								paid: mapPaymentStatus(row[10]),
 								notes: row[12] || ''
 							};
 							
@@ -6645,6 +6541,7 @@
 					base_amount: parseFloat(document.getElementById('editLocationAmount').value) || 0,
 					active: document.getElementById('editLocationActive').value,
 					next_visit: document.getElementById('editLocationNextVisit').value,
+					client_requests: document.getElementById('editLocationClientRequests').value,
 					notes: document.getElementById('editLocationNotes').value
 				};
 				
@@ -6948,6 +6845,35 @@
 			return `${day}/${month}/${year}`;
 		}
 	   
+	   
+	   // פונקציה להמרת סטטוס תשלום לקידוד מספרי
+		function mapPaymentStatus(value) {
+			if (!value || value.trim() === '') return "0"; // ערך ריק = לא שולם
+			const normalized = value.toString().toLowerCase().trim();
+			
+			switch(normalized) {
+				case "כן":
+				case "true": 
+					return "1"; // שולם
+				case "לא":
+				case "false":
+					return "0"; // לא שולם
+				case "ללא תשלום":
+					return "2"; // ללא תשלום
+				default:
+					return "0"; // ברירת מחדל = לא שולם
+			}
+		}
+
+		// פונקציה להצגת טקסט ידידותי
+		function getPaymentStatusText(status) {
+			switch(status) {
+				case "1": return "שולם";
+				case "0": return "לא שולם";
+				case "2": return "ללא תשלום";
+				default: return "לא שולם";
+			}
+		}
 	   
    </script>
 </body>
