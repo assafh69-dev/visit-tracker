@@ -986,7 +986,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -1065,6 +1065,12 @@
 							<label for="visitTime">שעת התחלה:</label>
 							<input type="time" id="visitTime" required>
 						</div>
+						
+						<div class="form-group">
+							<label for="endTime">שעת סיום:</label>
+							<input type="time" id="endTime">
+						</div>
+						
                         <div class="form-group">
                             <label for="visitType">סוג טיפול:</label>
                             <select id="visitType" required>
@@ -1108,6 +1114,16 @@
 							<label for="expense">הוצאה:</label>
 							<input type="number" id="expense" placeholder="הוצאות נילוות" onchange="calculateTreatmentCost()">
 						</div>
+						
+						<div class="form-group">
+							<label for="paymentStatus">סטטוס תשלום:</label>
+							<select id="paymentStatus">
+								<option value="0">לא שולם</option>
+								<option value="1">שולם</option>
+								<option value="2">ללא תשלום</option>
+							</select>
+						</div>
+						
                         <button type="submit">שמור טיפול</button>
                     </form>
                 </div>
@@ -2548,6 +2564,8 @@
 			const formData = new FormData(event.target);
 			const selectedLocationId = document.getElementById('locationSelect').value;
 			const visitDate = document.getElementById('visitDate').value; // התאריך הנוכחי
+			const endTime = document.getElementById('endTime').value;
+			const paymentStatus = document.getElementById('paymentStatus').value;
 			
 			// בדיקות בסיסיות
 			if (!selectedLocationId) {
@@ -2568,6 +2586,20 @@
 				}
 			}
 
+			// חישוב אוטומטי של משך הזמן אם יש שעת התחלה וסיום
+			let calculatedDuration = document.getElementById('duration_minutes').value;
+			const startTime = document.getElementById('visitTime').value;
+			if (startTime && endTime) {
+				const start = new Date(`2000-01-01 ${startTime}`);
+				const end = new Date(`2000-01-01 ${endTime}`);
+				const diffMs = end - start;
+				if (diffMs > 0) {
+					calculatedDuration = Math.round(diffMs / (1000 * 60)); // הפרש בדקות
+					document.getElementById('duration_minutes').value = calculatedDuration;
+				}
+			}
+
+
 			const visitData = {
 				location_id: selectedLocationId,  
 				visit_type: document.getElementById('visitType').value,
@@ -2576,11 +2608,11 @@
 				workers_count: parseInt(document.getElementById('numberOfWorkersVisit').value) || 1,		
 				amount: document.getElementById('amount').value || 0,
 				expense: document.getElementById('expense').value || 0,
-				paid: document.getElementById('paid') ? document.getElementById('paid').value : 'לא', // הוסף אם קיים
-				notes: document.getElementById('notes') ? document.getElementById('notes').value : '', // הוסף אם קיים
 				date: visitDate,
 				start_time: document.getElementById('visitTime').value,
-				end_time: document.getElementById('visitTime').value
+				end_time: endTime,
+				paid: paymentStatus,
+				notes: document.getElementById('notes') ? document.getElementById('notes').value : ''
 			};
 			
 			console.log('Visitdata:', visitData);
@@ -5391,7 +5423,7 @@
 	   
 	   // פונקציה להצגת חובות
 		function displayDebts() {
-			console.log('דוגמאות ערכי paid:', visits.slice(0, 5).map(v => v.paid));
+			//// console.log('דוגמאות ערכי paid:', visits.slice(0, 5).map(v => v.paid));
 			const sortBy = document.getElementById('debtSortBy').value;
 			const minAmount = parseFloat(document.getElementById('minDebtAmount').value) || 0;
 			
@@ -5532,7 +5564,7 @@
 		// הצגת פירוט חוב ללקוח
 		function showDebtDetails(locationId) {
 			const location = locations.find(loc => loc.ID == locationId);
-			const locationVisits = visits.filter(v => v.location_id == locationId && v.paid === 'לא');
+			const locationVisits = visits.filter(v => v.location_id == locationId && v.paid === '0');
 			
 			let details = `פירוט חוב עבור: ${location?.name}\n\n`;
 			
