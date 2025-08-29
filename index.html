@@ -1084,7 +1084,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
 			</nav>
         </header>
 
@@ -2109,11 +2109,13 @@
 			switch (currentPlanningView) {
 				case 'daily':
 					const today = new Date();
-					const todayName = "א'";   //today.toLocaleDateString('he-IL', { weekday: 'long' });
-					
+					const todayName = today.toLocaleDateString('he-IL', { weekday: 'long' }).normalize('NFC');
+
 					planningClients = filteredClients.filter(client => {
+						console.log('Today\'s name:', todayName, ' | client.allowed_day:', client.allowed_day);
 						const isDueOrOverdue = client.daysOverdue >= 0;
-						const isRightDay = !client.allowed_day || client.allowed_day === 'כל יום' || client.allowed_day === todayName;
+						const clientDayNormalized = client.allowed_day ? client.allowed_day.normalize('NFC') : '';
+						const isRightDay = !client.allowed_day || client.allowed_day === 'כל יום' || clientDayNormalized === todayName;
 						return isDueOrOverdue && isRightDay;
 					});
 					break;
