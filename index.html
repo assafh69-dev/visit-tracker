@@ -1015,7 +1015,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -6078,7 +6078,7 @@
 				// קרא את כל הנתונים הנוכחיים מהטבלה
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:O'
+					range: 'Locations!A:P'
 				});
 				
 				const allRows = response.result.values || [];
@@ -6090,7 +6090,8 @@
 					// מצא את השורה המתאימה בטבלה
 					for (let i = 1; i < allRows.length; i++) { // מתחיל מ-1 כדי לדלג על הכותרות
 						if (allRows[i][0] === location.ID) {
-							// עדכן את עמודות התאריכים (עמודות 13 ו-14)
+							// עדכן את עמודות התאריכים והיום המועדף
+							updatedRows[i][7] = location.allowed_day;   // allowed_day (עמודה 7)
 							updatedRows[i][13] = location.last_visit;   // last_visit
 							updatedRows[i][14] = location.next_visit;   // next_visit
 							updatedCount++;
@@ -6102,7 +6103,7 @@
 				// שמור את כל הטבלה המעודכנת בקריאה אחת בלבד
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:O',
+					range: 'Locations!A:P',
 					valueInputOption: 'USER_ENTERED',
 					resource: {
 						values: updatedRows
