@@ -957,6 +957,35 @@
 		}
 		/***************************************/
 
+		/* סטיילינג למצב שבועי */
+		.weekly-day-section {
+			margin-bottom: 25px;
+		}
+
+		.weekly-day-header {
+			background: linear-gradient(45deg, #3498db, #2980b9);
+			color: white;
+			padding: 10px 15px;
+			border-radius: 8px;
+			margin-bottom: 12px;
+			font-size: 16px;
+			font-weight: bold;
+			text-align: center;
+			box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+		}
+
+		.planning-empty-state {
+			text-align: center;
+			color: #666;
+			padding: 40px 20px;
+		}
+
+		.planning-empty-state h3 {
+			margin-bottom: 10px;
+			color: #4CAF50;
+		}
+
+
 	</style>
    
 </head>
@@ -986,7 +1015,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -2045,8 +2074,18 @@
 					});
 					break;
 				case 'weekly':
-					// לקוחות שצריכים טיפול השבוע הקרוב (כולל מי שכבר מאחר)
+					// במצב שבועי - מיון לפי ימים בשבוע
 					planningClients = filteredClients.filter(client => client.daysOverdue >= -7);
+					
+					// מיון לפי יום בשבוע ואז לפי זמן מתוכנן
+					planningClients.sort((a, b) => {
+						const dayOrder = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
+						const dayA = dayOrder.indexOf(a.allowed_day || 'יום ראשון');
+						const dayB = dayOrder.indexOf(b.allowed_day || 'יום ראשון');
+						
+						if (dayA !== dayB) return dayA - dayB;
+						return a.scheduledTime.localeCompare(b.scheduledTime);
+					});
 					break;
 				case 'overdue':
 					// רק לקוחות שכבר מאחרים
@@ -2126,34 +2165,75 @@
 				return;
 			}
 
-			container.innerHTML = planningClients.map((client, index) => {
-				const nextVisitFormatted = formatDate(client.next_visit);
-				const overdueDaysText = client.daysOverdue > 0 ? ` (איחור ${client.daysOverdue} ימים)` : '';
+			// במצב שבועי - חלוקה לפי ימים
+			if (currentPlanningView === 'weekly') {
+				renderWeeklyPlanningByDays();
+			} else {
+				// במצב יומי או מאחרות - רשימה רגילה
+				renderRegularPlanningList();
+			}
+		}
+
+		// רינדור למצב שבועי עם חלוקה לפי ימים
+		function renderWeeklyPlanningByDays() {
+			const container = document.getElementById('planningCardsContainer');
+			const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
+			
+			let html = '';
+			
+			dayNames.forEach(dayName => {
+				const dayClients = planningClients.filter(client => 
+					(client.allowed_day || 'יום ראשון') === dayName
+				);
 				
-				return `
-					<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
-						<div class="planning-row-main">
-							<div class="planning-client-info">
-								<div class="planning-client-name">${client.name}</div>
-								<div class="planning-client-address">${client.full_address}</div>
-								<div class="planning-client-date">📅 ${nextVisitFormatted}${overdueDaysText}</div>
-							</div>
-							<div class="planning-client-price">₪${client.base_amount || 0}</div>
-							<div class="planning-client-actions">
-								<button class="planning-action-btn planning-complete" title="התחלת טיפול" onclick="completePlanningVisit('${client.ID}')">▶</button>
-								<button class="planning-action-btn planning-postpone" title="דחיה" onclick="postponePlanningVisit('${client.ID}')">⏰</button>
-								<button class="planning-action-btn planning-menu" title="עוד פעולות" onclick="showPlanningClientMenu('${client.ID}')">⋮</button>
-							</div>
+				if (dayClients.length > 0) {
+					html += `
+						<div class="weekly-day-section">
+							<h4 class="weekly-day-header">---- ${dayName} -------</h4>
+							${dayClients.map(client => renderClientRow(client)).join('')}
 						</div>
-						${(client.notes || client.client_requests) ? `
-							<div class="planning-row-details">
-								${client.client_requests ? `<div class="client-requests">🔹 ${client.client_requests}</div>` : ''}
-								${client.notes ? `<div class="client-notes">💭 ${client.notes}</div>` : ''}
-							</div>
-						` : ''}
+					`;
+				}
+			});
+			
+			container.innerHTML = html;
+		}
+
+		// רינדור רגיל (יומי/מאחרות)
+		function renderRegularPlanningList() {
+			const container = document.getElementById('planningCardsContainer');
+			container.innerHTML = planningClients.map(client => renderClientRow(client)).join('');
+		}
+
+		// רינדור שורת לקוח (משותף לשני המצבים)
+		function renderClientRow(client) {
+			const nextVisitFormatted = formatDate(client.next_visit);
+			const overdueDaysText = client.daysOverdue > 0 ? 
+				` (איחור ${client.daysOverdue} ימים)` : '';
+			
+			return `
+				<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
+					<div class="planning-row-main">
+						<div class="planning-client-info">
+							<div class="planning-client-name">${client.name}</div>
+							<div class="planning-client-address">${client.full_address}</div>
+							<div class="planning-client-date">📅 ${nextVisitFormatted}${overdueDaysText}</div>
+						</div>
+						<div class="planning-client-price">₪${client.base_amount || 0}</div>
+						<div class="planning-client-actions">
+							<button class="planning-action-btn planning-complete" title="התחלת טיפול" onclick="completePlanningVisit('${client.ID}')">▶</button>
+							<button class="planning-action-btn planning-postpone" title="דחיה" onclick="postponePlanningVisit('${client.ID}')">⏰</button>
+							<button class="planning-action-btn planning-menu" title="עוד פעולות" onclick="showPlanningClientMenu('${client.ID}')">⋮</button>
+						</div>
 					</div>
-				`;
-			}).join('');
+					${(client.notes || client.client_requests) ? `
+						<div class="planning-row-details">
+							${client.client_requests ? `<div class="client-requests">🔹 ${client.client_requests}</div>` : ''}
+							${client.notes ? `<div class="client-notes">📝 ${client.notes}</div>` : ''}
+						</div>
+					` : ''}
+				</div>
+			`;
 		}
 	
 		// עדכון שעה מתוכננת ללקוח
@@ -2906,7 +2986,7 @@
 						
 						<div class="form-group">
 							<label>יום מועדף:</label>
-							<select id="editLocationDay">
+							<select id="editLocationDay" value="${location.allowed_day||''}>
 								<option value="כל יום" ${location.allowed_day === 'כל יום' ? 'selected' : ''}>כל יום</option>
 								<option value="יום ראשון" ${location.allowed_day === 'יום ראשון' ? 'selected' : ''}>יום ראשון</option>
 								<option value="יום שני" ${location.allowed_day === 'יום שני' ? 'selected' : ''}>יום שני</option>
@@ -4590,10 +4670,9 @@
 				switch (sheetName) {
 					case 'Locations':
 						headers = [
-							'ID', 'name', 'full_address', 'neighborhood', 'city', 
-							'contact_person', 'phone', 'allowed_day', 'interval_weeks', 
-							'temp_addition', 'base_amount', 'active', 'notes', 
-							'last_visit', 'next_visit'
+							'ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 
+							'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 
+							'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 'client_requests'
 						];
 						break;
 					case 'Visits':
@@ -5947,6 +6026,14 @@
 					// הטיפול האחרון
 					const lastVisit = locationVisits[0];
 					const lastVisitDate = lastVisit.date;
+					
+					// חישוב יום מועדף לפי הביקור האחרון
+					if (!location.allowed_day || location.allowed_day === '') {
+						const lastDate = new Date(lastVisitDate);
+						const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
+						location.allowed_day = dayNames[lastDate.getDay()];
+						console.log(`📅 ${location.name}: יום מועדף חושב כ-${location.allowed_day} (לפי ביקור מ-${lastVisitDate})`);
+					}
 					
 					// חישוב תאריך הטיפול הבא
 					const lastDate = new Date(lastVisitDate);
