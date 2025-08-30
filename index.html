@@ -1015,7 +1015,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -4647,17 +4647,18 @@
 							{ properties: { title: 'Locations' } },
 							{ properties: { title: 'Visits' } },
 							{ properties: { title: 'Receipts' } },
-							{ properties: { title: 'SystemSettings' } }
+							{ properties: { title: 'SystemSettings' } },
+							{ properties: { title: 'streetsRLZ' } } // ✅ הוספת הגיליון החדש
 						]
 					})
 				});
 				
 				SPREADSHEET_ID = response.result.spreadsheetId;
 				
-				// הוסף כותרות לכל הגיליונות
+				// הוסף כותרות לכל הגיליונות כולל streetsRLZ
 				await addAllHeaders();
 				
-				showToast('נוצרה טבלה חדשה!', 'success');
+				showToast('נוצרה טבלה חדשה עם גיליון רחובות-שכונות!', 'success');
 				
 			} catch (error) {
 				console.error('Error creating spreadsheet:', error);
@@ -4699,6 +4700,7 @@
 		}
 		
 		// פונקציה חדשה להוספת כותרות לגיליון ספציפי
+		// עדכון פונקציית addHeadersToSheet - הוספת טיפול ב-streetsRLZ
 		async function addHeadersToSheet(sheetName) {
 			try {
 				let headers = [];
@@ -4714,27 +4716,33 @@
 					case 'Visits':
 						headers = [
 							'ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 
-							'duration_minutes', 'num_workers', 'start_time', 'end_time', 
-							'amount', 'expense', 'paid', 'notes'
+							'duration_minutes', 'start_time', 'end_time', 'amount', 'expense', 'paid', 'notes'
 						];
 						break;
 					case 'Receipts':
 						headers = [
-							'ID', 'book_number', 'receipt_number', 'date', 'location_id', 
-							'location_name', 'amount', 'payment_type', 'notes'
+							'ID', 'code_x', 'booklet', 'receipt', 'date', 'address', 
+							'amount', 'type', 'notes', 'details'
 						];
+						break;
+					case 'SystemSettings':
+						headers = ['Setting', 'Value'];
+						break;
+					case 'streetsRLZ': // ✅ הוספת הגיליון החדש
+						headers = ['רחוב', 'שכונה'];
 						break;
 				}
 				
-				await gapi.client.sheets.spreadsheets.values.update({
-					spreadsheetId: SPREADSHEET_ID,
-					range: `${sheetName}!A1:${String.fromCharCode(64 + headers.length)}1`,
-					valueInputOption: 'RAW',
-					values: [headers]
-				});
-				
-				console.log(`✅ Added headers to ${sheetName}`);
-				
+				if (headers.length > 0) {
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: `${sheetName}!A1:${String.fromCharCode(64 + headers.length)}1`,
+						valueInputOption: 'RAW',
+						resource: { values: [headers] }
+					});
+					
+					console.log(`✅ Headers added to ${sheetName}`);
+				}
 			} catch (error) {
 				console.error(`Error adding headers to ${sheetName}:`, error);
 			}
