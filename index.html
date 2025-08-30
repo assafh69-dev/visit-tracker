@@ -1015,7 +1015,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -1865,13 +1865,14 @@
 
 
 		// DOMContentLoaded
+		// עדכון האירוע DOMContentLoaded - שינוי הזמן
 		document.addEventListener('DOMContentLoaded', function() {
 			console.log('App starting...');
 			initializeGoogleAPIs();
-			loadAllData(); // זה יטען נתונים מקומיים
+			loadAllData();
 			setupEventListeners();
 			
-			// **הוספה חדשה** - טעינת רחובות-שכונות אחרי אתחול
+			// **שינוי הזמן** - מ-3000 ל-1000 מילי-שניות
 			setTimeout(() => {
 				const importTableId = localStorage.getItem('importTableId');
 				if (importTableId) {
@@ -1879,7 +1880,7 @@
 						console.log('Streets neighborhoods not loaded:', err.message)
 					);
 				}
-			}, 3000); // המתנה של 3 שניות אחרי אתחול המערכת
+			}, 1000); // ✅ זמן קצר יותר כי עכשיו זה מהטבלה הראשית
 		});
 
         // Setup event listeners
@@ -6991,16 +6992,12 @@
 		let streetsNeighborhoods = {};
 
 		// קריאה של טבלת רחובות-שכונות מגוגל שיטס
+		// עדכון פונקציה לטעינת רחובות-שכונות מהטבלת הנתונים הראשית
 		async function loadStreetsNeighborhoods() {
 			try {
-				const importTableId = localStorage.getItem('importTableId');
-				if (!importTableId) {
-					console.log('⚠️ No import table ID - skipping streets neighborhoods');
-					return;
-				}
-				
+				// **שינוי** - קריאה מהטבלת הנתונים הראשית במקום טבלת העזר
 				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: importTableId,
+					spreadsheetId: SPREADSHEET_ID, // ✅ הטבלה הראשית במקום importTableId
 					range: 'streetsRLZ!A2:B1000'
 				});
 				
@@ -7015,10 +7012,10 @@
 					}
 				}
 				
-				console.log(`📍 Loaded ${Object.keys(streetsNeighborhoods).length} street-neighborhood mappings`);
+				console.log(`📍 Loaded ${Object.keys(streetsNeighborhoods).length} street-neighborhood mappings from main spreadsheet`);
 				
 			} catch (error) {
-				console.error('Error loading streets neighborhoods:', error);
+				console.error('Error loading streets neighborhoods from main spreadsheet:', error);
 				streetsNeighborhoods = {}; // ריק במקרה של שגיאה
 			}
 		}
@@ -7028,56 +7025,65 @@
 			if (!customerName) return { name: '', fullAddress: '', neighborhood: '', city: '' };
 			
 			const originalAddress = customerName.trim();
+			
+			// רשימת ערים דו-מילתיות וקיצורים
+			const cityMappings = {
+				'ראשלצ': 'ראשון לציון',
+				'פתח תקוה': 'פתח תקוה',
+				'בת ים': 'בת ים',
+				'רמת גן': 'רמת גן',
+				'רמת השרון': 'רמת השרון',
+				'גליל ים': 'גליל ים'
+			};
+			
 			const parts = originalAddress.split(' ');
-			
-			// המרת קיצורים
-			const lastPart = parts[parts.length - 1];
-			if (lastPart === 'ראשלצ') {
-				parts[parts.length - 1] = 'ראשון לציון';
-			}
-			
-			let name = '';
 			let city = '';
 			let neighborhood = '';
 			
-			if (parts.length >= 3) {
-				// פורמט רגיל: "רחוב מספר עיר"
-				city = parts[parts.length - 1];
-				const houseNumber = parts[parts.length - 2];
-				const street = parts.slice(0, -2).join(' ');
-				
-				// בדיקה אם מספר הבית הוא באמת מספר
-				const isNumber = /^\d+[א-ב]?$/.test(houseNumber); // מספר + אולי א/ב
-				
-				if (isNumber) {
-					name = street; // השם יהיה רק הרחוב
-				} else {
-					// לא מספר - אולי זה חלק מהרחוב
-					name = parts.slice(0, -1).join(' '); // הכל פרט לעיר
+			// זיהוי שם העיר - מהסוף לתחילה
+			if (parts.length >= 2) {
+				// בדיקה אם 2 המילים האחרונות הן עיר דו-מילתית
+				const lastTwoWords = parts.slice(-2).join(' ');
+				if (cityMappings[lastTwoWords] || ['פתח תקוה', 'בת ים', 'רמת גן', 'רמת השרון', 'גליל ים'].includes(lastTwoWords)) {
+					city = cityMappings[lastTwoWords] || lastTwoWords;
+				} 
+				// אחרת בדיקה של המילה האחרונה
+				else {
+					const lastWord = parts[parts.length - 1];
+					city = cityMappings[lastWord] || lastWord;
 				}
-				
-			} else if (parts.length === 2) {
-				// "רחוב עיר" או "עיר עיר"
-				name = parts[0];
-				city = parts[1];
-			} else {
-				// רק עיר
-				name = originalAddress;
-				city = originalAddress;
 			}
 			
 			// קביעת שכונה לפי עיר ורחוב
-			if (city === 'ראשון לציון' && streetsNeighborhoods[name]) {
-				neighborhood = streetsNeighborhoods[name];
+			if (city === 'ראשון לציון') {
+				// חילוץ שם הרחוב לבדיקת שכונה
+				let streetName = '';
+				if (parts.length >= 3) {
+					// אם העיר דו-מילתית
+					if (['פתח תקוה', 'בת ים', 'רמת גן', 'רמת השרון', 'גליל ים'].includes(parts.slice(-2).join(' '))) {
+						streetName = parts.slice(0, -3).join(' '); // רחוב + מספר, מינוס עיר דו-מילתית
+					} else {
+						streetName = parts.slice(0, -2).join(' '); // רחוב + מספר, מינוס עיר חד-מילתית
+					}
+					
+					// הסרת מספר בית מסוף שם הרחוב
+					const streetParts = streetName.split(' ');
+					const lastPart = streetParts[streetParts.length - 1];
+					if (/^\d+[א-ב]?$/.test(lastPart)) { // אם החלק האחרון הוא מספר
+						streetName = streetParts.slice(0, -1).join(' ');
+					}
+				}
+				
+				if (streetName && streetsNeighborhoods[streetName]) {
+					neighborhood = streetsNeighborhoods[streetName];
+				}
 			} else if (city === 'חולון') {
 				neighborhood = 'מרכז העיר';
-			} else {
-				neighborhood = ''; // עבור שאר המקומות
 			}
 			
 			return {
-				name: name,
-				fullAddress: originalAddress, // כתובת מקורית ללא שינוי
+				name: originalAddress, // ✅ השם נשאר הכתובת המקורית ללא שינוי!
+				fullAddress: originalAddress,
 				neighborhood: neighborhood,
 				city: city
 			};
