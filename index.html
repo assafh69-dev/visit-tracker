@@ -1015,7 +1015,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -7046,7 +7046,6 @@
 			
 			const parts = originalAddress.split(' ');
 			let city = '';
-			let neighborhood = '';
 			
 			// זיהוי שם העיר - מהסוף לתחילה
 			if (parts.length >= 2) {
@@ -7062,41 +7061,13 @@
 				}
 			}
 			
-			// קביעת שכונה לפי עיר ורחוב
-			if (city === 'ראשון לציון') {
-				// חילוץ שם הרחוב לבדיקת שכונה
-				let streetName = '';
-				if (parts.length >= 3) {
-					// אם העיר דו-מילתית
-					if (['פתח תקוה', 'בת ים', 'רמת גן', 'רמת השרון', 'גליל ים'].includes(parts.slice(-2).join(' '))) {
-						streetName = parts.slice(0, -3).join(' '); // רחוב + מספר, מינוס עיר דו-מילתית
-					} else {
-						streetName = parts.slice(0, -2).join(' '); // רחוב + מספר, מינוס עיר חד-מילתית
-					}
-					
-					// הסרת מספר בית מסוף שם הרחוב
-					const streetParts = streetName.split(' ');
-					const lastPart = streetParts[streetParts.length - 1];
-					if (/^\d+[א-ב]?$/.test(lastPart)) { // אם החלק האחרון הוא מספר
-						streetName = streetParts.slice(0, -1).join(' ');
-					}
-				}
-				
-				if (streetName && streetsNeighborhoods[streetName]) {
-					neighborhood = streetsNeighborhoods[streetName];
-				}
-			} else if (city === 'חולון') {
-				neighborhood = 'מרכז העיר';
-			}
-			
 			return {
-				name: originalAddress, // ✅ השם נשאר הכתובת המקורית ללא שינוי!
+				name: originalAddress, // השם נשאר הכתובת המקורית ללא שינוי
 				fullAddress: originalAddress,
-				neighborhood: neighborhood,
+				neighborhood: '', // תמיד ריק - למילוי ידני
 				city: city
 			};
 		}
-	   
 		   
 	   
    </script>
