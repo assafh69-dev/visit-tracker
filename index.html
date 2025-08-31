@@ -957,6 +957,35 @@
 		}
 		/***************************************/
 
+		/* סטיילינג למצב שבועי */
+		.weekly-day-section {
+			margin-bottom: 25px;
+		}
+
+		.weekly-day-header {
+			background: linear-gradient(45deg, #3498db, #2980b9);
+			color: white;
+			padding: 10px 15px;
+			border-radius: 8px;
+			margin-bottom: 12px;
+			font-size: 16px;
+			font-weight: bold;
+			text-align: center;
+			box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+		}
+
+		.planning-empty-state {
+			text-align: center;
+			color: #666;
+			padding: 40px 20px;
+		}
+
+		.planning-empty-state h3 {
+			margin-bottom: 10px;
+			color: #4CAF50;
+		}
+
+
 	</style>
    
 </head>
@@ -1065,6 +1094,12 @@
 							<label for="visitTime">שעת התחלה:</label>
 							<input type="time" id="visitTime" required>
 						</div>
+						
+						<div class="form-group">
+							<label for="endTime">שעת סיום:</label>
+							<input type="time" id="endTime">
+						</div>
+						
                         <div class="form-group">
                             <label for="visitType">סוג טיפול:</label>
                             <select id="visitType" required>
@@ -1108,6 +1143,16 @@
 							<label for="expense">הוצאה:</label>
 							<input type="number" id="expense" placeholder="הוצאות נילוות" onchange="calculateTreatmentCost()">
 						</div>
+						
+						<div class="form-group">
+							<label for="paymentStatus">סטטוס תשלום:</label>
+							<select id="paymentStatus">
+								<option value="0">לא שולם</option>
+								<option value="1">שולם</option>
+								<option value="2">ללא תשלום</option>
+							</select>
+						</div>
+						
                         <button type="submit">שמור טיפול</button>
                     </form>
                 </div>
@@ -2029,8 +2074,18 @@
 					});
 					break;
 				case 'weekly':
-					// לקוחות שצריכים טיפול השבוע הקרוב (כולל מי שכבר מאחר)
+					// במצב שבועי - מיון לפי ימים בשבוע
 					planningClients = filteredClients.filter(client => client.daysOverdue >= -7);
+					
+					// מיון לפי יום בשבוע ואז לפי זמן מתוכנן
+					planningClients.sort((a, b) => {
+						const dayOrder = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
+						const dayA = dayOrder.indexOf(a.allowed_day || 'יום ראשון');
+						const dayB = dayOrder.indexOf(b.allowed_day || 'יום ראשון');
+						
+						if (dayA !== dayB) return dayA - dayB;
+						return a.scheduledTime.localeCompare(b.scheduledTime);
+					});
 					break;
 				case 'overdue':
 					// רק לקוחות שכבר מאחרים
@@ -2110,34 +2165,75 @@
 				return;
 			}
 
-			container.innerHTML = planningClients.map((client, index) => {
-				const nextVisitFormatted = formatDate(client.next_visit);
-				const overdueDaysText = client.daysOverdue > 0 ? ` (איחור ${client.daysOverdue} ימים)` : '';
+			// במצב שבועי - חלוקה לפי ימים
+			if (currentPlanningView === 'weekly') {
+				renderWeeklyPlanningByDays();
+			} else {
+				// במצב יומי או מאחרות - רשימה רגילה
+				renderRegularPlanningList();
+			}
+		}
+
+		// רינדור למצב שבועי עם חלוקה לפי ימים
+		function renderWeeklyPlanningByDays() {
+			const container = document.getElementById('planningCardsContainer');
+			const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
+			
+			let html = '';
+			
+			dayNames.forEach(dayName => {
+				const dayClients = planningClients.filter(client => 
+					(client.allowed_day || 'יום ראשון') === dayName
+				);
 				
-				return `
-					<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
-						<div class="planning-row-main">
-							<div class="planning-client-info">
-								<div class="planning-client-name">${client.name}</div>
-								<div class="planning-client-address">${client.full_address}</div>
-								<div class="planning-client-date">📅 ${nextVisitFormatted}${overdueDaysText}</div>
-							</div>
-							<div class="planning-client-price">₪${client.base_amount || 0}</div>
-							<div class="planning-client-actions">
-								<button class="planning-action-btn planning-complete" title="התחלת טיפול" onclick="completePlanningVisit('${client.ID}')">▶</button>
-								<button class="planning-action-btn planning-postpone" title="דחיה" onclick="postponePlanningVisit('${client.ID}')">⏰</button>
-								<button class="planning-action-btn planning-menu" title="עוד פעולות" onclick="showPlanningClientMenu('${client.ID}')">⋮</button>
-							</div>
+				if (dayClients.length > 0) {
+					html += `
+						<div class="weekly-day-section">
+							<h4 class="weekly-day-header">---- ${dayName} -------</h4>
+							${dayClients.map(client => renderClientRow(client)).join('')}
 						</div>
-						${(client.notes || client.client_requests) ? `
-							<div class="planning-row-details">
-								${client.client_requests ? `<div class="client-requests">🔹 ${client.client_requests}</div>` : ''}
-								${client.notes ? `<div class="client-notes">💭 ${client.notes}</div>` : ''}
-							</div>
-						` : ''}
+					`;
+				}
+			});
+			
+			container.innerHTML = html;
+		}
+
+		// רינדור רגיל (יומי/מאחרות)
+		function renderRegularPlanningList() {
+			const container = document.getElementById('planningCardsContainer');
+			container.innerHTML = planningClients.map(client => renderClientRow(client)).join('');
+		}
+
+		// רינדור שורת לקוח (משותף לשני המצבים)
+		function renderClientRow(client) {
+			const nextVisitFormatted = formatDate(client.next_visit);
+			const overdueDaysText = client.daysOverdue > 0 ? 
+				` (איחור ${client.daysOverdue} ימים)` : '';
+			
+			return `
+				<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
+					<div class="planning-row-main">
+						<div class="planning-client-info">
+							<div class="planning-client-name">${client.name}</div>
+							<div class="planning-client-address">${client.full_address}</div>
+							<div class="planning-client-date">📅 ${nextVisitFormatted}${overdueDaysText}</div>
+						</div>
+						<div class="planning-client-price">₪${client.base_amount || 0}</div>
+						<div class="planning-client-actions">
+							<button class="planning-action-btn planning-complete" title="התחלת טיפול" onclick="completePlanningVisit('${client.ID}')">▶</button>
+							<button class="planning-action-btn planning-postpone" title="דחיה" onclick="postponePlanningVisit('${client.ID}')">⏰</button>
+							<button class="planning-action-btn planning-menu" title="עוד פעולות" onclick="showPlanningClientMenu('${client.ID}')">⋮</button>
+						</div>
 					</div>
-				`;
-			}).join('');
+					${(client.notes || client.client_requests) ? `
+						<div class="planning-row-details">
+							${client.client_requests ? `<div class="client-requests">🔹 ${client.client_requests}</div>` : ''}
+							${client.notes ? `<div class="client-notes">📝 ${client.notes}</div>` : ''}
+						</div>
+					` : ''}
+				</div>
+			`;
 		}
 	
 		// עדכון שעה מתוכננת ללקוח
@@ -2548,6 +2644,8 @@
 			const formData = new FormData(event.target);
 			const selectedLocationId = document.getElementById('locationSelect').value;
 			const visitDate = document.getElementById('visitDate').value; // התאריך הנוכחי
+			const endTime = document.getElementById('endTime').value;
+			const paymentStatus = document.getElementById('paymentStatus').value;
 			
 			// בדיקות בסיסיות
 			if (!selectedLocationId) {
@@ -2568,6 +2666,20 @@
 				}
 			}
 
+			// חישוב אוטומטי של משך הזמן אם יש שעת התחלה וסיום
+			let calculatedDuration = document.getElementById('duration_minutes').value;
+			const startTime = document.getElementById('visitTime').value;
+			if (startTime && endTime) {
+				const start = new Date(`2000-01-01 ${startTime}`);
+				const end = new Date(`2000-01-01 ${endTime}`);
+				const diffMs = end - start;
+				if (diffMs > 0) {
+					calculatedDuration = Math.round(diffMs / (1000 * 60)); // הפרש בדקות
+					document.getElementById('duration_minutes').value = calculatedDuration;
+				}
+			}
+
+
 			const visitData = {
 				location_id: selectedLocationId,  
 				visit_type: document.getElementById('visitType').value,
@@ -2576,11 +2688,11 @@
 				workers_count: parseInt(document.getElementById('numberOfWorkersVisit').value) || 1,		
 				amount: document.getElementById('amount').value || 0,
 				expense: document.getElementById('expense').value || 0,
-				paid: document.getElementById('paid') ? document.getElementById('paid').value : 'לא', // הוסף אם קיים
-				notes: document.getElementById('notes') ? document.getElementById('notes').value : '', // הוסף אם קיים
 				date: visitDate,
 				start_time: document.getElementById('visitTime').value,
-				end_time: document.getElementById('visitTime').value
+				end_time: endTime,
+				paid: paymentStatus,
+				notes: document.getElementById('notes') ? document.getElementById('notes').value : ''
 			};
 			
 			console.log('Visitdata:', visitData);
@@ -2874,7 +2986,7 @@
 						
 						<div class="form-group">
 							<label>יום מועדף:</label>
-							<select id="editLocationDay">
+							<select id="editLocationDay" value="${location.allowed_day||''}>
 								<option value="כל יום" ${location.allowed_day === 'כל יום' ? 'selected' : ''}>כל יום</option>
 								<option value="יום ראשון" ${location.allowed_day === 'יום ראשון' ? 'selected' : ''}>יום ראשון</option>
 								<option value="יום שני" ${location.allowed_day === 'יום שני' ? 'selected' : ''}>יום שני</option>
@@ -3619,7 +3731,7 @@
 						const workDone = row[7] || '';          // work_done
 						const duration = row[8] || 0;           // duration
 						const amount = row[9] || 0;             // amount
-						const paid = row[10] || 'לא';           // paid
+						const paid = row[10] || '';           // paid
 						const expense = row[11] || 0;           // expense
 						const notes = row[12] || '';            // notes
 						
@@ -3955,9 +4067,9 @@
 				const row = document.createElement('tr');
 				
 				// הדגשת שורות לפי סטטוס תשלום
-				if (visit.paid === 'לא') {
+				if (visit.paid === '0') {
 					row.style.backgroundColor = '#fff2cc'; // צהוב עדין לחובות
-				} else if (visit.paid === 'כן') {
+				} else if (visit.paid === '1') {
 					row.style.backgroundColor = '#d4edda'; // ירוק עדין לשולם
 				}
 				
@@ -3975,7 +4087,7 @@
 					</td>
 					<td>
 						<span class="payment-status payment-${visit.paid}">
-							${visit.paid === 'כן' ? '✅ שולם' : visit.paid === 'לא' ? '❌ לא שולם' : '⚪ ללא'}
+							${getPaymentStatusText(visit.paid)}
 						</span>
 					</td>
 					<td>
@@ -4008,7 +4120,7 @@
 			const totalHours = filteredVisits.reduce((sum, visit) => sum + (visit.duration_minutes / 60), 0);
 			const totalIncome = filteredVisits.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			const outstandingDebt = filteredVisits
-				.filter(visit => visit.paid === 'לא')
+				.filter(visit => visit.paid === '0')
 				.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			
 			document.getElementById('visitsCount').textContent = visitsCount;
@@ -4027,7 +4139,7 @@
 			}
 			
 			// חישוב נתונים מפורטים יותר על חובות
-			const unpaidVisits = filteredVisits.filter(visit => visit.paid === 'לא');
+			const unpaidVisits = filteredVisits.filter(visit => visit.paid === '0');
 			const uniqueDebtors = new Set(unpaidVisits.map(visit => visit.location_id)).size;
 			
 			// הצגת מידע נוסף בכרטיסי הסיכום
@@ -4110,9 +4222,9 @@
 						<div class="form-group">
 							<label>סטטוס תשלום:</label>
 							<select id="editPaid">
-								<option value="לא" ${visit.paid === 'לא' ? 'selected' : ''}>לא שולם</option>
-								<option value="כן" ${visit.paid === 'כן' ? 'selected' : ''}>שולם</option>
-								<option value="ללא תשלום" ${visit.paid === 'ללא תשלום' ? 'selected' : ''}>ללא תשלום</option>
+								<option value="0" ${visit.paid === '0' ? 'selected' : ''}>לא שולם</option>
+								<option value="1" ${visit.paid === '1' ? 'selected' : ''}>שולם</option>
+								<option value="2" ${visit.paid === '2' ? 'selected' : ''}>ללא תשלום</option>
 							</select>
 						</div>
 						
@@ -4558,10 +4670,9 @@
 				switch (sheetName) {
 					case 'Locations':
 						headers = [
-							'ID', 'name', 'full_address', 'neighborhood', 'city', 
-							'contact_person', 'phone', 'allowed_day', 'interval_weeks', 
-							'temp_addition', 'base_amount', 'active', 'notes', 
-							'last_visit', 'next_visit'
+							'ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 
+							'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 
+							'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 'client_requests'
 						];
 						break;
 					case 'Visits':
@@ -5391,6 +5502,7 @@
 	   
 	   // פונקציה להצגת חובות
 		function displayDebts() {
+			//// console.log('דוגמאות ערכי paid:', visits.slice(0, 5).map(v => v.paid));
 			const sortBy = document.getElementById('debtSortBy').value;
 			const minAmount = parseFloat(document.getElementById('minDebtAmount').value) || 0;
 			
@@ -5531,7 +5643,7 @@
 		// הצגת פירוט חוב ללקוח
 		function showDebtDetails(locationId) {
 			const location = locations.find(loc => loc.ID == locationId);
-			const locationVisits = visits.filter(v => v.location_id == locationId && v.paid === 'לא');
+			const locationVisits = visits.filter(v => v.location_id == locationId && v.paid === '0');
 			
 			let details = `פירוט חוב עבור: ${location?.name}\n\n`;
 			
@@ -5552,8 +5664,8 @@
 		function markDebtAsPaid(locationId) {
 			if (confirm('לסמן את כל החובות של הלקוח הזה כמסולקים?')) {
 				visits.forEach(visit => {
-					if (visit.location_id == locationId && visit.paid === 'לא') {
-						visit.paid = 'כן';
+					if (visit.location_id == locationId && visit.paid === '0') {
+						visit.paid = '1';
 					}
 				});
 				
@@ -5567,7 +5679,7 @@
 	    // התראה על חובות חמורים
 		function checkCriticalDebts() {
 			const criticalDebts = visits.filter(visit => {
-				if (visit.paid !== 'לא') return false;
+				if (visit.paid !== '0') return false;
 				
 				const daysSince = Math.floor((new Date() - new Date(visit.date)) / (1000 * 60 * 60 * 24));
 				return daysSince > 90 || parseFloat(visit.amount) > 1000;
@@ -5600,7 +5712,7 @@
 				sum + parseFloat(visit.amount || 0), 0);
 			
 			const paidRevenue = monthlyVisits
-				.filter(visit => visit.paid === 'כן')
+				.filter(visit => visit.paid === '1')
 				.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			
 			const totalHours = monthlyVisits.reduce((sum, visit) => 
@@ -5915,6 +6027,14 @@
 					const lastVisit = locationVisits[0];
 					const lastVisitDate = lastVisit.date;
 					
+					// חישוב יום מועדף לפי הביקור האחרון
+					if (!location.allowed_day || location.allowed_day === '') {
+						const lastDate = new Date(lastVisitDate);
+						const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
+						location.allowed_day = dayNames[lastDate.getDay()];
+						console.log(`📅 ${location.name}: יום מועדף חושב כ-${location.allowed_day} (לפי ביקור מ-${lastVisitDate})`);
+					}
+					
 					// חישוב תאריך הטיפול הבא
 					const lastDate = new Date(lastVisitDate);
 					const intervalDays = (location.interval_weeks || 4) * 7; // ברירת מחדל 4 שבועות
@@ -5958,7 +6078,7 @@
 				// קרא את כל הנתונים הנוכחיים מהטבלה
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:O'
+					range: 'Locations!A:P'
 				});
 				
 				const allRows = response.result.values || [];
@@ -5970,7 +6090,8 @@
 					// מצא את השורה המתאימה בטבלה
 					for (let i = 1; i < allRows.length; i++) { // מתחיל מ-1 כדי לדלג על הכותרות
 						if (allRows[i][0] === location.ID) {
-							// עדכן את עמודות התאריכים (עמודות 13 ו-14)
+							// עדכן את עמודות התאריכים והיום המועדף
+							updatedRows[i][7] = location.allowed_day;   // allowed_day (עמודה 7)
 							updatedRows[i][13] = location.last_visit;   // last_visit
 							updatedRows[i][14] = location.next_visit;   // next_visit
 							updatedCount++;
@@ -5982,7 +6103,7 @@
 				// שמור את כל הטבלה המעודכנת בקריאה אחת בלבד
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:O',
+					range: 'Locations!A:P',
 					valueInputOption: 'USER_ENTERED',
 					resource: {
 						values: updatedRows
@@ -6848,28 +6969,20 @@
 	   
 	   // פונקציה להמרת סטטוס תשלום לקידוד מספרי
 		function mapPaymentStatus(value) {
-			if (!value || value.trim() === '') return "0"; // ערך ריק = לא שולם
+			if (!value || value.trim() === '') return "0";
 			const normalized = value.toString().toLowerCase().trim();
 			
-			switch(normalized) {
-				case "כן":
-				case "true": 
-					return "1"; // שולם
-				case "לא":
-				case "false":
-					return "0"; // לא שולם
-				case "ללא תשלום":
-					return "2"; // ללא תשלום
-				default:
-					return "0"; // ברירת מחדל = לא שולם
-			}
+			// המרה פשוטה לפי הערכים שיכולים להגיע מהייבוא
+			if (normalized === "כן" || normalized === "true" || normalized === "1") return "1";
+			if (normalized === "ללא תשלום" || normalized === "ללא") return "2";
+			return "0"; // כל השאר = לא שולם
 		}
 
 		// פונקציה להצגת טקסט ידידותי
 		function getPaymentStatusText(status) {
 			switch(status) {
-				case "1": return "שולם";
 				case "0": return "לא שולם";
+				case "1": return "שולם"; 
 				case "2": return "ללא תשלום";
 				default: return "לא שולם";
 			}
