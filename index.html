@@ -1780,7 +1780,7 @@
 		}
 		
 		// תוספה - שמירת מיקום חדש לשיטס
-		async function saveLocationToSheets(locationData) {
+		/* async function saveLocationToSheets(locationData) {
 		
 			console.log('📝 saveLocationToSheets started with client_requests:', locationData.client_requests);
 			
@@ -1840,7 +1840,58 @@
 				throw error;
 
 			}
+		}  */
+
+
+		async function saveLocationToSheets(locationData) {
+		
+			if (!await validateToken()) {
+				showToast('החיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
+				return;
+			}
+    
+			try {
+				const values = [[
+					locationData.ID,
+					locationData.name,
+					locationData.full_address,
+					locationData.neighborhood,
+					locationData.city,
+					locationData.contact_person,
+					locationData.phone,
+					locationData.allowed_day,
+					locationData.interval_weeks,
+					locationData.temp_addition,
+					locationData.base_amount,
+					locationData.active,
+					locationData.notes,
+					locationData.last_visit,
+					locationData.next_visit
+				]];
+				
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${SHEETS.LOCATIONS}!A:O`,
+					valueInputOption: 'USER_ENTERED',
+					resource: { values: values }
+				});
+				
+			} catch (error) {
+				console.error('Error saving location to sheets:', error);
+				
+				if (error.status === 401) {
+					access_token = null;
+					showToast('⚠️ החיבור פג - התחבר מחדש', 'warning');
+					document.getElementById('statusText').textContent = '🔓 נותק';
+				} else {
+					// שגיאות אחרות (לא קשורות לאסימון)
+					showToast('⚠️ שגיאה בשמירה לענן', 'error');
+				}
+				throw error;
+
+			}
 		}
+
 
 		// שמירת ביקור חדש לשיטס
 		async function saveVisitToSheets(visitData) {
@@ -1865,6 +1916,7 @@
 					visitData.paid,
 					visitData.notes
 				]];
+				
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
