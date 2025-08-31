@@ -1112,7 +1112,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -2243,7 +2243,7 @@
 					const todayName = today.toLocaleDateString('he-IL', { weekday: 'long' }).normalize('NFC');
 
 					planningClients = filteredClients.filter(client => {
-						console.log('Today\'s name:', todayName, ' | client.allowed_day:', client.allowed_day);
+						// console.log('Today\'s name:', todayName, ' | client.allowed_day:', client.allowed_day);
 						const isDueOrOverdue = client.daysOverdue >= 0;
 						const clientDayNormalized = client.allowed_day ? client.allowed_day.normalize('NFC') : '';
 						const isRightDay = !client.allowed_day || client.allowed_day === 'כל יום' || clientDayNormalized === todayName;
@@ -2975,78 +2975,85 @@
         function showAddLocationForm() {
 			const modalHTML = `
 				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90vw; max-height: 80vh; overflow-y: auto;">
-					<h3 style="margin-bottom: 20px; color: #2c3e50;">הוספת לקוח חדש</h3>					
+					<h3 style="margin-bottom: 20px; color: #2c3e50;">הוספת לקוח חדש</h3>
+					
 					<form id="locationForm" onsubmit="handleLocationSubmit(event)">
 						<div class="form-group">
 							<label for="locationName">שם לקוח:</label>
 							<input type="text" id="locationName" required>
-						</div>	
-					    <div class="form-group">
-						   <label for="locationAddress">כתובת מלאה:</label>
-						   <input type="text" id="locationAddress" required>
-					    </div>
-					    <div class="form-group">
-						   <label for="locationNeighborhood">שכונה:</label>
-						   <input type="text" id="locationNeighborhood">
-					    </div>
-					    <div class="form-group">
-						   <label for="locationCity">עיר:</label>
-						   <input type="text" id="locationCity">
-					    </div>
-					    <div class="form-group">
-						   <label for="locationContact">איש קשר:</label>
-						   <input type="text" id="locationContact" required>
-					    </div>
-					    <div class="form-group">
-						   <label for="locationPhone">טלפון:</label>
-						   <input type="tel" id="locationPhone">
-					    </div>
-					    <div class="form-group">
-						   <label for="locationDay">יום מותר:</label>
-						   <select id="locationDay" required>
-							   <option value="">בחר יום...</option>
-							   <option value="א'">ראשון</option>
-							   <option value="ב'">שני</option>
-							   <option value="ג'">שלישי</option>
-							   <option value="ד'">רביעי</option>
-							   <option value="ה'">חמישי</option>
-							   <option value="ו'">שישי</option>
-							   <option value="שבת">שבת</option>
-						   </select>
-					    </div>
-					    <div class="form-group">
-						   <label for="locationInterval">מרווח שבועות:</label>
-						   <input type="number" id="locationInterval" required min="1" max="52">
-					    </div>
-					    <div class="form-group">
-						   <label for="locationAmount">סכום בסיסי:</label>
-						   <input type="number" id="locationAmount">
-					    </div>
-					    <div class="form-group">
-						   <label for="locationActive">פעילה:</label>
-						   <select id="locationActive" required>
-							   <option value="כן">כן</option>
-							   <option value="לא">לא</option>
-						   </select>
-					    </div>
-					    <div class="form-group">
-						   <label for="locationNextVisit">תאריך לטיפול הבא:</label>
-						   <input type="date" id="locationNextVisit" required>
-					    </div>
-					    <div class="form-group">
-						   <label for="locationNotes">הערות:</label>
-						   <textarea id="locationNotes"></textarea>
-					    </div>	   
-					    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
-							<button type="submit" class="btn btn-success">💾 שמור לקוח</button>
-							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">❌ ביטול</button>
+						</div>
+						<div class="form-group">
+							<label for="locationAddress">כתובת מלאה:</label>
+							<input type="text" id="locationAddress" required>
+						</div>
+						<div class="form-group">
+							<label for="locationNeighborhood">שכונה:</label>
+							<input type="text" id="locationNeighborhood">
+						</div>
+						<div class="form-group">
+							<label for="locationCity">עיר:</label>
+							<input type="text" id="locationCity">
+						</div>
+						<div class="form-group">
+							<label for="locationContact">איש קשר:</label>
+							<input type="text" id="locationContact">
+						</div>
+						<div class="form-group">
+							<label for="locationPhone">טלפון:</label>
+							<input type="tel" id="locationPhone">
+						</div>
+						<div class="form-group">
+							<label for="locationDay">יום מועדף:</label>
+							<select id="locationDay">
+								<option value="כל יום">כל יום</option>
+								<option value="יום ראשון">יום ראשון</option>
+								<option value="יום שני">יום שני</option>
+								<option value="יום שלישי">יום שלישי</option>
+								<option value="יום רביעי">יום רביעי</option>
+								<option value="יום חמישי">יום חמישי</option>
+								<option value="יום שישי">יום שישי</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="locationInterval">מרווח שבועות:</label>
+							<input type="number" id="locationInterval" value="4" min="1">
+						</div>
+						<div class="form-group">
+							<label for="locationAmount">סכום בסיסי:</label>
+							<input type="number" id="locationAmount">
+						</div>
+						<div class="form-group">
+							<label for="locationActive">פעילות:</label>
+							<select id="locationActive" required>
+								<option value="1">פעיל</option>
+								<option value="0">לא פעיל</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="locationNextVisit">תאריך לטיפול הבא:</label>
+							<input type="date" id="locationNextVisit" required>
+						</div>
+						<div class="form-group">
+							<label for="locationClientRequests">בקשות לקוח:</label>
+							<textarea id="locationClientRequests" rows="2"></textarea>
+						</div>
+						<div class="form-group">
+							<label for="locationNotes">הערות:</label>
+							<textarea id="locationNotes" rows="3"></textarea>
+						</div>
+						
+						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
+							<button type="submit" class="btn btn-success">שמור לקוח</button>
+							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">ביטול</button>
 						</div>
 					</form>
 				</div>
 			`;
 			
-			// השתמש בפונקציית מודל עקבית
 			showEditModal(modalHTML);
+			
+			// Set default date
+			document.getElementById('locationNextVisit').value = new Date().toISOString().split('T')[0];
 		}
 
         async function handleLocationSubmit(event) {
