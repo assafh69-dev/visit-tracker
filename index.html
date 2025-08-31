@@ -986,6 +986,103 @@
 		}
 
 
+/***************************************/
+/***************************************/
+
+		/* עדכון CSS לכרטיסיות תכנון - מבנה דו-שורתי */
+		.planning-row-details {
+			background: #f8f9fa;
+			padding: 8px 15px 12px 15px;
+			border-top: 1px solid #e9ecef;
+			font-size: 13px;
+		}
+
+		.client-requests {
+			color: #0066cc;
+			margin-bottom: 4px;
+			font-weight: 500;
+		}
+
+		.client-notes {
+			color: #666;
+			font-style: italic;
+		}
+
+		.planning-active-toggle {
+			margin-right: 5px;
+		}
+
+		.planning-history-btn {
+			background: #6c757d;
+			color: white;
+			border: none;
+			padding: 6px 10px;
+			border-radius: 4px;
+			font-size: 11px;
+			cursor: pointer;
+		}
+
+		.planning-history-btn:hover {
+			background: #5a6268;
+		}
+
+/***************************************/
+
+		/* תיקון CSS לכפתורי הפעולה החדשים */
+		.planning-client-actions {
+			display: flex;
+			gap: 5px;
+			align-items: center;
+			flex-wrap: wrap;
+		}
+
+		.planning-date-input {
+			padding: 4px 6px;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+			font-size: 11px;
+			width: 100px;
+			background: white;
+		}
+
+		.planning-active-toggle {
+			padding: 4px 6px;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+			font-size: 11px;
+			background: white;
+			width: 70px;
+		}
+
+		.planning-history-btn {
+			background: #6c757d;
+			color: white;
+			border: none;
+			padding: 6px 8px;
+			border-radius: 4px;
+			font-size: 11px;
+			cursor: pointer;
+			min-width: 35px;
+		}
+
+		.planning-history-btn:hover {
+			background: #5a6268;
+		}
+
+		/* תגובה למובייל */
+		@media (max-width: 768px) {
+			.planning-client-actions {
+				justify-content: center;
+				gap: 3px;
+			}
+			
+			.planning-date-input,
+			.planning-active-toggle {
+				font-size: 10px;
+				width: auto;
+				min-width: 60px;
+			}
+		}
 	</style>
    
 </head>
@@ -1015,7 +1112,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -2222,14 +2319,18 @@
 						<div class="planning-client-price">₪${client.base_amount || 0}</div>
 						<div class="planning-client-actions">
 							<button class="planning-action-btn planning-complete" title="התחלת טיפול" onclick="completePlanningVisit('${client.ID}')">▶</button>
-							<button class="planning-action-btn planning-postpone" title="דחיה" onclick="postponePlanningVisit('${client.ID}')">⏰</button>
-							<button class="planning-action-btn planning-menu" title="עוד פעולות" onclick="showPlanningClientMenu('${client.ID}')">⋮</button>
+							<input type="date" class="planning-date-input" value="${client.next_visit}" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא">
+							<select class="planning-active-toggle" onchange="toggleClientActive('${client.ID}', this.value)" title="סטטוס לקוח">
+								<option value="1" ${client.active === "1" ? 'selected' : ''}>פעיל</option>
+								<option value="0" ${client.active === "0" ? 'selected' : ''}>לא פעיל</option>
+							</select>
+							<button class="planning-history-btn" onclick="showClientHistory('${client.ID}')" title="היסטוריית טיפולים">📋</button>
 						</div>
 					</div>
 					${(client.notes || client.client_requests) ? `
 						<div class="planning-row-details">
-							${client.client_requests ? `<div class="client-requests">🔹 ${client.client_requests}</div>` : ''}
-							${client.notes ? `<div class="client-notes">📝 ${client.notes}</div>` : ''}
+							${client.client_requests ? `<div class="client-requests">📝 בקשות: ${client.client_requests}</div>` : ''}
+							${client.notes ? `<div class="client-notes">💬 הערות: ${client.notes}</div>` : ''}
 						</div>
 					` : ''}
 				</div>
@@ -6985,6 +7086,197 @@
 				case "1": return "שולם"; 
 				case "2": return "ללא תשלום";
 				default: return "לא שולם";
+			}
+		}
+	   
+	   
+	   function parseAddressForImport(customerName) {
+			if (!customerName) return { name: '', fullAddress: '', neighborhood: '', city: '' };
+			
+			const originalAddress = customerName.trim();
+			const parts = originalAddress.split(' ');
+			let city = '';
+			
+			if (parts.length >= 3) {
+				// חיפוש מספר בית (מספר + אולי אות א/ב)
+				let houseNumberIndex = -1;
+				for (let i = 0; i < parts.length; i++) {
+					if (/^\d+[א-ב]?$/.test(parts[i])) {
+						houseNumberIndex = i;
+						break; // לוקח את המספר הראשון שנמצא
+					}
+				}
+				
+				if (houseNumberIndex !== -1 && houseNumberIndex < parts.length - 1) {
+					// יש מספר בית - כל מה שאחריו הוא עיר
+					city = parts.slice(houseNumberIndex + 1).join(' ');
+				} else {
+					// אין מספר בית - כל הכתובת היא עיר
+					city = originalAddress;
+				}
+			} else {
+				// פחות מ-3 מילים - כל הכתובת היא עיר
+				city = originalAddress;
+			}
+			
+			// ✅ המרת הקיצור אחרי שקבענו את העיר
+			if (city === 'ראשלצ') {
+				city = 'ראשון לציון';
+			}
+			
+			return {
+				name: originalAddress, // השם המקורי ללא שינוי
+				fullAddress: originalAddress,
+				neighborhood: '', // ריק למילוי ידני
+				city: city
+			};
+		}
+		
+		
+		// פונקציה לעדכון תאריך טיפול הבא
+		function updateClientNextVisit(clientId, newDate) {
+			if (!newDate) return;
+			
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) return;
+			
+			client.next_visit = newDate;
+			client.temp_addition = 0; // איפוס תוספת זמנית
+			
+			// שמירה
+			saveToLocalStorage();
+			
+			// עדכון בענן אם מחובר
+			if (access_token && SPREADSHEET_ID) {
+				updateLocationInCloud(client);
+			}
+			
+			showToast(`תאריך הטיפול הבא עבור ${client.name} עודכן ל-${formatDate(newDate)}`, 'success');
+			
+			// רענון התצוגה
+			loadPlanningDataAdvanced();
+		}
+
+		// פונקציה להפיכת לקוח לפעיל/לא פעיל
+		function toggleClientActive(clientId, activeValue) {
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) return;
+			
+			client.active = activeValue;
+			
+			// שמירה
+			saveToLocalStorage();
+			
+			// עדכון בענן אם מחובר
+			if (access_token && SPREADSHEET_ID) {
+				updateLocationInCloud(client);
+			}
+			
+			const statusText = activeValue === "1" ? "פעיל" : "לא פעיל";
+			showToast(`${client.name} הוגדר כ-${statusText}`, 'success');
+			
+			// רענון התצוגה (הלקוח ייעלם אם לא פעיל)
+			loadPlanningDataAdvanced();
+		}
+
+		// פונקציה להצגת היסטוריית טיפולים
+		function showClientHistory(clientId) {
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) return;
+			
+			// מציאת 3 הטיפולים האחרונים
+			const clientVisits = visits
+				.filter(visit => visit.location_id === clientId)
+				.sort((a, b) => new Date(b.date) - new Date(a.date))
+				.slice(0, 3);
+			
+			if (clientVisits.length === 0) {
+				alert(`${client.name}\nאין עדיין היסטוריית טיפולים`);
+				return;
+			}
+			
+			// בניית תוכן החלונית
+			let historyHtml = `
+				<div style="background: white; padding: 20px; border-radius: 10px; max-width: 500px; max-height: 400px; overflow-y: auto;">
+					<h3 style="margin-bottom: 15px; color: #333;">📋 היסטוריית טיפולים - ${client.name}</h3>
+					<div style="margin-bottom: 20px; font-size: 12px; color: #666;">
+						כתובת: ${client.full_address}
+					</div>
+					<div style="space-y: 10px;">
+			`;
+			
+			clientVisits.forEach((visit, index) => {
+				const visitDate = formatDate(visit.date);
+				const amount = visit.amount || 0;
+				const workDone = visit.work_done || 'טיפול';
+				const paidStatus = visit.paid === 'כן' ? '✅ שולם' : '❌ לא שולם';
+				const paidColor = visit.paid === 'כן' ? '#28a745' : '#dc3545';
+				
+				historyHtml += `
+					<div style="border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: ${index === 0 ? '#f8f9ff' : '#fafafa'};">
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+							<strong style="color: #2c3e50;">📅 ${visitDate}</strong>
+							<span style="font-weight: bold; color: ${paidColor};">${paidStatus}</span>
+						</div>
+						<div style="margin-bottom: 5px; color: #666;">
+							🛠️ עבודה: ${workDone}
+						</div>
+						<div style="display: flex; justify-content: space-between; font-size: 14px;">
+							<span>💰 ₪${amount}</span>
+							${visit.duration_minutes ? `<span>⏱️ ${visit.duration_minutes} דק'</span>` : ''}
+						</div>
+						${visit.notes ? `<div style="margin-top: 8px; font-size: 12px; color: #666; font-style: italic;">📝 ${visit.notes}</div>` : ''}
+					</div>
+				`;
+			});
+			
+			historyHtml += `
+					</div>
+					<div style="text-align: center; margin-top: 20px;">
+						<button onclick="closeModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+							סגור
+						</button>
+					</div>
+				</div>
+			`;
+			
+			// הצגת החלונית
+			showModal(historyHtml);
+		}
+		
+	   
+	   // פונקציה לעדכון לקוח ספציפי בענן
+		async function updateLocationInCloud(client) {
+			if (!await validateToken()) return;
+			
+			try {
+				// מציאת האינדקס של הלקוח בטבלה
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Locations!A:A'
+				});
+				
+				const rows = response.result.values || [];
+				const rowIndex = rows.findIndex(row => row[0] === client.ID);
+				
+				if (rowIndex > 0) { // מצא את הלקוח (אינדקס 0 הוא כותרות)
+					const rowNumber = rowIndex + 1;
+					const clientRow = [
+						client.ID, client.name, client.full_address, client.neighborhood, client.city,
+						client.contact_person, client.phone, client.allowed_day, client.interval_weeks,
+						client.temp_addition, client.base_amount, client.active, client.notes,
+						client.last_visit, client.next_visit
+					];
+					
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: `Locations!A${rowNumber}:O${rowNumber}`,
+						valueInputOption: 'USER_ENTERED',
+						resource: { values: [clientRow] }
+					});
+				}
+			} catch (error) {
+				console.error('Error updating client in cloud:', error);
 			}
 		}
 	   
