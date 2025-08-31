@@ -1015,7 +1015,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
 			</nav>
         </header>
 
@@ -7033,11 +7033,7 @@
 			if (!customerName) return { name: '', fullAddress: '', neighborhood: '', city: '' };
 			
 			const originalAddress = customerName.trim();
-			
-			// המרת קיצור יחיד
-			let processedAddress = originalAddress.replace(/\bראשלצ\b/g, 'ראשון לציון');
-			
-			const parts = processedAddress.split(' ');
+			const parts = originalAddress.split(' ');
 			let city = '';
 			
 			if (parts.length >= 3) {
@@ -7055,11 +7051,16 @@
 					city = parts.slice(houseNumberIndex + 1).join(' ');
 				} else {
 					// אין מספר בית - כל הכתובת היא עיר
-					city = processedAddress;
+					city = originalAddress;
 				}
 			} else {
 				// פחות מ-3 מילים - כל הכתובת היא עיר
-				city = processedAddress;
+				city = originalAddress;
+			}
+			
+			// ✅ המרת הקיצור אחרי שקבענו את העיר
+			if (city === 'ראשלצ') {
+				city = 'ראשון לציון';
 			}
 			
 			return {
