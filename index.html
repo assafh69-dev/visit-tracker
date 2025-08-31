@@ -1112,7 +1112,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
 			</nav>
         </header>
 
@@ -1674,30 +1674,44 @@
 			try {
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.LOCATIONS}!A:O`
+					range: `${SHEETS.LOCATIONS}!A:P` // וודא שקוראים עד עמודה P
 				});
 				
 				const rows = response.result.values;
+				console.log('🔍 Raw locations data (first row):', rows ? rows[0] : 'No data');
+				console.log('🔍 Raw locations data (second row):', rows ? rows[1] : 'No data');
+				
 				if (rows && rows.length > 1) {
-					locations = rows.slice(1).map(row => ({
-						ID: row[0] || '',
-						name: row[1] || '',
-						full_address: row[2] || '',
-						neighborhood: row[3] || '',
-						city: row[4] || '',
-						contact_person: row[5] || '',
-						phone: row[6] || '',
-						allowed_day: row[7] || '',
-						interval_weeks: row[8] || '',
-						temp_addition: row[9] || 0,
-						base_amount: row[10] || '',
-						active: row[11] || '',
-						notes: row[12] || '',
-						last_visit: row[13] || '',
-						next_visit: row[14] || '',
-						client_requests: row[15] || ''
-					}));
+					locations = rows.slice(1).map((row, index) => {
+						const location = {
+							ID: row[0] || '',
+							name: row[1] || '',
+							full_address: row[2] || '',
+							neighborhood: row[3] || '',
+							city: row[4] || '',
+							contact_person: row[5] || '',
+							phone: row[6] || '',
+							allowed_day: row[7] || '',
+							interval_weeks: row[8] || '',
+							temp_addition: row[9] || 0,
+							base_amount: row[10] || '',
+							active: row[11] || '',
+							notes: row[12] || '',
+							last_visit: row[13] || '',
+							next_visit: row[14] || '',
+							client_requests: row[15] || '' // עמודה P
+						};
+						
+						// לוג רק לשורות עם client_requests
+						if (row[15]) {
+							console.log(`✅ Row ${index + 1} - ${location.name}: client_requests = "${row[15]}"`);
+						}
+						
+						return location;
+					});
 				}
+				
+				console.log('📊 Total locations loaded:', locations.length);
 				
 			} catch (error) {
 				console.error('Error loading locations:', error);
@@ -1789,12 +1803,13 @@
 					locationData.active,
 					locationData.notes,
 					locationData.last_visit,
-					locationData.next_visit
+					locationData.next_visit,
+					locationData.client_requests || ''
 				]];
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.LOCATIONS}!A:O`,
+					range: `${SHEETS.LOCATIONS}!A:P`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: values }
 				});
@@ -3155,7 +3170,7 @@
 				// קריאת כל הנתונים מהענן
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:O'
+					range: 'Locations!A:P' // ✅ שונה מ-A:O ל-A:P
 				});
 				
 				const rows = response.result.values || [];
@@ -3186,12 +3201,13 @@
 						updatedLocation.active,
 						updatedLocation.notes,
 						updatedLocation.last_visit || '',
-						updatedLocation.next_visit || ''
+						updatedLocation.next_visit || '',
+						updatedLocation.client_requests || '' // ✅ הוסף שדה client_requests
 					];
 					
 					await gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: SPREADSHEET_ID,
-						range: `Locations!A${rowToUpdate}:O${rowToUpdate}`,
+						range: `Locations!A${rowToUpdate}:P${rowToUpdate}`, // ✅ שונה מ-O ל-P
 						valueInputOption: 'USER_ENTERED',
 						resource: {
 							values: [updatedRow]
@@ -5987,7 +6003,7 @@
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.LOCATIONS}!A:O`,
+					range: `${SHEETS.LOCATIONS}!A:P`, 
 					valueInputOption: 'USER_ENTERED',
 					resource: { 
 						values: values,
