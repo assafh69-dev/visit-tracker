@@ -1112,7 +1112,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -1782,11 +1782,16 @@
 		// תוספה - שמירת מיקום חדש לשיטס
 		async function saveLocationToSheets(locationData) {
 		
+			console.log('📝 saveLocationToSheets started with client_requests:', locationData.client_requests);
+			
 			if (!await validateToken()) {
+				console.log('❌ Token validation failed');
 				showToast('החיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
 				return;
 			}
     
+			console.log('✅ Token validated, proceeding to save...');
+	
 			try {
 				const values = [[
 					locationData.ID,
@@ -1807,6 +1812,8 @@
 					locationData.client_requests || ''
 				]];
 				
+				console.log('📤 About to send to Google Sheets:', values[0][15]); 
+				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
 					range: `${SHEETS.LOCATIONS}!A:P`,
@@ -1814,7 +1821,12 @@
 					resource: { values: values }
 				});
 				
+				console.log('✅ Successfully saved to Google Sheets');
+				
 			} catch (error) {
+			
+				console.error('❌ Error in saveLocationToSheets:', error);
+			
 				console.error('Error saving location to sheets:', error);
 				
 				if (error.status === 401) {
