@@ -1015,7 +1015,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -1871,16 +1871,6 @@
 			initializeGoogleAPIs();
 			loadAllData();
 			setupEventListeners();
-			
-			// **שינוי הזמן** - מ-3000 ל-1000 מילי-שניות
-			setTimeout(() => {
-				const importTableId = localStorage.getItem('importTableId');
-				if (importTableId) {
-					loadStreetsNeighborhoods().catch(err => 
-						console.log('Streets neighborhoods not loaded:', err.message)
-					);
-				}
-			}, 1000); // ✅ זמן קצר יותר כי עכשיו זה מהטבלה הראשית
 		});
 
         // Setup event listeners
@@ -3628,10 +3618,6 @@
 					return;
 				}
 				
-				// טען רחובות-שכונות לפני הייבוא
-				await loadStreetsNeighborhoods();
-				showToast('📍 טבלת רחובות-שכונות נטענה', 'info', 1500);
-				
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: importTableId,
 					range: 'Locations!A2:G1000'
@@ -4648,14 +4634,13 @@
 							{ properties: { title: 'Visits' } },
 							{ properties: { title: 'Receipts' } },
 							{ properties: { title: 'SystemSettings' } },
-							{ properties: { title: 'streetsRLZ' } } // ✅ הוספת הגיליון החדש
 						]
 					})
 				});
 				
 				SPREADSHEET_ID = response.result.spreadsheetId;
 				
-				// הוסף כותרות לכל הגיליונות כולל streetsRLZ
+				// הוסף כותרות לכל הגיליונות כולל 
 				await addAllHeaders();
 				
 				showToast('נוצרה טבלה חדשה עם גיליון רחובות-שכונות!', 'success');
@@ -4667,7 +4652,6 @@
 		}
 		
 		// פונקציה חדשה לבדיקה ותיקון מבנה הטבלה
-		// עדכון פונקציית בדיקה ותיקון מבנה טבלה - כולל streetsRLZ
 		async function checkAndFixTableStructure() {
 			console.log('Checking and fixing table structure...');
 			
@@ -4681,7 +4665,7 @@
 				console.log('Existing sheets:', existingSheets);
 				
 				// רשימת כל הגיליונות שצריכים להיות
-				const requiredSheets = ['Locations', 'Visits', 'Receipts', 'SystemSettings', 'streetsRLZ'];
+				const requiredSheets = ['Locations', 'Visits', 'Receipts', 'SystemSettings'];
 				
 				// בדיקה אילו גיליונות חסרים
 				const missingSheets = requiredSheets.filter(sheet => !existingSheets.includes(sheet));
@@ -4755,7 +4739,6 @@
 
 		
 		// פונקציה חדשה להוספת כותרות לגיליון ספציפי
-		// עדכון פונקציית addHeadersToSheet - הוספת טיפול ב-streetsRLZ
 		async function addHeadersToSheet(sheetName) {
 			try {
 				let headers = [];
@@ -4783,9 +4766,6 @@
 					case 'SystemSettings':
 						headers = ['Setting', 'Value'];
 						break;
-					case 'streetsRLZ': // ✅ הוספת הגיליון החדש
-						headers = ['street_name', 'hood_name'];
-						break;
 				}
 				
 				if (headers.length > 0) {
@@ -4811,7 +4791,6 @@
 				await addHeadersToSheet('Locations');
 				await addHeadersToSheet('Visits');
 				await addHeadersToSheet('Receipts');
-				await addHeadersToSheet('streetsRLZ');
 				
 				// הוספת כותרות ל-SystemSettings
 				await gapi.client.sheets.spreadsheets.values.update({
@@ -6317,12 +6296,7 @@
 			
 			try {
 				showLoading('מייבא נתונים מהר מטבלת העזר...');
-				
-				// **הוספה חדשה** - טעינת טבלת רחובות-שכונות בתחילה
-				showToast('📍 טוען רחובות ושכונות...', 'info', 1500);
-				await loadStreetsNeighborhoods();
-				await updateNeighborhoodsInHelperTable();
-				
+			
 				// מעקב סטטיסטיקות
 				const stats = {
 					locations: { imported: 0, updated: 0, skipped: 0 },
@@ -7053,37 +7027,6 @@
 			}
 		}
 	   
-	   // מיפוי שכונות - יאוכלס מטבלת streetsRLZ
-		let streetsNeighborhoods = {};
-
-		// קריאה של טבלת רחובות-שכונות מגוגל שיטס
-		// עדכון פונקציה לטעינת רחובות-שכונות מהטבלת הנתונים הראשית
-		async function loadStreetsNeighborhoods() {
-			try {
-				// **שינוי** - קריאה מהטבלת הנתונים הראשית במקום טבלת העזר
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID, // ✅ הטבלה הראשית במקום importTableId
-					range: 'streetsRLZ!A2:B1000'
-				});
-				
-				const rows = response.result.values || [];
-				streetsNeighborhoods = {};
-				
-				for (const row of rows) {
-					if (row[0] && row[1]) { // יש רחוב ושכונה
-						const street = row[0].trim();
-						const neighborhood = row[1].trim();
-						streetsNeighborhoods[street] = neighborhood;
-					}
-				}
-				
-				console.log(`📍 Loaded ${Object.keys(streetsNeighborhoods).length} street-neighborhood mappings from main spreadsheet`);
-				
-			} catch (error) {
-				console.error('Error loading streets neighborhoods from main spreadsheet:', error);
-				streetsNeighborhoods = {}; // ריק במקרה של שגיאה
-			}
-		}
 
 		// פונקציה מעודכנת לפירוק כתובת עם כל התנאים
 		function parseAddressForImport(customerName) {
@@ -7154,66 +7097,7 @@
 			};
 		}
 	   
-	   // פונקציה חדשה - עדכון שכונות בטבלת העזר לפני ייבוא
-		async function updateNeighborhoodsInHelperTable() {
-			try {
-				const importTableId = localStorage.getItem('importTableId');
-				if (!importTableId) return;
-				
-				console.log('🏘️ Updating neighborhoods in helper table...');
-				
-				// טען רחובות-שכונות מהטבלה הראשית
-				await loadStreetsNeighborhoods();
-				
-				// קרא לקוחות מטבלת העזר
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: importTableId,
-					range: 'Locations!A2:H1000' // עד H כי נוסיף שכונה
-				});
-				
-				const rows = response.result.values || [];
-				const updatedRows = [];
-				let updatedCount = 0;
-				
-				for (let i = 0; i < rows.length; i++) {
-					const row = rows[i];
-					if (row.length > 0 && row[0]) {
-						const customerName = row[0].trim();
-						const addressData = parseAddressForImport(customerName);
-						
-						// העתק השורה הקיימת ועדכן/הוסף שכונה בעמודה H (אינדקס 7)
-						const updatedRow = [...row];
-						while (updatedRow.length < 8) updatedRow.push(''); // וודא שיש 8 עמודות
-						
-						if (updatedRow[7] !== addressData.neighborhood) {
-							updatedRow[7] = addressData.neighborhood; // עמודה H = שכונה
-							updatedCount++;
-						}
-						
-						updatedRows.push(updatedRow);
-					}
-				}
-				
-				if (updatedCount > 0) {
-					// עדכן את הטבלה
-					await gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: importTableId,
-						range: `Locations!A2:H${updatedRows.length + 1}`,
-						valueInputOption: 'RAW',
-						resource: { values: updatedRows }
-					});
-					
-					console.log(`✅ Updated ${updatedCount} neighborhoods in helper table`);
-					showToast(`עודכנו ${updatedCount} שכונות בטבלת העזר`, 'success');
-				} else {
-					console.log('ℹ️ No neighborhood updates needed');
-				}
-				
-			} catch (error) {
-				console.error('Error updating neighborhoods in helper table:', error);
-			}
-		}
-	   
+		   
 	   
    </script>
 </body>
