@@ -1112,7 +1112,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -6791,11 +6791,13 @@
 				
 				// נסה לשמור בענן
 				if (access_token && SPREADSHEET_ID) {
+					console.log('🔍 About to call saveLocationToSheets with:', updatedLocation.client_requests);
 					// שמור בענן עם בדיקת חיבור
 					saveLocationToSheets(updatedLocation).then(() => {
 						updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
 						showToast('לקוח עודכן בהצלחה במערכת ובענן!', 'success');
 					}).catch(error => {
+						console.error('❌ saveLocationToSheets failed:', error);
 						if (error.status === 401) {
 							updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
 							showToast('⚠️ החיבור לגוגל פג - הלקוח נשמר מקומית בלבד', 'warning');
