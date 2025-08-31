@@ -1015,7 +1015,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
 			</nav>
         </header>
 
@@ -7034,37 +7034,38 @@
 			
 			const originalAddress = customerName.trim();
 			
-			// רשימת ערים דו-מילתיות וקיצורים
-			const cityMappings = {
-				'ראשלצ': 'ראשון לציון',
-				'פתח תקוה': 'פתח תקוה',
-				'בת ים': 'בת ים',
-				'רמת גן': 'רמת גן',
-				'רמת השרון': 'רמת השרון',
-				'גליל ים': 'גליל ים'
-			};
+			// המרת קיצור יחיד
+			let processedAddress = originalAddress.replace(/\bראשלצ\b/g, 'ראשון לציון');
 			
-			const parts = originalAddress.split(' ');
+			const parts = processedAddress.split(' ');
 			let city = '';
 			
-			// זיהוי שם העיר - מהסוף לתחילה
-			if (parts.length >= 2) {
-				// בדיקה אם 2 המילים האחרונות הן עיר דו-מילתית
-				const lastTwoWords = parts.slice(-2).join(' ');
-				if (cityMappings[lastTwoWords] || ['פתח תקוה', 'בת ים', 'רמת גן', 'רמת השרון', 'גליל ים'].includes(lastTwoWords)) {
-					city = cityMappings[lastTwoWords] || lastTwoWords;
-				} 
-				// אחרת בדיקה של המילה האחרונה
-				else {
-					const lastWord = parts[parts.length - 1];
-					city = cityMappings[lastWord] || lastWord;
+			if (parts.length >= 3) {
+				// חיפוש מספר בית (מספר + אולי אות א/ב)
+				let houseNumberIndex = -1;
+				for (let i = 0; i < parts.length; i++) {
+					if (/^\d+[א-ב]?$/.test(parts[i])) {
+						houseNumberIndex = i;
+						break; // לוקח את המספר הראשון שנמצא
+					}
 				}
+				
+				if (houseNumberIndex !== -1 && houseNumberIndex < parts.length - 1) {
+					// יש מספר בית - כל מה שאחריו הוא עיר
+					city = parts.slice(houseNumberIndex + 1).join(' ');
+				} else {
+					// אין מספר בית - כל הכתובת היא עיר
+					city = processedAddress;
+				}
+			} else {
+				// פחות מ-3 מילים - כל הכתובת היא עיר
+				city = processedAddress;
 			}
 			
 			return {
-				name: originalAddress, // השם נשאר הכתובת המקורית ללא שינוי
+				name: originalAddress, // השם המקורי ללא שינוי
 				fullAddress: originalAddress,
-				neighborhood: '', // תמיד ריק - למילוי ידני
+				neighborhood: '', // ריק למילוי ידני
 				city: city
 			};
 		}
