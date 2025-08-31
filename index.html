@@ -1112,7 +1112,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
 			</nav>
         </header>
 
@@ -6792,7 +6792,7 @@
 				// נסה לשמור בענן
 				if (access_token && SPREADSHEET_ID) {
 					// שמור בענן עם בדיקת חיבור
-					updateLocationInCloud(updatedLocation).then(() => {
+					saveLocationToSheets(updatedLocation).then(() => {
 						updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
 						showToast('לקוח עודכן בהצלחה במערכת ובענן!', 'success');
 					}).catch(error => {
@@ -7266,7 +7266,6 @@
 			if (!await validateToken()) return;
 			
 			try {
-				// מציאת האינדקס של הלקוח בטבלה
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
 					range: 'Locations!A:A'
@@ -7275,18 +7274,18 @@
 				const rows = response.result.values || [];
 				const rowIndex = rows.findIndex(row => row[0] === client.ID);
 				
-				if (rowIndex > 0) { // מצא את הלקוח (אינדקס 0 הוא כותרות)
+				if (rowIndex > 0) {
 					const rowNumber = rowIndex + 1;
 					const clientRow = [
 						client.ID, client.name, client.full_address, client.neighborhood, client.city,
 						client.contact_person, client.phone, client.allowed_day, client.interval_weeks,
 						client.temp_addition, client.base_amount, client.active, client.notes,
-						client.last_visit, client.next_visit
+						client.last_visit, client.next_visit, client.client_requests || '' // ✅ הוסף
 					];
 					
 					await gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: SPREADSHEET_ID,
-						range: `Locations!A${rowNumber}:O${rowNumber}`,
+						range: `Locations!A${rowNumber}:P${rowNumber}`, // ✅ שונה ל-P
 						valueInputOption: 'USER_ENTERED',
 						resource: { values: [clientRow] }
 					});
