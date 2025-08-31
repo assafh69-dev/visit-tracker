@@ -1112,7 +1112,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -3122,13 +3122,13 @@
 						</div>
 						
 						<div class="form-group">
-							<label>בקשות לקוח:</label>
-							<textarea id="editLocationClientRequests" rows="2">${location.client_requests || ''}</textarea>
+							<label>הערות:</label>
+							<textarea id="editLocationNotes" rows="3">${location.notes || ''}</textarea>
 						</div>
 						
 						<div class="form-group">
-							<label>הערות:</label>
-							<textarea id="editLocationNotes" rows="3">${location.notes || ''}</textarea>
+							<label>בקשות לקוח:</label>
+							<textarea id="editLocationClientRequests" rows="2">${location.client_requests || ''}</textarea>
 						</div>
 						
 						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
@@ -5980,9 +5980,9 @@
 					location.base_amount,
 					location.active,
 					location.notes,
-					location.client_requests || '',
 					formatDateForSheets(location.last_visit),
-					formatDateForSheets(location.next_visit)
+					formatDateForSheets(location.next_visit),
+					location.client_requests || ''
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.append({
