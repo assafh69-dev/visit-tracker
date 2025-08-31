@@ -398,31 +398,9 @@
 			background: linear-gradient(45deg, #f39c12, #e67e22);
 		}
 
-		.toast.info {
-			border-right-color: #3498db;
-			background: linear-gradient(45deg, #3498db, #2980b9);
-		}
-
 		.toast.show {
 			transform: translateX(0);
 			opacity: 1;
-		}
-
-		@media (max-width: 768px) {
-			.toast-container {
-				left: 10px;
-				right: 10px;
-				top: 10px;
-				max-width: none;
-			}
-			
-			.toast {
-				transform: translateY(-100px);
-			}
-			
-			.toast.show {
-				transform: translateY(0);
-			}
 		}
 		
 
@@ -496,6 +474,49 @@
 			box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
 		}
 
+		/* כפתורי טיימר */
+		.timer-buttons button {
+			padding: 12px 25px;
+			border: none;
+			border-radius: 10px;
+			cursor: pointer;
+			font-size: 16px;
+			font-weight: bold;
+			transition: all 0.3s ease;
+			min-width: 140px;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+		}
+
+		#startBtn {
+			background: linear-gradient(45deg, #27ae60, #2ecc71);
+			color: white;
+		}
+
+		#startBtn:hover:not(:disabled) {
+			transform: translateY(-3px);
+			box-shadow: 0 6px 18px rgba(39, 174, 96, 0.4);
+		}
+
+		#pauseBtn {
+			background: linear-gradient(45deg, #f39c12, #e67e22);
+			color: white;
+		}
+
+		#pauseBtn:hover:not(:disabled) {
+			transform: translateY(-3px);
+			box-shadow: 0 6px 18px rgba(243, 156, 18, 0.4);
+		}
+
+		#stopBtn {
+			background: linear-gradient(45deg, #e74c3c, #c0392b);
+			color: white;
+		}
+
+		#stopBtn:hover:not(:disabled) {
+			transform: translateY(-3px);
+			box-shadow: 0 6px 18px rgba(231, 76, 60, 0.4);
+		}
+
 		/* רשימות נפתחות */
 		select, .form-group select {
 			width: 100%;
@@ -562,6 +583,15 @@
 			min-width: 150px;
 		}
 
+		/* תיקון לכפתורים בגריד */
+		.nav-buttons .nav-btn,
+		.filter-buttons .filter-btn,
+		.timer-buttons button,
+		.filter-actions .btn {
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			letter-spacing: 0.5px;
+		}
+
 		/* שיפור נוסף לכפתורים קטנים */
 		.action-btn {
 			padding: 10px 16px;
@@ -615,6 +645,12 @@
 				min-width: 100px;
 			}
 			
+			.timer-buttons button {
+				padding: 10px 18px;
+				font-size: 14px;
+				min-width: 110px;
+			}
+			
 			select, input[type="date"], input[type="text"], input[type="number"] {
 				padding: 10px 12px;
 				font-size: 13px;
@@ -657,312 +693,10 @@
 			}
 		}
 
-		.debt-card .summary-value {
-			color: #e74c3c !important;
-			font-weight: bold;
-		}
-
-		.debts-table tr:hover {
-			background-color: #f8f9fa !important;
-		}
-
-		.action-btn {
-			margin: 1px;
-			padding: 4px 8px;
-			font-size: 12px;
-			border-radius: 3px;
-			border: none;
-			color: white;
-			cursor: pointer;
-		}
-
-		.action-btn:hover {
-			opacity: 0.8;
-		}
-
-		#statusText {
-			transition: all 0.3s ease;
-			padding: 8px 12px;
-			border-radius: 6px;
-			font-size: 14px;
-		}
-
-		#statusText.connected {
-			background: linear-gradient(45deg, #28a745, #20c997);
-			color: white;
-			box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
-		}
-
-
-		/* תצוגת תכנון - שורות כפולות */
-			.planning-cards-container {
-				min-height: 300px;
-				border: 2px dashed #ddd;
-				border-radius: 10px;
-				padding: 15px;
-				background: #fafafa;
-				margin-bottom: 20px;
-			}
-
-			.planning-client-row {
-				background: white;
-				border-radius: 8px;
-				margin-bottom: 12px;
-				box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-				transition: all 0.3s ease;
-			}
-
-			.planning-client-row:hover {
-				transform: translateY(-1px);
-				box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-			}
-
-			/* צבעי רמזור */
-			.planning-status-green { border-right: 4px solid #4CAF50; }
-			.planning-status-yellow { border-right: 4px solid #FFC107; }
-			.planning-status-orange { border-right: 4px solid #FF9800; }
-			.planning-status-red { border-right: 4px solid #F44336; }
-
-			.planning-row-main {
-				display: flex;
-				align-items: center;
-				padding: 12px 15px;
-				gap: 15px;
-			}
-
-			.planning-client-info {
-				flex: 1;
-				text-align: right;
-			}
-
-			.planning-client-name {
-				font-weight: bold;
-				font-size: 16px;
-				color: #333;
-				margin-bottom: 3px;
-			}
-
-			.planning-client-address {
-				font-size: 12px;
-				color: #666;
-				margin-bottom: 3px;
-			}
-
-			.planning-client-date {
-				font-size: 12px;
-				color: #555;
-				font-weight: 500;
-			}
-
-			.planning-client-price {
-				font-weight: bold;
-				color: #2196F3;
-				font-size: 16px;
-				min-width: 80px;
-				text-align: center;
-			}
-
-			.planning-client-actions {
-				display: flex;
-				gap: 8px;
-			}
-
-			.planning-action-btn {
-				width: 32px;
-				height: 32px;
-				border: none;
-				border-radius: 50%;
-				cursor: pointer;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				font-size: 12px;
-				transition: all 0.3s ease;
-			}
-
-			.planning-complete {
-				background: #4CAF50;
-				color: white;
-			}
-
-			.planning-postpone {
-				background: #FF9800;
-				color: white;
-			}
-
-			.planning-menu {
-				background: #607D8B;
-				color: white;
-			}
-
-			.planning-action-btn:hover {
-				transform: scale(1.1);
-			}
-
-			.planning-row-details {
-				background: #f8f9fa;
-				padding: 8px 15px 12px 15px;
-				border-top: 1px solid #e9ecef;
-				font-size: 13px;
-			}
-
-			.client-requests {
-				color: #0066cc;
-				margin-bottom: 4px;
-				font-weight: 500;
-			}
-
-			.client-notes {
-				color: #666;
-				font-style: italic;
-			}
-
-			/* מובייל */
-			@media (max-width: 768px) {
-				.planning-row-main {
-					flex-direction: column;
-					align-items: stretch;
-					gap: 10px;
-				}
-				
-				.planning-client-info {
-					text-align: center;
-				}
-				
-				.planning-client-actions {
-					justify-content: center;
-				}
-				
-				.planning-action-btn {
-					width: 40px;
-					height: 40px;
-					font-size: 14px;
-				}
-			}
-
-			/* שאר הסטיילים הקיימים נשארים */
-			.planning-date-header {
-				text-align: center;
-				background: linear-gradient(45deg, #4CAF50, #45a049);
-				color: white;
-				padding: 15px;
-				border-radius: 10px;
-				margin-bottom: 20px;
-				box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-			}
-
-			.planning-view-tabs {
-				display: flex;
-				justify-content: center;
-				gap: 10px;
-				margin-bottom: 20px;
-			}
-
-			.planning-tab-btn {
-				padding: 10px 20px;
-				border: 2px solid #ddd;
-				background: white;
-				border-radius: 25px;
-				cursor: pointer;
-				transition: all 0.3s ease;
-				font-weight: bold;
-			}
-
-			.planning-tab-btn.active {
-				background: #4CAF50;
-				color: white;
-				border-color: #4CAF50;
-			}
-
-		/***************************************/
-		/* ייבוא נתונים - כפתורים אחידים */
-		.import-main-buttons {
-			display: flex;
-			justify-content: center;
-			gap: 15px;
-			margin: 15px 0;
-			flex-wrap: wrap;
-		}
-
-		.import-other-buttons {
-			display: flex;
-			justify-content: center;
-			margin: 15px 0;
-		}
-
-		.import-main-buttons button,
-		.import-other-buttons button {
-			padding: 12px 20px;
-			background: #ffc107;
-			color: #212529;
-			border: 1px solid #ffc107;
-			border-radius: 5px;
-			font-weight: 500;
-			font-size: 14px;
-			cursor: pointer;
-			transition: all 0.3s ease;
-			min-width: 200px;
-			white-space: nowrap;
-		}
-
-		.import-main-buttons button:hover,
-		.import-other-buttons button:hover {
-			background: #e0a800;
-			border-color: #d39e00;
-			transform: translateY(-1px);
-			box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-		}
-
-		/* כפתורי הייבוא החלקי */
-		details[open] > div {
-			display: flex !important;
-			flex-wrap: wrap;
-			gap: 8px;
-			margin-top: 10px;
-			justify-content: center;
-		}
-
-		details[open] > div button {
-			flex: 1;
-			min-width: 120px;
-			max-width: 150px;
-			font-size: 13px;
-			padding: 10px 12px;
-		}
-
-		/* תגובה למובייל */
-		@media (max-width: 768px) {
-			.import-main-buttons {
-				flex-direction: column;
-				align-items: center;
-			}
-			
-			.import-main-buttons button,
-			.import-other-buttons button {
-				min-width: 80%;
-				max-width: 300px;
-				padding: 15px 20px;
-				font-size: 16px;
-			}
-			
-			details[open] > div {
-				flex-direction: column;
-			}
-			
-			details[open] > div button {
-				min-width: 80%;
-				max-width: 250px;
-				font-size: 14px;
-			}
-		}
-		/***************************************/
-
 	</style>
    
 </head>
 <body>
-	<!-- Toast Container -->
-	<div id="toastContainer" class="toast-container"></div>
     <div class="container">
         <header class="header">
             <h1>טיפולים</h1>
@@ -976,8 +710,7 @@
 				<button onclick="loadAllFromSheets()" id="loadBtn" class="connect-btn" disabled>
 					טען מהענן
 				</button>
-				<span id="statusText" style="color: white; font-weight: bold; font-size: 16px;">לא מחובר</span>
-				<div id="lastSaved" style="font-size: 12px; color: white; margin-top: 4px;"></div>
+				<span id="statusText">לא מחובר</span>
 			</div>
             <nav class="nav-buttons">
 				<button onclick="showSection('planning')" class="nav-btn active">תכנון יומי</button>
@@ -985,63 +718,63 @@
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
-				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
         <main class="main-content">
             <!-- Planning Section -->
-			<section id="planning" class="section active">
-				<h2>📅 תכנון יומי ושבועי</h2>
-            
-            <!-- כותרת תאריך -->
-            <div class="planning-date-header">
-                <h3 id="planningDateTitle">היום - רביעי</h3>
-                <p id="planningDateFormatted">28 בנובמבר 2024</p>
-            </div>
-
-            <!-- טאבים -->
-            <div class="planning-view-tabs">
-                <button class="planning-tab-btn active" onclick="switchPlanningView('daily')">יומי</button>
-                <button class="planning-tab-btn" onclick="switchPlanningView('weekly')">שבועי</button>
-                <button class="planning-tab-btn" onclick="switchPlanningView('overdue')">מאוחרות</button>
-            </div>
-
-            <!-- כרטיסי לקוחות -->
-            <div class="planning-cards-container" id="planningCardsContainer">
-                <!-- כרטיסים יטענו כאן דינמית -->
-            </div>
-
-            <!-- סטטיסטיקות (שמירה על הקיים) -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
-                <div style="background: rgba(52, 152, 219, 0.1); border: 2px solid #3498db; border-radius: 8px; padding: 12px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-size: 13px; color: #2c3e50;">לקוחות:</span>
-                        <span id="totalLocations" style="font-weight: bold; color: #2c3e50;">0</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-size: 13px; color: #2c3e50;">פעילים:</span>
-                        <span id="activeLocations" style="font-weight: bold; color: #27ae60;">0</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="font-size: 13px; color: #2c3e50;">טיפולים השבוע:</span>
-                        <span id="weeklyVisits" style="font-weight: bold; color: #2c3e50;">0</span>
-                    </div>
+            <section id="planning" class="section active">
+                <h2>📅 תכנון יומי</h2>
+				<!-- Statistics Panel -->
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+					<div style="background: rgba(52, 152, 219, 0.1); border: 2px solid #3498db; border-radius: 8px; padding: 12px;">
+						<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+							<span style="font-size: 13px; color: #2c3e50;">לקוחות:</span>
+							<span id="totalLocations" style="font-weight: bold; color: #2c3e50;">0</span>
+						</div>
+						<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+							<span style="font-size: 13px; color: #2c3e50;">פעילים:</span>
+							<span id="activeLocations" style="font-weight: bold; color: #27ae60;">0</span>
+						</div>
+						<div style="display: flex; justify-content: space-between;">
+							<span style="font-size: 13px; color: #2c3e50;">טיפולים השבוע:</span>
+							<span id="weeklyVisits" style="font-weight: bold; color: #2c3e50;">0</span>
+						</div>
+					</div>
+					
+					<div style="background: rgba(39, 174, 96, 0.1); border: 2px solid #27ae60; border-radius: 8px; padding: 12px;">
+						<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+							<span style="font-size: 13px; color: #2c3e50;">הכנסה השבוע:</span>
+							<span id="weeklyIncome" style="font-weight: bold; color: #27ae60;">₪0</span>
+						</div>
+						<div style="display: flex; justify-content: space-between;">
+							<span style="font-size: 13px; color: #2c3e50;">חובות פתוחים:</span>
+							<span id="openDebts" style="font-weight: bold; color: #e74c3c;">₪0</span>
+						</div>
+					</div>
+				</div>
+                <div class="filter-buttons">
+					<button onclick="filterVisits('today')" class="filter-btn active">היום</button>
+					<button onclick="filterVisits('week')" class="filter-btn">השבוע</button>
+					<button onclick="filterVisits('overdue')" class="filter-btn">מאחרות</button>
+				</div>
+                <div class="table-container">
+                    <table id="planningTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>שם גינה</th>
+                                <th>כתובת</th>
+                                <th>יום מותר</th>
+                                <th>טיפול הבא</th>
+                                <th>פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="planningTableBody">
+                        </tbody>
+                    </table>
                 </div>
-                
-                <div style="background: rgba(39, 174, 96, 0.1); border: 2px solid #27ae60; border-radius: 8px; padding: 12px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-size: 13px; color: #2c3e50;">הכנסה השבוע:</span>
-                        <span id="weeklyIncome" style="font-weight: bold; color: #27ae60;">₪0</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="font-size: 13px; color: #2c3e50;">חובות פתוחים:</span>
-                        <span id="openDebts" style="font-weight: bold; color: #e74c3c;">₪0</span>
-                    </div>
-                </div>
-            </div>
-			</section>
+            </section>
 
             <!-- VisitSection -->
             <section id="visit" class="section">
@@ -1252,91 +985,26 @@
                 </div>
             </section>
 
-			<section id="debts" class="section">
-				<h2>💰 ניהול חובות</h2>
-				
-				<!-- סיכום כללי -->
-				<div class="summary-cards">
-					<div class="summary-card debt-card">
-						<h3>סה"כ חובות</h3>
-						<div id="totalDebt" class="summary-value">₪0</div>
-					</div>
-					<div class="summary-card">
-						<h3>לקוחות חייבים</h3>
-						<div id="debtorsCount" class="summary-value">0</div>
-					</div>
-					<div class="summary-card">
-						<h3>חוב ממוצע</h3>
-						<div id="averageDebt" class="summary-value">₪0</div>
-					</div>
-					<div class="summary-card">
-						<h3>חוב הכי ישן</h3>
-						<div id="oldestDebt" class="summary-value">-</div>
-					</div>
-				</div>
-				
-				<!-- רשימת חובות -->
-				<div class="filter-panel">
-					<div class="filter-header">
-						<h3>🔍 חובות פתוחים</h3>
-					</div>
-					<div class="filter-row">
-						<div class="filter-group">
-							<label>מיון לפי:</label>
-							<select id="debtSortBy" onchange="displayDebts()">
-								<option value="amount_desc">סכום (גבוה לנמוך)</option>
-								<option value="amount_asc">סכום (נמוך לגבוה)</option>
-								<option value="date_old">תאריך (הכי ישן)</option>
-								<option value="date_new">תאריך (הכי חדש)</option>
-								<option value="location">לקוח (א-ב)</option>
-							</select>
-						</div>
-						<div class="filter-group">
-							<label>סכום מינימלי:</label>
-							<input type="number" id="minDebtAmount" placeholder="0" onchange="displayDebts()">
-						</div>
-					</div>
-				</div>
-				
-				<div class="table-container">
-					<table id="debtsTable" class="data-table">
-						<thead>
-							<tr>
-								<th>לקוח</th>
-								<th>כתובת</th>
-								<th>טלפון</th>
-								<th>מספר טיפולים</th>
-								<th>סה"כ חוב</th>
-								<th>טיפול אחרון</th>
-								<th>ימים</th>
-								<th>פעולות</th>
-							</tr>
-						</thead>
-						<tbody id="debtsTableBody">
-						</tbody>
-					</table>
-				</div>
-			</section>
-
 			<!-- System Section -->
 			<section id="system" class="section">
-				<h2>🛠️ מערכת</h2>
+				<h2>🛠️ מערכת v2.5</h2>
 				
 				<!-- Import Section -->
 				<div class="form-section">
 					<h3>📥 ייבוא נתונים</h3>
 					
-					<div class="import-main-buttons">
-						<button onclick="createImportTable()">📗 צור טבלת עזר לייבוא</button>
-						<button onclick="importFromHelperTableFast()">🚀 ייבוא מהיר וכולל</button>
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+						<button class="btn btn-primary" onclick="createImportTable()">
+							🔗 צור טבלת עזר לייבוא
+						</button>
+						<button class="btn btn-success" onclick="importFromHelper()">
+							📥 ייבא הכל מטבלת העזר
+						</button>
 					</div>
-					
-					<div class="import-other-buttons">
-						<button onclick="importFromTelegram()">💬 ייבוא מטלגרם</button>
-					</div>
-					
-					<details>
-						<summary>⚙️ ייבוא חלקי (למתקדמים)</summary>
+
+					<!-- ייבוא חלקי - מקופל -->
+					<details style="margin-top: 15px;">
+						<summary style="cursor: pointer; color: #666; font-size: 14px;">⚙️ ייבוא חלקי (למתקדמים)</summary>
 						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;">
 							<button class="btn btn-info" onclick="importCustomersFromHelper()">👥 רק לקוחות</button>
 							<button class="btn btn-primary" onclick="importVisitsFromHelper()">🔧 רק טיפולים</button>
@@ -1361,33 +1029,6 @@
 					<p style="text-align: center; font-size: 12px; color: #666; margin-top: 15px;">
 						ייבוא לקוחות, ביקורים וקבלות מקובץ Excel או Google Sheets
 					</p>
-				</div>
-				
-				<!-- ניהול נתונים -->
-				<div class="form-section">
-					<h3>🗂️ ניהול נתונים</h3>
-					
-					<div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-						<h4 style="color: #856404; margin-bottom: 10px;">⚠️ ניקוי נתונים</h4>
-						<p style="font-size: 14px; color: #856404; margin-bottom: 10px;">
-							נקה את כל הנתונים המקומיים לפני ייבוא חדש (לא משפיע על הענן)
-						</p>
-						
-						<button class="btn" onclick="clearAllDataBeforeImport()" 
-								style="background: #dc3545; color: white; border: none;">
-							🗑️ נקה את כל הנתונים המקומיים
-						</button>
-					</div>
-					
-					<!-- סטטוס טבלת עזר -->
-					<div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px;">
-						<h4 style="color: #495057; margin-bottom: 10px;">📊 טבלת עזר לייבוא</h4>
-						<div id="importTableStatus">
-							<span style="font-size: 13px; color: #666;">
-								בודק סטטוס טבלת עזר...
-							</span>
-						</div>
-					</div>
 				</div>
 				
 				<!-- Additional System Features -->
@@ -1423,10 +1064,9 @@
 		 // Google Sheets API Configuration
 		const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
 		const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
-		let SPREADSHEET_ID = '1fSD5dh0bXRzFSeOZUwJ2bPjGRLqs2crGXPkebz6MpWc';
+		const SPREADSHEET_ID = '1fSD5dh0bXRzFSeOZUwJ2bPjGRLqs2crGXPkebz6MpWc';
 		const CLIENT_ID = '1040357646874-4sbkrokgjn4dd7a0e9rkrtjt8d9l3vie.apps.googleusercontent.com';
 		const API_KEY = 'AIzaSyB25ms_UzbgfY9FnduMwMhGhlvwfVPaTg8';
-		const SPREADSHEET_NAME = 'service_visits_data';
 
 //////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   למחיקה
 		// בדיקה זמנית - תמחק אחרי הבדיקה
@@ -1459,6 +1099,14 @@
 			hourlyRate: 150,
 			workerCost: 50
 		};
+		
+        let timer = {
+            startTime: null,
+            pauseTime: 0,
+            interval: null,
+            isRunning: false,
+            isPaused: false
+        };
 
 		// Initialize Google APIs
 		function initializeGoogleAPIs() {
@@ -1510,7 +1158,6 @@
 				
 				hideLoading();
 				showSuccess('נתונים נטענו בהצלחה מ-Google Sheets!');
-				setTimeout(checkCriticalDebts, 2000); // התראה אחרי 2 שניות
 				
 			} catch (error) {
 				console.error('Error loading data from sheets:', error);
@@ -1525,7 +1172,36 @@
 			}
 		}
 
-		
+		async function connectToGoogleSheets() {
+			try {
+				console.log('Connecting to Google Sheets...');
+				showSuccess('מתחבר ל-Google Sheets...');
+				
+				document.getElementById('statusText').textContent = 'מחובר';
+				document.getElementById('statusText').classList.add('connected');
+				document.getElementById('saveBtn').disabled = false;
+				document.getElementById('loadBtn').disabled = false;
+				
+				const tokenClient = google.accounts.oauth2.initTokenClient({
+					client_id: CLIENT_ID,
+					scope: SCOPES,
+					callback: (response) => {
+						access_token = response.access_token;
+						showSuccess('התחברת בהצלחה ל-Google Sheets!');
+						document.getElementById('statusText').textContent = 'מחובר';
+						document.getElementById('statusText').classList.add('connected');
+						loadAllDataFromSheets();
+						ensureAllSheets().then(() => loadSettingsFromCloud());
+					},
+				});
+				
+				tokenClient.requestAccessToken();
+				
+			} catch (error) {
+				console.error('Error connecting to Google Sheets:', error);
+				showError('שגיאה בחיבור ל-Google Sheets');
+			}
+		}
 
 		// תוספה - טעינת מיקומים (גינות)
 		async function loadLocationsFromSheets() {
@@ -1551,9 +1227,8 @@
 						base_amount: row[10] || '',
 						active: row[11] || '',
 						notes: row[12] || '',
-						client_requests: row[13] || '',
-						last_visit: row[14] || '',
-						next_visit: row[15] || ''
+						last_visit: row[13] || '',
+						next_visit: row[14] || ''
 					}));
 				}
 				
@@ -1567,7 +1242,7 @@
 			try {
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.VISITS}!A:N` // ← שנה מ-A:L ל-A:N
+					range: `${SHEETS.VISITS}!A:L`
 				});
 				
 				const rows = response.result.values;
@@ -1576,17 +1251,15 @@
 						ID: row[0] || '',
 						date: row[1] || '',
 						location_id: row[2] || '',
-						location_name: row[3] || '', // ← הוסף את השדה החדש!
-						visit_type: row[4] || '',    // ← הזזה של כל השדות
-						work_done: row[5] || '',
-						duration_minutes: row[6] || 0,
-						num_workers: row[7] || 1,    // ← השדה הזה היה חסר!
-						start_time: row[8] || '',
-						end_time: row[9] || '',
-						amount: row[10] || 0,
-						expense: row[11] || 0,
-						paid: row[12] || 'לא',
-						notes: row[13] || ''         // ← עכשיו זה עמודה 13
+						visit_type: row[3] || '',
+						work_done: row[4] || '',
+						duration_minutes: row[5] || 0,
+						start_time: row[6] || '',
+						end_time: row[7] || '',
+						amount: row[8] || 0,
+						expense: row[9] || 0,
+						paid: row[10] || 'לא',
+						notes: row[11] || ''
 					}));
 				}
 				
@@ -1673,9 +1346,10 @@
 			}
 		}
 
-		// שמירת ביקור חדש לשיטס
+		// תוספה - שמירת ביקור חדש לשיטס
 		async function saveVisitToSheets(visitData) {
 			if (!await validateToken()) {
+				showToast('החיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
 				return;
 			}
 			
@@ -1684,66 +1358,103 @@
 					visitData.ID,
 					visitData.date,
 					visitData.location_id,
-					visitData.location_name || '', // ← הוסף את השדה החדש!
 					visitData.visit_type,
 					visitData.work_done,
 					visitData.duration_minutes,
-					visitData.num_workers || 1,
 					visitData.start_time,
 					visitData.end_time,
 					visitData.amount,
-					visitData.expense || 0,
+					visitData.expense,
 					visitData.paid,
 					visitData.notes
 				]];
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.VISITS}!A:N`, // ← שנה מ-A:M ל-A:N
+					range: `${SHEETS.VISITS}!A:L`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: values }
 				});
 				
 			} catch (error) {
 				console.error('Error saving visit to sheets:', error);
+				if (error.status === 401) {
+					access_token = null;
+					showToast('⚠️ החיבור פג - התחבר מחדש', 'warning');
+				}
 				throw error;
 			}
 		}
-
-		// תוספה - שמירת קבלה לשיטס
+		
+		// שמירת קבלה חדשה לשיטס
 		async function saveReceiptToSheets(receiptData) {
 			if (!await validateToken()) {
+				showToast('החיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
 				return;
 			}
 			
 			try {
 				const values = [[
 					receiptData.ID,
-					receiptData.booklet_number || '',
-					receiptData.receipt_number || '',
+					receiptData.book_number,
+					receiptData.receipt_number,
 					receiptData.date,
 					receiptData.location_id,
-					receiptData.location_name || '',
+					receiptData.location_name,
 					receiptData.amount,
-					receiptData.payment_type || '',
-					receiptData.tax_code || '',
-					receiptData.notes || ''
+					receiptData.payment_type,
+					receiptData.notes
 				]];
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.RECEIPTS}!A:J`,
+					range: `${SHEETS.RECEIPTS}!A:I`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: values }
 				});
 				
+				console.log('Receipt saved to sheets');
+				
 			} catch (error) {
 				console.error('Error saving receipt to sheets:', error);
+				if (error.status === 401) {
+					access_token = null;
+					showToast('⚠️ החיבור פג - התחבר מחדש', 'warning');
+				}
 				throw error;
 			}
 		}
 
-		
+		// תוספה - שמירת כל הנתונים לענן
+		async function saveAllToSheets() {
+			try {
+				showLoading('שומר נתונים לענן...');
+				
+				// שמירת כל הלקוחות
+				for (const location of locations) {
+					await saveLocationToSheets(location);
+				}
+				
+				// שמירת כל הביקורים
+				for (const visit of visits) {
+					await saveVisitToSheets(visit);
+				}
+				
+				// שמירת כל הקבלות
+				for (const receipt of receipts) {
+					await saveReceiptToSheets(receipt);
+				}
+				
+				hideLoading();
+				showSuccess('כל הנתונים נשמרו בהצלחה לענן!');
+				
+			} catch (error) {
+				console.error('Error saving all data:', error);
+				hideLoading();
+				showError('שגיאה בשמירת הנתונים לענן');
+			}
+		}
+
 		// תוספה - טעינת כל הנתונים מהענן
 		async function loadAllFromSheets() {
 			try {
@@ -1869,10 +1580,68 @@
                 case 'receipts':
                     loadReceiptsTable();
                     break;
-				case 'debts':
-                    displayDebts();
-                    break;
             }
+        }
+
+        // Timer functions
+        function startVisit() {
+            timer.startTime = Date.now() - timer.pauseTime;
+            timer.isRunning = true;
+            timer.isPaused = false;
+            
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = false;
+            
+            timer.interval = setInterval(updateTimerDisplay, 1000);
+        }
+
+        function pauseVisit() {
+            if (timer.isPaused) {
+                // Resume
+                timer.startTime = Date.now() - timer.pauseTime;
+                timer.isPaused = false;
+                timer.interval = setInterval(updateTimerDisplay, 1000);
+                document.getElementById('pauseBtn').textContent = 'הפסקה';
+            } else {
+                // Pause
+                clearInterval(timer.interval);
+                timer.pauseTime = Date.now() - timer.startTime;
+                timer.isPaused = true;
+                document.getElementById('pauseBtn').textContent = 'המשך';
+            }
+        }
+
+        function stopVisit() {
+            clearInterval(timer.interval);
+            const totalDuration = Math.floor((Date.now() - timer.startTime) / 60000); // minutes
+            
+            document.getElementById('manualDuration').value = totalDuration;
+            
+            // Reset timer
+            timer = {
+                startTime: null,
+                pauseTime: 0,
+                interval: null,
+                isRunning: false,
+                isPaused: false
+            };
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('pauseBtn').textContent = 'הפסקה';
+            document.getElementById('timerDisplay').textContent = '00:00:00';
+        }
+
+        function updateTimerDisplay() {
+            const elapsed = Date.now() - timer.startTime;
+            const hours = Math.floor(elapsed / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            
+            document.getElementById('timerDisplay').textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
 
         // Data loading functions
@@ -1938,426 +1707,12 @@
 
         // Display functions
         function loadPlanningData() {
-			// Debug - בדיקת נתונים
-			debugPlanningData();
-			
 			// חישוב סטטיסטיקות
 			updatePlanningStats();
 			
 			// סינון רגיל
 			filterVisits(currentFilter);
 		}
-
-	/////<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-	
-	// ========== מערכת תכנון משודרגת ==========
-
-		// משתנים גלובליים לתכנון משודרג
-		let currentPlanningView = 'daily';
-		let planningClients = [];
-
-		// זמני עבודה זמינים (07:00-19:00 בקפיצות של 30 דקות)
-		const timeSlots = [];
-		for (let hour = 7; hour <= 19; hour++) {
-			timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
-			if (hour < 19) timeSlots.push(`${hour.toString().padStart(2, '0')}:30`);
-		}
-
-		// פונקציה עיקרית לטעינת נתוני תכנון - גרסה משודרגת
-		function loadPlanningDataAdvanced() {
-			updatePlanningStats();
-			loadPlanningClientsAdvanced();
-			updatePlanningDateHeader();
-			renderPlanningCards();
-		}
-
-		// טעינת לקוחות לתכנון לפי התצוגה הנוכחית - גרסה מתוקנת
-		function loadPlanningClientsAdvanced() {
-			const today = new Date();
-			today.setHours(0, 0, 0, 0);
-			
-			/// console.log('🔍 טוען לקוחות מתקדם - סה"כ לקוחות:', locations.length);
-			
-			// סינון לקוחות פעילים - תיקון לבעיית active = true
-			let filteredClients = locations.filter(location => {
-				const isActive = location.active === "1";
-				const hasNextVisit = location.next_visit && location.next_visit.trim() !== '';
-				const hasInterval = location.interval_weeks && location.interval_weeks > 0;
-				
-				return isActive && hasNextVisit && hasInterval;
-			});
-			
-			console.log('🔍 לקוחות פעילים עם תאריכים:', filteredClients.length);
-			
-			// חישוב ימים באיחור לכל לקוח
-			filteredClients = filteredClients.map(location => {
-				const nextVisitDate = new Date(location.next_visit);
-				const daysOverdue = Math.floor((today - nextVisitDate) / (1000 * 60 * 60 * 24));
-				
-				// קביעת סטטוס צבע
-				let status = 'green';
-				if (daysOverdue > 14) status = 'red';
-				else if (daysOverdue > 7) status = 'orange';  
-				else if (daysOverdue > 0) status = 'yellow';
-				
-				return {
-					...location,
-					daysOverdue: daysOverdue,
-					status: status,
-					scheduledTime: location.scheduled_time || '09:00'
-				};
-			});
-			
-			////////<<<<<<<<<<<<<<<<<<<<<<<<<
-			/// const today = new Date();
-			/// const todayName = today.toLocaleDateString('en-US', { weekday: 'long' });
-			/// console.log(todayName);
-			////////<<<<<<<<<<<<<<<<<<<<<<<<<
-			
-			// סינון לפי תצוגה נוכחית
-			switch (currentPlanningView) {
-				case 'daily':
-					const today = new Date();
-					const todayName = today.toLocaleDateString('he-IL', { weekday: 'long' }).normalize('NFC');
-
-					planningClients = filteredClients.filter(client => {
-						console.log('Today\'s name:', todayName, ' | client.allowed_day:', client.allowed_day);
-						const isDueOrOverdue = client.daysOverdue >= 0;
-						const clientDayNormalized = client.allowed_day ? client.allowed_day.normalize('NFC') : '';
-						const isRightDay = !client.allowed_day || client.allowed_day === 'כל יום' || clientDayNormalized === todayName;
-						return isDueOrOverdue && isRightDay;
-					});
-					break;
-				case 'weekly':
-					// לקוחות שצריכים טיפול השבוע הקרוב (כולל מי שכבר מאחר)
-					planningClients = filteredClients.filter(client => client.daysOverdue >= -7);
-					break;
-				case 'overdue':
-					// רק לקוחות שכבר מאחרים
-					planningClients = filteredClients.filter(client => client.daysOverdue > 0);
-					break;
-			}
-			
-			/// console.log(`🔍 תוצאות סינון "${currentPlanningView}":`, planningClients.length, 'לקוחות');
-			
-			// מיון לפי זמן מתוכנן (רק בתצוגה יומית)
-			if (currentPlanningView === 'daily') {
-				planningClients.sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
-			} else {
-				planningClients.sort((a, b) => new Date(a.next_visit) - new Date(b.next_visit));
-			}
-		}
-	
-		// החלפת תצוגת תכנון
-		function switchPlanningView(view) {
-			currentPlanningView = view;
-			
-			// עדכון כפתורי טאב
-			document.querySelectorAll('.planning-tab-btn').forEach(btn => btn.classList.remove('active'));
-			const activeBtn = document.querySelector(`[onclick="switchPlanningView('${view}')"]`);
-			if (activeBtn) activeBtn.classList.add('active');
-			
-			// טעינה מחדש
-			loadPlanningDataAdvanced();
-		}
-
-		// עדכון כותרת תאריך
-		function updatePlanningDateHeader() {
-			const today = new Date();
-			const dayName = today.toLocaleDateString('he-IL', { weekday: 'long' });
-			const dateFormatted = today.toLocaleDateString('he-IL', { 
-				day: 'numeric', 
-				month: 'long', 
-				year: 'numeric' 
-			});
-			
-			let headerTitle = '';
-			switch (currentPlanningView) {
-				case 'daily':
-					headerTitle = `היום - ${dayName}`;
-					break;
-				case 'weekly':
-					headerTitle = `השבוע - ${dayName}`;
-					break;
-				case 'overdue':
-					headerTitle = 'מאחרות - טיפולים שדחויים';
-					break;
-			}
-			
-			const titleElement = document.getElementById('planningDateTitle');
-			const dateElement = document.getElementById('planningDateFormatted');
-			
-			if (titleElement) titleElement.textContent = headerTitle;
-			if (dateElement) dateElement.textContent = dateFormatted;
-		}
-
-		// רינדור כרטיסי לקוחות לתכנון
-		function renderPlanningCards() {
-			const container = document.getElementById('planningCardsContainer');
-			
-			if (!container) {
-				console.log('⚠️ לא נמצא container לכרטיסי התכנון');
-				return;
-			}
-			
-			if (planningClients.length === 0) {
-				container.innerHTML = `
-					<div class="planning-empty-state">
-						<h3>😊 אין לקוחות לתצוגה זו</h3>
-						<p>כל הטיפולים מעודכנים!</p>
-					</div>
-				`;
-				return;
-			}
-
-			container.innerHTML = planningClients.map((client, index) => {
-				const nextVisitFormatted = formatDate(client.next_visit);
-				const overdueDaysText = client.daysOverdue > 0 ? ` (איחור ${client.daysOverdue} ימים)` : '';
-				
-				return `
-					<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
-						<div class="planning-row-main">
-							<div class="planning-client-info">
-								<div class="planning-client-name">${client.name}</div>
-								<div class="planning-client-address">${client.full_address}</div>
-								<div class="planning-client-date">📅 ${nextVisitFormatted}${overdueDaysText}</div>
-							</div>
-							<div class="planning-client-price">₪${client.base_amount || 0}</div>
-							<div class="planning-client-actions">
-								<button class="planning-action-btn planning-complete" title="התחלת טיפול" onclick="completePlanningVisit('${client.ID}')">▶</button>
-								<button class="planning-action-btn planning-postpone" title="דחיה" onclick="postponePlanningVisit('${client.ID}')">⏰</button>
-								<button class="planning-action-btn planning-menu" title="עוד פעולות" onclick="showPlanningClientMenu('${client.ID}')">⋮</button>
-							</div>
-						</div>
-						${(client.notes || client.client_requests) ? `
-							<div class="planning-row-details">
-								${client.client_requests ? `<div class="client-requests">🔹 ${client.client_requests}</div>` : ''}
-								${client.notes ? `<div class="client-notes">💭 ${client.notes}</div>` : ''}
-							</div>
-						` : ''}
-					</div>
-				`;
-			}).join('');
-		}
-	
-		// עדכון שעה מתוכננת ללקוח
-		function updateClientScheduledTime(clientId, newTime) {
-			const client = locations.find(loc => loc.ID === clientId);
-			if (client) {
-				client.scheduled_time = newTime;
-				saveToLocalStorage();
-				
-				// שמירה בענן אם מחובר
-				if (access_token && SPREADSHEET_ID) {
-					updateLocationInCloud(client);
-				}
-				
-				showToast(`שעת טיפול עודכנה ל-${newTime}`, 'success', 2000);
-			}
-		}
-
-		// סיום טיפול (מעבר לטופס הוספת ביקור)
-		function completePlanningVisit(clientId) {
-			showSection('visit');
-			document.getElementById('locationSelect').value = clientId;
-			document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
-			
-			const client = locations.find(loc => loc.ID === clientId);
-			if (client && client.scheduled_time) {
-				const timeInput = document.getElementById('visitTime');
-				if (timeInput) timeInput.value = client.scheduled_time;
-			}
-		}
-
-		// דחיית טיפול
-		function postponePlanningVisit(clientId) {
-			const client = locations.find(loc => loc.ID === clientId);
-			if (!client) return;
-			
-			const weeks = prompt(`כמה שבועות לדחות את הטיפול עבור ${client.name}?`, '1');
-			if (weeks && !isNaN(weeks) && parseInt(weeks) > 0) {
-				const currentNextVisit = new Date(client.next_visit);
-				const postponedDate = new Date(currentNextVisit.getTime() + (parseInt(weeks) * 7 * 24 * 60 * 60 * 1000));
-				
-				client.next_visit = postponedDate.toISOString().split('T')[0];
-				client.temp_addition = 0;
-				
-				saveToLocalStorage();
-				
-				if (access_token && SPREADSHEET_ID) {
-					updateLocationInCloud(client);
-				}
-				
-				showToast(`טיפול נדחה ל-${formatDate(client.next_visit)}`, 'success');
-				loadPlanningDataAdvanced();
-			}
-		}
-
-		// תפריט פעולות נוספות ללקוח
-		function showPlanningClientMenu(clientId) {
-			const client = locations.find(loc => loc.ID === clientId);
-			if (!client) return;
-			
-			const actions = [
-				'צפייה בהיסטוריית טיפולים',
-				'התחלת טיפול מיידי',
-				'קביעת תאריך ספציפי',
-				'עריכת פרטי לקוח',
-				'ביטול'
-			];
-			
-			const choice = prompt(`בחר פעולה עבור ${client.name}:\n\n` + 
-				actions.map((action, i) => `${i + 1}. ${action}`).join('\n'));
-			
-			switch (choice) {
-				case '1':
-					showClientTreatmentHistory(clientId);
-					break;
-				case '2':
-					startImmediateVisit(clientId);
-					break;
-				case '3':
-					setSpecificVisitDate(clientId);
-					break;
-				case '4':
-					editLocation(clientId);
-					break;
-			}
-		}
-
-		// צפייה בהיסטוריית טיפולים
-		function showClientTreatmentHistory(clientId) {
-			const client = locations.find(loc => loc.ID === clientId);
-			const clientVisits = visits.filter(visit => visit.location_id === clientId)
-				.sort((a, b) => new Date(b.date) - new Date(a.date))
-				.slice(0, 10);
-			
-			if (clientVisits.length === 0) {
-				alert(`${client.name} - אין עדיין היסטוריית טיפולים`);
-				return;
-			}
-			
-			const historyText = clientVisits.map(visit => 
-				`${formatDate(visit.date)} - ${visit.work_done || 'טיפול'} - ₪${visit.amount} (${getPaymentStatusText(visit.paid)})`
-			).join('\n');
-			
-			alert(`היסטוריית טיפולים - ${client.name}:\n\n${historyText}`);
-		}
-
-		// התחלת טיפול מיידי
-		function startImmediateVisit(clientId) {
-			showSection('visit');
-			document.getElementById('locationSelect').value = clientId;
-			document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
-			document.getElementById('visitTime').value = new Date().toTimeString().slice(0,5);
-		}
-
-		// קביעת תאריך ספציפי לטיפול
-		function setSpecificVisitDate(clientId) {
-			const client = locations.find(loc => loc.ID === clientId);
-			const newDate = prompt(`הזן תאריך חדש לטיפול הבא עבור ${client.name}:`, client.next_visit);
-			
-			if (newDate && !isNaN(new Date(newDate))) {
-				client.next_visit = newDate;
-				client.temp_addition = 0;
-				saveToLocalStorage();
-				
-				if (access_token && SPREADSHEET_ID) {
-					updateLocationInCloud(client);
-				}
-				
-				showToast(`תאריך הטיפול הבא עבור ${client.name} עודכן ל-${formatDate(newDate)}`, 'success');
-				loadPlanningDataAdvanced();
-			}
-		}
-	
-	
-	// הוספת אירועי גרירה לכרטיסים (רק בתצוגה יומית)
-		let draggedPlanningCard = null;
-
-		function addPlanningDragEvents() {
-			const cards = document.querySelectorAll('.planning-client-card');
-			
-			cards.forEach(card => {
-				card.addEventListener('dragstart', handlePlanningDragStart);
-				card.addEventListener('dragend', handlePlanningDragEnd);
-				card.addEventListener('dragover', handlePlanningDragOver);
-				card.addEventListener('drop', handlePlanningDrop);
-			});
-		}
-
-		function handlePlanningDragStart(e) {
-			draggedPlanningCard = this;
-			this.classList.add('planning-dragging');
-			e.dataTransfer.effectAllowed = 'move';
-		}
-
-		function handlePlanningDragEnd(e) {
-			this.classList.remove('planning-dragging');
-			document.querySelectorAll('.planning-client-card').forEach(card => {
-				card.classList.remove('planning-drag-over');
-			});
-		}
-
-		function handlePlanningDragOver(e) {
-			if (e.preventDefault) e.preventDefault();
-			this.classList.add('planning-drag-over');
-			e.dataTransfer.dropEffect = 'move';
-			return false;
-		}
-
-		function handlePlanningDrop(e) {
-			if (e.stopPropagation) e.stopPropagation();
-			
-			if (draggedPlanningCard !== this) {
-				const draggedIndex = parseInt(draggedPlanningCard.dataset.index);
-				const droppedIndex = parseInt(this.dataset.index);
-				
-				// החלפת מקומות במערך
-				const temp = planningClients[draggedIndex];
-				planningClients[draggedIndex] = planningClients[droppedIndex];
-				planningClients[droppedIndex] = temp;
-				
-				// רינדור מחדש
-				renderPlanningCards();
-				
-				showToast('סדר הלקוחות שונה', 'info');
-			}
-			
-			this.classList.remove('planning-drag-over');
-			return false;
-		}
-
-		// שמירת הפונקציה המקורית לפני ההחלפה
-		window.originalLoadPlanningData = window.loadPlanningData;
-
-		// החלפת הפונקציה loadPlanningData
-		window.loadPlanningData = function() {
-			console.log('🔄 loadPlanningData נקראה');
-			
-			// בדיקה אם יש את האלמנטים החדשים
-			if (document.getElementById('planningCardsContainer')) {
-				console.log('📊 משתמש במערכת חדשה');
-				loadPlanningDataAdvanced();
-			} else {
-				console.log('📊 משתמש במערכת ישנה');
-				updatePlanningStats();
-				filterVisits(window.currentFilter || 'today');
-			}
-		};
-
-		// עדכון הפונקציה refreshPlanningAfterTreatmentUpdate לעבוד עם שתי המערכות
-		function refreshPlanningAfterTreatmentUpdate() {
-			const currentSection = document.querySelector('.section.active');
-			if (currentSection && currentSection.id === 'planning') {
-				loadPlanningData(); // זה יקרא למערכת המתאימה
-			}
-			
-			loadLocationsForSelect();
-		}
-	
-	/////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
 
 		// תוספה - עדכון סטטיסטיקות
 		function updatePlanningStats() {
@@ -2378,7 +1733,7 @@
 			
 			// חובות פתוחים
 			const openDebts = visits
-				.filter(visit => visit.paid === '0')
+				.filter(visit => visit.paid === 'לא')
 				.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			
 			// עדכון התצוגה
@@ -2392,49 +1747,40 @@
         function filterVisits(filter) {
 			currentFilter = filter;
 			
-			// Update filter buttons
+			// Update filter buttons - fix the event.target issue
 			document.querySelectorAll('.filter-btn').forEach(btn => {
 				btn.classList.remove('active');
+				// Add active class to the button that matches the current filter
 				if ((filter === 'today' && btn.textContent === 'היום') ||
 					(filter === 'week' && btn.textContent === 'השבוע') ||
-					(filter === 'overdue' && btn.textContent === 'מאוחרות')) {
+					(filter === 'overdue' && btn.textContent === 'מאחרות')) {
 					btn.classList.add('active');
 				}
 			});
 			
-			// Filter locations based on next_visit date
+			// Filter locations based on next_visitdate
 			const today = new Date();
-			today.setHours(0, 0, 0, 0); // תחילת היום
 			const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 			
-			let filteredlocations = locations.filter(location => {
-				return location.active === "1" && location.next_visit && location.next_visit.trim() !== '';
-			});
+			let filteredlocations = locations.filter(location => location.active === "כן");
 			
 			switch(filter) {
 				case 'today':
-					// לקוחות שהתאריך הבא שלהם הוא היום או עבר (צריכים טיפול)
 					filteredlocations = filteredlocations.filter(location => {
-						const nextVisit = new Date(location.next_visit);
-						nextVisit.setHours(0, 0, 0, 0); // תחילת היום
-						return nextVisit <= today;
+						const nextVisit= new Date(location.next_visit);
+						return nextVisit<= today;
 					});
 					break;
 				case 'week':
-					// לקוחות שהתאריך הבא שלהם הוא השבוע הקרוב או עבר
 					filteredlocations = filteredlocations.filter(location => {
-						const nextVisit = new Date(location.next_visit);
-						return nextVisit <= weekFromNow;
+						const nextVisit= new Date(location.next_visit);
+						return nextVisit<= weekFromNow;
 					});
 					break;
 				case 'overdue':
-					// לקוחות שהתאריך הבא שלהם עבר (מאוחרים)
-					const yesterday = new Date(today);
-					yesterday.setDate(yesterday.getDate() - 1);
-					
 					filteredlocations = filteredlocations.filter(location => {
-						const nextVisit = new Date(location.next_visit);
-						return nextVisit <= yesterday;
+						const nextVisit= new Date(location.next_visit);
+						return nextVisit< today;
 					});
 					break;
 			}
@@ -2473,9 +1819,9 @@
 
         function loadLocationsForSelect() {
             const select = document.getElementById('locationSelect');
-            select.innerHTML = '<option value="">בחר לקוח...</option>';
+            select.innerHTML = '<option value="">בחר גינה...</option>';
             
-            locations.filter(location => location.active === "1").forEach(location => {
+            locations.filter(location => location.active === "כן").forEach(location => {
                 const option = document.createElement('option');
                 option.value = location.ID;
                 option.textContent = `${location.name} - ${location.full_address}`;
@@ -2483,27 +1829,27 @@
             });
         }
 
-       function loadLocationsTable() {
-			const tbody = document.getElementById('locationsTableBody');
-			tbody.innerHTML = '';
-			
-			locations.forEach(location => {
-				const row = document.createElement('tr');
-				row.innerHTML = `
-					<td>${location.name}</td>
-					<td>${location.full_address}</td>
-					<td>${location.contact_person}</td>
-					<td>${location.allowed_day}</td>
-					<td>${location.interval_weeks} שבועות</td>
-					<td>${location.active}</td>
-					<td>
-						<button class="action-btn edit-btn" onclick="editLocation('${location.ID}')">ערוך</button>
-						<button class="action-btn delete-btn" onclick="deleteLocation('${location.ID}')">מחק</button>
-					</td>
-				`;
-				tbody.appendChild(row);
-			});
-		}
+        function loadLocationsTable() {
+            const tbody = document.getElementById('locationsTableBody');
+            tbody.innerHTML = '';
+            
+            locations.forEach(location => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${location.name}</td>
+                    <td>${location.full_address}</td>
+                    <td>${location.contact_person}</td>
+                    <td>${location.allowed_day}</td>
+                    <td>${location.interval_weeks} שבועות</td>
+                    <td>${location.active}</td>
+                    <td>
+                        <button class="action-btn edit-btn" onclick="editLocation(${location.ID})">ערוך</button>
+                        <button class="action-btn delete-btn" onclick="deleteLocation(${location.ID})">מחק</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
 
        function loadReceiptsTable() {
 			const tbody = document.getElementById('receiptsTableBody');
@@ -2513,7 +1859,7 @@
 				tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">אין קבלות</td></tr>';
 				return;
 			}
-
+			
 			receipts.forEach(receipt => {
 				const row = document.createElement('tr');
 				row.innerHTML = `
@@ -2525,8 +1871,8 @@
 					<td>${receipt.payment_type}</td>
 					<td>${receipt.codeX || ''}</td>
 					<td>
-						<button class="action-btn edit-btn" onclick="editReceipt('${receipt.ID}')">ערוך</button>
-						<button class="action-btn delete-btn" onclick="deleteReceipt('${receipt.ID}')">מחק</button>
+						<button class="action-btn edit-btn" onclick="editReceipt(${receipt.ID})">ערוך</button>
+						<button class="action-btn delete-btn" onclick="deleteReceipt(${receipt.ID})">מחק</button>
 					</td>
 				`;
 				tbody.appendChild(row);
@@ -2569,6 +1915,7 @@
 			}
 
 			const visitData = {
+				ID: Date.now(), // הוסף ID
 				location_id: selectedLocationId,  
 				visit_type: document.getElementById('visitType').value,
 				work_done: document.getElementById('workDone').value,
@@ -2593,12 +1940,11 @@
 		async function saveVisit(visitData) {
 			try {
 				// For now, just add to local array
-				const newVisit = {
-					ID: generateID(),
-					location_name: location ? location.name : '',
-					paid: visitData.paid || 'לא',     // משתמש בערך מהטופס
-					notes: visitData.notes || '',     // משתמש בערך מהטופס
-					...visitData                      // שאר הנתונים
+				const newVisit= {
+					ID: Date.now(),
+					...visitData,
+					paid: 'לא',
+					notes: ''
 				};
 				
 				// בדיקת תקינות
@@ -2631,12 +1977,15 @@
 				if (visitData.visit_type === 'מלא') {
 				   updateNextVisitDate(visitData.location_id);
 				}
-		
+			   
 				showSuccess('טיפול נשמר בהצלחה!');
 				
 				// Reset form
 				document.getElementById('visitForm').reset();
-			   		   
+			   
+				// Reset timer display
+				document.getElementById('timerDisplay').textContent = '00:00:00';
+			   
 				// Reload planning data
 				loadPlanningData();
 				saveToLocalStorage();
@@ -2684,12 +2033,12 @@
                <div class="modal" id="locationModal">
                    <div class="modal-content">
                        <div class="modal-header">
-                           h3>הוספת לקוח חדש</h3>
+                           <h3>הוספת גינה חדשה</h3>
                            <span class="close" onclick="closeModal('locationModal')">&times;</span>
                        </div>
                        <form id="locationForm" onsubmit="handleLocationSubmit(event)">
                            <div class="form-group">
-                               <label for="locationName">שם לקוח:</label>
+                               <label for="locationName">שם גינה:</label>
                                <input type="text" id="locationName" required>
                            </div>
                            <div class="form-group">
@@ -2748,7 +2097,7 @@
                                <label for="locationNotes">הערות:</label>
                                <textarea id="locationNotes"></textarea>
                            </div>
-                           <button type="submit">שמור לקוח</button>
+                           <button type="submit">שמור גינה</button>
                        </form>
                    </div>
                </div>
@@ -2765,7 +2114,7 @@
             event.preventDefault();
            
 			const locationData = {
-				ID: generateID(),
+				ID: Date.now(),
 				name: document.getElementById('locationName').value,
 				full_address: document.getElementById('locationAddress').value,
 				neighborhood: document.getElementById('locationNeighborhood').value,
@@ -2778,7 +2127,6 @@
 				base_amount: parseFloat(document.getElementById('locationAmount').value) || 0,
 				active: document.getElementById('locationActive').value,
 				notes: document.getElementById('locationNotes').value,
-				client_requests: document.getElementById('locationClientRequests').value || '', // שדה חדש
 				last_visit: '',
 				next_visit: document.getElementById('locationNextVisit').value
 			};
@@ -2827,181 +2175,68 @@
         }
 
 		function editLocation(locationId) {
-			console.log(`✅ editLocation ('${locationId}')`);
 			const location = locations.find(g => g.ID == locationId);
-			if (!location) {
-				showToast('לקוח לא נמצא', 'error');
-				return;
-			}
-			
-			console.log(`✅ editLocation second: ('${locationId}')`);
-			
-			// צור חלון עריכה
-			const editModalHTML = `
-				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90vw; max-height: 80vh; overflow-y: auto;">
-					<h3 style="margin-bottom: 20px; color: #2c3e50;">🏠 עריכת לקוח - ${location.name}</h3>
-					
-					<form id="editLocationForm">
-						<div class="form-group">
-							<label>שם הלקוח:</label>
-							<input type="text" id="editLocationName" value="${location.name || ''}" required>
-						</div>
-						
-						<div class="form-group">
-							<label>כתובת מלאה:</label>
-							<input type="text" id="editLocationAddress" value="${location.full_address || ''}" required>
-						</div>
-						
-						<div class="form-group">
-							<label>שכונה:</label>
-							<input type="text" id="editLocationNeighborhood" value="${location.neighborhood || ''}">
-						</div>
-						
-						<div class="form-group">
-							<label>עיר:</label>
-							<input type="text" id="editLocationCity" value="${location.city || ''}">
-						</div>
-						
-						<div class="form-group">
-							<label>איש קשר:</label>
-							<input type="text" id="editLocationContact" value="${location.contact_person || ''}">
-						</div>
-						
-						<div class="form-group">
-							<label>טלפון:</label>
-							<input type="tel" id="editLocationPhone" value="${location.phone || ''}">
-						</div>
-						
-						<div class="form-group">
-							<label>יום מועדף:</label>
-							<select id="editLocationDay">
-								<option value="כל יום" ${location.allowed_day === 'כל יום' ? 'selected' : ''}>כל יום</option>
-								<option value="יום ראשון" ${location.allowed_day === 'יום ראשון' ? 'selected' : ''}>יום ראשון</option>
-								<option value="יום שני" ${location.allowed_day === 'יום שני' ? 'selected' : ''}>יום שני</option>
-								<option value="יום שלישי" ${location.allowed_day === 'יום שלישי' ? 'selected' : ''}>יום שלישי</option>
-								<option value="יום רביעי" ${location.allowed_day === 'יום רביעי' ? 'selected' : ''}>יום רביעי</option>
-								<option value="יום חמישי" ${location.allowed_day === 'יום חמישי' ? 'selected' : ''}>יום חמישי</option>
-								<option value="יום שישי" ${location.allowed_day === 'יום שישי' ? 'selected' : ''}>יום שישי</option>
-							</select>
-						</div>
-						
-						<div class="form-group">
-							<label>מרווח בשבועות:</label>
-							<input type="number" id="editLocationInterval" value="${location.interval_weeks || 4}" min="1" required>
-						</div>
-						
-						<div class="form-group">
-							<label>סכום בסיס (₪):</label>
-							<input type="number" id="editLocationAmount" value="${location.base_amount || 0}" step="0.01">
-						</div>
-						
-						<div class="form-group">
-							<label>סטטוס:</label>
-							<select id="editLocationActive">
-								<option value="1" ${location.active === '1' ? 'selected' : ''}>פעיל</option>
-								<option value="0" ${location.active === '0' ? 'selected' : ''}>לא פעיל</option>
-							</select>
-						</div>
-						
-						<div class="form-group">
-							<label>טיפול הבא:</label>
-							<input type="date" id="editLocationNextVisit" value="${location.next_visit || ''}">
-						</div>
-						
-						<div class="form-group">
-							<label>בקשות לקוח:</label>
-							<textarea id="editLocationClientRequests" rows="2">${location.client_requests || ''}</textarea>
-						</div>
-						
-						<div class="form-group">
-							<label>הערות:</label>
-							<textarea id="editLocationNotes" rows="3">${location.notes || ''}</textarea>
-						</div>
-						
-						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
-							<button type="button" onclick="saveEditedLocation('${locationId}')" class="btn btn-success">
-								💾 שמור שינויים
-							</button>
-							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">
-								❌ ביטול
-							</button>
-						</div>
-					</form>
-				</div>
-			`;
-			
-			// הצג את המודל
-			showEditModal(editModalHTML);
-		}
+			if (!location) return;
 
-		// פונקציה לעדכון הלקוח בענן (אופציונלית)
-		async function updateLocationInCloud(updatedLocation) {
-			if (!await validateToken()) return;
-			
-			try {
-				// קריאת כל הנתונים מהענן
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:O'
-				});
-				
-				const rows = response.result.values || [];
-				
-				// מציאת השורה לעדכון
-				let rowToUpdate = -1;
-				for (let i = 1; i < rows.length; i++) {
-					if (rows[i][0] == updatedLocation.ID) {
-						rowToUpdate = i + 1; // +1 כי Google Sheets מתחיל מ-1
-						break;
-					}
-				}
-				
-				if (rowToUpdate > 0) {
-					// עדכון השורה
-					const updatedRow = [
-						updatedLocation.ID,
-						updatedLocation.name,
-						updatedLocation.full_address,
-						updatedLocation.neighborhood,
-						updatedLocation.city,
-						updatedLocation.contact_person,
-						updatedLocation.phone,
-						updatedLocation.allowed_day,
-						updatedLocation.interval_weeks,
-						updatedLocation.temp_addition || 0,
-						updatedLocation.base_amount,
-						updatedLocation.active,
-						updatedLocation.notes,
-						updatedLocation.last_visit || '',
-						updatedLocation.next_visit || ''
-					];
-					
-					await gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: SPREADSHEET_ID,
-						range: `Locations!A${rowToUpdate}:O${rowToUpdate}`,
-						valueInputOption: 'USER_ENTERED',
-						resource: {
-							values: [updatedRow]
-						}
-					});
-					
-					console.log(`✅ Updated location ${updatedLocation.ID} in cloud`);
-				}
-				
-			} catch (error) {
-				console.error('Error updating location in cloud:', error);
-				throw error;
-			}
+			showAddLocationForm();
+
+			// Populate form with existing data
+			setTimeout(() => {
+			    document.getElementById('locationName').value = location.name;
+			    document.getElementById('locationAddress').value = location.full_address;
+			    document.getElementById('locationNeighborhood').value = location.neighborhood || '';
+			    document.getElementById('locationCity').value = location.city || '';
+			    document.getElementById('locationContact').value = location.contact_person;
+			    document.getElementById('locationPhone').value = location.phone || '';
+			    document.getElementById('locationDay').value = location.allowed_day;
+			    document.getElementById('locationInterval').value = location.interval_weeks;
+			    document.getElementById('locationAmount').value = location.base_amount;
+			    document.getElementById('locationActive').value = location.active;
+			    document.getElementById('locationNextVisit').value = location.next_visit;
+			    document.getElementById('locationNotes').value = location.notes || '';
+			   
+			    // Change form submission to update instead of add
+			    document.getElementById('locationForm').onsubmit = function(event) {
+				   event.preventDefault();
+				   updatelocation(locationId);
+			    };
+			   
+			   document.querySelector('.modal-header h3').textContent = 'עריכת גינה';
+			}, 100);
 		}
         
+       function updatelocation(locationId) {
+           const location = locations.find(g => g.ID == locationId);
+           if (!location) return;
+           
+           location.name = document.getElementById('locationName').value;
+           location.full_address = document.getElementById('locationAddress').value;
+           location.neighborhood = document.getElementById('locationNeighborhood').value;
+           location.city = document.getElementById('locationCity').value;
+           location.contact_person = document.getElementById('locationContact').value;
+           location.phone = document.getElementById('locationPhone').value;
+           location.allowed_day = document.getElementById('locationDay').value;
+           location.interval_weeks = parseInt(document.getElementById('locationInterval').value);
+           location.base_amount = parseFloat(document.getElementById('locationAmount').value) || 0;
+           location.active = document.getElementById('locationActive').value;
+           location.next_visit= document.getElementById('locationNextVisit').value;
+           location.notes = document.getElementById('locationNotes').value;
+           
+           closeModal('locationModal');
+           loadLocationsTable();
+           loadLocationsForSelect();
+           loadPlanningData();
+           showSuccess('גינה עודכנה בהצלחה!');
+		   saveToLocalStorage();
+       }
 
        function deleteLocation(locationId) {
-           if (confirm('האם אתה בטוח שברצונך למחוק את הלקוח?')) {
+           if (confirm('האם אתה בטוח שברצונך למחוק את הגינה?')) {
                locations = locations.filter(g => g.ID != locationId);
                loadLocationsTable();
                loadLocationsForSelect();
                loadPlanningData();
-               showSuccess('לקוח נמחק בהצלחה!');
+               showSuccess('גינה נמחקה בהצלחה!');
 			   saveToLocalStorage();
            }
        }
@@ -3145,7 +2380,30 @@
            console.log('Loading complete');
        }
 
-       
+       function showError(message) {
+           // Show error message
+           const errorDiv = document.createElement('div');
+           errorDiv.className = 'error';
+           errorDiv.textContent = message;
+           document.querySelector('.main-content').insertBefore(errorDiv, document.querySelector('.main-content').firstChild);
+           
+           setTimeout(() => {
+               errorDiv.remove();
+           }, 5000);
+       }
+
+       function showSuccess(message) {
+           // Show success message
+           const successDiv = document.createElement('div');
+           successDiv.className = 'success';
+           successDiv.textContent = message;
+           document.querySelector('.main-content').insertBefore(successDiv, document.querySelector('.main-content').firstChild);
+           
+           setTimeout(() => {
+               successDiv.remove();
+           }, 3000);
+       }
+
        // Click outside modal to close
        window.onclick = function(event) {
            if (event.target.classList.contains('modal')) {
@@ -3153,141 +2411,54 @@
            }
        }
 	   
-	  function editReceipt(receiptId) {
-			console.log(`✅ editReceipt ('${receiptId}')`);
+	   function editReceipt(receiptId) {
 			const receipt = receipts.find(r => r.ID == receiptId);
-			if (!receipt) {
-				showToast('קבלה לא נמצאה', 'error');
-				return;
-			}
+			if (!receipt) return;
 			
-			// בניית אפשרויות הלקוחות
-			let locationOptions = '<option value="">בחר לקוח</option>';
-			locations.forEach(location => {
-				const selected = location.ID == receipt.location_id ? 'selected' : '';
-				locationOptions += `<option value="${location.ID}" ${selected}>${location.name} - ${location.full_address}</option>`;
-			});
+			showAddReceiptForm();
 			
-			// צור חלון עריכה
-			const editModalHTML = `
-				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90vw; max-height: 80vh; overflow-y: auto;">
-					<h3 style="margin-bottom: 20px; color: #2c3e50;">🧾 עריכת קבלה</h3>
-					
-					<form id="editReceiptForm">
-						<div class="form-group">
-							<label>מספר פנקס:</label>
-							<input type="text" id="editReceiptBook" value="${receipt.book_number || ''}" required>
-						</div>
-						
-						<div class="form-group">
-							<label>מספר קבלה:</label>
-							<input type="text" id="editReceiptNumber" value="${receipt.receipt_number || ''}" required>
-						</div>
-						
-						<div class="form-group">
-							<label>תאריך:</label>
-							<input type="date" id="editReceiptDate" value="${receipt.date}" required>
-						</div>
-						
-						<div class="form-group">
-							<label>לקוח:</label>
-							<select id="editReceiptLocation" required>
-								${locationOptions}
-							</select>
-						</div>
-						
-						<div class="form-group">
-							<label>סכום (₪):</label>
-							<input type="number" step="0.01" id="editReceiptAmount" value="${receipt.amount || 0}" required>
-						</div>
-						
-						<div class="form-group">
-							<label>סוג תשלום:</label>
-							<select id="editReceiptPaymentType">
-								<option value="מזומן" ${receipt.payment_type === 'מזומן' ? 'selected' : ''}>מזומן</option>
-								<option value="העברה" ${receipt.payment_type === 'העברה' ? 'selected' : ''}>העברה</option>
-								<option value="צ׳ק" ${receipt.payment_type === 'צ׳ק' ? 'selected' : ''}>צ׳ק</option>
-								<option value="כרטיס אשראי" ${receipt.payment_type === 'כרטיס אשראי' ? 'selected' : ''}>כרטיס אשראי</option>
-							</select>
-						</div>
-						
-						<div class="form-group">
-							<label>הערות:</label>
-							<textarea id="editReceiptNotes" rows="3">${receipt.notes || ''}</textarea>
-						</div>
-						
-						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
-							<button type="button" onclick="saveEditedReceipt('${receiptId}')" class="btn btn-success">
-								💾 שמור שינויים
-							</button>
-							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">
-								❌ ביטול
-							</button>
-						</div>
-					</form>
-				</div>
-			`;
-			
-			// הצג את המודל
-			showEditModal(editModalHTML);
+			// Populate form with existing data
+			setTimeout(() => {
+				document.getElementById('receiptBook').value = receipt.book_number;
+				document.getElementById('receiptNumber').value = receipt.receipt_number;
+				document.getElementById('receiptDate').value = receipt.date;
+				document.getElementById('receiptLocation').value = receipt.location_id;
+				document.getElementById('receiptAmount').value = receipt.amount;
+				document.getElementById('receiptPaymentType').value = receipt.payment_type;
+				document.getElementById('receiptNotes').value = receipt.notes || '';
+				
+				// Change form submission to update instead of add
+				document.getElementById('receiptForm').onsubmit = function(event) {
+					event.preventDefault();
+					updateReceipt(receiptId);
+				};
+				
+				document.querySelector('.modal-header h3').textContent = 'עריכת קבלה';
+			}, 100);
 		}
 
-		
-		// פונקציה לעדכון הקבלה בענן (אופציונלית)
-		async function updateReceiptInCloud(updatedReceipt) {
-			if (!await validateToken()) return;
+		function updateReceipt(receiptId) {
+			const receipt = receipts.find(r => r.ID == receiptId);
+			if (!receipt) return;
 			
-			try {
-				// קריאת כל הנתונים מהענן
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Receipts!A:I'
-				});
-				
-				const rows = response.result.values || [];
-				
-				// מציאת השורה לעדכון
-				let rowToUpdate = -1;
-				for (let i = 1; i < rows.length; i++) {
-					if (rows[i][0] == updatedReceipt.ID) {
-						rowToUpdate = i + 1; // +1 כי Google Sheets מתחיל מ-1
-						break;
-					}
-				}
-				
-				if (rowToUpdate > 0) {
-					// עדכון השורה
-					const updatedRow = [
-						updatedReceipt.ID,
-						updatedReceipt.book_number,
-						updatedReceipt.receipt_number,
-						updatedReceipt.date,
-						updatedReceipt.location_id,
-						updatedReceipt.location_name,
-						updatedReceipt.amount,
-						updatedReceipt.payment_type,
-						updatedReceipt.notes
-					];
-					
-					await gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: SPREADSHEET_ID,
-						range: `Receipts!A${rowToUpdate}:I${rowToUpdate}`,
-						valueInputOption: 'USER_ENTERED',
-						resource: {
-							values: [updatedRow]
-						}
-					});
-					
-					console.log(`✅ Updated receipt ${updatedReceipt.ID} in cloud`);
-				}
-				
-			} catch (error) {
-				console.error('Error updating receipt in cloud:', error);
-				throw error;
-			}
+			const locationId = document.getElementById('receiptLocation').value;
+			const location = locations.find(g => g.ID == locationId);
+			
+			receipt.book_number = document.getElementById('receiptBook').value;
+			receipt.receipt_number = document.getElementById('receiptNumber').value;
+			receipt.date = document.getElementById('receiptDate').value;
+			receipt.location_id = locationId;
+			receipt.location_name = location ? location.name : '';
+			receipt.amount = parseFloat(document.getElementById('receiptAmount').value);
+			receipt.payment_type = document.getElementById('receiptPaymentType').value;
+			receipt.notes = document.getElementById('receiptNotes').value;
+			
+			closeModal('receiptModal');
+			loadReceiptsTable();
+			saveToLocalStorage();
+			showSuccess('קבלה עודכנה בהצלחה!');
 		}
 
-		
 		function deleteReceipt(receiptId) {
 			if (confirm('האם אתה בטוח שברצונך למחוק את הקבלה?')) {
 				receipts = receipts.filter(r => r.ID != receiptId);
@@ -3299,73 +2470,59 @@
 	   
 	   // תוספה - הודעות Toast מתקדמות
 		function showToast(message, type = 'info', duration = 3000) {
-			const toastContainer = document.getElementById('toastContainer');
-			
-			if (!toastContainer) {
-				console.error('Toast container not found');
-				return;
+			// הסר toast קיים
+			const existingToast = document.querySelector('.toast');
+			if (existingToast) {
+				existingToast.remove();
 			}
 			
+			// צור toast חדש
 			const toast = document.createElement('div');
-			toast.className = `toast ${type}`;
+			toast.className = `toast toast-${type}`;
 			toast.textContent = message;
 			
-			toastContainer.appendChild(toast);
+			// הוסף styles
+			toast.style.cssText = `
+				position: fixed;
+				top: 20px;
+				right: 20px;
+				padding: 12px 20px;
+				border-radius: 6px;
+				color: white;
+				font-weight: bold;
+				z-index: 10000;
+				max-width: 400px;
+				box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+				transform: translateX(100%);
+				transition: transform 0.3s ease;
+			`;
 			
-			// Trigger animation
-			setTimeout(() => {
-				toast.classList.add('show');
-			}, 100);
+			// צבעים לפי סוג
+			const colors = {
+				success: '#27ae60',
+				error: '#e74c3c',
+				warning: '#f39c12',
+				info: '#3498db'
+			};
 			
-			// Remove toast after specified duration
+			toast.style.backgroundColor = colors[type] || colors.info;
+			
+			document.body.appendChild(toast);
+			
+			// אנימציה כניסה
 			setTimeout(() => {
-				toast.classList.remove('show');
-				setTimeout(() => {
-					if (toast.parentNode) {
-						toast.parentNode.removeChild(toast);
-					}
-				}, 300);
+				toast.style.transform = 'translateX(0)';
+			}, 10);
+			
+			// הסרה אוטומטית
+			setTimeout(() => {
+				toast.style.transform = 'translateX(100%)';
+				setTimeout(() => toast.remove(), 300);
 			}, duration);
-		}
-	   
-	   // פונקציות עזר להודעות
-		function showSuccess(message, duration = 3000) {
-			showToast(message, 'success', duration);
-		}
-
-		function showError(message, duration = 4000) {
-			showToast(message, 'error', duration);
-		}
-
-		function showWarning(message, duration = 3500) {
-			showToast(message, 'warning', duration);
-		}
-
-		function showInfo(message, duration = 3000) {
-			showToast(message, 'info', duration);
 		}
 	   
 	   
 	    // יצירת טבלת עזר לייבוא
-		async function clearAllDataBeforeImport() {
-			if (confirm('האם אתה בטוח שברצונך למחוק את כל הנתונים הקיימים לפני הייבוא החדש?\n\nפעולה זו תמחק:\n- את כל המיקומים\n- את כל הביקורים\n- את כל הקבלות\n\nהנתונים בגוגל שיטס לא יימחקו.')) {
-				locations = [];
-				visits = [];
-				receipts = [];
-				saveToLocalStorage();
-				
-				// עדכון רק הפונקציות שקיימות
-				loadLocationsTable();
-				loadReceiptsTable(); 
-				loadFilterOptions();
-				
-				showToast('כל הנתונים נוקו בהצלחה', 'success');
-				return true;
-			}
-			return false;
-		}
-
-		// שיפור לפונקציה הקיימת
 		async function createImportTable() {
 			if (!await validateToken()) {
 				showToast('התחבר לגוגל קודם', 'warning');
@@ -3373,12 +2530,13 @@
 			}
 			
 			try {
-				showLoading('יוצר טבלת עזר לייבוא...');
+				showToast('יוצר טבלת עזר לייבוא...', 'info');
 				
+				// יצירת טבלה חדשה עם access_token במקום API key
 				const response = await gapi.client.sheets.spreadsheets.create({
 					resource: {
 						properties: {
-							title: `import_table_${new Date().toISOString().split('T')[0]}`
+							title: `Import_Helper_${new Date().toISOString().split('T')[0]}`
 						},
 						sheets: [{
 							properties: { title: 'Locations' },
@@ -3403,13 +2561,19 @@
 				// שמירת ID לייבוא מאוחר יותר
 				localStorage.setItem('importTableId', newSpreadsheetId);
 				
-				showToast('טבלת עזר נוצרה! מלא את הנתונים ואז חזור לייבא', 'success');
+				showToast('טבלת עזר נוצרה! הדבק את הנתונים שלך החל משורה 2', 'success');
 				
 			} catch (error) {
 				console.error('Error creating import table:', error);
-				showToast('שגיאה ביצירת טבלת עזר', 'error');
-			} finally {
-				hideLoading();
+				
+				if (error.status === 401) {
+					access_token = null;
+					showToast('⚠️ החיבור פג במהלך יצירת הטבלה', 'warning');
+				} else {
+					showToast(`שגיאה ביצירת טבלת עזר: ${error.result?.error?.message || error.message}`, 'error');
+				}
+				throw error;
+				
 			}
 		}
 
@@ -3421,29 +2585,29 @@
 			}
 
 			try {
-				// כל הכותרות באנגלית
-				const locationHeaders = [['customer_name', 'street', 'house_number', 'city', 'frequency', 'contact_person', 'base_amount']];
-				const visitHeaders = [['year', 'month', 'day', 'customer', 'contact_person', 'treatment', 'date', 'work_done', 'duration', 'amount', 'paid', 'expense', 'notes']];
-				const receiptHeaders = [['code_x', 'booklet', 'receipt', 'year', 'month', 'day', 'address', 'amount', 'type', 'notes', 'details']];
+				// הסר ID מכל הטבלאות
+				const locationHeaders = [['שם לקוח', 'רחוב', 'בית', 'עיר', 'תדירות', 'איש קשר', 'סכום בסיסי']];
+				const visitHeaders = [['שנה', 'חודש', 'יום', 'לקוח', 'איש קשר', 'טיפול', 'תאריך', 'מה בוצע', 'משך', 'סכום', 'שולם', 'הוצאה', 'הערות']];
+				const receiptHeaders = [['XK', 'פנקס', 'קבלה', 'שנה', 'חודש', 'יום', 'כתובת', 'סכום', 'סוג', 'הערות', 'פירוט']];
 				
 				await new Promise(resolve => setTimeout(resolve, 1000));
 				
 				await Promise.all([
 					gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: spreadsheetId,
-						range: 'Locations!A1:G1',
+						range: 'Locations!A1:G1', // G במקום H
 						valueInputOption: 'RAW',
 						resource: { values: locationHeaders }
 					}),
 					gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: spreadsheetId,
-						range: 'Visits!A1:M1',
+						range: 'Visits!A1:M1', // M במקום N
 						valueInputOption: 'RAW', 
 						resource: { values: visitHeaders }
 					}),
 					gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: spreadsheetId,
-						range: 'Receipts!A1:K1',
+						range: 'Receipts!A1:K1', // K עמודות
 						valueInputOption: 'RAW',
 						resource: { values: receiptHeaders }
 					}),
@@ -3506,80 +2670,69 @@
 				
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: importTableId,
-					range: 'Locations!A2:G1000' // עד G במקום H
+					range: 'Locations!A2:H1000'
 				});
 				
 				const rows = response.result.values || [];
 				let importedCount = 0;
-				let newLocations = []; // מערך לאיסוף כל הלקוחות החדשים
 				
 				for (const row of rows) {
 					if (row.length > 0 && row[0]) { // יש שם לקוח
-						// מיפוי לפי הכותרות החדשות באנגלית:
-						const customerName = row[0].trim();  // customer_name
-						const street = row[1] || '';         // street  
-						const houseNumber = row[2] || '';    // house_number
-						const city = row[3] || '';           // city
-						const frequency = row[4] || '';      // frequency
-						const contactPerson = row[5] || '';  // contact_person
-						const baseAmount = row[6] || '';     // base_amount
+						const customerName = row[0].trim(); // עמודה 0 במקום 1
 						
-						// בניית כתובת מלאה
-						const fullAddress = `${street} ${houseNumber} ${city}`.trim();
-						
-						// בדוק אם לקוח כבר קיים (לפי כתובת מלאה)
+						// בדוק אם לקוח כבר קיים
 						const existingCustomer = locations.find(loc => 
 							loc.full_address && 
-							loc.full_address.toLowerCase() === fullAddress.toLowerCase()
+							loc.full_address.toLowerCase() === customerName.toLowerCase()
 						);
 						
 						if (existingCustomer) {
-							console.log(`לקוח ${fullAddress} כבר קיים - דולג`);
+							showToast(`לקוח ${customerName} כבר קיים - דולג`, 'warning');
 							continue;
 						}
 						
+						// אם יש רחוב ובית נפרדים - השתמש בהם
+						let street = row[1] || '';      // עמודה 1 במקום 2
+						let houseNumber = row[2] || ''; // עמודה 2 במקום 3
+						let city = row[3] || '';        // עמודה 3 במקום 4
+						
+						// אם לא - פענח מהשם
+						if (!street && !houseNumber && !city) {
+							const parsed = parseFullAddress(customerName);
+							street = parsed.street;
+							houseNumber = parsed.houseNumber;
+							city = parsed.city;
+						}
+						
 						const locationData = {
-							ID: generateID(),
-							name: customerName,           // שם הלקוח (עכשיו נפרד מהכתובת)
-							full_address: fullAddress,   // כתובת מלאה מורכבת
-							neighborhood: '',
+							ID: Date.now() + importedCount, // ID אוטומטי
+							name: customerName, // שם הלקוח הוא הכתובת המלאה
+							full_address: customerName, // זה המזהה הייחודי
+							neighborhood: '', // ריק - ימולא בהמשך
 							city: city,
-							contact_person: contactPerson,
+							contact_person: row[5] || '', // עמודה 5 במקום 6 - איש קשר
 							phone: '',
 							allowed_day: 'כל יום',
-							interval_weeks: parseInt(frequency) || 4,
+							interval_weeks: parseInt(row[4]) || 4, // עמודה 4 במקום 5 - תדירות
 							temp_addition: 0,
-							base_amount: parseFloat(baseAmount) || 0,
-							active: "1",
+							base_amount: parseFloat(row[6]) || 0, // עמודה 6 במקום 7 - סכום בסיסי
+							active: 'כן',
 							notes: 'יובא מטבלת לקוחות',
 							last_visit: '',
 							next_visit: ''
 						};
 						
 						locations.push(locationData);
-						newLocations.push(locationData); // הוסף למערך החדש
 						importedCount++;
 					}
 				}
 				
-				// שמירה מקבצית אחת בסוף:
-				if (newLocations.length > 0) {
-					showToast(`שומר ${newLocations.length} לקוחות בבת אחת...`, 'info', 2000);
-					const success = await saveLocationsBatch(newLocations);
-					
-					if (success) {
-						showToast(`✅ יובאו ${importedCount} לקוחות במהירות!`, 'success');
-					} else {
-						showToast('⚠️ בעיה בשמירה לענן - נשמר מקומית בלבד', 'warning');
-					}
-				} else {
-					showToast('לא נמצאו לקוחות חדשים לייבוא', 'info');
-				}
-				
-				// עדכון תצוגות
-				saveToLocalStorage();
+				// שמירה
+				await saveAllToSheets();
 				loadLocationsTable();
 				loadLocationsForSelect();
+				
+				showToast(`יובאו ${importedCount} לקוחות בהצלחה!`, 'success');
 				
 			} catch (error) {
 				console.error('Error importing customers:', error);
@@ -3598,99 +2751,75 @@
 				
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: importTableId,
-					range: 'Visits!A2:M1000'
+					range: 'Visits!A2:M1000' // M במקום N
 				});
 				
 				const rows = response.result.values || [];
 				let importedCount = 0;
 				let notFoundCustomers = [];
-				let newVisits = []; // מערך לאיסוף כל הביקורים החדשים
 				
 				for (const row of rows) {
-					if (row.length > 3 && row[3]) { // יש לקוח בעמודה 3 (customer)
-						// מיפוי לפי הכותרות החדשות באנגלית:
-						const year = row[0];                    // year
-						const month = row[1];                   // month
-						const day = row[2];                     // day
-						const customerName = row[3].trim();     // customer
-						const contactPerson = row[4] || '';     // contact_person
-						const treatment = row[5] || 'מלא';      // treatment
-						const dateField = row[6];               // date (לא נשתמש - נבנה מהעמודות הראשונות)
-						const workDone = row[7] || '';          // work_done
-						const duration = row[8] || 0;           // duration
-						const amount = row[9] || 0;             // amount
-						const paid = row[10] || 'לא';           // paid
-						const expense = row[11] || 0;           // expense
-						const notes = row[12] || '';            // notes
+					if (row.length > 3 && row[3]) { // יש לקוח - עמודה 3 במקום 4
+						const customerAddress = row[3].trim(); // עמודה "לקוח"
 						
 						// מצא לקוח קיים לפי כתובת מלאה
 						const existingCustomer = locations.find(loc => 
 							loc.full_address && 
-							loc.full_address.toLowerCase().includes(customerName.toLowerCase())
+							loc.full_address.toLowerCase() === customerAddress.toLowerCase()
 						);
 						
 						if (!existingCustomer) {
-							if (!notFoundCustomers.includes(customerName)) {
-								notFoundCustomers.push(customerName);
+							if (!notFoundCustomers.includes(customerAddress)) {
+								notFoundCustomers.push(customerAddress);
 							}
 							continue;
 						}
 						
-						// בניית תאריך נכון מ-3 עמודות
-						const visitDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+						// בניית תאריך מהעמודות שנה/חודש/יום או מעמודה "תאריך"
+						let visitDate = '';
+						if (row[6]) { // יש תאריך בפורמט DD/MM/YYYY - עמודה 6 במקום 7
+							visitDate = convertDateFormat(row[6]);
+						} else if (row[0] && row[1] && row[2]) { // יש שנה/חודש/יום - עמודות 0,1,2 במקום 1,2,3
+							const year = row[0];
+							const month = String(row[1]).padStart(2, '0');
+							const day = String(row[2]).padStart(2, '0');
+							visitDate = `${year}-${month}-${day}`;
+						}
 						
 						const visitData = {
-							ID: generateID(),
+							ID: Date.now() + importedCount, // ID אוטומטי
 							date: visitDate,
 							location_id: existingCustomer.ID,
-							location_name: existingCustomer.name,
-							visit_type: treatment,
-							work_done: workDone,
-							duration_minutes: parseFloat(duration) * 60 || 0, // שעות → דקות
+							visit_type: row[5] || 'מלא', // עמודה "טיפול" - עמודה 5 במקום 6
+							work_done: row[7] || '', // עמודה "מה בוצע" - עמודה 7 במקום 8
+							duration_minutes: parseFloat(row[8]) * 60 || 0, // משך בשעות → דקות - עמודה 8 במקום 9
 							start_time: '',
 							end_time: '',
-							amount: parseFloat(amount) || 0,
-							expense: parseFloat(expense) || 0,
-							paid: mapPaymentStatus(paid),
-							notes: notes
+							amount: parseFloat(row[9]) || 0, // סכום - עמודה 9 במקום 10
+							expense: parseFloat(row[11]) || 0, // הוצאה - עמודה 11 במקום 12
+							paid: row[10] === 'כן' ? 'כן' : 'לא', // שולם - עמודה 10 במקום 11
+							notes: row[12] || '' // הערות - עמודה 12 במקום 13
 						};
 						
 						visits.push(visitData);
-						newVisits.push(visitData); // הוסף למערך החדש
-						// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
-						// await updateSingleLocationTreatmentDates(visitData.location_id);
 						importedCount++;
 					}
 				}
 				
-				// שמירה מקבצית אחת בסוף:
-				if (newVisits.length > 0) {
-					showToast(`שומר ${newVisits.length} ביקורים בבת אחת...`, 'info', 2000);
-					const success = await saveVisitsBatch(newVisits);
-					
-					if (success) {
-						showToast(`✅ יובאו ${importedCount} ביקורים במהירות!`, 'success');
-					} else {
-						showToast('⚠️ בעיה בשמירה לענן - נשמר מקומית בלבד', 'warning');
-					}
-				} else {
-					showToast('לא נמצאו ביקורים חדשים לייבוא', 'info');
-				}
-				
-				// עדכון תצוגות
-				saveToLocalStorage();
+				// שמירה
+				await saveAllToSheets();
 				loadPlanningData();
 				
-				// הודעה על לקוחות שלא נמצאו
-				let message = `יובאו ${importedCount} ביקורים בהצלחה!`;
+				let message = `יובאו ${importedCount} טיפולים בהצלחה!`;
 				if (notFoundCustomers.length > 0) {
 					message += `\n⚠️ ${notFoundCustomers.length} לקוחות לא נמצאו: ${notFoundCustomers.slice(0, 3).join(', ')}${notFoundCustomers.length > 3 ? '...' : ''}`;
-					showToast(message, 'warning', 5000);
 				}
+				
+				showToast(message, 'success');
 				
 			} catch (error) {
 				console.error('Error importing visits:', error);
-				showToast('שגיאה בייבוא ביקורים', 'error');
+				showToast('שגיאה בייבוא טיפולים', 'error');
 			}
 		}
 	   
@@ -3714,13 +2843,13 @@
 				let notFoundCustomers = [];
 				
 				for (const row of rows) {
-					if (row.length > 6 && row[6]) { // יש כתובת בעמודה 6 (G)
+					if (row.length > 6 && row[6]) { // יש כתובת - עמודה 6
 						const customerAddress = row[6].trim(); // עמודה "כתובת"
 						
 						// מצא לקוח קיים לפי כתובת מלאה
 						const existingCustomer = locations.find(loc => 
 							loc.full_address && 
-							loc.full_address.toLowerCase().includes(customerAddress.toLowerCase())
+							loc.full_address.toLowerCase() === customerAddress.toLowerCase()
 						);
 						
 						if (!existingCustomer) {
@@ -3730,23 +2859,26 @@
 							continue;
 						}
 						
-						// בניית תאריך מ-3 עמודות
-						const year = row[3];   // שנה - עמודה D
-						const month = String(row[4]).padStart(2, '0');  // חודש - עמודה E
-						const day = String(row[5]).padStart(2, '0');    // יום - עמודה F
-						const receiptDate = `${year}-${month}-${day}`;
+						// בניית תאריך מהעמודות שנה/חודש/יום
+						let receiptDate = '';
+						if (row[3] && row[4] && row[5]) { // עמודות 3,4,5
+							const year = row[3];
+							const month = String(row[4]).padStart(2, '0');
+							const day = String(row[5]).padStart(2, '0');
+							receiptDate = `${year}-${month}-${day}`;
+						}
 						
 						const receiptData = {
-							ID: generateID(),
-							book_number: row[1] || '',      // פנקס - עמודה B
-							receipt_number: row[2] || '',   // קבלה - עמודה C
-							date: receiptDate,              // תאריך נכון
+							ID: Date.now() + importedCount,
+							book_number: row[1] || '', // פנקס - עמודה 1
+							receipt_number: row[2] || '', // קבלה - עמודה 2
+							date: receiptDate,
 							location_id: existingCustomer.ID,
 							location_name: customerAddress,
-							amount: parseFloat(row[7]) || 0, // סכום - עמודה H
-							payment_type: row[8] || '',     // סוג - עמודה I
-							codeX: row[0] || '',           // XK - עמודה A
-							notes: `${row[9] || ''} ${row[10] || ''}`.trim() // הערות + פירוט
+							amount: parseFloat(row[7]) || 0, // סכום - עמודה 7
+							payment_type: row[8] || '', // סוג - עמודה 8
+							codeX: row[0] || '', // XK - עמודה 0
+							notes: `${row[9] || ''} ${row[10] || ''}`.trim() // הערות + פירוט - עמודות 9,10
 						};
 						
 						receipts.push(receiptData);
@@ -3949,8 +3081,7 @@
 			
 			filteredVisits.forEach(visit => {
 				const location = locations.find(loc => loc.ID == visit.location_id);
-				const locationName = visit.location_name || (location ? location.name : `לא נמצא (ID: ${visit.location_id})`);
-				//////////console.log(`Visit location_id: ${visit.location_id}, Found location:`, location);   //////>>>>>>>>>>>>>
+				const locationName = location ? location.name : 'לא נמצא';
 				
 				const row = document.createElement('tr');
 				
@@ -3967,39 +3098,19 @@
 					<td>${visit.visit_type}</td>
 					<td>${visit.work_done}</td>
 					<td>${(visit.duration_minutes / 60).toFixed(2)}</td>
-					<td>
-						<div style="display: flex; flex-direction: column; align-items: center;">
-							<span style="font-weight: bold; color: #27ae60;">₪${visit.amount}</span>
-							${getVisitCostBreakdown(visit)}
-						</div>
-					</td>
+					<td>₪${visit.amount}</td>
 					<td>
 						<span class="payment-status payment-${visit.paid}">
 							${visit.paid === 'כן' ? '✅ שולם' : visit.paid === 'לא' ? '❌ לא שולם' : '⚪ ללא'}
 						</span>
 					</td>
 					<td>
-						<button class="action-btn edit-btn" onclick="editVisit('${visit.ID}')">ערוך</button>
-						<button class="action-btn delete-btn" onclick="deleteVisit('${visit.ID}')">מחק</button>
+						<button class="action-btn edit-btn" onclick="editVisit(${visit.ID})">ערוך</button>
+						<button class="action-btn delete-btn" onclick="deleteVisit(${visit.ID})">מחק</button>
 					</td>
 				`;
 				tbody.appendChild(row);
 			});
-		}
-
-		// הוסף פונקציה חדשה להצגת פירוט עלויות:
-		function getVisitCostBreakdown(visit) {
-			if (!visit.duration_minutes) return '<span style="font-size: 11px; color: #999;">ללא פירוט</span>';
-			
-			const hours = (visit.duration_minutes / 60).toFixed(2);
-			const workers = visit.num_workers || 1;
-			const expense = visit.expense || 0;
-			
-			let breakdown = `${hours}ש`;
-			if (workers > 1) breakdown += ` × ${workers}ע`;
-			if (expense > 0) breakdown += ` + ₪${expense}`;
-			
-			return `<span style="font-size: 11px; color: #666;">${breakdown}</span>`;
 		}
 
 		// תוספה - עדכון פאנל המידע
@@ -4025,21 +3136,7 @@
 				debtElement.style.color = '#27ae60';
 				debtElement.style.fontWeight = 'bold';
 			}
-			
-			// חישוב נתונים מפורטים יותר על חובות
-			const unpaidVisits = filteredVisits.filter(visit => visit.paid === 'לא');
-			const uniqueDebtors = new Set(unpaidVisits.map(visit => visit.location_id)).size;
-			
-			// הצגת מידע נוסף בכרטיסי הסיכום
-			if (outstandingDebt > 0) {
-				const avgDebtPerClient = uniqueDebtors > 0 ? Math.round(outstandingDebt / uniqueDebtors) : 0;
-				document.getElementById('outstandingDebt').title = 
-					`${uniqueDebtors} לקוחות חייבים | ממוצע ₪${avgDebtPerClient} ללקוח`;
-			}
-	
 		}
-
-
 
 		// תוספה - טעינה ראשונית של הטאב
 		function loadVisitsHistory() {
@@ -4048,198 +3145,13 @@
 			updateVisitsInfo(visits);
 		}
 
-		async function editVisit(visitId) {
-			console.log(`✅ editVisit ('${visitId}') `);
-			const visit = visits.find(v => v.ID == visitId);
-			if (!visit) {
-				showToast('ביקור לא נמצא', 'error');
-				return;
-			}
-			
-			console.log(`✅ editVisit second: ('${visitId}') `);
-			
-			// מצא את הלקוח
-			const location = locations.find(loc => loc.ID == visit.location_id);
-			const locationName = location ? location.name : 'לקוח לא נמצא';
-			
-			// צור חלון עריכה
-			const editModalHTML = `
-				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90vw; max-height: 80vh; overflow-y: auto;">
-					<h3 style="margin-bottom: 20px; color: #2c3e50;">✏️ עריכת ביקור - ${locationName}</h3>
-					
-					<form id="editVisitForm">
-						<div class="form-group">
-							<label>תאריך:</label>
-							<input type="date" id="editVisitDate" value="${visit.date}" required>
-						</div>
-						
-						<div class="form-group">
-							<label>סוג טיפול:</label>
-							<select id="editVisitType">
-								<option value="מלא" ${visit.visit_type === 'מלא' ? 'selected' : ''}>מלא</option>
-								<option value="חלקי" ${visit.visit_type === 'חלקי' ? 'selected' : ''}>חלקי</option>
-								<option value="ביקורת" ${visit.visit_type === 'ביקורת' ? 'selected' : ''}>ביקורת</option>
-							</select>
-						</div>
-						
-						<div class="form-group">
-							<label>עבודה שבוצעה:</label>
-							<textarea id="editWorkDone" rows="3">${visit.work_done || ''}</textarea>
-						</div>
-						
-						<div class="form-group">
-							<label>משך זמן (דקות):</label>
-							<input type="number" id="editDuration" value="${visit.duration_minutes || 0}">
-						</div>
-						
-						<div class="form-group">
-							<label>שעת התחלה:</label>
-							<input type="time" id="editStartTime" value="${visit.start_time || ''}">
-						</div>
-						
-						<div class="form-group">
-							<label>סכום (₪):</label>
-							<input type="number" step="0.01" id="editAmount" value="${visit.amount || 0}">
-						</div>
-						
-						<div class="form-group">
-							<label>הוצאות (₪):</label>
-							<input type="number" step="0.01" id="editExpense" value="${visit.expense || 0}">
-						</div>
-						
-						<div class="form-group">
-							<label>סטטוס תשלום:</label>
-							<select id="editPaid">
-								<option value="לא" ${visit.paid === 'לא' ? 'selected' : ''}>לא שולם</option>
-								<option value="כן" ${visit.paid === 'כן' ? 'selected' : ''}>שולם</option>
-								<option value="ללא תשלום" ${visit.paid === 'ללא תשלום' ? 'selected' : ''}>ללא תשלום</option>
-							</select>
-						</div>
-						
-						<div class="form-group">
-							<label>הערות:</label>
-							<textarea id="editNotes" rows="3">${visit.notes || ''}</textarea>
-						</div>
-						
-						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
-							<button type="button" onclick="saveEditedVisit('${visitId}')" class="btn btn-success">
-								💾 שמור שינויים
-							</button>
-							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">
-								❌ ביטול
-							</button>
-						</div>
-					</form>
-				</div>
-			`;
-			
-			// הצג את המודל
-			showEditModal(editModalHTML);
-		}
-
-		function showEditModal(content) {
-			// הסר מודל קיים אם יש
-			const existingModal = document.getElementById('editModal');
-			if (existingModal) {
-				existingModal.remove();
-			}
-			
-			// צור מודל חדש
-			const modal = document.createElement('div');
-			modal.id = 'editModal';
-			modal.style.cssText = `
-				position: fixed;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				background: rgba(0,0,0,0.5);
-				display: flex;
-				justify-content: center;
-				align-items: center;
-				z-index: 1000;
-			`;
-			
-			modal.innerHTML = content;
-			document.body.appendChild(modal);
-			
-			// סגירה בלחיצה על הרקע
-			modal.addEventListener('click', (e) => {
-				if (e.target === modal) {
-					closeEditModal();
-				}
-			});
-		}
-
-		function closeEditModal() {
-			const modal = document.getElementById('editModal');
-			if (modal) {
-				modal.remove();
-			}
-		}
-
-		
-		// פונקציה לעדכון הביקור בענן
-		async function updateVisitInCloud(updatedVisit) {
-			if (!await validateToken()) return;
-			
-			try {
-				// קריאת כל הנתונים מהענן
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Visits!A:N'
-				});
-				
-				const rows = response.result.values || [];
-				
-				// מציאת השורה לעדכון
-				let rowToUpdate = -1;
-				for (let i = 1; i < rows.length; i++) {
-					if (rows[i][0] == updatedVisit.ID) {
-						rowToUpdate = i + 1; // +1 כי Google Sheets מתחיל מ-1
-						break;
-					}
-				}
-				
-				if (rowToUpdate > 0) {
-					// עדכון השורה
-					const updatedRow = [
-						updatedVisit.ID,
-						updatedVisit.date,
-						updatedVisit.location_id,
-						updatedVisit.location_name || '',
-						updatedVisit.visit_type,
-						updatedVisit.work_done,
-						updatedVisit.duration_minutes,
-						updatedVisit.num_workers || 1,
-						updatedVisit.start_time,
-						updatedVisit.end_time || '',
-						updatedVisit.amount,
-						updatedVisit.expense,
-						updatedVisit.paid,
-						updatedVisit.notes
-					];
-					
-					await gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: SPREADSHEET_ID,
-						range: `Visits!A${rowToUpdate}:N${rowToUpdate}`,
-						valueInputOption: 'USER_ENTERED',
-						resource: {
-							values: [updatedRow]
-						}
-					});
-					
-					console.log(`✅ Updated visit ${updatedVisit.ID} in cloud`);
-				}
-				
-			} catch (error) {
-				console.error('Error updating visit in cloud:', error);
-				throw error;
-			}
+		// תוספה - פונקציות עריכה ומחיקה
+		function editVisit(visitId) {
+			// כאן תוכל להוסיף מודל עריכה
+			showToast('עריכת טיפול - יתווסף בהמשך', 'info');
 		}
 
 		function deleteVisit(visitId) {
-			console.log(`✅ deleteVisit ('${visitId}') `);
 			if (confirm('האם אתה בטוח שברצונך למחוק את הטיפול?')) {
 				visits = visits.filter(visit => visit.ID != visitId);
 				applyVisitFilters(); // רענן תצוגה
@@ -4272,6 +3184,30 @@
 			}
 		}
 	   
+	   // תוספה - בדיקת תקינות אסימון
+		async function validateToken() {
+			if (!access_token || !gapi.client) {
+				return false;
+			}
+			
+			try {
+				// בדיקה פשוטה - נסה לקרוא מהטבלה
+				await gapi.client.sheets.spreadsheets.get({
+					spreadsheetId: SPREADSHEET_ID || 'test'
+				});
+				return true;
+			} catch (error) {
+				if (error.status === 401) {
+					console.log('Google token expired');
+					access_token = null;
+					document.getElementById('statusText').textContent = '🔓 נדרש חיבור מחדש';
+					document.getElementById('statusText').classList.remove('connected');
+					showToast('⚠️ החיבור לגוגל פג - התחבר מחדש', 'warning');
+					return false;
+				}
+				return false;
+			}
+		}
 	   
 	   // תוספה - בדיקה תקופתית של חיבור
 		setInterval(async () => {
@@ -4290,7 +3226,7 @@
 			document.getElementById('calculatedHours').value = hours > 0 ? hours : '';
 		}
 	   
-	    // חישוב עלות טיפול מעודכן
+	   // חישוב עלות טיפול מעודכן
 		function calculateTreatmentCost() {
 			const minutes = parseFloat(document.getElementById('manualDurationMinutes').value) || 0;
 			const workers = parseInt(document.getElementById('numberOfWorkersVisit').value) || 1;
@@ -4299,7 +3235,6 @@
 			if (minutes > 0) {
 				const hours = minutes / 60;
 				const baseCost = costSettings.hourlyRate * hours;
-				// תיקון: עלות עובדים נוספים (לא כולל אותך)
 				const workersCost = (workers - 1) * costSettings.workerCost * hours;
 				const laborCost = baseCost + workersCost;
 				const totalCost = laborCost + expense;
@@ -4307,34 +3242,16 @@
 				// עדכן את שדה הסכום
 				document.getElementById('amount').value = Math.round(totalCost);
 				
-				// הצג פירוט מפורט יותר
-				let breakdown = `${hours.toFixed(2)} שעות × ₪${costSettings.hourlyRate} = ₪${Math.round(baseCost)}`;
-				
-				if (workers > 1) {
-					breakdown += `\n+ ${workers - 1} עובדים × ₪${costSettings.workerCost}/שעה = ₪${Math.round(workersCost)}`;
-				}
-				
-				if (expense > 0) {
-					breakdown += `\n+ הוצאות: ₪${expense}`;
-				}
-				
-				breakdown += `\n= סה"כ: ₪${Math.round(totalCost)}`;
-				
+				// הצג פירוט
+				const breakdown = `
+					${hours.toFixed(2)} שעות × ₪${costSettings.hourlyRate} + 
+					${workers - 1} פועלים × ₪${costSettings.workerCost} = 
+					₪${Math.round(laborCost)} + הוצאות ₪${expense} = ₪${Math.round(totalCost)}
+				`;
 				document.getElementById('costBreakdown').textContent = breakdown;
-				document.getElementById('costBreakdown').style.whiteSpace = 'pre-line';
 			} else {
 				document.getElementById('costBreakdown').textContent = '';
 			}
-		}
-
-		// הוסף חישוב אוטומטי כשמקלידים משך זמן
-		function updateHoursDisplay() {
-			const minutes = parseFloat(document.getElementById('manualDurationMinutes').value) || 0;
-			const hours = minutes > 0 ? (minutes / 60).toFixed(2) : '';
-			document.getElementById('calculatedHours').value = hours;
-			
-			// חשב עלויות אוטומטית
-			calculateTreatmentCost();
 		}
 
 		// שמירת הגדרות עלות פשוטה יותר
@@ -4449,2431 +3366,70 @@
 			return false;
 		}
 	   
-	   // פונקציה חדשה לבדיקה ויצירת הטבלה הראשית
-		async function findOrCreateMainSpreadsheet() {
-			try {
-				console.log('Searching for existing main spreadsheet...');
-				
-				// חיפוש טבלה קיימת
-				const response = await gapi.client.request({
-					path: 'https://www.googleapis.com/drive/v3/files',
-					params: {
-						q: `name='${SPREADSHEET_NAME}' and mimeType='application/vnd.google-apps.spreadsheet'`,
-					}
-				});
-				
-				if (response.result.files.length > 0) {
-					console.log('Found existing spreadsheet');
-					SPREADSHEET_ID = response.result.files[0].id;
-					showToast('נמצאה טבלה קיימת!', 'success');
-					
-					// בדיקה ותיקון של מבנה הטבלה
-					await checkAndFixTableStructure();
-				} else {
-					console.log('No spreadsheet found, creating new one...');
-					await createNewMainSpreadsheet();
-				}
-				
-			} catch (error) {
-				console.error('Error in findOrCreateMainSpreadsheet:', error);
-				showToast('שגיאה בחיפוש טבלה', 'error');
+	   // תוספה - בדיקה ויצירת כל הגיליונות הנדרשים
+		async function ensureAllSheets() {
+			if (!await validateToken()) {
+				return false;
 			}
-		}
-
-		// פונקציה חדשה ליצירת טבלה ראשית חדשה
-		async function createNewMainSpreadsheet() {
-			console.log('Creating new main spreadsheet...');
-			try {
-				const response = await gapi.client.request({
-					path: 'https://sheets.googleapis.com/v4/spreadsheets',
-					method: 'POST',
-					headers: {
-						'Authorization': `Bearer ${access_token}`,
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({
-						properties: {
-							title: SPREADSHEET_NAME
-						},
-						sheets: [
-							{ properties: { title: 'Locations' } },
-							{ properties: { title: 'Visits' } },
-							{ properties: { title: 'Receipts' } },
-							{ properties: { title: 'SystemSettings' } }
-						]
-					})
-				});
-				
-				SPREADSHEET_ID = response.result.spreadsheetId;
-				
-				// הוסף כותרות לכל הגיליונות
-				await addAllHeaders();
-				
-				showToast('נוצרה טבלה חדשה!', 'success');
-				
-			} catch (error) {
-				console.error('Error creating spreadsheet:', error);
-				showToast('שגיאה ביצירת טבלה', 'error');
-			}
-		}
-		
-		// פונקציה חדשה לבדיקה ותיקון מבנה הטבלה
-		async function checkAndFixTableStructure() {
-			console.log('Checking and fixing table structure...');
 			
 			try {
-				// בדיקת כותרות בכל גיליון
-				const sheetsToCheck = ['Locations', 'Visits', 'Receipts'];
+				// בדוק אילו גיליונות קיימים
+				const response = await gapi.client.sheets.spreadsheets.get({
+					spreadsheetId: SPREADSHEET_ID
+				});
 				
-				for (const sheetName of sheetsToCheck) {
-					try {
-						const response = await gapi.client.sheets.spreadsheets.values.get({
+				const existingSheets = response.result.sheets || [];
+				const existingSheetNames = existingSheets.map(sheet => sheet.properties.title);
+				
+				const requiredSheets = [
+					{ name: 'Locations', headers: [['ID', 'שם', 'כתובת מלאה', 'שכונה', 'עיר', 'איש קשר', 'טלפון', 'יום מותר', 'מרווח שבועות', 'תוספת זמנית', 'סכום בסיסי', 'פעיל', 'הערות', 'ביקור אחרון', 'ביקור הבא']] },
+					{ name: 'Visits', headers: [['ID', 'תאריך', 'מזהה מיקום', 'סוג ביקור', 'עבודה שבוצעה', 'משך דקות', 'מספר עובדים', 'זמן התחלה', 'זמן סיום', 'סכום', 'הוצאה', 'שולם', 'הערות']] },
+					{ name: 'Receipts', headers: [['ID', 'מספר פנקס', 'מספר קבלה', 'תאריך', 'מזהה מיקום', 'שם מיקום', 'סכום', 'סוג תשלום', 'קודX', 'הערות']] },
+					{ name: 'SystemSettings', headers: [['Setting', 'Value']] }
+				];
+				
+				for (const requiredSheet of requiredSheets) {
+					if (!existingSheetNames.includes(requiredSheet.name)) {
+						// צור גליון
+						await gapi.client.sheets.spreadsheets.batchUpdate({
 							spreadsheetId: SPREADSHEET_ID,
-							range: `${sheetName}!A1:A1`
+							resource: {
+								requests: [{
+									addSheet: {
+										properties: { title: requiredSheet.name }
+									}
+								}]
+							}
 						});
 						
-						if (!response.result.values || !response.result.values[0][0]) {
-							console.log(`Headers missing in ${sheetName}, adding them...`);
-							await addHeadersToSheet(sheetName);
-						}
-					} catch (error) {
-						console.log(`Sheet ${sheetName} missing or error, will add headers:`, error);
-						await addHeadersToSheet(sheetName);
-					}
-				}
-				
-				console.log('✅ Table structure verified');
-				
-			} catch (error) {
-				console.log('Headers check failed, will force add them:', error);
-				await addAllHeaders();
-			}
-		}
-		
-		// פונקציה חדשה להוספת כותרות לגיליון ספציפי
-		async function addHeadersToSheet(sheetName) {
-			try {
-				let headers = [];
-				
-				switch (sheetName) {
-					case 'Locations':
-						headers = [
-							'ID', 'name', 'full_address', 'neighborhood', 'city', 
-							'contact_person', 'phone', 'allowed_day', 'interval_weeks', 
-							'temp_addition', 'base_amount', 'active', 'notes', 
-							'last_visit', 'next_visit'
-						];
-						break;
-					case 'Visits':
-						headers = [
-							'ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 
-							'duration_minutes', 'num_workers', 'start_time', 'end_time', 
-							'amount', 'expense', 'paid', 'notes'
-						];
-						break;
-					case 'Receipts':
-						headers = [
-							'ID', 'book_number', 'receipt_number', 'date', 'location_id', 
-							'location_name', 'amount', 'payment_type', 'notes'
-						];
-						break;
-				}
-				
-				await gapi.client.sheets.spreadsheets.values.update({
-					spreadsheetId: SPREADSHEET_ID,
-					range: `${sheetName}!A1:${String.fromCharCode(64 + headers.length)}1`,
-					valueInputOption: 'RAW',
-					values: [headers]
-				});
-				
-				console.log(`✅ Added headers to ${sheetName}`);
-				
-			} catch (error) {
-				console.error(`Error adding headers to ${sheetName}:`, error);
-			}
-		}
-		
-		// פונקציה משופרת להוספת כותרות לכל הגיליונות
-		async function addAllHeaders() {
-			try {
-				console.log('Adding headers to all sheets...');
-				
-				await addHeadersToSheet('Locations');
-				await addHeadersToSheet('Visits');
-				await addHeadersToSheet('Receipts');
-				
-				// הוספת כותרות ל-SystemSettings
-				await gapi.client.sheets.spreadsheets.values.update({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'SystemSettings!A1:B1',
-					valueInputOption: 'RAW',
-					values: [['setting_key', 'setting_value']]
-				});
-				
-				console.log('✅ All headers added successfully');
-				
-			} catch (error) {
-				console.error('Error adding all headers:', error);
-			}
-		}  
-	   
-	   async function importFromHelperTable() {
-			if (!await validateToken()) {
-				showToast('התחבר לגוגל קודם', 'warning');
-				return;
-			}
-			
-			const importTableId = localStorage.getItem('importTableId');
-			if (!importTableId) {
-				showToast('לא נמצא ID של טבלת העזר', 'warning');
-				return;
-			}
-			
-			console.log('🔍 Import Table ID:', importTableId); // לוג חדש
-			
-			try {
-				showLoading('מייבא נתונים מטבלת העזר...');
-				
-				let importedCount = 0;
-				
-				// ייבוא מיקומים
-				try {
-					console.log('📍 Starting locations import...'); // לוג חדש
-					
-					const locationsResponse = await gapi.client.sheets.spreadsheets.values.get({
-						spreadsheetId: importTableId,
-						range: 'Locations!A2:O1000'
-					});
-					
-					console.log('📍 Locations response:', locationsResponse.result); // לוג חדש
-					
-					if (locationsResponse.result.values && locationsResponse.result.values.length > 0) {
-						console.log('📍 Found', locationsResponse.result.values.length, 'location rows'); // לוג חדש
-						
-						for (const row of locationsResponse.result.values) {
-							if (row[0] && row[1]) {
-								const locationData = parseLocationFromRow(row);
-								locations.push(locationData);
-								importedCount++;
-								
-								await new Promise(resolve => setTimeout(resolve, 200));
-							}
-						}
-						showToast(`יובאו ${importedCount} מיקומים`, 'success');
-					} else {
-						console.log('📍 No locations data found'); // לוג חדש
-					}
-				} catch (error) {
-					console.error('📍 Locations import error:', error); // לוג חדש
-				}
-				
-				await new Promise(resolve => setTimeout(resolve, 1000));
-				
-				// ייבוא ביקורים
-				try {
-					console.log('🔧 Starting visits import...');
-					
-					const visitsResponse = await gapi.client.sheets.spreadsheets.values.get({
-						spreadsheetId: importTableId,
-						range: 'Visits!A2:M1000'
-					});
-					
-					console.log('🔧 Visits response:', visitsResponse.result);
-					
-					let visitsCount = 0;
-					if (visitsResponse.result.values && visitsResponse.result.values.length > 0) {
-						console.log('🔧 Found', visitsResponse.result.values.length, 'visit rows');
-						
-						for (let i = 0; i < visitsResponse.result.values.length; i++) {
-							const row = visitsResponse.result.values[i];
-							if (row[0] && row[1]) {
-								const visitData = parseVisitFromRow(row);
-								if (!isDuplicateVisit(visitData)) {
-									visits.push(visitData);
-									// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
-									//await updateSingleLocationTreatmentDates(visitData.location_id);
-									visitsCount++;
-								} else {
-									console.log('⚠️ Duplicate visit skipped:', visitData.date, visitData.location_id);
-								}
-								visitsCount++;
-								
-								// הצג התקדמות כל 50 רשומות
-								if (visitsCount % 50 === 0) {
-									console.log(`🔧 Processed ${visitsCount}/${visitsResponse.result.values.length} visits`);
-									showToast(`מעבד ביקור ${visitsCount}...`, 'info', 1000);
-								}
-								
-								await new Promise(resolve => setTimeout(resolve, 100)); // המתנה קצרה יותר
-							}
-						}
-						showToast(`יובאו ${visitsCount} ביקורים`, 'success');
-					} else {
-						console.log('🔧 No visits data found');
-					}
-				} catch (error) {
-					console.error('🔧 Visits import error:', error);
-				}
-				
-				await new Promise(resolve => setTimeout(resolve, 1000));
-				
-				// ייבוא קבלות
-				try {
-					console.log('🧾 Starting receipts import...');
-					
-					const receiptsResponse = await gapi.client.sheets.spreadsheets.values.get({
-						spreadsheetId: importTableId,
-						range: 'Receipts!A2:J1000'
-					});
-					
-					console.log('🧾 Receipts response:', receiptsResponse.result);
-					
-					let receiptsCount = 0;
-					if (receiptsResponse.result.values && receiptsResponse.result.values.length > 0) {
-						console.log('🧾 Found', receiptsResponse.result.values.length, 'receipt rows');
-						
-						for (let i = 0; i < receiptsResponse.result.values.length; i++) {
-							const row = receiptsResponse.result.values[i];
-							if (row[0] && row[3]) { // ID ותאריך
-								const receiptData = parseReceiptFromRow(row);
-								
-								
-								if (!isDuplicateReceipt(receiptData)) {
-									receipts.push(receiptData);
-									receiptsCount++;
-								} else {
-									console.log('⚠️ Duplicate receipt skipped:', receiptData.date, receiptData.location_id);
-								}
-								
-								// הצג התקדמות כל 25 רשומות (קבלות בדרך כלל פחות)
-								if (receiptsCount % 25 === 0) {
-									console.log(`🧾 Processed ${receiptsCount}/${receiptsResponse.result.values.length} receipts`);
-									showToast(`מעבד קבלה ${receiptsCount}...`, 'info', 1000);
-								}
-								
-								await new Promise(resolve => setTimeout(resolve, 100)); // המתנה קצרה יותר
-							}
-						}
-						showToast(`יובאו ${receiptsCount} קבלות`, 'success');
-					} else {
-						console.log('🧾 No receipts data found');
-					}
-				} catch (error) {
-					console.error('🧾 Receipts import error:', error);
-				}
-				
-				// שמירה מקומית ועדכון תצוגה
-				saveToLocalStorage();
-				loadLocationsTable();
-				loadReceiptsTable();
-				loadFilterOptions();
-
-				// בדיקה שהנתונים נטענו נכון
-				console.log('🔍 בדיקת ייבוא:');
-				console.log(`לקוחות: ${locations.length}`);
-				console.log(`ביקורים: ${visits.length}`);
-				console.log(`קבלות: ${receipts.length}`);
-
-				// הצג דוגמה של הרשומה הראשונה מכל סוג
-				if (locations.length > 0) {
-					console.log('דוגמה לקוח:', locations[0]);
-				}
-				if (visits.length > 0) {
-					console.log('דוגמה ביקור:', visits[0]);
-				}
-
-
-				// תוספה חשובה - שמירה לענן!
-				showToast('שומר נתונים חדשים לענן...', 'info');
-
-				try {
-					/// await saveAllToSheets();
-					/// await saveAllToSheetsOptimized();
-					
-					// שמירה מהירה לפי סוג נתונים
-					const locationSuccess = await saveLocationsBatch(newLocations || []);
-					const visitSuccess = await saveVisitsBatch(newVisits || []);  
-					const receiptSuccess = await saveReceiptsBatch(newReceipts || []);
-
-					if (locationSuccess && visitSuccess && receiptSuccess) {
-						showToast('🚀 שמירה מהירה הושלמה בהצלחה!', 'success');
-					} else {
-						showToast('⚠️ חלק מהנתונים לא נשמרו לענן', 'warning');
-					}
-
-					showToast(`🎉 ייבוא הושלם בהצלחה!
-					📍 ${locationsCount || 0} מיקומים
-					🔧 ${visitsCount || 0} ביקורים  
-					🧾 ${receiptsCount || 0} קבלות
-					✅ הכל נשמר לענן!`, 'success', 6000);
-				} catch (error) {
-					console.error('Error saving imported data to cloud:', error);
-					showToast('ייבוא הושלם מקומית, אבל שגיאה בשמירה לענן', 'warning');
-				}
-				
-			} catch (error) {
-				console.error('Import error:', error);
-				showToast('שגיאה בייבוא נתונים', 'error');
-			} finally {
-				hideLoading();
-			}
-		}
-
-		// פונקציות עזר לפרסור שורות
-		function parseVisitFromRow(row) {
-			return {
-				ID: row[0] || generateID(),
-				date: row[1] || '',
-				location_id: row[2] || '',
-				visit_type: row[3] || '',
-				work_done: row[4] || '',
-				duration_minutes: parseInt(row[5]) || 0,
-				num_workers: parseInt(row[6]) || 1,
-				start_time: row[7] || '',
-				end_time: row[8] || '',
-				amount: parseFloat(row[9]) || 0,
-				expense: parseFloat(row[10]) || 0,
-				paid: row[11] || 'לא',
-				notes: row[12] || ''
-			};
-		}
-
-		function parseReceiptFromRow(row) {
-			return {
-				ID: row[0] || generateID(),
-				booklet_number: row[1] || '',
-				receipt_number: row[2] || '',
-				date: row[3] || '',
-				location_id: row[4] || '',
-				location_name: row[5] || '',
-				amount: parseFloat(row[6]) || 0,
-				payment_type: row[7] || '',
-				tax_code: row[8] || '',
-				notes: row[9] || ''
-			};
-		}
-	   
-	   // הוסף את זה לסוף הקוד
-		function updateImportTableStatus() {
-			const importTableId = localStorage.getItem('importTableId');
-			const statusDiv = document.getElementById('importTableStatus');
-			
-			if (importTableId && statusDiv) {
-				statusDiv.innerHTML = `
-					<span style="font-size: 13px; color: #28a745;">
-						✅ טבלת עזר זמינה: 
-						<a href="https://docs.google.com/spreadsheets/d/${importTableId}/edit" 
-						   target="_blank" style="color: #007bff; text-decoration: underline;">
-						   פתח טבלה
-						</a>
-					</span>
-					<br>
-					<button onclick="localStorage.removeItem('importTableId'); updateImportTableStatus();" 
-							style="background: none; border: none; color: #dc3545; font-size: 12px; cursor: pointer; margin-top: 5px;">
-						🗑️ מחק קישור לטבלת עזר
-					</button>
-				`;
-			} else if (statusDiv) {
-				statusDiv.innerHTML = `
-					<span style="font-size: 13px; color: #666;">
-						❌ לא נמצאה טבלת עזר שמורה
-					</span>
-					<br>
-					<span style="font-size: 12px; color: #999;">
-						צור טבלת עזר חדשה כדי לייבא נתונים
-					</span>
-				`;
-			}
-		}
-
-		// הרץ את זה כשהדף נטען
-		document.addEventListener('DOMContentLoaded', function() {
-			updateImportTableStatus();
-		});
-
-		// הרץ גם כשעוברים לטאב המערכת
-		function showTab(event, tabName) {
-			// הקוד הקיים שלך...
-			
-			// הוסף את זה בסוף הפונקציה
-			if (tabName === 'system') {
-				setTimeout(updateImportTableStatus, 100);
-			}
-		}
-	   
-	   
-	   // ייבוא מטקסט טלגרם - פונקציה ראשית
-		async function importFromTelegram() {
-			// יצירת input קובץ עם תמיכה בקבצים מרובים
-			const fileInput = document.createElement('input');
-			fileInput.type = 'file';
-			fileInput.accept = '.txt';
-			fileInput.multiple = true; // תמיכה בקבצים מרובים!
-			
-			fileInput.onchange = async (event) => {
-				const files = Array.from(event.target.files);
-				if (files.length === 0) return;
-				
-				try {
-					showLoading(`מפרסר ${files.length} קבצי טלגרם...`);
-					
-					let allParsedVisits = [];
-					
-					// עבור על כל הקבצים
-					for (let i = 0; i < files.length; i++) {
-						const file = files[i];
-						console.log(`📄 Processing file ${i+1}/${files.length}: ${file.name}`);
-						
-						const text = await file.text();
-						const parsedVisits = parseTelegramText(text);
-						
-						console.log(`📄 File ${file.name}: found ${parsedVisits.length} visits`);
-						allParsedVisits = allParsedVisits.concat(parsedVisits);
-						
-						// המתנה קצרה בין קבצים
-						if (i < files.length - 1) {
-							await new Promise(resolve => setTimeout(resolve, 300));
-						}
+						console.log(`Created sheet: ${requiredSheet.name}`);
 					}
 					
-					if (allParsedVisits.length > 0) {
-						showToast(`נמצאו ${allParsedVisits.length} ביקורים מ-${files.length} קבצים`, 'success');
-						
-						// פתרון פשוט - אישור ישיר
-						if (confirm(`נמצאו ${allParsedVisits.length} ביקורים מטלגרם.\n\nהאם לייבא אותם למערכת?`)) {
-							window.pendingTelegramVisits = allParsedVisits;
-							await confirmTelegramImport();
-						} else {
-							showToast('ייבוא בוטל', 'info');
-						}
-					} else {
-						showToast('לא נמצאו ביקורים בקבצים', 'warning');
-					}
-					
-				} catch (error) {
-					console.error('Error parsing telegram files:', error);
-					showToast('שגיאה בפרסור קבצי טלגרם', 'error');
-				} finally {
-					hideLoading();
-				}
-			};
-			
-			fileInput.click();
-		}
-
-		// פונקציה ראשית לפרסור הטקסט
-		function parseTelegramText(text) {
-			const lines = text.split('\n');
-			const visits = [];
-			
-			let currentDate = '';
-			let currentTime = '';
-			let currentAddress = '';
-			let currentClient = null;
-			let workDone = '';
-			let duration = 0;
-			
-			console.log('🔍 Parsing', lines.length, 'lines...');
-			
-			for (let i = 0; i < lines.length; i++) {
-				const line = lines[i].trim();
-				if (!line) continue;
-				
-				// זיהוי תאריך
-				if (isDateLine(line)) {
-					currentDate = parseTelegramDate(line);
-					console.log('📅 Found date:', currentDate);
-					continue;
-				}
-				
-				// זיהוי שעה
-				if (isTimeLine(line)) {
-					currentTime = line;
-					console.log('🕐 Found time:', currentTime);
-					continue;
-				}
-				
-				// זיהוי כתובת לקוח
-				const foundClient = findClientInText(line);
-				if (foundClient) {
-					currentClient = foundClient;
-					currentAddress = foundClient.full_address;
-					console.log('👤 Found client:', foundClient.name, 'at', currentAddress);
-					continue;
-				}
-				
-				// זיהוי סיום עבודה
-				if (line.startsWith('סיום')) {
-					workDone = line.replace('סיום', '').trim();
-					console.log('🔧 Found work:', workDone);
-					
-					// חפש זמן בשורות הבאות
-					for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
-						const nextLine = lines[j].trim();
-						const foundDuration = parseWorkDuration(nextLine);
-						if (foundDuration > 0) {
-							duration = foundDuration;
-							console.log('⏱️ Found duration:', duration, 'minutes');
-							break;
-						}
-					}
-					
-					// צור ביקור אם יש מספיק מידע
-					if (currentDate && currentClient && workDone) {
-						const visit = {
-							date: currentDate,
-							time: currentTime,
-							client_name: currentClient.name,
-							client_id: currentClient.ID,
-							address: currentAddress,
-							work_done: workDone,
-							duration_minutes: duration || 60, // ברירת מחדל שעה
-							raw_text: `${line}\n${lines.slice(i+1, i+3).join('\n')}`
-						};
-						
-						visits.push(visit);
-						console.log('✅ Created visit:', visit);
-					}
-					
-					// איפוס למצב הבא
-					workDone = '';
-					duration = 0;
-				}
-			}
-			
-			console.log('📊 Total parsed visits:', visits.length);
-			return visits;
-		}
-
-		// פונקציות עזר לזיהוי דפוסים
-		function isDateLine(line) {
-			// זיהוי תאריך כמו "15 August 2024"
-			const dateRegex = /^\d{1,2}\s+[A-Za-z]+\s+\d{4}$/;
-			return dateRegex.test(line);
-		}
-
-		function isTimeLine(line) {
-			// זיהוי שעה כמו "13:39"
-			const timeRegex = /^\d{1,2}:\d{2}$/;
-			return timeRegex.test(line);
-		}
-
-		function parseTelegramDate(dateStr) {
-			// המר "15 August 2024" ל-"2024-08-15"
-			const months = {
-				'January': '01', 'February': '02', 'March': '03', 'April': '04',
-				'May': '05', 'June': '06', 'July': '07', 'August': '08',
-				'September': '09', 'October': '10', 'November': '11', 'December': '12'
-			};
-			
-			const parts = dateStr.split(' ');
-			if (parts.length === 3) {
-				const day = parts[0].padStart(2, '0');
-				const month = months[parts[1]] || '01';
-				const year = parts[2];
-				return `${year}-${month}-${day}`;
-			}
-			
-			return '';
-		}
-
-		function findClientInText(text) {
-			// חפש לקוח לפי כתובת או שם מהרשימה הקיימת
-			for (const location of locations) {
-				// התאמה מדויקת לשם
-				if (location.name && text.includes(location.name)) {
-					return location;
-				}
-				
-				// התאמה לרחוב
-				if (location.street && text.includes(location.street)) {
-					return location;
-				}
-				
-				// התאמה לכתובת מלאה
-				if (location.full_address && text.toLowerCase().includes(location.full_address.toLowerCase())) {
-					return location;
-				}
-				
-				// חיפוש גמיש יותר - לפי חלקי כתובת
-				if (location.full_address) {
-					const addressParts = location.full_address.split(' ');
-					if (addressParts.length >= 2) {
-						const street = addressParts.slice(0, -1).join(' ');
-						const number = addressParts[addressParts.length - 1];
-						
-						if (text.includes(street) && text.includes(number)) {
-							return location;
-						}
-					}
-				}
-			}
-			
-			return null;
-		}
-
-		function parseWorkDuration(text) {
-			const patterns = {
-				'שעתיים וחצי': 150,
-				'שעה ורבע נטו': 75,
-				'שעה ורבע': 75,
-				'שעה וחצי': 90,
-				'שעתיים': 120,
-				'שעה': 60,
-				'חצי שעה': 30
-			};
-			
-			for (const [pattern, minutes] of Object.entries(patterns)) {
-				if (text.includes(pattern)) {
-					return minutes;
-				}
-			}
-			
-			return 0;
-		}
-
-		// תצוגה מקדימה של הביקורים שנמצאו
-		function showTelegramPreview(parsedVisits) {
-			let previewHTML = `
-				<div style="background: white; padding: 20px; border-radius: 10px; max-width: 800px; max-height: 600px; overflow-y: auto;">
-					<h3 style="margin-bottom: 20px;">📋 תצוגה מקדימה - ביקורים שנמצאו</h3>
-					
-					<div style="margin-bottom: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
-						<p><strong>נמצאו ${parsedVisits.length} ביקורים פוטנציאליים</strong></p>
-						<p style="font-size: 14px; color: #666;">בדוק את הנתונים ואשר ייבוא</p>
-					</div>
-					
-					<div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px;">
-						<table style="width: 100%; border-collapse: collapse;">
-							<thead style="background: #f8f9fa; position: sticky; top: 0;">
-								<tr>
-									<th style="padding: 10px; border: 1px solid #ddd;">תאריך</th>
-									<th style="padding: 10px; border: 1px solid #ddd;">שעה</th>
-									<th style="padding: 10px; border: 1px solid #ddd;">לקוח</th>
-									<th style="padding: 10px; border: 1px solid #ddd;">עבודה</th>
-									<th style="padding: 10px; border: 1px solid #ddd;">זמן (דק')</th>
-								</tr>
-							</thead>
-							<tbody>
-			`;
-			
-			parsedVisits.forEach((visit, index) => {
-				previewHTML += `
-					<tr style="background: ${index % 2 === 0 ? '#f8f9fa' : 'white'};">
-						<td style="padding: 8px; border: 1px solid #ddd;">${visit.date}</td>
-						<td style="padding: 8px; border: 1px solid #ddd;">${visit.time}</td>
-						<td style="padding: 8px; border: 1px solid #ddd;">${visit.client_name}</td>
-						<td style="padding: 8px; border: 1px solid #ddd;">${visit.work_done}</td>
-						<td style="padding: 8px; border: 1px solid #ddd;">${visit.duration_minutes}</td>
-					</tr>
-				`;
-			});
-			
-			previewHTML += `
-							</tbody>
-						</table>
-					</div>
-					
-					<div style="margin-top: 20px; text-align: center; gap: 10px; display: flex; justify-content: center;">
-						<button class="btn btn-success" onclick="confirmTelegramImport()">
-							✅ אשר ייבוא (${parsedVisits.length} ביקורים)
-						</button>
-						<button class="btn btn-secondary" onclick="closeTelegramPreview()">
-							❌ ביטול
-						</button>
-					</div>
-				</div>
-			`;
-			
-			// שמור את הנתונים למשתנה גלובלי לייבוא
-			window.pendingTelegramVisits = parsedVisits;
-			
-			// הצג מודל
-			showModal(previewHTML);
-		}
-
-		// אישור ייבוא הביקורים מטלגרם
-		async function confirmTelegramImport() {
-			if (!window.pendingTelegramVisits || window.pendingTelegramVisits.length === 0) {
-				showToast('אין ביקורים לייבוא', 'warning');
-				return;
-			}
-			
-			try {
-				showLoading('מייבא ביקורים מטלגרם...');
-				
-				let importedCount = 0;
-				
-				for (const telegramVisit of window.pendingTelegramVisits) {
-					// צור ביקור חדש במבנה המערכת
-					const visitData = {
-						ID: generateID(),
-						date: telegramVisit.date,
-						location_id: telegramVisit.client_id,
-						visit_type: 'גינון', // ברירת מחדל
-						work_done: telegramVisit.work_done,
-						duration_minutes: telegramVisit.duration_minutes,
-						start_time: telegramVisit.time || '',
-						end_time: '',
-						amount: 0, // יחושב לפי זמן ותעריף
-						expense: 0,
-						paid: 'לא',
-						notes: `יובא מטלגרם: ${telegramVisit.raw_text}`
-					};
-					
-					// הוסף למערכת
-					visits.push(visitData);
-					// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
-					//await updateSingleLocationTreatmentDates(visitData.location_id);
-					importedCount++;
-				}
-				
-				// שמור הכל
-				saveToLocalStorage();
-				
-				// עדכן תצוגות
-				loadReceiptsTable(); // זה מעדכן גם טבלת ביקורים
-				loadFilterOptions();
-				
-				// שמור לענן
-				/// await saveAllToSheets();
-				await saveAllToSheetsOptimized();
-				
-				showToast(`🎉 ייבוא טלגרם הושלם!
-				💬 ${importedCount} ביקורים יובאו
-				✅ הכל נשמר לענן!
-				🕐 תהליך הושלם`, 'success', 6000);;
-				
-				// נקה ונסגור
-				window.pendingTelegramVisits = null;
-				closeTelegramPreview();
-				
-			} catch (error) {
-				console.error('Error importing telegram visits:', error);
-				showToast('שגיאה בייבוא מטלגרם', 'error');
-			} finally {
-				hideLoading();
-			}
-		}
-
-		// סגירת תצוגה מקדימה
-		function closeTelegramPreview() {
-			window.pendingTelegramVisits = null;
-			closeModal();
-		}
-
-
-		function showModal(content) {
-			// הסר מודל קיים אם יש
-			const existingModal = document.getElementById('telegramModal');
-			if (existingModal) {
-				existingModal.remove();
-			}
-			
-			// צור מודל
-			const modal = document.createElement('div');
-			modal.id = 'telegramModal';
-			modal.style.cssText = `
-				position: fixed;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				background: rgba(0,0,0,0.5);
-				display: flex;
-				justify-content: center;
-				align-items: center;
-				z-index: 1000;
-			`;
-			
-			modal.innerHTML = content;
-			document.body.appendChild(modal);
-			
-			// סגירה בלחיצה על הרקע
-			modal.addEventListener('click', (e) => {
-				if (e.target === modal) {
-					closeModal();
-				}
-			});
-		}
-
-		function closeModal() {
-			const modal = document.getElementById('telegramModal');
-			if (modal) {
-				modal.remove();
-			}
-		}
-	   
-	    function generateID() {
-			return Date.now() + Math.random().toString(36).substr(2, 9);
-		}
-	   
-	   
-	   async function saveAllToSheetsOptimized() {
-			if (!await validateToken()) {
-				showToast('חיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
-				return;
-			}
-			
-			try {
-				showLoading('שומר נתונים לענן (מצב מהיר)...');
-				
-				// שמירה אצווית - כל המיקומים בבת אחת
-				if (locations.length > 0) {
-					showToast(`שומר ${locations.length} מיקומים בבת אחת...`, 'info', 2000);
-					
-					const locationValues = locations.map(loc => [
-						loc.ID, loc.name, loc.full_address, loc.neighborhood, loc.city,
-						loc.contact_person, loc.phone, loc.allowed_day, loc.interval_weeks,
-						loc.temporary_addition, loc.base_amount, loc.active, loc.notes,
-						loc.last_visit, loc.next_visit
-					]);
-					
-					await gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: SPREADSHEET_ID,
-						range: `Locations!A2:O${locationValues.length + 1}`,
-						valueInputOption: 'USER_ENTERED',
-						resource: { values: locationValues }
-					});
-				}
-				
-				// שמירה אצווית - כל הביקורים בבת אחת
-				if (visits.length > 0) {
-					showToast(`שומר ${visits.length} ביקורים בבת אחת...`, 'info', 2000);
-					
-					const visitValues = visits.map(visit => [
-						visit.ID, visit.date, visit.location_id, visit.location_name, visit.visit_type, // ← location_name הוא עמודה D
-						visit.work_done, visit.duration_minutes, visit.num_workers || 1,
-						visit.start_time, visit.end_time, visit.amount, visit.expense || 0,
-						visit.paid, visit.notes
-					]);
-
-					await gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: SPREADSHEET_ID,
-						range: `Visits!A2:N${visitValues.length + 1}`, // ← שנה מ-M ל-N
-						valueInputOption: 'USER_ENTERED',
-						resource: { values: visitValues }
-					});
-				}
-				
-				// שמירה אצווית - כל הקבלות בבת אחת
-				if (receipts.length > 0) {
-					showToast(`שומר ${receipts.length} קבלות בבת אחת...`, 'info', 2000);
-					
-					const receiptValues = receipts.map(receipt => [
-						receipt.ID, receipt.book_number, receipt.receipt_number, receipt.date,
-						receipt.location_id, receipt.location_name, receipt.amount,
-						receipt.payment_type, receipt.notes
-					]);
-					
-					await gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: SPREADSHEET_ID,
-						range: `Receipts!A2:I${receiptValues.length + 1}`,
-						valueInputOption: 'USER_ENTERED',
-						resource: { values: receiptValues }
-					});
-				}
-				
-				showToast(`🚀 שמירה מהירה הושלמה!
-		✅ ${locations.length + visits.length + receipts.length} רשומות נשמרו
-		⚡ זמן חיסכון: ~90%`, 'success', 5000);
-				
-			} catch (error) {
-				console.error('Error in optimized save:', error);
-				showToast('שגיאה בשמירה מהירה - חוזר לשיטה רגילה', 'warning');
-				
-				// אם נכשל, חזור לשיטה הרגילה
-				await saveAllToSheets();
-			} finally {
-				hideLoading();
-			}
-		}
-	   
-	   // פונקציה להצגת חובות
-		function displayDebts() {
-			const sortBy = document.getElementById('debtSortBy').value;
-			const minAmount = parseFloat(document.getElementById('minDebtAmount').value) || 0;
-			
-			// חישוב חובות לכל לקוח
-			const debtsByLocation = {};
-			
-			visits.forEach(visit => {
-				if (visit.paid === '0' && visit.amount > 0) {
-					if (!debtsByLocation[visit.location_id]) {
-						const location = locations.find(loc => loc.ID == visit.location_id);
-						debtsByLocation[visit.location_id] = {
-							location: location,
-							visits: [],
-							totalDebt: 0
-						};
-					}
-					debtsByLocation[visit.location_id].visits.push(visit);
-					debtsByLocation[visit.location_id].totalDebt += parseFloat(visit.amount);
-				}
-			});
-			
-			// המרה למערך וסינון
-			let debtsArray = Object.values(debtsByLocation)
-				.filter(debt => debt.totalDebt >= minAmount);
-			
-			// מיון
-			debtsArray.sort((a, b) => {
-				switch(sortBy) {
-					case 'amount_desc':
-						return b.totalDebt - a.totalDebt;
-					case 'amount_asc':
-						return a.totalDebt - b.totalDebt;
-					case 'date_old':
-						return new Date(a.visits[0].date) - new Date(b.visits[0].date);
-					case 'date_new':
-						return new Date(b.visits[0].date) - new Date(a.visits[0].date);
-					case 'location':
-						return a.location?.name.localeCompare(b.location?.name);
-					default:
-						return b.totalDebt - a.totalDebt;
-				}
-			});
-			
-			// הצגה בטבלה
-			const tbody = document.getElementById('debtsTableBody');
-			tbody.innerHTML = '';
-			
-			debtsArray.forEach(debt => {
-				const location = debt.location || { name: 'לא נמצא', full_address: '', phone: '' };
-				const lastVisit = debt.visits[debt.visits.length - 1];
-				const daysSinceLastVisit = Math.floor((new Date() - new Date(lastVisit.date)) / (1000 * 60 * 60 * 24));
-				
-				const row = document.createElement('tr');
-				
-				// הדגשת חובות ישנים
-				if (daysSinceLastVisit > 60) {
-					row.style.backgroundColor = '#ffebee'; // אדום עדין
-				} else if (daysSinceLastVisit > 30) {
-					row.style.backgroundColor = '#fff3e0'; // כתום עדין  
-				}
-				
-				row.innerHTML = `
-					<td>
-						<strong>${location.name}</strong>
-						<br><small style="color: #666;">${location.contact_person || ''}</small>
-					</td>
-					<td><small>${location.full_address || ''}</small></td>
-					<td>
-						${location.phone ? 
-							`<a href="tel:${location.phone}" style="color: #007bff; text-decoration: none;">
-								📞 ${location.phone}
-							</a>` : 
-							'<span style="color: #999;">-</span>'
-						}
-					</td>
-					<td style="text-align: center;">
-						<span style="background: #e3f2fd; padding: 2px 8px; border-radius: 12px; font-size: 12px;">
-							${debt.visits.length}
-						</span>
-					</td>
-					<td style="text-align: center;">
-						<strong style="color: #e74c3c; font-size: 16px;">₪${debt.totalDebt.toLocaleString()}</strong>
-					</td>
-					<td style="text-align: center;">${formatDate(lastVisit.date)}</td>
-					<td style="text-align: center;">
-						<span style="color: ${daysSinceLastVisit > 60 ? '#e74c3c' : daysSinceLastVisit > 30 ? '#f39c12' : '#666'}; font-weight: bold;">
-							${daysSinceLastVisit}
-						</span>
-					</td>
-					<td style="text-align: center;">
-						<button class="action-btn" onclick="showDebtDetails(${location.ID})" style="background: #007bff; margin: 2px;">
-							🔍 פירוט
-						</button>
-						<button class="action-btn" onclick="markDebtAsPaid(${location.ID})" style="background: #28a745; margin: 2px;">
-							✅ סולק
-						</button>
-					</td>
-				`;
-				
-				tbody.appendChild(row);
-			});
-			
-			// עדכון סיכום
-			updateDebtsSummary(debtsArray);
-		}
-
-		// עדכון כרטיסי סיכום
-		function updateDebtsSummary(debtsArray) {
-			const totalDebt = debtsArray.reduce((sum, debt) => sum + debt.totalDebt, 0);
-			const debtorsCount = debtsArray.length;
-			const averageDebt = debtorsCount > 0 ? totalDebt / debtorsCount : 0;
-			
-			// מציאת החוב הכי ישן
-			let oldestDebtDays = 0;
-			if (debtsArray.length > 0) {
-				const oldestVisit = debtsArray
-					.flatMap(debt => debt.visits)
-					.reduce((oldest, visit) => 
-						new Date(visit.date) < new Date(oldest.date) ? visit : oldest
-					);
-				oldestDebtDays = Math.floor((new Date() - new Date(oldestVisit.date)) / (1000 * 60 * 60 * 24));
-			}
-			
-			document.getElementById('totalDebt').textContent = `₪${totalDebt.toLocaleString()}`;
-			document.getElementById('totalDebt').style.color = totalDebt > 0 ? '#e74c3c' : '#27ae60';
-			
-			document.getElementById('debtorsCount').textContent = debtorsCount;
-			document.getElementById('averageDebt').textContent = `₪${Math.round(averageDebt).toLocaleString()}`;
-			document.getElementById('oldestDebt').textContent = oldestDebtDays > 0 ? `${oldestDebtDays} ימים` : '-';
-			
-			if (oldestDebtDays > 90) {
-				document.getElementById('oldestDebt').style.color = '#e74c3c';
-			} else if (oldestDebtDays > 30) {
-				document.getElementById('oldestDebt').style.color = '#f39c12';
-			}
-		}
-
-		// הצגת פירוט חוב ללקוח
-		function showDebtDetails(locationId) {
-			const location = locations.find(loc => loc.ID == locationId);
-			const locationVisits = visits.filter(v => v.location_id == locationId && v.paid === 'לא');
-			
-			let details = `פירוט חוב עבור: ${location?.name}\n\n`;
-			
-			locationVisits.forEach(visit => {
-				details += `📅 ${formatDate(visit.date)}\n`;
-				details += `🔧 ${visit.work_done}\n`;
-				details += `💰 ₪${visit.amount}\n`;
-				details += `---\n`;
-			});
-			
-			const totalDebt = locationVisits.reduce((sum, v) => sum + parseFloat(v.amount), 0);
-			details += `\nסה"כ חוב: ₪${totalDebt}`;
-			
-			alert(details);
-		}
-
-		// סימון חוב כמסולק
-		function markDebtAsPaid(locationId) {
-			if (confirm('לסמן את כל החובות של הלקוח הזה כמסולקים?')) {
-				visits.forEach(visit => {
-					if (visit.location_id == locationId && visit.paid === 'לא') {
-						visit.paid = 'כן';
-					}
-				});
-				
-				saveToLocalStorage();
-				displayDebts();
-				showToast('החובות סומנו כמסולקים!', 'success');
-			}
-		}
-
-	   
-	    // התראה על חובות חמורים
-		function checkCriticalDebts() {
-			const criticalDebts = visits.filter(visit => {
-				if (visit.paid !== 'לא') return false;
-				
-				const daysSince = Math.floor((new Date() - new Date(visit.date)) / (1000 * 60 * 60 * 24));
-				return daysSince > 90 || parseFloat(visit.amount) > 1000;
-			});
-			
-			if (criticalDebts.length > 0) {
-				const totalCritical = criticalDebts.reduce((sum, visit) => sum + parseFloat(visit.amount), 0);
-				
-				showToast(
-					`⚠️ יש ${criticalDebts.length} חובות דחופים (₪${totalCritical.toLocaleString()})`, 
-					'warning', 
-					8000
-				);
-			}
-		}
-	   
-	   
-	    // דוח הכנסות לחודש נוכחי
-		function generateMonthlyReport() {
-			const currentMonth = new Date().getMonth();
-			const currentYear = new Date().getFullYear();
-			
-			const monthlyVisits = visits.filter(visit => {
-				const visitDate = new Date(visit.date);
-				return visitDate.getMonth() === currentMonth && 
-					   visitDate.getFullYear() === currentYear;
-			});
-			
-			const totalRevenue = monthlyVisits.reduce((sum, visit) => 
-				sum + parseFloat(visit.amount || 0), 0);
-			
-			const paidRevenue = monthlyVisits
-				.filter(visit => visit.paid === 'כן')
-				.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
-			
-			const totalHours = monthlyVisits.reduce((sum, visit) => 
-				sum + (visit.duration_minutes || 0) / 60, 0);
-			
-			const monthNames = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
-				'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
-			
-			const report = {
-				month: monthNames[currentMonth],
-				year: currentYear,
-				totalVisits: monthlyVisits.length,
-				totalRevenue: totalRevenue,
-				paidRevenue: paidRevenue,
-				pendingRevenue: totalRevenue - paidRevenue,
-				totalHours: totalHours.toFixed(1),
-				avgPerVisit: monthlyVisits.length > 0 ? Math.round(totalRevenue / monthlyVisits.length) : 0
-			};
-			
-			return report;
-		}
-
-		// הצגת דוח במודל
-		function showMonthlyReport() {
-			const report = generateMonthlyReport();
-			
-			const reportHTML = `
-				<div style="background: white; padding: 20px; border-radius: 10px; max-width: 500px;">
-					<h3>📊 דוח ${report.month} ${report.year}</h3>
-					
-					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
-						<div style="text-align: center; padding: 15px; background: #e3f2fd; border-radius: 8px;">
-							<div style="font-size: 24px; font-weight: bold; color: #1976d2;">${report.totalVisits}</div>
-							<div style="color: #666;">ביקורים</div>
-						</div>
-						
-						<div style="text-align: center; padding: 15px; background: #e8f5e8; border-radius: 8px;">
-							<div style="font-size: 24px; font-weight: bold; color: #2e7d32;">₪${report.totalRevenue.toLocaleString()}</div>
-							<div style="color: #666;">סה"כ הכנסות</div>
-						</div>
-						
-						<div style="text-align: center; padding: 15px; background: #f3e5f5; border-radius: 8px;">
-							<div style="font-size: 24px; font-weight: bold; color: #7b1fa2;">₪${report.paidRevenue.toLocaleString()}</div>
-							<div style="color: #666;">נגבה</div>
-						</div>
-						
-						<div style="text-align: center; padding: 15px; background: #fff3e0; border-radius: 8px;">
-							<div style="font-size: 24px; font-weight: bold; color: #f57c00;">₪${report.pendingRevenue.toLocaleString()}</div>
-							<div style="color: #666;">בהמתנה</div>
-						</div>
-					</div>
-					
-					<div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-						<div><strong>שעות עבודה:</strong> ${report.totalHours} שעות</div>
-						<div><strong>ממוצע לביקור:</strong> ₪${report.avgPerVisit}</div>
-						<div><strong>ממוצע לשעה:</strong> ₪${Math.round(report.paidRevenue / parseFloat(report.totalHours) || 0)}</div>
-					</div>
-					
-					<button onclick="closeModal()" style="margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; width: 100%;">
-						סגור
-					</button>
-				</div>
-			`;
-			
-			showModal(reportHTML);
-		}
-	   
-	    function isDuplicateVisit(newVisit) {
-			return visits.some(existing => 
-				existing.location_id === newVisit.location_id &&
-				existing.date === newVisit.date &&
-				existing.work_done === newVisit.work_done &&
-				existing.amount === newVisit.amount
-			);
-		}
-	   
-	    function isDuplicateReceipt(newReceipt) {
-			return receipts.some(existing => 
-				existing.receipt_number === newReceipt.receipt_number &&
-				existing.booklet_number === newReceipt.booklet_number &&
-				existing.date === newReceipt.date
-			);
-		}
-		
-		
-		function removeDuplicates() {
-			const uniqueVisits = [];
-			const seen = new Set();
-			
-			visits.forEach(visit => {
-				const key = `${visit.location_id}-${visit.date}-${visit.work_done}-${visit.amount}`;
-				if (!seen.has(key)) {
-					seen.add(key);
-					uniqueVisits.push(visit);
-				}
-			});
-			
-			const removedCount = visits.length - uniqueVisits.length;
-			visits = uniqueVisits;
-			
-			console.log(`Removed ${removedCount} duplicate visits`);
-			return removedCount;
-		}
-	   
-	   function validateVisitData(visitData) {
-			const errors = [];
-			
-			if (!visitData.location_id) {
-				errors.push('חסר מזהה לקוח');
-			}
-			
-			if (!visitData.date) {
-				errors.push('חסר תאריך');
-			}
-			
-			if (!visitData.work_done || visitData.work_done.trim() === '') {
-				errors.push('חסר תיאור עבודה');
-			}
-			
-			return errors;
-		}
-
-		function showValidationErrors(errors) {
-			if (errors.length > 0) {
-				alert('בעיות בטופס:\n' + errors.join('\n'));
-				return true; // יש שגיאות
-			}
-			return false; // אין שגיאות
-		}
-	   
-	   // שמירה מקבצית של לקוחות
-		async function saveLocationsBatch(locationsArray) {
-			if (!await validateToken() || locationsArray.length === 0) return false;
-			
-			try {
-			
-			    // קרא את הנתונים הקיימים קודם
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:A'
-				});
-				
-				const existingIDs = new Set(response.result.values?.slice(1).map(row => row[0]) || []);
-				
-				// סנן רק רשומות חדשות
-				const newLocations = locationsArray.filter(location => !existingIDs.has(location.ID));
-				
-				if (newLocations.length === 0) {
-					console.log('אין לקוחות חדשים לשמירה');
-					return true;
-				}
-			
-				const values = newLocations.map(location => [
-					location.ID,
-					location.name,
-					location.full_address,
-					location.neighborhood,
-					location.city,
-					location.contact_person,
-					location.phone,
-					location.allowed_day,
-					location.interval_weeks,
-					location.temp_addition,
-					location.base_amount,
-					location.active,
-					location.notes,
-					location.client_requests || '',
-					formatDateForSheets(location.last_visit),
-					formatDateForSheets(location.next_visit)
-				]);
-				
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.LOCATIONS}!A:O`,
-					valueInputOption: 'USER_ENTERED',
-					resource: { 
-						values: values,
-						majorDimension: 'ROWS'
-					}
-				});
-				
-				console.log(`✅ Saved ${newLocations.length} locations in batch - from ${locationsArray.length}`);
-				return true;
-			} catch (error) {
-				console.error('Error in batch save locations:', error);
-				return false;
-			}
-		}
-
-		// שמירה מקבצית של ביקורים
-		async function saveVisitsBatch(visitsArray) {
-			if (!await validateToken() || visitsArray.length === 0) return false;
-			
-			try {
-				// קרא את הנתונים הקיימים קודם
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Visits!A:A'
-				});
-				
-				const existingIDs = new Set(response.result.values?.slice(1).map(row => row[0]) || []);
-				
-				// סנן רק רשומות חדשות
-				const newVisits = visitsArray.filter(visit => !existingIDs.has(visit.ID));
-				
-				if (newVisits.length === 0) {
-					console.log('✅ No new visits to save');
-					return true;
-				}
-				
-				const values = newVisits.map(visit => [
-					visit.ID,
-					formatDateForSheets(visit.date),
-					visit.location_id,
-					visit.location_name,
-					visit.visit_type,
-					visit.work_done,
-					visit.duration_minutes,
-					visit.start_time,
-					visit.end_time,
-					visit.amount,
-					visit.expense,
-					visit.paid,
-					visit.notes
-				]);
-				
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.VISITS}!A:M`,
-					valueInputOption: 'USER_ENTERED',
-					resource: { 
-						values: values,
-						majorDimension: 'ROWS'
-					}
-				});
-				
-				console.log(`✅ Saved ${newVisits.length} visits in batch - from ${visitsArray.length}`);
-				return true;
-			} catch (error) {
-				console.error('Error in batch save visits:', error);
-				return false;
-			}
-		}
-
-		// שמירה מקבצית של קבלות
-		async function saveReceiptsBatch(receiptsArray) {
-			if (!await validateToken() || receiptsArray.length === 0) return false;
-			
-			try {
-				// קרא את הנתונים הקיימים קודם
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Receipts!A:A'
-				});
-				
-				const existingIDs = new Set(response.result.values?.slice(1).map(row => row[0]) || []);
-				
-				// סנן רק רשומות חדשות
-				const newReceipts = receiptsArray.filter(receipt => !existingIDs.has(receipt.ID));
-				
-				if (newReceipts.length === 0) {
-					console.log('✅ No new receipts to save');
-					return true;
-				}
-				
-				const values = newReceipts.map(receipt => [
-					receipt.ID,
-					receipt.book_number,
-					receipt.receipt_number,
-					formatDateForSheets(receipt.date),
-					receipt.location_id,
-					receipt.location_name,
-					receipt.amount,
-					receipt.payment_type,
-					receipt.notes
-				]);
-				
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.RECEIPTS}!A:I`,
-					valueInputOption: 'USER_ENTERED',
-					resource: { 
-						values: values,
-						majorDimension: 'ROWS'
-					}
-				});
-				
-				console.log(`✅ Saved ${newReceipts.length} receipts in batch - from ${receiptsArray.length}`);
-				return true;
-			} catch (error) {
-				console.error('Error in batch save receipts:', error);
-				return false;
-			}
-		}
-	   
-	   // פונקציה לחישוב ועדכון תאריכי טיפול אחרון וטיפול הבא
-		// פונקציה לחישוב ועדכון תאריכי טיפול אחרון וטיפול הבא - גרסה מתקנת
-		async function calculateTreatmentDates() {
-			console.log('🔄 מחשב תאריכי טיפול אחרון וטיפול הבא...');
-			
-			let updatedLocations = [];
-			
-			for (const location of locations) {
-				// מצא את כל הטיפולים של הלקוח הזה
-				const locationVisits = visits.filter(visit => visit.location_id === location.ID);
-				
-				if (locationVisits.length > 0) {
-					// מיין לפי תאריך (החדש ביותר ראשון)
-					locationVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
-					
-					// הטיפול האחרון
-					const lastVisit = locationVisits[0];
-					const lastVisitDate = lastVisit.date;
-					
-					// חישוב תאריך הטיפול הבא
-					const lastDate = new Date(lastVisitDate);
-					const intervalDays = (location.interval_weeks || 4) * 7; // ברירת מחדל 4 שבועות
-					const nextDate = new Date(lastDate);
-					nextDate.setDate(lastDate.getDate() + intervalDays);
-					
-					// פורמט התאריך ל-YYYY-MM-DD
-					const nextVisitDate = nextDate.toISOString().split('T')[0];
-					
-					// עדכון האובייקט המקומי
-					location.last_visit = lastVisitDate;
-					location.next_visit = nextVisitDate;
-					
-					updatedLocations.push(location);
-					
-					console.log(`📅 ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
-				}
-			}
-			
-			// עדכון בגוגל שיטס במקביל - קריאה אחת בלבד עבור כל הלקוחות
-			if (updatedLocations.length > 0) {
-				console.log(`🔄 מעדכן ${updatedLocations.length} לקוחות בגוגל שיטס...`);
-				await updateTreatmentDatesInSheets(updatedLocations);
-				showToast(`📅 תאריכי טיפול עודכנו עבור ${updatedLocations.length} לקוחות`, 'success', 2000);
-			}
-			
-			// רענן נתוני תכנון
-			refreshPlanningAfterTreatmentUpdate();
-			
-			return updatedLocations.length;
-		}
-	   
-	   
-	    // פונקציה לעדכון תאריכי הטיפול בגוגל שיטס
-		async function updateTreatmentDatesInSheets(locationsToUpdate) {
-			if (!await validateToken() || locationsToUpdate.length === 0) return false;
-			
-			console.log(`🔄 מעדכן תאריכי טיפול עבור ${locationsToUpdate.length} לקוחות בגוגל שיטס...`);
-			
-			try {
-				// קרא את כל הנתונים הנוכחיים מהטבלה
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:O'
-				});
-				
-				const allRows = response.result.values || [];
-				const updatedRows = [...allRows];
-				let updatedCount = 0;
-				
-				// עבור כל לקוח שצריך עדכון
-				for (const location of locationsToUpdate) {
-					// מצא את השורה המתאימה בטבלה
-					for (let i = 1; i < allRows.length; i++) { // מתחיל מ-1 כדי לדלג על הכותרות
-						if (allRows[i][0] === location.ID) {
-							// עדכן את עמודות התאריכים (עמודות 13 ו-14)
-							updatedRows[i][13] = location.last_visit;   // last_visit
-							updatedRows[i][14] = location.next_visit;   // next_visit
-							updatedCount++;
-							break;
-						}
-					}
-				}
-				
-				// שמור את כל הטבלה המעודכנת בקריאה אחת בלבד
-				await gapi.client.sheets.spreadsheets.values.update({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:O',
-					valueInputOption: 'USER_ENTERED',
-					resource: {
-						values: updatedRows
-					}
-				});
-				
-				console.log(`✅ עודכנו ${updatedCount} תאריכי טיפול בגוגל שיטס`);
-				return true;
-			} catch (error) {
-				console.error('Error updating treatment dates in sheets:', error);
-				return false;
-			}
-		}
-		
-		// פונקציה לעדכון תאריכי טיפול עבור לקוח אחד לאחר הוספת ביקור
-		async function updateSingleLocationTreatmentDates(locationId) {
-			const location = locations.find(loc => loc.ID === locationId);
-			if (!location) return;
-			
-			// מצא את כל הביקורים של הלקוח הזה
-			const locationVisits = visits.filter(visit => visit.location_id === locationId);
-			
-			if (locationVisits.length > 0) {
-				// מיין לפי תאריך (החדש ביותר ראשון)
-				locationVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
-				
-				// הטיפול האחרון
-				const lastVisit = locationVisits[0];
-				const lastVisitDate = lastVisit.date;
-				
-				// חישוב תאריך הטיפול הבא
-				const lastDate = new Date(lastVisitDate);
-				const intervalDays = (location.interval_weeks || 4) * 7; // ברירת מחדל 4 שבועות
-				const nextDate = new Date(lastDate);
-				nextDate.setDate(lastDate.getDate() + intervalDays);
-				
-				// פורמט התאריך ל-YYYY-MM-DD
-				const nextVisitDate = nextDate.toISOString().split('T')[0];
-				
-				// עדכון האובייקט המקומי
-				location.last_visit = lastVisitDate;
-				location.next_visit = nextVisitDate;
-				
-				// עדכון בגוגל שיטס
-				await updateTreatmentDatesInSheets([location]);
-				
-				console.log(`📅 עודכן לקוח ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
-				// רענן נתוני תכנון
-				refreshPlanningAfterTreatmentUpdate();
-			}
-		}
-	   
-	   // פונקציה לחידוש נתוני התכנון לאחר עדכון תאריכים
-		function refreshPlanningAfterTreatmentUpdate() {
-			// רענן את נתוני התכנון אם הטאב פתוח
-			const currentSection = document.querySelector('.section.active');
-			if (currentSection && currentSection.id === 'planning') {
-				loadPlanningData();
-			}
-			
-			// רענן גם את רשימת הלקוחות בטופס הביקור
-			loadLocationsForSelect();
-		}
-	   
-	   // פונקציה לבדיקת מצב נתוני התכנון - לדיבוג
-		function debugPlanningData() {
-			console.log('=== Debug Planning Data ===');
-			console.log(`סה"כ לקוחות: ${locations.length}`);
-			
-			// בדוק מה יש בשדה active
-			console.log('דוגמאות של שדה active:', locations.slice(0, 5).map(loc => ({ name: loc.name, active: loc.active, type: typeof loc.active })));
-
-			const activeLocations = locations.filter(loc => loc.active === "כן" || loc.active === true || loc.active === "1");
-			console.log(`לקוחות פעילים: ${activeLocations.length}`);
-			
-			const locationsWithDates = activeLocations.filter(loc => loc.next_visit && loc.next_visit.trim() !== '');
-			console.log(`לקוחות עם תאריכי טיפול: ${locationsWithDates.length}`);
-			
-			// הצג 5 לקוחות ראשונים
-			locationsWithDates.slice(0, 5).forEach(loc => {
-				console.log(`👤 ${loc.name}: אחרון=${loc.last_visit}, הבא=${loc.next_visit}`);
-			});
-			
-			const today = new Date();
-			const todayStr = today.toISOString().split('T')[0];
-			console.log(`תאריך היום: ${todayStr}`);
-			
-			const dueToday = locationsWithDates.filter(loc => {
-				return new Date(loc.next_visit) <= today;
-			});
-			console.log(`צריכים טיפול היום: ${dueToday.length}`);
-			
-			console.log('=== סיום Debug ===');
-		}
-	   
-	   
-		// פונקציה חדשה לייבוא מהיר וכולל של כל הנתונים
-		async function importFromHelperTableFast() {
-			if (!await validateToken()) {
-				showToast('התחבר לגוגל קודם', 'warning');
-				return;
-			}
-			
-			const importTableId = localStorage.getItem('importTableId');
-			if (!importTableId) {
-				showToast('לא נמצא ID של טבלת העזר', 'warning');
-				return;
-			}
-			
-			console.log('🚀 Starting FAST complete import from helper table...');
-			
-			try {
-				showLoading('מייבא נתונים מהר מטבלת העזר...');
-				
-				// מעקב סטטיסטיקות
-				const stats = {
-					locations: { imported: 0, skipped: 0 },
-					visits: { imported: 0, skipped: 0 },
-					receipts: { imported: 0, skipped: 0 }
-				};
-				
-				// מערכים לנתונים חדשים בלבד
-				const newLocations = [];
-				const newVisits = [];
-				const newReceipts = [];
-				
-				// ======== שלב 1: קריאת נתונים ברצף (כמו בפונקציות שעובדות) ========
-				let locationsResponse, visitsResponse, receiptsResponse;
-				
-				try {
-					console.log('📊 Loading locations data...');
-					locationsResponse = await gapi.client.sheets.spreadsheets.values.get({
-						spreadsheetId: importTableId,
-						range: 'Locations!A2:G1000'
-					});
-				} catch (error) {
-					console.log('📊 Locations sheet not found or empty');
-					locationsResponse = { result: { values: [] } };
-				}
-				
-				try {
-					console.log('🔧 Loading visits data...');
-					visitsResponse = await gapi.client.sheets.spreadsheets.values.get({
-						spreadsheetId: importTableId,
-						range: 'Visits!A2:M1000'
-					});
-				} catch (error) {
-					console.log('🔧 Visits sheet not found or empty');
-					visitsResponse = { result: { values: [] } };
-				}
-				
-				try {
-					console.log('🧾 Loading receipts data...');
-					receiptsResponse = await gapi.client.sheets.spreadsheets.values.get({
-						spreadsheetId: importTableId,
-						range: 'Receipts!A2:K1000'
-					});
-				} catch (error) {
-					console.log('🧾 Receipts sheet not found or empty');
-					receiptsResponse = { result: { values: [] } };
-				}
-				
-				console.log('📊 Raw data loaded:', {
-					locations: locationsResponse.result.values?.length || 0,
-					visits: visitsResponse.result.values?.length || 0,
-					receipts: receiptsResponse.result.values?.length || 0
-				});
-				
-				// ======== שלב 2: עיבוד לקוחות ========
-				if (locationsResponse.result.values?.length > 0) {
-					showToast('מעבד לקוחות...', 'info', 1500);
-					
-					for (const row of locationsResponse.result.values) {
-						if (row.length > 0 && row[0]) { // יש שם לקוח
-							const customerName = row[0].trim();
-							const street = row[1] || '';
-							const houseNumber = row[2] || '';
-							const city = row[3] || '';
-							const fullAddress = `${street} ${houseNumber} ${city}`.trim();
-							
-							// בדיקת כפילות לפי שם ו/או כתובת
-							const isDuplicate = locations.some(existing =>
-								existing.name.toLowerCase() === customerName.toLowerCase() ||
-								(fullAddress && existing.full_address && 
-								 existing.full_address.toLowerCase() === fullAddress.toLowerCase())
-							);
-							
-							if (isDuplicate) {
-								stats.locations.skipped++;
-								console.log(`⚠️ Duplicate customer skipped: ${customerName}`);
-								continue;
-							}
-							
-							const locationData = {
-								ID: generateID(),
-								name: customerName,
-								full_address: fullAddress || customerName, // ← תיקון: גם שם הלקוח אם אין כתובת נפרדת
-								neighborhood: '',
-								city: city,
-								contact_person: row[5] || '',
-								phone: '',
-								allowed_day: '',
-								interval_weeks: parseInt(row[4]) || 4,
-								temp_addition: 0,
-								base_amount: parseFloat(row[6]) || 0,
-								active: "1",
-								notes: '',
-								last_visit: '',
-								next_visit: ''
-							};
-							
-							locations.push(locationData);
-							newLocations.push(locationData);
-							stats.locations.imported++;
-						}
-					}
-				}
-				
-				// ======== שלב 3: עיבוד ביקורים ========
-				if (visitsResponse.result.values?.length > 0) {
-					showToast('מעבד ביקורים...', 'info', 1500);
-					
-					let notFoundCustomers = [];
-					
-					for (const row of visitsResponse.result.values) {
-						if (row.length > 3 && row[3]) { // יש לקוח בעמודה 3
-							const customerName = row[3].trim();
-							
-							// מצא לקוח קיים
-							const existingCustomer = locations.find(loc =>
-								loc.name && loc.name.toLowerCase() === customerName.toLowerCase()
-							);
-							
-							if (!existingCustomer) {
-								if (!notFoundCustomers.includes(customerName)) {
-									notFoundCustomers.push(customerName);
-								}
-								stats.visits.skipped++;
-								continue;
-							}
-							
-							// בניית תאריך מ-3 עמודות: year, month, day
-							const year = row[0];
-							const month = String(row[1]).padStart(2, '0');
-							const day = String(row[2]).padStart(2, '0');
-							const visitDate = `${year}-${month}-${day}`;
-							
-							const workDone = row[7] || '';
-							const amount = parseFloat(row[9]) || 0;
-							
-							// בדיקת כפילות ביקור
-							const isDuplicateVisit = visits.some(existing =>
-								existing.location_id === existingCustomer.ID &&
-								existing.date === visitDate &&
-								existing.work_done === workDone &&
-								Math.abs(existing.amount - amount) < 0.01
-							);
-							
-							if (isDuplicateVisit) {
-								stats.visits.skipped++;
-								console.log(`⚠️ Duplicate visit skipped: ${customerName} on ${visitDate}`);
-								continue;
-							}
-							
-							const visitData = {
-								ID: generateID(),
-								date: visitDate,
-								location_id: existingCustomer.ID,
-								location_name: customerName, // ← הוספנו את השם!
-								visit_type: row[5] || 'regular',
-								work_done: workDone,
-								duration_minutes: (parseFloat(row[8]) || 0) * 60,
-								num_workers: 1,
-								start_time: '',
-								end_time: '',
-								amount: amount,
-								expense: parseFloat(row[11]) || 0,
-								paid: mapPaymentStatus(row[10]),
-								notes: row[12] || ''
-							};
-							
-							visits.push(visitData);
-							newVisits.push(visitData);
-							//** עדכון תאריכי טיפול לאחר הוספת ביקור חדש
-							//** await updateSingleLocationTreatmentDates(visitData.location_id);
-							stats.visits.imported++;
-						}
-					}
-					
-					if (notFoundCustomers.length > 0) {
-						console.log(`⚠️ ${notFoundCustomers.length} customers not found for visits:`, notFoundCustomers.slice(0, 5));
-					}
-				}
-				
-				// ======== שלב 4: עיבוד קבלות ========
-				if (receiptsResponse.result.values?.length > 0) {
-					showToast('מעבד קבלות...', 'info', 1500);
-					
-					let notFoundAddresses = [];
-					
-					for (const row of receiptsResponse.result.values) {
-						if (row.length > 6 && row[6]) { // יש כתובת בעמודה 6
-							const customerAddress = row[6].trim();
-							
-							// מצא לקוח לפי כתובת - גם בשם וגם בכתובת מלאה
-							const existingCustomer = locations.find(loc =>
-								(loc.name && loc.name.toLowerCase().includes(customerAddress.toLowerCase())) ||
-								(loc.full_address && loc.full_address.toLowerCase().includes(customerAddress.toLowerCase()))
-							);
-							
-							if (!existingCustomer) {
-								if (!notFoundAddresses.includes(customerAddress)) {
-									notFoundAddresses.push(customerAddress);
-								}
-								stats.receipts.skipped++;
-								continue;
-							}
-							
-							// בניית תאריך
-							const year = row[3];
-							const month = String(row[4]).padStart(2, '0');
-							const day = String(row[5]).padStart(2, '0');
-							const receiptDate = `${year}-${month}-${day}`;
-							
-							const bookNumber = row[1] || '';
-							const receiptNumber = row[2] || '';
-							
-							// בדיקת כפילות קבלה
-							const isDuplicateReceipt = receipts.some(existing =>
-								existing.book_number === bookNumber &&
-								existing.receipt_number === receiptNumber &&
-								existing.date === receiptDate
-							);
-							
-							if (isDuplicateReceipt) {
-								stats.receipts.skipped++;
-								console.log(`⚠️ Duplicate receipt skipped: ${bookNumber}/${receiptNumber}`);
-								continue;
-							}
-							
-							const receiptData = {
-								ID: generateID(),
-								book_number: bookNumber,
-								receipt_number: receiptNumber,
-								date: receiptDate,
-								location_id: existingCustomer.ID,
-								location_name: customerAddress,
-								amount: parseFloat(row[7]) || 0,
-								payment_type: row[8] || '',
-								notes: `${row[9] || ''} ${row[10] || ''}`.trim()
-							};
-							
-							receipts.push(receiptData);
-							newReceipts.push(receiptData);
-							stats.receipts.imported++;
-						}
-					}
-					
-					if (notFoundAddresses.length > 0) {
-						console.log(`⚠️ ${notFoundAddresses.length} addresses not found for receipts:`, notFoundAddresses.slice(0, 5));
-					}
-				}
-				
-				// ======== שלב 5: שמירה מקבצית לענן ========
-				showToast('שומר נתונים חדשים לענן...', 'info');
-				
-				const savePromises = [];
-				
-				if (newLocations.length > 0) {
-					savePromises.push(saveLocationsBatchNew(newLocations));
-				}
-				if (newVisits.length > 0) {
-					savePromises.push(saveVisitsBatchNew(newVisits));
-				}
-				if (newReceipts.length > 0) {
-					savePromises.push(saveReceiptsBatchNew(newReceipts));
-				}
-				
-				const saveResults = await Promise.all(savePromises);
-				const allSaved = saveResults.every(result => result === true);
-				
-				// ======== שלב 6: עדכון ממשק ========
-				saveToLocalStorage();
-				loadLocationsTable();
-				loadReceiptsTable();
-				loadLocationsForSelect();
-				loadFilterOptions();
-				
-				hideLoading();
-				
-				// ======== דיווח סופי ========
-				console.log('📊 Import completed:', stats);
-				
-				const totalImported = stats.locations.imported + stats.visits.imported + stats.receipts.imported;
-				const totalSkipped = stats.locations.skipped + stats.visits.skipped + stats.receipts.skipped;
-				
-				// חישוב ועדכון תאריכי טיפול (הוספה חדשה)
-				if (stats.visits.imported > 0) {
-					showToast('מחשב תאריכי טיפול...', 'info', 2000);
-					const updatedCount = await calculateTreatmentDates();
-					if (updatedCount > 0) {
-						showToast(`✅ עודכנו תאריכי טיפול עבור ${updatedCount} לקוחות`, 'success', 3000);
-					}
-				}
-				
-				if (totalImported > 0) {
-					const message = `🎉 ייבוא הושלם בהצלחה!
-					
-		✅ יובאו: ${stats.locations.imported} לקוחות, ${stats.visits.imported} ביקורים, ${stats.receipts.imported} קבלות
-		${totalSkipped > 0 ? `⚠️ דולגו (כפילויות): ${totalSkipped} רשומות` : ''}
-		${allSaved ? '☁️ נשמר לענן בהצלחה' : '⚠️ חלק מהנתונים לא נשמרו לענן'}`;
-					
-					showToast(message, 'success', 8000);
-				} else {
-					showToast('לא נמצאו נתונים חדשים לייבוא', 'info');
-				}
-				
-			} catch (error) {
-				console.error('Error in fast import:', error);
-				hideLoading();
-				showToast('שגיאה בייבוא מהיר', 'error');
-			}
-		}
-
-		// פונקציות עזר חדשות ומעודכנות לשמירה מקבצית
-		async function saveLocationsBatchNew(locationsArray) {
-			if (!locationsArray.length) return true;
-			
-			try {
-				const values = locationsArray.map(loc => [
-					loc.ID, loc.name, loc.full_address, loc.neighborhood, loc.city,
-					loc.contact_person, loc.phone, loc.allowed_day, loc.interval_weeks,
-					loc.temp_addition, loc.base_amount, loc.active, loc.notes,
-					loc.last_visit, loc.next_visit
-				]);
-				
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A2:O2',
-					valueInputOption: 'USER_ENTERED',
-					resource: { values }
-				});
-				
-				console.log(`✅ Saved ${locationsArray.length} locations to cloud`);
-				return true;
-			} catch (error) {
-				console.error('Error saving locations batch:', error);
-				return false;
-			}
-		}
-
-		async function saveVisitsBatchNew(visitsArray) {
-			if (!visitsArray.length) return true;
-			
-			try {
-				// הסרנו את location_name שלא קיים בביקורים - אופס, זה כן צריך להיות!
-				const values = visitsArray.map(visit => [
-					visit.ID, visit.date, visit.location_id, visit.location_name, visit.visit_type, visit.work_done,
-					visit.duration_minutes, visit.num_workers, visit.start_time, visit.end_time,
-					visit.amount, visit.expense, visit.paid, visit.notes
-				]);
-				
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Visits!A2:N2', // ← עכשיו N כי יש עמודה נוספת
-					valueInputOption: 'USER_ENTERED',
-					resource: { values }
-				});
-				
-				console.log(`✅ Saved ${visitsArray.length} visits to cloud`);
-				return true;
-			} catch (error) {
-				console.error('Error saving visits batch:', error);
-				return false;
-			}
-		}
-
-		async function saveReceiptsBatchNew(receiptsArray) {
-			if (!receiptsArray.length) return true;
-			
-			try {
-				const values = receiptsArray.map(receipt => [
-					receipt.ID, receipt.book_number, receipt.receipt_number, receipt.date,
-					receipt.location_id, receipt.location_name, receipt.amount,
-					receipt.payment_type, receipt.notes
-				]);
-				
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Receipts!A2:I2',
-					valueInputOption: 'USER_ENTERED',
-					resource: { values }
-				});
-				
-				console.log(`✅ Saved ${receiptsArray.length} receipts to cloud`);
-				return true;
-			} catch (error) {
-				console.error('Error saving receipts batch:', error);
-				return false;
-			}
-		}
-
-	   
-	   ////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-	   
-	   // החלף את validateToken בפונקציה זו:
-		async function validateToken() {
-			if (!access_token || !gapi.client) {
-				updateCloudStatus('🔐 לא מחובר לענן', 'נותק');
-				return false;
-			}
-			
-			try {
-				// בדיקה פשוטה - נסה לקרוא מהטבלה
-				await gapi.client.sheets.spreadsheets.get({
-					spreadsheetId: SPREADSHEET_ID || 'test'
-				});
-				return true;
-			} catch (error) {
-				if (error.status === 401) {
-					console.log('Google token expired');
-					access_token = null;
-					updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
-					document.getElementById('statusText').classList.remove('connected');
-					document.getElementById('saveBtn').disabled = true;
-					document.getElementById('loadBtn').disabled = true;
-					showToast('⚠️ החיבור לגוגל פג - התחבר מחדש', 'warning');
-					return false;
-				}
-				updateCloudStatus('⚠️ בעיית חיבור לענן', 'שגיאה');
-				return false;
-			}
-		}
-
-		// החלף את saveEditedLocation בפונקציה זו:
-		function saveEditedLocation(locationId) {
-			console.log(`✅ saveEditedLocation ('${locationId}')`);
-			const locationIndex = locations.findIndex(g => g.ID == locationId);
-			if (locationIndex === -1) {
-				showToast('לקוח לא נמצא', 'error');
-				return;
-			}
-			
-			try {
-				// עדכן את הלקוח במערך המקומי
-				const updatedLocation = {
-					...locations[locationIndex], // שמור נתונים קיימים
-					name: document.getElementById('editLocationName').value,
-					full_address: document.getElementById('editLocationAddress').value,
-					neighborhood: document.getElementById('editLocationNeighborhood').value,
-					city: document.getElementById('editLocationCity').value,
-					contact_person: document.getElementById('editLocationContact').value,
-					phone: document.getElementById('editLocationPhone').value,
-					allowed_day: document.getElementById('editLocationDay').value,
-					interval_weeks: parseInt(document.getElementById('editLocationInterval').value) || 4,
-					base_amount: parseFloat(document.getElementById('editLocationAmount').value) || 0,
-					active: document.getElementById('editLocationActive').value,
-					next_visit: document.getElementById('editLocationNextVisit').value,
-					client_requests: document.getElementById('editLocationClientRequests').value,
-					notes: document.getElementById('editLocationNotes').value
-				};
-				
-				locations[locationIndex] = updatedLocation;
-				
-				// שמור מקומית תמיד
-				saveToLocalStorage();
-				updateCloudStatus('💾 שומר...', 'מעדכן');
-				
-				// נסה לשמור בענן
-				if (access_token && SPREADSHEET_ID) {
-					// שמור בענן עם בדיקת חיבור
-					updateLocationInCloud(updatedLocation).then(() => {
-						updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
-						showToast('לקוח עודכן בהצלחה במערכת ובענן!', 'success');
-					}).catch(error => {
-						if (error.status === 401) {
-							updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
-							showToast('⚠️ החיבור לגוגל פג - הלקוח נשמר מקומית בלבד', 'warning');
-							access_token = null;
-							document.getElementById('saveBtn').disabled = true;
-							document.getElementById('loadBtn').disabled = true;
-						} else {
-							updateCloudStatus('⚠️ שגיאה בשמירה', 'שגיאה');
-							showToast('⚠️ הלקוח נשמר מקומית, אבל לא הצליח לשמור בענן', 'warning');
-						}
-					});
-				} else {
-					updateCloudStatus('🔐 שינויים לא נשמרו בענן', 'מקומי');
-					showToast('🔐 לקוח נשמר מקומית - התחבר לענן לשמירה מלאה', 'warning');
-				}
-				
-				// עדכן תצוגה
-				loadLocationsTable();
-				loadLocationsForSelect();
-				closeEditModal();
-				
-			} catch (error) {
-				console.error('Error updating location:', error);
-				updateCloudStatus('❌ שגיאה במערכת', 'שגיאה');
-				showToast('שגיאה בעדכון הלקוח', 'error');
-			}
-		}
-
-		// החלף את saveEditedReceipt בפונקציה זו:
-		function saveEditedReceipt(receiptId) {
-			console.log(`✅ saveEditedReceipt ('${receiptId}')`);
-			const receiptIndex = receipts.findIndex(r => r.ID == receiptId);
-			if (receiptIndex === -1) {
-				showToast('קבלה לא נמצאה', 'error');
-				return;
-			}
-			
-			try {
-				const locationId = document.getElementById('editReceiptLocation').value;
-				const location = locations.find(g => g.ID == locationId);
-				
-				// עדכן את הקבלה במערך המקומי
-				const updatedReceipt = {
-					...receipts[receiptIndex], // שמור נתונים קיימים
-					book_number: document.getElementById('editReceiptBook').value,
-					receipt_number: document.getElementById('editReceiptNumber').value,
-					date: document.getElementById('editReceiptDate').value,
-					location_id: locationId,
-					location_name: location ? location.name : '',
-					amount: parseFloat(document.getElementById('editReceiptAmount').value) || 0,
-					payment_type: document.getElementById('editReceiptPaymentType').value,
-					notes: document.getElementById('editReceiptNotes').value
-				};
-				
-				receipts[receiptIndex] = updatedReceipt;
-				
-				// שמור מקומית תמיד
-				saveToLocalStorage();
-				updateCloudStatus('💾 שומר קבלה...', 'מעדכן');
-				
-				// נסה לשמור בענן
-				if (access_token && SPREADSHEET_ID) {
-					updateReceiptInCloud(updatedReceipt).then(() => {
-						updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
-						showToast('קבלה עודכנה בהצלחה במערכת ובענן!', 'success');
-					}).catch(error => {
-						if (error.status === 401) {
-							updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
-							showToast('⚠️ החיבור לגוגל פג - הקבלה נשמרה מקומית בלבד', 'warning');
-							access_token = null;
-						} else {
-							updateCloudStatus('⚠️ שגיאה בשמירה', 'שגיאה');
-							showToast('⚠️ הקבלה נשמרה מקומית, אבל לא הצליחה לשמור בענן', 'warning');
-						}
-					});
-				} else {
-					updateCloudStatus('🔐 שינויים לא נשמרו בענן', 'מקומי');
-					showToast('🔐 קבלה נשמרה מקומית - התחבר לענן לשמירה מלאה', 'warning');
-				}
-				
-				// עדכן תצוגה
-				loadReceiptsTable();
-				closeEditModal();
-				
-			} catch (error) {
-				console.error('Error updating receipt:', error);
-				updateCloudStatus('❌ שגיאה במערכת', 'שגיאה');
-				showToast('שגיאה בעדכון הקבלה', 'error');
-			}
-		}
-
-		// החלף את saveEditedVisit בפונקציה זו:
-		async function saveEditedVisit(visitId) {
-			console.log(`✅ saveEditedVisit ('${visitId}')`);
-			const visitIndex = visits.findIndex(v => v.ID == visitId);
-			if (visitIndex === -1) {
-				showToast('ביקור לא נמצא', 'error');
-				return;
-			}
-			
-			try {
-				// עדכן את הביקור במערך המקומי
-				const updatedVisit = {
-					...visits[visitIndex], // שמור נתונים קיימים
-					date: document.getElementById('editVisitDate').value,
-					visit_type: document.getElementById('editVisitType').value,
-					work_done: document.getElementById('editWorkDone').value,
-					duration_minutes: parseInt(document.getElementById('editDuration').value) || 0,
-					start_time: document.getElementById('editStartTime').value,
-					amount: parseFloat(document.getElementById('editAmount').value) || 0,
-					expense: parseFloat(document.getElementById('editExpense').value) || 0,
-					paid: document.getElementById('editPaid').value,
-					notes: document.getElementById('editNotes').value
-				};
-				
-				visits[visitIndex] = updatedVisit;
-				
-				// שמור מקומית תמיד
-				saveToLocalStorage();
-				updateCloudStatus('💾 שומר ביקור...', 'מעדכן');
-				
-				// נסה לשמור בענן
-				if (access_token && SPREADSHEET_ID) {
+					// תמיד וודא שיש כותרות (גם אם הגליון קיים אבל ריק)
 					try {
-						await updateVisitInCloud(updatedVisit);
-						updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
-						showToast('ביקור עודכן בהצלחה במערכת ובענן!', 'success');
-					} catch (error) {
-						if (error.status === 401) {
-							updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
-							showToast('⚠️ החיבור לגוגל פג - הביקור נשמר מקומית בלבד', 'warning');
-							access_token = null;
-						} else {
-							updateCloudStatus('⚠️ שגיאה בשמירה', 'שגיאה');
-							showToast('⚠️ הביקור נשמר מקומית, אבל לא הצליח לשמור בענן', 'warning');
-						}
+						await gapi.client.sheets.spreadsheets.values.update({
+							spreadsheetId: SPREADSHEET_ID,
+							range: `${requiredSheet.name}!A1:${String.fromCharCode(64 + requiredSheet.headers[0].length)}1`,
+							valueInputOption: 'RAW',
+							resource: { values: requiredSheet.headers }
+						});
+						
+						console.log(`Added headers to: ${requiredSheet.name}`);
+					} catch (headerError) {
+						console.error(`Error adding headers to ${requiredSheet.name}:`, headerError);
 					}
-				} else {
-					updateCloudStatus('🔐 שינויים לא נשמרו בענן', 'מקומי');
-					showToast('🔐 ביקור נשמר מקומית - התחבר לענן לשמירה מלאה', 'warning');
 				}
 				
-				// עדכן תצוגה
-				applyVisitFilters();
-				closeEditModal();
+				showToast('כל הגיליונות והכותרות מוכנים', 'success');
+				return true;
 				
 			} catch (error) {
-				console.error('Error updating visit:', error);
-				updateCloudStatus('❌ שגיאה במערכת', 'שגיאה');
-				showToast('שגיאה בעדכון הביקור', 'error');
+				console.error('Error ensuring sheets:', error);
+				showToast('שגיאה ביצירת גיליונות', 'error');
+				return false;
 			}
 		}
-
-		// החלף את connectToGoogleSheets בפונקציה זו:
-		async function connectToGoogleSheets() {
-			try {
-				console.log('Connecting to Google Sheets...');
-				updateCloudStatus('🔗 מתחבר...', 'מתחבר');
-				showToast('מתחבר ל-Google Sheets...', 'info');
-				
-				const tokenClient = google.accounts.oauth2.initTokenClient({
-					client_id: CLIENT_ID,
-					scope: SCOPES,
-					callback: async (response) => {
-						access_token = response.access_token;
-						
-						// עדכון סטטוס
-						updateCloudStatus('✅ מחובר ומסונכרן', 'התחבר');
-						document.getElementById('statusText').classList.add('connected');
-						document.getElementById('saveBtn').disabled = false;
-						document.getElementById('loadBtn').disabled = false;
-						
-						showToast('התחברת בהצלחה ל-Google Sheets!', 'success');
-						
-						// מציאה או יצירת הטבלה הראשית
-						await findOrCreateMainSpreadsheet();
-						
-						// טעינה אוטומטית של נתונים אם קיימים
-						if (SPREADSHEET_ID) {
-							try {
-								await loadAllDataFromSheets();
-							} catch (error) {
-								console.log('Could not auto-load data:', error);
-							}
-						}
-					},
-				});
-				
-				tokenClient.requestAccessToken();
-				
-			} catch (error) {
-				console.error('Error connecting to Google Sheets:', error);
-				updateCloudStatus('❌ שגיאה בחיבור', 'שגיאה');
-				showToast('שגיאה בחיבור ל-Google Sheets', 'error');
-			}
-		}
-
-		// החלף את saveAllToSheets בפונקציה זו:
-		async function saveAllToSheets() {
-			if (!await validateToken()) {
-				showToast('אין חיבור לגוגל - שמירה מקומית בלבד', 'warning');
-				return;
-			}
-			
-			try {
-				updateCloudStatus('שומר נתונים לענן...', 'מעדכן');
-				
-				// שמירה בבאצ'ים (לא לולאות!)
-				const savePromises = [];
-				
-				if (locations.length > 0) {
-					showToast(`שומר ${locations.length} לקוחות בבת אחת...`, 'info', 2000);
-					savePromises.push(saveLocationsBatch(locations));
-				}
-				
-				if (visits.length > 0) {
-					showToast(`שומר ${visits.length} ביקורים בבת אחת...`, 'info', 2000);
-					savePromises.push(saveVisitsBatch(visits));
-				}
-				
-				if (receipts.length > 0) {
-					showToast(`שומר ${receipts.length} קבלות בבת אחת...`, 'info', 2000);
-					savePromises.push(saveReceiptsBatch(receipts));
-				}
-				
-				// המתן לכל השמירות במקביל
-				await Promise.all(savePromises);
-				
-				updateCloudStatus('מחובר ומסונכרן', 'נשמר');
-				showToast(`כל הנתונים נשמרו בענן בהצלחה!`, 'success', 3000);
-				
-			} catch (error) {
-				console.error('Error saving all data to cloud:', error);
-				updateCloudStatus('שגיאה בשמירה לענן', 'שגיאה');
-				showToast('שגיאה בשמירה לענן - הנתונים נשמרו מקומית', 'error');
-			}
-		}
-
-		// הוסף את פונקציית updateCloudStatus החדשה:
-		function updateCloudStatus(status, lastAction) {
-			const statusElement = document.getElementById('statusText');
-			const lastSavedElement = document.getElementById('lastSaved');
-			
-			if (statusElement) {
-				statusElement.textContent = status;
-				
-				// עדכון צבעים לפי סטטוס
-				if (status.includes('מחובר') || status.includes('מסונכרן')) {
-					statusElement.style.color = '#28a745'; // ירוק
-					statusElement.style.fontWeight = 'bold';
-					statusElement.style.background = 'transparent'; // הסר רקע
-					statusElement.classList.add('connected');
-				} else if (status.includes('שומר') || status.includes('מעדכן')) {
-					statusElement.style.color = '#ffc107'; // צהוב
-					statusElement.style.fontWeight = 'bold';
-				} else if (status.includes('שגיאה')) {
-					statusElement.style.color = '#dc3545'; // אדום
-					statusElement.style.fontWeight = 'bold';
-					statusElement.classList.remove('connected');
-				} else if (status.includes('נדרש חיבור')) {
-					statusElement.style.color = '#fd7e14'; // כתום
-					statusElement.style.fontWeight = 'bold';
-					statusElement.classList.remove('connected');
-				}
-			}
-			
-			// עדכון זמן פעולה אחרונה
-			if (lastSavedElement && lastAction) {
-				lastSavedElement.textContent = `${lastAction}: ${new Date().toLocaleTimeString('he-IL')}`;
-				//lastSavedElement.style.color = //'#333'; // צבע כהה יותר
-			}
-		}
-	   
-	   
-	   
-	   //////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-	   
-	   
-	   function formatDateForSheets(dateString) {
-			if (!dateString) return '';
-			const date = new Date(dateString);
-			const day = String(date.getDate()).padStart(2, '0');
-			const month = String(date.getMonth() + 1).padStart(2, '0');
-			const year = date.getFullYear();
-			return `${day}/${month}/${year}`;
-		}
-	   
-	   
-	   // פונקציה להמרת סטטוס תשלום לקידוד מספרי
-		function mapPaymentStatus(value) {
-			if (!value || value.trim() === '') return "0"; // ערך ריק = לא שולם
-			const normalized = value.toString().toLowerCase().trim();
-			
-			switch(normalized) {
-				case "כן":
-				case "true": 
-					return "1"; // שולם
-				case "לא":
-				case "false":
-					return "0"; // לא שולם
-				case "ללא תשלום":
-					return "2"; // ללא תשלום
-				default:
-					return "0"; // ברירת מחדל = לא שולם
-			}
-		}
-
-		// פונקציה להצגת טקסט ידידותי
-		function getPaymentStatusText(status) {
-			switch(status) {
-				case "1": return "שולם";
-				case "0": return "לא שולם";
-				case "2": return "ללא תשלום";
-				default: return "לא שולם";
-			}
-		}
+		
 	   
    </script>
 </body>
