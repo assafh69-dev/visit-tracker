@@ -1112,7 +1112,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -1806,10 +1806,10 @@
 					locationData.temp_addition,
 					locationData.base_amount,
 					locationData.active,
-					locationData.notes,
+					locationData.notes || '',
 					locationData.last_visit,
 					locationData.next_visit,
-					locationData.client_requests || ''
+					locationData.client_requests|| ''
 				]];
 				
 				console.log('📤 About to send to Google Sheets:', values[0][15]); 
@@ -1864,14 +1864,15 @@
 					locationData.temp_addition,
 					locationData.base_amount,
 					locationData.active,
-					locationData.notes,
+					locationData.notes || '',
 					locationData.last_visit,
-					locationData.next_visit
+					locationData.next_visit,
+					locationData.client_requests || ''
 				]];
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.LOCATIONS}!A:O`,
+					range: `${SHEETS.LOCATIONS}!A:P`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: values }
 				});
@@ -6855,13 +6856,13 @@
 				
 				// נסה לשמור בענן
 				if (access_token && SPREADSHEET_ID) {
-					console.log('🔍 About to call saveLocationToSheets with:', updatedLocation.client_requests);
-					// שמור בענן עם בדיקת חיבור
-					saveLocationToSheets(updatedLocation).then(() => {
+					console.log('🔍 About to call updateLocationInCloud with:', updatedLocation.client_requests);
+					// עדכון בענן (לא הוספה חדשה)
+					updateLocationInCloud(updatedLocation).then(() => {
 						updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
 						showToast('לקוח עודכן בהצלחה במערכת ובענן!', 'success');
 					}).catch(error => {
-						console.error('❌ saveLocationToSheets failed:', error);
+						console.error('❌ updateLocationInCloud failed:', error);
 						if (error.status === 401) {
 							updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
 							showToast('⚠️ החיבור לגוגל פג - הלקוח נשמר מקומית בלבד', 'warning');
@@ -6889,6 +6890,7 @@
 				showToast('שגיאה בעדכון הלקוח', 'error');
 			}
 		}
+
 
 		// החלף את saveEditedReceipt בפונקציה זו:
 		function saveEditedReceipt(receiptId) {
@@ -7345,19 +7347,25 @@
 					const clientRow = [
 						client.ID, client.name, client.full_address, client.neighborhood, client.city,
 						client.contact_person, client.phone, client.allowed_day, client.interval_weeks,
-						client.temp_addition, client.base_amount, client.active, client.notes,
-						client.last_visit, client.next_visit, client.client_requests || '' // ✅ הוסף
+						client.temp_addition || 0, // ✅ הוסף בדיקה
+						client.base_amount, client.active, client.notes,
+						client.last_visit, client.next_visit, client.client_requests || ''
 					];
 					
 					await gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: SPREADSHEET_ID,
-						range: `Locations!A${rowNumber}:P${rowNumber}`, // ✅ שונה ל-P
+						range: `Locations!A${rowNumber}:P${rowNumber}`,
 						valueInputOption: 'USER_ENTERED',
 						resource: { values: [clientRow] }
 					});
+					
+					console.log('✅ Successfully updated client in cloud'); // לוג להצלחה
+				} else {
+					throw new Error(`Client with ID ${client.ID} not found in spreadsheet`);
 				}
 			} catch (error) {
 				console.error('Error updating client in cloud:', error);
+				throw error; // ✅ חשוב - העבר את השגיאה הלאה
 			}
 		}
 	   
