@@ -4784,7 +4784,7 @@
 						headers = ['Setting', 'Value'];
 						break;
 					case 'streetsRLZ': // ✅ הוספת הגיליון החדש
-						headers = ['streetName', 'neigbName'];
+						headers = ['street_name', 'hood_name'];
 						break;
 				}
 				
@@ -6321,6 +6321,7 @@
 				// **הוספה חדשה** - טעינת טבלת רחובות-שכונות בתחילה
 				showToast('📍 טוען רחובות ושכונות...', 'info', 1500);
 				await loadStreetsNeighborhoods();
+				await updateNeighborhoodsInHelperTable();
 				
 				// מעקב סטטיסטיקות
 				const stats = {
@@ -7151,6 +7152,66 @@
 				neighborhood: neighborhood,
 				city: city
 			};
+		}
+	   
+	   // פונקציה חדשה - עדכון שכונות בטבלת העזר לפני ייבוא
+		async function updateNeighborhoodsInHelperTable() {
+			try {
+				const importTableId = localStorage.getItem('importTableId');
+				if (!importTableId) return;
+				
+				console.log('🏘️ Updating neighborhoods in helper table...');
+				
+				// טען רחובות-שכונות מהטבלה הראשית
+				await loadStreetsNeighborhoods();
+				
+				// קרא לקוחות מטבלת העזר
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: importTableId,
+					range: 'Locations!A2:H1000' // עד H כי נוסיף שכונה
+				});
+				
+				const rows = response.result.values || [];
+				const updatedRows = [];
+				let updatedCount = 0;
+				
+				for (let i = 0; i < rows.length; i++) {
+					const row = rows[i];
+					if (row.length > 0 && row[0]) {
+						const customerName = row[0].trim();
+						const addressData = parseAddressForImport(customerName);
+						
+						// העתק השורה הקיימת ועדכן/הוסף שכונה בעמודה H (אינדקס 7)
+						const updatedRow = [...row];
+						while (updatedRow.length < 8) updatedRow.push(''); // וודא שיש 8 עמודות
+						
+						if (updatedRow[7] !== addressData.neighborhood) {
+							updatedRow[7] = addressData.neighborhood; // עמודה H = שכונה
+							updatedCount++;
+						}
+						
+						updatedRows.push(updatedRow);
+					}
+				}
+				
+				if (updatedCount > 0) {
+					// עדכן את הטבלה
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: importTableId,
+						range: `Locations!A2:H${updatedRows.length + 1}`,
+						valueInputOption: 'RAW',
+						resource: { values: updatedRows }
+					});
+					
+					console.log(`✅ Updated ${updatedCount} neighborhoods in helper table`);
+					showToast(`עודכנו ${updatedCount} שכונות בטבלת העזר`, 'success');
+				} else {
+					console.log('ℹ️ No neighborhood updates needed');
+				}
+				
+			} catch (error) {
+				console.error('Error updating neighborhoods in helper table:', error);
+			}
 		}
 	   
 	   
