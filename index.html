@@ -1015,7 +1015,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -4667,14 +4667,32 @@
 		}
 		
 		// פונקציה חדשה לבדיקה ותיקון מבנה הטבלה
+		// עדכון פונקציית בדיקה ותיקון מבנה טבלה - כולל streetsRLZ
 		async function checkAndFixTableStructure() {
 			console.log('Checking and fixing table structure...');
 			
 			try {
-				// בדיקת כותרות בכל גיליון
-				const sheetsToCheck = ['Locations', 'Visits', 'Receipts'];
+				// בדיקה אילו גיליונות קיימים
+				const response = await gapi.client.sheets.spreadsheets.get({
+					spreadsheetId: SPREADSHEET_ID
+				});
 				
-				for (const sheetName of sheetsToCheck) {
+				const existingSheets = response.result.sheets.map(sheet => sheet.properties.title);
+				console.log('Existing sheets:', existingSheets);
+				
+				// רשימת כל הגיליונות שצריכים להיות
+				const requiredSheets = ['Locations', 'Visits', 'Receipts', 'SystemSettings', 'streetsRLZ'];
+				
+				// בדיקה אילו גיליונות חסרים
+				const missingSheets = requiredSheets.filter(sheet => !existingSheets.includes(sheet));
+				
+				if (missingSheets.length > 0) {
+					console.log('Missing sheets:', missingSheets);
+					await createMissingSheets(missingSheets);
+				}
+				
+				// בדיקת כותרות בכל הגיליונות הקיימים והחדשים
+				for (const sheetName of requiredSheets) {
 					try {
 						const response = await gapi.client.sheets.spreadsheets.values.get({
 							spreadsheetId: SPREADSHEET_ID,
@@ -4691,13 +4709,50 @@
 					}
 				}
 				
-				console.log('✅ Table structure verified');
+				console.log('✅ Table structure verified and fixed');
 				
 			} catch (error) {
 				console.log('Headers check failed, will force add them:', error);
 				await addAllHeaders();
 			}
 		}
+		
+		// פונקציה חדשה ליצירת גיליונות חסרים
+		async function createMissingSheets(missingSheets) {
+			try {
+				console.log(`Creating ${missingSheets.length} missing sheets:`, missingSheets);
+				
+				const requests = missingSheets.map(sheetName => ({
+					addSheet: {
+						properties: {
+							title: sheetName,
+							gridProperties: {
+								rowCount: 1000,
+								columnCount: 20
+							}
+						}
+					}
+				}));
+				
+				await gapi.client.sheets.spreadsheets.batchUpdate({
+					spreadsheetId: SPREADSHEET_ID,
+					resource: { requests }
+				});
+				
+				console.log('✅ Missing sheets created successfully');
+				showToast(`נוצרו ${missingSheets.length} גיליונות חסרים: ${missingSheets.join(', ')}`, 'success');
+				
+				// הוספת כותרות לגיליונות החדשים
+				for (const sheetName of missingSheets) {
+					await addHeadersToSheet(sheetName);
+				}
+				
+			} catch (error) {
+				console.error('Error creating missing sheets:', error);
+				showToast('שגיאה ביצירת גיליונות חסרים', 'error');
+			}
+		}
+
 		
 		// פונקציה חדשה להוספת כותרות לגיליון ספציפי
 		// עדכון פונקציית addHeadersToSheet - הוספת טיפול ב-streetsRLZ
