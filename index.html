@@ -957,35 +957,6 @@
 		}
 		/***************************************/
 
-		/* סטיילינג למצב שבועי */
-		.weekly-day-section {
-			margin-bottom: 25px;
-		}
-
-		.weekly-day-header {
-			background: linear-gradient(45deg, #3498db, #2980b9);
-			color: white;
-			padding: 10px 15px;
-			border-radius: 8px;
-			margin-bottom: 12px;
-			font-size: 16px;
-			font-weight: bold;
-			text-align: center;
-			box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
-		}
-
-		.planning-empty-state {
-			text-align: center;
-			color: #666;
-			padding: 40px 20px;
-		}
-
-		.planning-empty-state h3 {
-			margin-bottom: 10px;
-			color: #4CAF50;
-		}
-
-
 	</style>
    
 </head>
@@ -1015,7 +986,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -1094,12 +1065,6 @@
 							<label for="visitTime">שעת התחלה:</label>
 							<input type="time" id="visitTime" required>
 						</div>
-						
-						<div class="form-group">
-							<label for="endTime">שעת סיום:</label>
-							<input type="time" id="endTime">
-						</div>
-						
                         <div class="form-group">
                             <label for="visitType">סוג טיפול:</label>
                             <select id="visitType" required>
@@ -1143,16 +1108,6 @@
 							<label for="expense">הוצאה:</label>
 							<input type="number" id="expense" placeholder="הוצאות נילוות" onchange="calculateTreatmentCost()">
 						</div>
-						
-						<div class="form-group">
-							<label for="paymentStatus">סטטוס תשלום:</label>
-							<select id="paymentStatus">
-								<option value="0">לא שולם</option>
-								<option value="1">שולם</option>
-								<option value="2">ללא תשלום</option>
-							</select>
-						</div>
-						
                         <button type="submit">שמור טיפול</button>
                     </form>
                 </div>
@@ -1864,12 +1819,10 @@
 
 
 
-		// DOMContentLoaded
-		// עדכון האירוע DOMContentLoaded - שינוי הזמן
-		document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
 			console.log('App starting...');
 			initializeGoogleAPIs();
-			loadAllData();
+			loadAllData(); // זה יטען נתונים מקומיים
 			setupEventListeners();
 		});
 
@@ -2076,18 +2029,8 @@
 					});
 					break;
 				case 'weekly':
-					// במצב שבועי - מיון לפי ימים בשבוע
+					// לקוחות שצריכים טיפול השבוע הקרוב (כולל מי שכבר מאחר)
 					planningClients = filteredClients.filter(client => client.daysOverdue >= -7);
-					
-					// מיון לפי יום בשבוע ואז לפי זמן מתוכנן
-					planningClients.sort((a, b) => {
-						const dayOrder = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
-						const dayA = dayOrder.indexOf(a.allowed_day || 'יום ראשון');
-						const dayB = dayOrder.indexOf(b.allowed_day || 'יום ראשון');
-						
-						if (dayA !== dayB) return dayA - dayB;
-						return a.scheduledTime.localeCompare(b.scheduledTime);
-					});
 					break;
 				case 'overdue':
 					// רק לקוחות שכבר מאחרים
@@ -2167,75 +2110,34 @@
 				return;
 			}
 
-			// במצב שבועי - חלוקה לפי ימים
-			if (currentPlanningView === 'weekly') {
-				renderWeeklyPlanningByDays();
-			} else {
-				// במצב יומי או מאחרות - רשימה רגילה
-				renderRegularPlanningList();
-			}
-		}
-
-		// רינדור למצב שבועי עם חלוקה לפי ימים
-		function renderWeeklyPlanningByDays() {
-			const container = document.getElementById('planningCardsContainer');
-			const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
-			
-			let html = '';
-			
-			dayNames.forEach(dayName => {
-				const dayClients = planningClients.filter(client => 
-					(client.allowed_day || 'יום ראשון') === dayName
-				);
+			container.innerHTML = planningClients.map((client, index) => {
+				const nextVisitFormatted = formatDate(client.next_visit);
+				const overdueDaysText = client.daysOverdue > 0 ? ` (איחור ${client.daysOverdue} ימים)` : '';
 				
-				if (dayClients.length > 0) {
-					html += `
-						<div class="weekly-day-section">
-							<h4 class="weekly-day-header">---- ${dayName} -------</h4>
-							${dayClients.map(client => renderClientRow(client)).join('')}
+				return `
+					<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
+						<div class="planning-row-main">
+							<div class="planning-client-info">
+								<div class="planning-client-name">${client.name}</div>
+								<div class="planning-client-address">${client.full_address}</div>
+								<div class="planning-client-date">📅 ${nextVisitFormatted}${overdueDaysText}</div>
+							</div>
+							<div class="planning-client-price">₪${client.base_amount || 0}</div>
+							<div class="planning-client-actions">
+								<button class="planning-action-btn planning-complete" title="התחלת טיפול" onclick="completePlanningVisit('${client.ID}')">▶</button>
+								<button class="planning-action-btn planning-postpone" title="דחיה" onclick="postponePlanningVisit('${client.ID}')">⏰</button>
+								<button class="planning-action-btn planning-menu" title="עוד פעולות" onclick="showPlanningClientMenu('${client.ID}')">⋮</button>
+							</div>
 						</div>
-					`;
-				}
-			});
-			
-			container.innerHTML = html;
-		}
-
-		// רינדור רגיל (יומי/מאחרות)
-		function renderRegularPlanningList() {
-			const container = document.getElementById('planningCardsContainer');
-			container.innerHTML = planningClients.map(client => renderClientRow(client)).join('');
-		}
-
-		// רינדור שורת לקוח (משותף לשני המצבים)
-		function renderClientRow(client) {
-			const nextVisitFormatted = formatDate(client.next_visit);
-			const overdueDaysText = client.daysOverdue > 0 ? 
-				` (איחור ${client.daysOverdue} ימים)` : '';
-			
-			return `
-				<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
-					<div class="planning-row-main">
-						<div class="planning-client-info">
-							<div class="planning-client-name">${client.name}</div>
-							<div class="planning-client-address">${client.full_address}</div>
-							<div class="planning-client-date">📅 ${nextVisitFormatted}${overdueDaysText}</div>
-						</div>
-						<div class="planning-client-price">₪${client.base_amount || 0}</div>
-						<div class="planning-client-actions">
-							<button class="planning-action-btn planning-complete" title="התחלת טיפול" onclick="completePlanningVisit('${client.ID}')">▶</button>
-							<button class="planning-action-btn planning-postpone" title="דחיה" onclick="postponePlanningVisit('${client.ID}')">⏰</button>
-							<button class="planning-action-btn planning-menu" title="עוד פעולות" onclick="showPlanningClientMenu('${client.ID}')">⋮</button>
-						</div>
+						${(client.notes || client.client_requests) ? `
+							<div class="planning-row-details">
+								${client.client_requests ? `<div class="client-requests">🔹 ${client.client_requests}</div>` : ''}
+								${client.notes ? `<div class="client-notes">💭 ${client.notes}</div>` : ''}
+							</div>
+						` : ''}
 					</div>
-					${(client.notes || client.client_requests) ? `
-						<div class="planning-row-details">
-							${client.client_requests ? `<div class="client-requests">🔹 ${client.client_requests}</div>` : ''}
-							${client.notes ? `<div class="client-notes">📝 ${client.notes}</div>` : ''}
-						</div>
-					` : ''}
-				</div>
-			`;
+				`;
+			}).join('');
 		}
 	
 		// עדכון שעה מתוכננת ללקוח
@@ -2646,8 +2548,6 @@
 			const formData = new FormData(event.target);
 			const selectedLocationId = document.getElementById('locationSelect').value;
 			const visitDate = document.getElementById('visitDate').value; // התאריך הנוכחי
-			const endTime = document.getElementById('endTime').value;
-			const paymentStatus = document.getElementById('paymentStatus').value;
 			
 			// בדיקות בסיסיות
 			if (!selectedLocationId) {
@@ -2668,20 +2568,6 @@
 				}
 			}
 
-			// חישוב אוטומטי של משך הזמן אם יש שעת התחלה וסיום
-			let calculatedDuration = document.getElementById('duration_minutes').value;
-			const startTime = document.getElementById('visitTime').value;
-			if (startTime && endTime) {
-				const start = new Date(`2000-01-01 ${startTime}`);
-				const end = new Date(`2000-01-01 ${endTime}`);
-				const diffMs = end - start;
-				if (diffMs > 0) {
-					calculatedDuration = Math.round(diffMs / (1000 * 60)); // הפרש בדקות
-					document.getElementById('duration_minutes').value = calculatedDuration;
-				}
-			}
-
-
 			const visitData = {
 				location_id: selectedLocationId,  
 				visit_type: document.getElementById('visitType').value,
@@ -2690,11 +2576,11 @@
 				workers_count: parseInt(document.getElementById('numberOfWorkersVisit').value) || 1,		
 				amount: document.getElementById('amount').value || 0,
 				expense: document.getElementById('expense').value || 0,
+				paid: document.getElementById('paid') ? document.getElementById('paid').value : 'לא', // הוסף אם קיים
+				notes: document.getElementById('notes') ? document.getElementById('notes').value : '', // הוסף אם קיים
 				date: visitDate,
 				start_time: document.getElementById('visitTime').value,
-				end_time: endTime,
-				paid: paymentStatus,
-				notes: document.getElementById('notes') ? document.getElementById('notes').value : ''
+				end_time: document.getElementById('visitTime').value
 			};
 			
 			console.log('Visitdata:', visitData);
@@ -2988,7 +2874,7 @@
 						
 						<div class="form-group">
 							<label>יום מועדף:</label>
-							<select id="editLocationDay" value="${location.allowed_day||''}>
+							<select id="editLocationDay">
 								<option value="כל יום" ${location.allowed_day === 'כל יום' ? 'selected' : ''}>כל יום</option>
 								<option value="יום ראשון" ${location.allowed_day === 'יום ראשון' ? 'selected' : ''}>יום ראשון</option>
 								<option value="יום שני" ${location.allowed_day === 'יום שני' ? 'selected' : ''}>יום שני</option>
@@ -3609,7 +3495,7 @@
 			}
 		}
 	   
-	   //  ייבוא לקוחות מטבלת עזר
+	   // תוספה - ייבוא לקוחות מטבלת עזר
 		async function importCustomersFromHelper() {
 			try {
 				const importTableId = localStorage.getItem('importTableId');
@@ -3620,100 +3506,80 @@
 				
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: importTableId,
-					range: 'Locations!A2:G1000'
+					range: 'Locations!A2:G1000' // עד G במקום H
 				});
 				
 				const rows = response.result.values || [];
 				let importedCount = 0;
-				let updatedCount = 0;
-				let newLocations = [];
+				let newLocations = []; // מערך לאיסוף כל הלקוחות החדשים
 				
 				for (const row of rows) {
 					if (row.length > 0 && row[0]) { // יש שם לקוח
+						// מיפוי לפי הכותרות החדשות באנגלית:
 						const customerName = row[0].trim();  // customer_name
-						const frequency = parseInt(row[4]) || 4;
-						const contactPerson = row[5] || '';
-						const baseAmount = parseFloat(row[6]) || 0;
+						const street = row[1] || '';         // street  
+						const houseNumber = row[2] || '';    // house_number
+						const city = row[3] || '';           // city
+						const frequency = row[4] || '';      // frequency
+						const contactPerson = row[5] || '';  // contact_person
+						const baseAmount = row[6] || '';     // base_amount
 						
-						// פירוק הכתובת עם הלוגיקה החדשה
-						const addressData = parseAddressForImport(customerName);
+						// בניית כתובת מלאה
+						const fullAddress = `${street} ${houseNumber} ${city}`.trim();
 						
-						// בדיקה אם לקוח כבר קיים
+						// בדוק אם לקוח כבר קיים (לפי כתובת מלאה)
 						const existingCustomer = locations.find(loc => 
 							loc.full_address && 
-							loc.full_address.toLowerCase() === addressData.fullAddress.toLowerCase()
+							loc.full_address.toLowerCase() === fullAddress.toLowerCase()
 						);
 						
 						if (existingCustomer) {
-							// עדכון לקוח קיים עם פרטי כתובת מפורקת
-							let wasUpdated = false;
-							
-							if (existingCustomer.name !== addressData.name) {
-								existingCustomer.name = addressData.name;
-								wasUpdated = true;
-							}
-							if (existingCustomer.neighborhood !== addressData.neighborhood) {
-								existingCustomer.neighborhood = addressData.neighborhood;
-								wasUpdated = true;
-							}
-							if (existingCustomer.city !== addressData.city) {
-								existingCustomer.city = addressData.city;
-								wasUpdated = true;
-							}
-							
-							if (wasUpdated) {
-								updatedCount++;
-								console.log(`🔄 Updated address parts for: ${addressData.fullAddress}`);
-							}
-						} else {
-							// יצירת לקוח חדש
-							const locationData = {
-								ID: generateID(),
-								name: addressData.name,
-								full_address: addressData.fullAddress,
-								neighborhood: addressData.neighborhood,
-								city: addressData.city,
-								contact_person: contactPerson,
-								phone: '',
-								allowed_day: '',
-								interval_weeks: frequency,
-								temp_addition: 0,
-								base_amount: baseAmount,
-								active: "1",
-								notes: '',
-								last_visit: '',
-								next_visit: ''
-							};
-							
-							locations.push(locationData);
-							newLocations.push(locationData);
-							importedCount++;
-							
-							console.log(`✅ New customer: ${addressData.name} | ${addressData.city} | ${addressData.neighborhood}`);
+							console.log(`לקוח ${fullAddress} כבר קיים - דולג`);
+							continue;
 						}
+						
+						const locationData = {
+							ID: generateID(),
+							name: customerName,           // שם הלקוח (עכשיו נפרד מהכתובת)
+							full_address: fullAddress,   // כתובת מלאה מורכבת
+							neighborhood: '',
+							city: city,
+							contact_person: contactPerson,
+							phone: '',
+							allowed_day: 'כל יום',
+							interval_weeks: parseInt(frequency) || 4,
+							temp_addition: 0,
+							base_amount: parseFloat(baseAmount) || 0,
+							active: "1",
+							notes: 'יובא מטבלת לקוחות',
+							last_visit: '',
+							next_visit: ''
+						};
+						
+						locations.push(locationData);
+						newLocations.push(locationData); // הוסף למערך החדש
+						importedCount++;
 					}
 				}
 				
-				// שמירה
-				saveToLocalStorage();
+				// שמירה מקבצית אחת בסוף:
+				if (newLocations.length > 0) {
+					showToast(`שומר ${newLocations.length} לקוחות בבת אחת...`, 'info', 2000);
+					const success = await saveLocationsBatch(newLocations);
+					
+					if (success) {
+						showToast(`✅ יובאו ${importedCount} לקוחות במהירות!`, 'success');
+					} else {
+						showToast('⚠️ בעיה בשמירה לענן - נשמר מקומית בלבד', 'warning');
+					}
+				} else {
+					showToast('לא נמצאו לקוחות חדשים לייבוא', 'info');
+				}
 				
 				// עדכון תצוגות
-				loadReceiptsTable();
-				loadFilterOptions();  
+				saveToLocalStorage();
+				loadLocationsTable();
 				loadLocationsForSelect();
-				
-				// הודעת סיכום
-				let message = '';
-				if (importedCount > 0) message += `✅ יובאו: ${importedCount} לקוחות חדשים`;
-				if (updatedCount > 0) {
-					if (message) message += '\n';
-					message += `🔄 עודכנו: ${updatedCount} לקוחות עם פרטי כתובת`;
-				}
-				if (importedCount === 0 && updatedCount === 0) {
-					message = 'ℹ️ לא נמצאו לקוחות חדשים או עדכונים';
-				}
-				
-				showToast(message, importedCount > 0 ? 'success' : 'info', 4000);
 				
 			} catch (error) {
 				console.error('Error importing customers:', error);
@@ -3753,7 +3619,7 @@
 						const workDone = row[7] || '';          // work_done
 						const duration = row[8] || 0;           // duration
 						const amount = row[9] || 0;             // amount
-						const paid = row[10] || '';           // paid
+						const paid = row[10] || 'לא';           // paid
 						const expense = row[11] || 0;           // expense
 						const notes = row[12] || '';            // notes
 						
@@ -4089,9 +3955,9 @@
 				const row = document.createElement('tr');
 				
 				// הדגשת שורות לפי סטטוס תשלום
-				if (visit.paid === '0') {
+				if (visit.paid === 'לא') {
 					row.style.backgroundColor = '#fff2cc'; // צהוב עדין לחובות
-				} else if (visit.paid === '1') {
+				} else if (visit.paid === 'כן') {
 					row.style.backgroundColor = '#d4edda'; // ירוק עדין לשולם
 				}
 				
@@ -4109,7 +3975,7 @@
 					</td>
 					<td>
 						<span class="payment-status payment-${visit.paid}">
-							${getPaymentStatusText(visit.paid)}
+							${visit.paid === 'כן' ? '✅ שולם' : visit.paid === 'לא' ? '❌ לא שולם' : '⚪ ללא'}
 						</span>
 					</td>
 					<td>
@@ -4142,7 +4008,7 @@
 			const totalHours = filteredVisits.reduce((sum, visit) => sum + (visit.duration_minutes / 60), 0);
 			const totalIncome = filteredVisits.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			const outstandingDebt = filteredVisits
-				.filter(visit => visit.paid === '0')
+				.filter(visit => visit.paid === 'לא')
 				.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			
 			document.getElementById('visitsCount').textContent = visitsCount;
@@ -4161,7 +4027,7 @@
 			}
 			
 			// חישוב נתונים מפורטים יותר על חובות
-			const unpaidVisits = filteredVisits.filter(visit => visit.paid === '0');
+			const unpaidVisits = filteredVisits.filter(visit => visit.paid === 'לא');
 			const uniqueDebtors = new Set(unpaidVisits.map(visit => visit.location_id)).size;
 			
 			// הצגת מידע נוסף בכרטיסי הסיכום
@@ -4244,9 +4110,9 @@
 						<div class="form-group">
 							<label>סטטוס תשלום:</label>
 							<select id="editPaid">
-								<option value="0" ${visit.paid === '0' ? 'selected' : ''}>לא שולם</option>
-								<option value="1" ${visit.paid === '1' ? 'selected' : ''}>שולם</option>
-								<option value="2" ${visit.paid === '2' ? 'selected' : ''}>ללא תשלום</option>
+								<option value="לא" ${visit.paid === 'לא' ? 'selected' : ''}>לא שולם</option>
+								<option value="כן" ${visit.paid === 'כן' ? 'selected' : ''}>שולם</option>
+								<option value="ללא תשלום" ${visit.paid === 'ללא תשלום' ? 'selected' : ''}>ללא תשלום</option>
 							</select>
 						</div>
 						
@@ -4633,17 +4499,17 @@
 							{ properties: { title: 'Locations' } },
 							{ properties: { title: 'Visits' } },
 							{ properties: { title: 'Receipts' } },
-							{ properties: { title: 'SystemSettings' } },
+							{ properties: { title: 'SystemSettings' } }
 						]
 					})
 				});
 				
 				SPREADSHEET_ID = response.result.spreadsheetId;
 				
-				// הוסף כותרות לכל הגיליונות כולל 
+				// הוסף כותרות לכל הגיליונות
 				await addAllHeaders();
 				
-				showToast('נוצרה טבלה חדשה עם גיליון רחובות-שכונות!', 'success');
+				showToast('נוצרה טבלה חדשה!', 'success');
 				
 			} catch (error) {
 				console.error('Error creating spreadsheet:', error);
@@ -4656,27 +4522,10 @@
 			console.log('Checking and fixing table structure...');
 			
 			try {
-				// בדיקה אילו גיליונות קיימים
-				const response = await gapi.client.sheets.spreadsheets.get({
-					spreadsheetId: SPREADSHEET_ID
-				});
+				// בדיקת כותרות בכל גיליון
+				const sheetsToCheck = ['Locations', 'Visits', 'Receipts'];
 				
-				const existingSheets = response.result.sheets.map(sheet => sheet.properties.title);
-				console.log('Existing sheets:', existingSheets);
-				
-				// רשימת כל הגיליונות שצריכים להיות
-				const requiredSheets = ['Locations', 'Visits', 'Receipts', 'SystemSettings'];
-				
-				// בדיקה אילו גיליונות חסרים
-				const missingSheets = requiredSheets.filter(sheet => !existingSheets.includes(sheet));
-				
-				if (missingSheets.length > 0) {
-					console.log('Missing sheets:', missingSheets);
-					await createMissingSheets(missingSheets);
-				}
-				
-				// בדיקת כותרות בכל הגיליונות הקיימים והחדשים
-				for (const sheetName of requiredSheets) {
+				for (const sheetName of sheetsToCheck) {
 					try {
 						const response = await gapi.client.sheets.spreadsheets.values.get({
 							spreadsheetId: SPREADSHEET_ID,
@@ -4693,50 +4542,13 @@
 					}
 				}
 				
-				console.log('✅ Table structure verified and fixed');
+				console.log('✅ Table structure verified');
 				
 			} catch (error) {
 				console.log('Headers check failed, will force add them:', error);
 				await addAllHeaders();
 			}
 		}
-		
-		// פונקציה חדשה ליצירת גיליונות חסרים
-		async function createMissingSheets(missingSheets) {
-			try {
-				console.log(`Creating ${missingSheets.length} missing sheets:`, missingSheets);
-				
-				const requests = missingSheets.map(sheetName => ({
-					addSheet: {
-						properties: {
-							title: sheetName,
-							gridProperties: {
-								rowCount: 1000,
-								columnCount: 20
-							}
-						}
-					}
-				}));
-				
-				await gapi.client.sheets.spreadsheets.batchUpdate({
-					spreadsheetId: SPREADSHEET_ID,
-					resource: { requests }
-				});
-				
-				console.log('✅ Missing sheets created successfully');
-				showToast(`נוצרו ${missingSheets.length} גיליונות חסרים: ${missingSheets.join(', ')}`, 'success');
-				
-				// הוספת כותרות לגיליונות החדשים
-				for (const sheetName of missingSheets) {
-					await addHeadersToSheet(sheetName);
-				}
-				
-			} catch (error) {
-				console.error('Error creating missing sheets:', error);
-				showToast('שגיאה ביצירת גיליונות חסרים', 'error');
-			}
-		}
-
 		
 		// פונקציה חדשה להוספת כותרות לגיליון ספציפי
 		async function addHeadersToSheet(sheetName) {
@@ -4746,38 +4558,36 @@
 				switch (sheetName) {
 					case 'Locations':
 						headers = [
-							'ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 
-							'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 
-							'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 'client_requests'
+							'ID', 'name', 'full_address', 'neighborhood', 'city', 
+							'contact_person', 'phone', 'allowed_day', 'interval_weeks', 
+							'temp_addition', 'base_amount', 'active', 'notes', 
+							'last_visit', 'next_visit'
 						];
 						break;
 					case 'Visits':
 						headers = [
 							'ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 
-							'duration_minutes', 'start_time', 'end_time', 'amount', 'expense', 'paid', 'notes'
+							'duration_minutes', 'num_workers', 'start_time', 'end_time', 
+							'amount', 'expense', 'paid', 'notes'
 						];
 						break;
 					case 'Receipts':
 						headers = [
-							'ID', 'code_x', 'booklet', 'receipt', 'date', 'address', 
-							'amount', 'type', 'notes', 'details'
+							'ID', 'book_number', 'receipt_number', 'date', 'location_id', 
+							'location_name', 'amount', 'payment_type', 'notes'
 						];
-						break;
-					case 'SystemSettings':
-						headers = ['Setting', 'Value'];
 						break;
 				}
 				
-				if (headers.length > 0) {
-					await gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: SPREADSHEET_ID,
-						range: `${sheetName}!A1:${String.fromCharCode(64 + headers.length)}1`,
-						valueInputOption: 'RAW',
-						resource: { values: [headers] }
-					});
-					
-					console.log(`✅ Headers added to ${sheetName}`);
-				}
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${sheetName}!A1:${String.fromCharCode(64 + headers.length)}1`,
+					valueInputOption: 'RAW',
+					values: [headers]
+				});
+				
+				console.log(`✅ Added headers to ${sheetName}`);
+				
 			} catch (error) {
 				console.error(`Error adding headers to ${sheetName}:`, error);
 			}
@@ -5581,7 +5391,6 @@
 	   
 	   // פונקציה להצגת חובות
 		function displayDebts() {
-			//// console.log('דוגמאות ערכי paid:', visits.slice(0, 5).map(v => v.paid));
 			const sortBy = document.getElementById('debtSortBy').value;
 			const minAmount = parseFloat(document.getElementById('minDebtAmount').value) || 0;
 			
@@ -5722,7 +5531,7 @@
 		// הצגת פירוט חוב ללקוח
 		function showDebtDetails(locationId) {
 			const location = locations.find(loc => loc.ID == locationId);
-			const locationVisits = visits.filter(v => v.location_id == locationId && v.paid === '0');
+			const locationVisits = visits.filter(v => v.location_id == locationId && v.paid === 'לא');
 			
 			let details = `פירוט חוב עבור: ${location?.name}\n\n`;
 			
@@ -5743,8 +5552,8 @@
 		function markDebtAsPaid(locationId) {
 			if (confirm('לסמן את כל החובות של הלקוח הזה כמסולקים?')) {
 				visits.forEach(visit => {
-					if (visit.location_id == locationId && visit.paid === '0') {
-						visit.paid = '1';
+					if (visit.location_id == locationId && visit.paid === 'לא') {
+						visit.paid = 'כן';
 					}
 				});
 				
@@ -5758,7 +5567,7 @@
 	    // התראה על חובות חמורים
 		function checkCriticalDebts() {
 			const criticalDebts = visits.filter(visit => {
-				if (visit.paid !== '0') return false;
+				if (visit.paid !== 'לא') return false;
 				
 				const daysSince = Math.floor((new Date() - new Date(visit.date)) / (1000 * 60 * 60 * 24));
 				return daysSince > 90 || parseFloat(visit.amount) > 1000;
@@ -5791,7 +5600,7 @@
 				sum + parseFloat(visit.amount || 0), 0);
 			
 			const paidRevenue = monthlyVisits
-				.filter(visit => visit.paid === '1')
+				.filter(visit => visit.paid === 'כן')
 				.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			
 			const totalHours = monthlyVisits.reduce((sum, visit) => 
@@ -6106,14 +5915,6 @@
 					const lastVisit = locationVisits[0];
 					const lastVisitDate = lastVisit.date;
 					
-					// חישוב יום מועדף לפי הביקור האחרון
-					if (!location.allowed_day || location.allowed_day === '') {
-						const lastDate = new Date(lastVisitDate);
-						const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
-						location.allowed_day = dayNames[lastDate.getDay()];
-						console.log(`📅 ${location.name}: יום מועדף חושב כ-${location.allowed_day} (לפי ביקור מ-${lastVisitDate})`);
-					}
-					
 					// חישוב תאריך הטיפול הבא
 					const lastDate = new Date(lastVisitDate);
 					const intervalDays = (location.interval_weeks || 4) * 7; // ברירת מחדל 4 שבועות
@@ -6157,7 +5958,7 @@
 				// קרא את כל הנתונים הנוכחיים מהטבלה
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:P'
+					range: 'Locations!A:O'
 				});
 				
 				const allRows = response.result.values || [];
@@ -6169,8 +5970,7 @@
 					// מצא את השורה המתאימה בטבלה
 					for (let i = 1; i < allRows.length; i++) { // מתחיל מ-1 כדי לדלג על הכותרות
 						if (allRows[i][0] === location.ID) {
-							// עדכן את עמודות התאריכים והיום המועדף
-							updatedRows[i][7] = location.allowed_day;   // allowed_day (עמודה 7)
+							// עדכן את עמודות התאריכים (עמודות 13 ו-14)
 							updatedRows[i][13] = location.last_visit;   // last_visit
 							updatedRows[i][14] = location.next_visit;   // next_visit
 							updatedCount++;
@@ -6182,7 +5982,7 @@
 				// שמור את כל הטבלה המעודכנת בקריאה אחת בלבד
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:P',
+					range: 'Locations!A:O',
 					valueInputOption: 'USER_ENTERED',
 					resource: {
 						values: updatedRows
@@ -6296,10 +6096,10 @@
 			
 			try {
 				showLoading('מייבא נתונים מהר מטבלת העזר...');
-			
+				
 				// מעקב סטטיסטיקות
 				const stats = {
-					locations: { imported: 0, updated: 0, skipped: 0 },
+					locations: { imported: 0, skipped: 0 },
 					visits: { imported: 0, skipped: 0 },
 					receipts: { imported: 0, skipped: 0 }
 				};
@@ -6309,88 +6109,94 @@
 				const newVisits = [];
 				const newReceipts = [];
 				
-				// קריאה מקבילית מכל הגיליונות
-				const [locationsResponse, visitsResponse, receiptsResponse] = await Promise.all([
-					gapi.client.sheets.spreadsheets.values.get({
+				// ======== שלב 1: קריאת נתונים ברצף (כמו בפונקציות שעובדות) ========
+				let locationsResponse, visitsResponse, receiptsResponse;
+				
+				try {
+					console.log('📊 Loading locations data...');
+					locationsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
 						range: 'Locations!A2:G1000'
-					}),
-					gapi.client.sheets.spreadsheets.values.get({
+					});
+				} catch (error) {
+					console.log('📊 Locations sheet not found or empty');
+					locationsResponse = { result: { values: [] } };
+				}
+				
+				try {
+					console.log('🔧 Loading visits data...');
+					visitsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
 						range: 'Visits!A2:M1000'
-					}),
-					gapi.client.sheets.spreadsheets.values.get({
+					});
+				} catch (error) {
+					console.log('🔧 Visits sheet not found or empty');
+					visitsResponse = { result: { values: [] } };
+				}
+				
+				try {
+					console.log('🧾 Loading receipts data...');
+					receiptsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
 						range: 'Receipts!A2:K1000'
-					})
-				]);
+					});
+				} catch (error) {
+					console.log('🧾 Receipts sheet not found or empty');
+					receiptsResponse = { result: { values: [] } };
+				}
 				
-				// ======== שלב 1: עיבוד לקוחות עם פירוק כתובות ========
+				console.log('📊 Raw data loaded:', {
+					locations: locationsResponse.result.values?.length || 0,
+					visits: visitsResponse.result.values?.length || 0,
+					receipts: receiptsResponse.result.values?.length || 0
+				});
+				
+				// ======== שלב 2: עיבוד לקוחות ========
 				if (locationsResponse.result.values?.length > 0) {
-					showToast('מעבד לקוחות עם פירוק כתובות...', 'info', 1500);
+					showToast('מעבד לקוחות...', 'info', 1500);
 					
 					for (const row of locationsResponse.result.values) {
-						if (row.length > 0 && row[0]) {
+						if (row.length > 0 && row[0]) { // יש שם לקוח
 							const customerName = row[0].trim();
-							const frequency = parseInt(row[4]) || 4;
-							const contactPerson = row[5] || '';
-							const baseAmount = parseFloat(row[6]) || 0;
+							const street = row[1] || '';
+							const houseNumber = row[2] || '';
+							const city = row[3] || '';
+							const fullAddress = `${street} ${houseNumber} ${city}`.trim();
 							
-							// **השימוש בפונקציה החדשה לפירוק כתובת**
-							const addressData = parseAddressForImport(customerName);
-							
-							// בדיקה אם לקוח כבר קיים
-							const existingCustomer = locations.find(loc => 
-								loc.full_address && 
-								loc.full_address.toLowerCase() === addressData.fullAddress.toLowerCase()
+							// בדיקת כפילות לפי שם ו/או כתובת
+							const isDuplicate = locations.some(existing =>
+								existing.name.toLowerCase() === customerName.toLowerCase() ||
+								(fullAddress && existing.full_address && 
+								 existing.full_address.toLowerCase() === fullAddress.toLowerCase())
 							);
 							
-							if (existingCustomer) {
-								// עדכון פרטי כתובת לקיים
-								let wasUpdated = false;
-								
-								if (existingCustomer.name !== addressData.name) {
-									existingCustomer.name = addressData.name;
-									wasUpdated = true;
-								}
-								if (existingCustomer.neighborhood !== addressData.neighborhood) {
-									existingCustomer.neighborhood = addressData.neighborhood;
-									wasUpdated = true;
-								}
-								if (existingCustomer.city !== addressData.city) {
-									existingCustomer.city = addressData.city;
-									wasUpdated = true;
-								}
-								
-								if (wasUpdated) {
-									stats.locations.updated++;
-								} else {
-									stats.locations.skipped++;
-								}
-							} else {
-								// לקוח חדש עם כתובת מפורקת
-								const locationData = {
-									ID: generateID(),
-									name: addressData.name,
-									full_address: addressData.fullAddress,
-									neighborhood: addressData.neighborhood,
-									city: addressData.city,
-									contact_person: contactPerson,
-									phone: '',
-									allowed_day: '',
-									interval_weeks: frequency,
-									temp_addition: 0,
-									base_amount: baseAmount,
-									active: "1",
-									notes: '',
-									last_visit: '',
-									next_visit: ''
-								};
-								
-								locations.push(locationData);
-								newLocations.push(locationData);
-								stats.locations.imported++;
+							if (isDuplicate) {
+								stats.locations.skipped++;
+								console.log(`⚠️ Duplicate customer skipped: ${customerName}`);
+								continue;
 							}
+							
+							const locationData = {
+								ID: generateID(),
+								name: customerName,
+								full_address: fullAddress || customerName, // ← תיקון: גם שם הלקוח אם אין כתובת נפרדת
+								neighborhood: '',
+								city: city,
+								contact_person: row[5] || '',
+								phone: '',
+								allowed_day: '',
+								interval_weeks: parseInt(row[4]) || 4,
+								temp_addition: 0,
+								base_amount: parseFloat(row[6]) || 0,
+								active: "1",
+								notes: '',
+								last_visit: '',
+								next_visit: ''
+							};
+							
+							locations.push(locationData);
+							newLocations.push(locationData);
+							stats.locations.imported++;
 						}
 					}
 				}
@@ -6405,9 +6211,9 @@
 						if (row.length > 3 && row[3]) { // יש לקוח בעמודה 3
 							const customerName = row[3].trim();
 							
-							// מצא לקוח קיים - עכשיו לפי full_address במקום name
+							// מצא לקוח קיים
 							const existingCustomer = locations.find(loc =>
-								loc.full_address && loc.full_address.toLowerCase().includes(customerName.toLowerCase())
+								loc.name && loc.name.toLowerCase() === customerName.toLowerCase()
 							);
 							
 							if (!existingCustomer) {
@@ -6445,65 +6251,88 @@
 								ID: generateID(),
 								date: visitDate,
 								location_id: existingCustomer.ID,
-								location_name: existingCustomer.name, // עכשיו זה רק שם הרחוב
-								visit_type: row[5] || 'ביקור',
+								location_name: customerName, // ← הוספנו את השם!
+								visit_type: row[5] || 'regular',
 								work_done: workDone,
-								duration_minutes: parseInt(row[8]) || 0,
+								duration_minutes: (parseFloat(row[8]) || 0) * 60,
+								num_workers: 1,
 								start_time: '',
 								end_time: '',
 								amount: amount,
 								expense: parseFloat(row[11]) || 0,
-								paid: row[10] || 'לא',
-								notes: row[12] || `יובא מטבלת עזר: ${customerName}`
+								paid: mapPaymentStatus(row[10]),
+								notes: row[12] || ''
 							};
 							
 							visits.push(visitData);
 							newVisits.push(visitData);
+							//** עדכון תאריכי טיפול לאחר הוספת ביקור חדש
+							//** await updateSingleLocationTreatmentDates(visitData.location_id);
 							stats.visits.imported++;
 						}
 					}
 					
 					if (notFoundCustomers.length > 0) {
-						console.warn('לקוחות לא נמצאו עבור ביקורים:', notFoundCustomers.slice(0, 5));
+						console.log(`⚠️ ${notFoundCustomers.length} customers not found for visits:`, notFoundCustomers.slice(0, 5));
 					}
 				}
 				
-				// ======== שלב 3: עיבוד קבלות ========
+				// ======== שלב 4: עיבוד קבלות ========
 				if (receiptsResponse.result.values?.length > 0) {
 					showToast('מעבד קבלות...', 'info', 1500);
 					
+					let notFoundAddresses = [];
+					
 					for (const row of receiptsResponse.result.values) {
-						if (row.length > 5) {
+						if (row.length > 6 && row[6]) { // יש כתובת בעמודה 6
+							const customerAddress = row[6].trim();
+							
+							// מצא לקוח לפי כתובת - גם בשם וגם בכתובת מלאה
+							const existingCustomer = locations.find(loc =>
+								(loc.name && loc.name.toLowerCase().includes(customerAddress.toLowerCase())) ||
+								(loc.full_address && loc.full_address.toLowerCase().includes(customerAddress.toLowerCase()))
+							);
+							
+							if (!existingCustomer) {
+								if (!notFoundAddresses.includes(customerAddress)) {
+									notFoundAddresses.push(customerAddress);
+								}
+								stats.receipts.skipped++;
+								continue;
+							}
+							
+							// בניית תאריך
 							const year = row[3];
 							const month = String(row[4]).padStart(2, '0');
 							const day = String(row[5]).padStart(2, '0');
 							const receiptDate = `${year}-${month}-${day}`;
-							const amount = parseFloat(row[7]) || 0;
-							const address = row[6] || '';
+							
+							const bookNumber = row[1] || '';
+							const receiptNumber = row[2] || '';
 							
 							// בדיקת כפילות קבלה
 							const isDuplicateReceipt = receipts.some(existing =>
-								existing.date === receiptDate &&
-								existing.address === address &&
-								Math.abs(existing.amount - amount) < 0.01
+								existing.book_number === bookNumber &&
+								existing.receipt_number === receiptNumber &&
+								existing.date === receiptDate
 							);
 							
 							if (isDuplicateReceipt) {
 								stats.receipts.skipped++;
+								console.log(`⚠️ Duplicate receipt skipped: ${bookNumber}/${receiptNumber}`);
 								continue;
 							}
 							
 							const receiptData = {
 								ID: generateID(),
-								code_x: row[0] || '',
-								booklet: row[1] || '',
-								receipt: row[2] || '',
+								book_number: bookNumber,
+								receipt_number: receiptNumber,
 								date: receiptDate,
-								address: address,
-								amount: amount,
-								type: row[8] || '',
-								notes: row[9] || '',
-								details: row[10] || ''
+								location_id: existingCustomer.ID,
+								location_name: customerAddress,
+								amount: parseFloat(row[7]) || 0,
+								payment_type: row[8] || '',
+								notes: `${row[9] || ''} ${row[10] || ''}`.trim()
 							};
 							
 							receipts.push(receiptData);
@@ -6511,61 +6340,72 @@
 							stats.receipts.imported++;
 						}
 					}
-				}
 					
-			// ======== שלב 4: שמירה מקומית ובענן ========
-				console.log('💾 Saving all data...');
-				saveToLocalStorage();
-				
-				// עדכון תצוגות
-				loadReceiptsTable();
-				loadFilterOptions();
-				loadLocationsForSelect();
-				
-				// שמירה בענן אם יש נתונים חדשים
-				let allSaved = true;
-				if (newLocations.length > 0 || newVisits.length > 0 || newReceipts.length > 0) {
-					try {
-						await saveAllToSheetsOptimized();
-						console.log('☁️ Data saved to cloud successfully');
-					} catch (error) {
-						console.error('Cloud save error:', error);
-						allSaved = false;
+					if (notFoundAddresses.length > 0) {
+						console.log(`⚠️ ${notFoundAddresses.length} addresses not found for receipts:`, notFoundAddresses.slice(0, 5));
 					}
 				}
-					
-				// ======== שלב 5: דיווח תוצאות ========
+				
+				// ======== שלב 5: שמירה מקבצית לענן ========
+				showToast('שומר נתונים חדשים לענן...', 'info');
+				
+				const savePromises = [];
+				
+				if (newLocations.length > 0) {
+					savePromises.push(saveLocationsBatchNew(newLocations));
+				}
+				if (newVisits.length > 0) {
+					savePromises.push(saveVisitsBatchNew(newVisits));
+				}
+				if (newReceipts.length > 0) {
+					savePromises.push(saveReceiptsBatchNew(newReceipts));
+				}
+				
+				const saveResults = await Promise.all(savePromises);
+				const allSaved = saveResults.every(result => result === true);
+				
+				// ======== שלב 6: עדכון ממשק ========
+				saveToLocalStorage();
+				loadLocationsTable();
+				loadReceiptsTable();
+				loadLocationsForSelect();
+				loadFilterOptions();
+				
 				hideLoading();
 				
+				// ======== דיווח סופי ========
+				console.log('📊 Import completed:', stats);
+				
 				const totalImported = stats.locations.imported + stats.visits.imported + stats.receipts.imported;
-				const totalUpdated = stats.locations.updated;
 				const totalSkipped = stats.locations.skipped + stats.visits.skipped + stats.receipts.skipped;
 				
-				if (totalImported > 0 || totalUpdated > 0) {
-					const message = `🎉 יבוא מהיר הושלם בהצלחה!
-
-			📋 סיכום:
-			${stats.locations.imported > 0 ? `✅ לקוחות חדשים: ${stats.locations.imported}` : ''}
-			${stats.locations.updated > 0 ? `🔄 לקוחות מעודכנים (כתובות): ${stats.locations.updated}` : ''}
-			${stats.visits.imported > 0 ? `📅 ביקורים חדשים: ${stats.visits.imported}` : ''}
-			${stats.receipts.imported > 0 ? `🧾 קבלות חדשות: ${stats.receipts.imported}` : ''}
-			${totalSkipped > 0 ? `⚠️ דולגו (כפילויות): ${totalSkipped} רשומות` : ''}
-			${allSaved ? '☁️ נשמר לענן בהצלחה' : '⚠️ חלק מהנתונים לא נשמרו לענן'}
-
-			🏠 כתובות פורקו אוטומטית לרכיבים: רחוב, עיר, שכונה`;
-						
+				// חישוב ועדכון תאריכי טיפול (הוספה חדשה)
+				if (stats.visits.imported > 0) {
+					showToast('מחשב תאריכי טיפול...', 'info', 2000);
+					const updatedCount = await calculateTreatmentDates();
+					if (updatedCount > 0) {
+						showToast(`✅ עודכנו תאריכי טיפול עבור ${updatedCount} לקוחות`, 'success', 3000);
+					}
+				}
+				
+				if (totalImported > 0) {
+					const message = `🎉 ייבוא הושלם בהצלחה!
+					
+		✅ יובאו: ${stats.locations.imported} לקוחות, ${stats.visits.imported} ביקורים, ${stats.receipts.imported} קבלות
+		${totalSkipped > 0 ? `⚠️ דולגו (כפילויות): ${totalSkipped} רשומות` : ''}
+		${allSaved ? '☁️ נשמר לענן בהצלחה' : '⚠️ חלק מהנתונים לא נשמרו לענן'}`;
+					
 					showToast(message, 'success', 8000);
 				} else {
 					showToast('לא נמצאו נתונים חדשים לייבוא', 'info');
 				}
-					
+				
 			} catch (error) {
 				console.error('Error in fast import:', error);
 				hideLoading();
 				showToast('שגיאה בייבוא מהיר', 'error');
 			}
 		}
-			
 
 		// פונקציות עזר חדשות ומעודכנות לשמירה מקבצית
 		async function saveLocationsBatchNew(locationsArray) {
@@ -7008,69 +6848,32 @@
 	   
 	   // פונקציה להמרת סטטוס תשלום לקידוד מספרי
 		function mapPaymentStatus(value) {
-			if (!value || value.trim() === '') return "0";
+			if (!value || value.trim() === '') return "0"; // ערך ריק = לא שולם
 			const normalized = value.toString().toLowerCase().trim();
 			
-			// המרה פשוטה לפי הערכים שיכולים להגיע מהייבוא
-			if (normalized === "כן" || normalized === "true" || normalized === "1") return "1";
-			if (normalized === "ללא תשלום" || normalized === "ללא") return "2";
-			return "0"; // כל השאר = לא שולם
+			switch(normalized) {
+				case "כן":
+				case "true": 
+					return "1"; // שולם
+				case "לא":
+				case "false":
+					return "0"; // לא שולם
+				case "ללא תשלום":
+					return "2"; // ללא תשלום
+				default:
+					return "0"; // ברירת מחדל = לא שולם
+			}
 		}
 
 		// פונקציה להצגת טקסט ידידותי
 		function getPaymentStatusText(status) {
 			switch(status) {
+				case "1": return "שולם";
 				case "0": return "לא שולם";
-				case "1": return "שולם"; 
 				case "2": return "ללא תשלום";
 				default: return "לא שולם";
 			}
 		}
-	   
-
-		// פונקציה מעודכנת לפירוק כתובת עם כל התנאים
-		function parseAddressForImport(customerName) {
-			if (!customerName) return { name: '', fullAddress: '', neighborhood: '', city: '' };
-			
-			const originalAddress = customerName.trim();
-			const parts = originalAddress.split(' ');
-			let city = '';
-			
-			if (parts.length >= 3) {
-				// חיפוש מספר בית (מספר + אולי אות א/ב)
-				let houseNumberIndex = -1;
-				for (let i = 0; i < parts.length; i++) {
-					if (/^\d+[א-ב]?$/.test(parts[i])) {
-						houseNumberIndex = i;
-						break; // לוקח את המספר הראשון שנמצא
-					}
-				}
-				
-				if (houseNumberIndex !== -1 && houseNumberIndex < parts.length - 1) {
-					// יש מספר בית - כל מה שאחריו הוא עיר
-					city = parts.slice(houseNumberIndex + 1).join(' ');
-				} else {
-					// אין מספר בית - כל הכתובת היא עיר
-					city = originalAddress;
-				}
-			} else {
-				// פחות מ-3 מילים - כל הכתובת היא עיר
-				city = originalAddress;
-			}
-			
-			// ✅ המרת הקיצור אחרי שקבענו את העיר
-			if (city === 'ראשלצ') {
-				city = 'ראשון לציון';
-			}
-			
-			return {
-				name: originalAddress, // השם המקורי ללא שינוי
-				fullAddress: originalAddress,
-				neighborhood: '', // ריק למילוי ידני
-				city: city
-			};
-		}
-		   
 	   
    </script>
 </body>
