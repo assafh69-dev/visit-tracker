@@ -957,132 +957,6 @@
 		}
 		/***************************************/
 
-		/* סטיילינג למצב שבועי */
-		.weekly-day-section {
-			margin-bottom: 25px;
-		}
-
-		.weekly-day-header {
-			background: linear-gradient(45deg, #3498db, #2980b9);
-			color: white;
-			padding: 10px 15px;
-			border-radius: 8px;
-			margin-bottom: 12px;
-			font-size: 16px;
-			font-weight: bold;
-			text-align: center;
-			box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
-		}
-
-		.planning-empty-state {
-			text-align: center;
-			color: #666;
-			padding: 40px 20px;
-		}
-
-		.planning-empty-state h3 {
-			margin-bottom: 10px;
-			color: #4CAF50;
-		}
-
-
-/***************************************/
-/***************************************/
-
-		/* עדכון CSS לכרטיסיות תכנון - מבנה דו-שורתי */
-		.planning-row-details {
-			background: #f8f9fa;
-			padding: 8px 15px 12px 15px;
-			border-top: 1px solid #e9ecef;
-			font-size: 13px;
-		}
-
-		.client-requests {
-			color: #0066cc;
-			margin-bottom: 4px;
-			font-weight: 500;
-		}
-
-		.client-notes {
-			color: #666;
-			font-style: italic;
-		}
-
-		.planning-active-toggle {
-			margin-right: 5px;
-		}
-
-		.planning-history-btn {
-			background: #6c757d;
-			color: white;
-			border: none;
-			padding: 6px 10px;
-			border-radius: 4px;
-			font-size: 11px;
-			cursor: pointer;
-		}
-
-		.planning-history-btn:hover {
-			background: #5a6268;
-		}
-
-/***************************************/
-
-		/* תיקון CSS לכפתורי הפעולה החדשים */
-		.planning-client-actions {
-			display: flex;
-			gap: 5px;
-			align-items: center;
-			flex-wrap: wrap;
-		}
-
-		.planning-date-input {
-			padding: 4px 6px;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-			font-size: 11px;
-			width: 100px;
-			background: white;
-		}
-
-		.planning-active-toggle {
-			padding: 4px 6px;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-			font-size: 11px;
-			background: white;
-			width: 70px;
-		}
-
-		.planning-history-btn {
-			background: #6c757d;
-			color: white;
-			border: none;
-			padding: 6px 8px;
-			border-radius: 4px;
-			font-size: 11px;
-			cursor: pointer;
-			min-width: 35px;
-		}
-
-		.planning-history-btn:hover {
-			background: #5a6268;
-		}
-
-		/* תגובה למובייל */
-		@media (max-width: 768px) {
-			.planning-client-actions {
-				justify-content: center;
-				gap: 3px;
-			}
-			
-			.planning-date-input,
-			.planning-active-toggle {
-				font-size: 10px;
-				width: auto;
-				min-width: 60px;
-			}
-		}
 	</style>
    
 </head>
@@ -1112,7 +986,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -1191,12 +1065,6 @@
 							<label for="visitTime">שעת התחלה:</label>
 							<input type="time" id="visitTime" required>
 						</div>
-						
-						<div class="form-group">
-							<label for="endTime">שעת סיום:</label>
-							<input type="time" id="endTime">
-						</div>
-						
                         <div class="form-group">
                             <label for="visitType">סוג טיפול:</label>
                             <select id="visitType" required>
@@ -1240,16 +1108,6 @@
 							<label for="expense">הוצאה:</label>
 							<input type="number" id="expense" placeholder="הוצאות נילוות" onchange="calculateTreatmentCost()">
 						</div>
-						
-						<div class="form-group">
-							<label for="paymentStatus">סטטוס תשלום:</label>
-							<select id="paymentStatus">
-								<option value="0">לא שולם</option>
-								<option value="1">שולם</option>
-								<option value="2">ללא תשלום</option>
-							</select>
-						</div>
-						
                         <button type="submit">שמור טיפול</button>
                     </form>
                 </div>
@@ -1674,44 +1532,30 @@
 			try {
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.LOCATIONS}!A:P` // וודא שקוראים עד עמודה P
+					range: `${SHEETS.LOCATIONS}!A:O`
 				});
 				
 				const rows = response.result.values;
-				console.log('🔍 Raw locations data (first row):', rows ? rows[0] : 'No data');
-				console.log('🔍 Raw locations data (second row):', rows ? rows[1] : 'No data');
-				
 				if (rows && rows.length > 1) {
-					locations = rows.slice(1).map((row, index) => {
-						const location = {
-							ID: row[0] || '',
-							name: row[1] || '',
-							full_address: row[2] || '',
-							neighborhood: row[3] || '',
-							city: row[4] || '',
-							contact_person: row[5] || '',
-							phone: row[6] || '',
-							allowed_day: row[7] || '',
-							interval_weeks: row[8] || '',
-							temp_addition: row[9] || 0,
-							base_amount: row[10] || '',
-							active: row[11] || '',
-							notes: row[12] || '',
-							last_visit: row[13] || '',
-							next_visit: row[14] || '',
-							client_requests: row[15] || '' // עמודה P
-						};
-						
-						// לוג רק לשורות עם client_requests
-						if (row[15]) {
-							console.log(`✅ Row ${index + 1} - ${location.name}: client_requests = "${row[15]}"`);
-						}
-						
-						return location;
-					});
+					locations = rows.slice(1).map(row => ({
+						ID: row[0] || '',
+						name: row[1] || '',
+						full_address: row[2] || '',
+						neighborhood: row[3] || '',
+						city: row[4] || '',
+						contact_person: row[5] || '',
+						phone: row[6] || '',
+						allowed_day: row[7] || '',
+						interval_weeks: row[8] || '',
+						temp_addition: row[9] || 0,
+						base_amount: row[10] || '',
+						active: row[11] || '',
+						notes: row[12] || '',
+						client_requests: row[13] || '',
+						last_visit: row[14] || '',
+						next_visit: row[15] || ''
+					}));
 				}
-				
-				console.log('📊 Total locations loaded:', locations.length);
 				
 			} catch (error) {
 				console.error('Error loading locations:', error);
@@ -1780,69 +1624,6 @@
 		}
 		
 		// תוספה - שמירת מיקום חדש לשיטס
-		/* async function saveLocationToSheets(locationData) {
-		
-			console.log('📝 saveLocationToSheets started with client_requests:', locationData.client_requests);
-			
-			if (!await validateToken()) {
-				console.log('❌ Token validation failed');
-				showToast('החיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
-				return;
-			}
-    
-			console.log('✅ Token validated, proceeding to save...');
-	
-			try {
-				const values = [[
-					locationData.ID,
-					locationData.name,
-					locationData.full_address,
-					locationData.neighborhood,
-					locationData.city,
-					locationData.contact_person,
-					locationData.phone,
-					locationData.allowed_day,
-					locationData.interval_weeks,
-					locationData.temp_addition,
-					locationData.base_amount,
-					locationData.active,
-					locationData.notes,
-					locationData.last_visit,
-					locationData.next_visit,
-					locationData.client_requests || ''
-				]];
-				
-				console.log('📤 About to send to Google Sheets:', values[0][15]); 
-				
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.LOCATIONS}!A:P`,
-					valueInputOption: 'USER_ENTERED',
-					resource: { values: values }
-				});
-				
-				console.log('✅ Successfully saved to Google Sheets');
-				
-			} catch (error) {
-			
-				console.error('❌ Error in saveLocationToSheets:', error);
-			
-				console.error('Error saving location to sheets:', error);
-				
-				if (error.status === 401) {
-					access_token = null;
-					showToast('⚠️ החיבור פג - התחבר מחדש', 'warning');
-					document.getElementById('statusText').textContent = '🔓 נותק';
-				} else {
-					// שגיאות אחרות (לא קשורות לאסימון)
-					showToast('⚠️ שגיאה בשמירה לענן', 'error');
-				}
-				throw error;
-
-			}
-		}  */
-
-
 		async function saveLocationToSheets(locationData) {
 		
 			if (!await validateToken()) {
@@ -1892,7 +1673,6 @@
 			}
 		}
 
-
 		// שמירת ביקור חדש לשיטס
 		async function saveVisitToSheets(visitData) {
 			if (!await validateToken()) {
@@ -1916,7 +1696,6 @@
 					visitData.paid,
 					visitData.notes
 				]];
-				
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
@@ -2250,18 +2029,8 @@
 					});
 					break;
 				case 'weekly':
-					// במצב שבועי - מיון לפי ימים בשבוע
+					// לקוחות שצריכים טיפול השבוע הקרוב (כולל מי שכבר מאחר)
 					planningClients = filteredClients.filter(client => client.daysOverdue >= -7);
-					
-					// מיון לפי יום בשבוע ואז לפי זמן מתוכנן
-					planningClients.sort((a, b) => {
-						const dayOrder = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
-						const dayA = dayOrder.indexOf(a.allowed_day || 'יום ראשון');
-						const dayB = dayOrder.indexOf(b.allowed_day || 'יום ראשון');
-						
-						if (dayA !== dayB) return dayA - dayB;
-						return a.scheduledTime.localeCompare(b.scheduledTime);
-					});
 					break;
 				case 'overdue':
 					// רק לקוחות שכבר מאחרים
@@ -2341,79 +2110,34 @@
 				return;
 			}
 
-			// במצב שבועי - חלוקה לפי ימים
-			if (currentPlanningView === 'weekly') {
-				renderWeeklyPlanningByDays();
-			} else {
-				// במצב יומי או מאחרות - רשימה רגילה
-				renderRegularPlanningList();
-			}
-		}
-
-		// רינדור למצב שבועי עם חלוקה לפי ימים
-		function renderWeeklyPlanningByDays() {
-			const container = document.getElementById('planningCardsContainer');
-			const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
-			
-			let html = '';
-			
-			dayNames.forEach(dayName => {
-				const dayClients = planningClients.filter(client => 
-					(client.allowed_day || 'יום ראשון') === dayName
-				);
+			container.innerHTML = planningClients.map((client, index) => {
+				const nextVisitFormatted = formatDate(client.next_visit);
+				const overdueDaysText = client.daysOverdue > 0 ? ` (איחור ${client.daysOverdue} ימים)` : '';
 				
-				if (dayClients.length > 0) {
-					html += `
-						<div class="weekly-day-section">
-							<h4 class="weekly-day-header">---- ${dayName} -------</h4>
-							${dayClients.map(client => renderClientRow(client)).join('')}
+				return `
+					<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
+						<div class="planning-row-main">
+							<div class="planning-client-info">
+								<div class="planning-client-name">${client.name}</div>
+								<div class="planning-client-address">${client.full_address}</div>
+								<div class="planning-client-date">📅 ${nextVisitFormatted}${overdueDaysText}</div>
+							</div>
+							<div class="planning-client-price">₪${client.base_amount || 0}</div>
+							<div class="planning-client-actions">
+								<button class="planning-action-btn planning-complete" title="התחלת טיפול" onclick="completePlanningVisit('${client.ID}')">▶</button>
+								<button class="planning-action-btn planning-postpone" title="דחיה" onclick="postponePlanningVisit('${client.ID}')">⏰</button>
+								<button class="planning-action-btn planning-menu" title="עוד פעולות" onclick="showPlanningClientMenu('${client.ID}')">⋮</button>
+							</div>
 						</div>
-					`;
-				}
-			});
-			
-			container.innerHTML = html;
-		}
-
-		// רינדור רגיל (יומי/מאחרות)
-		function renderRegularPlanningList() {
-			const container = document.getElementById('planningCardsContainer');
-			container.innerHTML = planningClients.map(client => renderClientRow(client)).join('');
-		}
-
-		// רינדור שורת לקוח (משותף לשני המצבים)
-		function renderClientRow(client) {
-			const nextVisitFormatted = formatDate(client.next_visit);
-			const overdueDaysText = client.daysOverdue > 0 ? 
-				` (איחור ${client.daysOverdue} ימים)` : '';
-			
-			return `
-				<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
-					<div class="planning-row-main">
-						<div class="planning-client-info">
-							<div class="planning-client-name">${client.name}</div>
-							<div class="planning-client-address">${client.full_address}</div>
-							<div class="planning-client-date">📅 ${nextVisitFormatted}${overdueDaysText}</div>
-						</div>
-						<div class="planning-client-price">₪${client.base_amount || 0}</div>
-						<div class="planning-client-actions">
-							<button class="planning-action-btn planning-complete" title="התחלת טיפול" onclick="completePlanningVisit('${client.ID}')">▶</button>
-							<input type="date" class="planning-date-input" value="${client.next_visit}" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא">
-							<select class="planning-active-toggle" onchange="toggleClientActive('${client.ID}', this.value)" title="סטטוס לקוח">
-								<option value="1" ${client.active === "1" ? 'selected' : ''}>פעיל</option>
-								<option value="0" ${client.active === "0" ? 'selected' : ''}>לא פעיל</option>
-							</select>
-							<button class="planning-history-btn" onclick="showClientHistory('${client.ID}')" title="היסטוריית טיפולים">📋</button>
-						</div>
+						${(client.notes || client.client_requests) ? `
+							<div class="planning-row-details">
+								${client.client_requests ? `<div class="client-requests">🔹 ${client.client_requests}</div>` : ''}
+								${client.notes ? `<div class="client-notes">💭 ${client.notes}</div>` : ''}
+							</div>
+						` : ''}
 					</div>
-					${(client.notes || client.client_requests) ? `
-						<div class="planning-row-details">
-							${client.client_requests ? `<div class="client-requests">📝 בקשות: ${client.client_requests}</div>` : ''}
-							${client.notes ? `<div class="client-notes">💬 הערות: ${client.notes}</div>` : ''}
-						</div>
-					` : ''}
-				</div>
-			`;
+				`;
+			}).join('');
 		}
 	
 		// עדכון שעה מתוכננת ללקוח
@@ -2824,8 +2548,6 @@
 			const formData = new FormData(event.target);
 			const selectedLocationId = document.getElementById('locationSelect').value;
 			const visitDate = document.getElementById('visitDate').value; // התאריך הנוכחי
-			const endTime = document.getElementById('endTime').value;
-			const paymentStatus = document.getElementById('paymentStatus').value;
 			
 			// בדיקות בסיסיות
 			if (!selectedLocationId) {
@@ -2846,20 +2568,6 @@
 				}
 			}
 
-			// חישוב אוטומטי של משך הזמן אם יש שעת התחלה וסיום
-			let calculatedDuration = document.getElementById('duration_minutes').value;
-			const startTime = document.getElementById('visitTime').value;
-			if (startTime && endTime) {
-				const start = new Date(`2000-01-01 ${startTime}`);
-				const end = new Date(`2000-01-01 ${endTime}`);
-				const diffMs = end - start;
-				if (diffMs > 0) {
-					calculatedDuration = Math.round(diffMs / (1000 * 60)); // הפרש בדקות
-					document.getElementById('duration_minutes').value = calculatedDuration;
-				}
-			}
-
-
 			const visitData = {
 				location_id: selectedLocationId,  
 				visit_type: document.getElementById('visitType').value,
@@ -2868,11 +2576,11 @@
 				workers_count: parseInt(document.getElementById('numberOfWorkersVisit').value) || 1,		
 				amount: document.getElementById('amount').value || 0,
 				expense: document.getElementById('expense').value || 0,
+				paid: document.getElementById('paid') ? document.getElementById('paid').value : 'לא', // הוסף אם קיים
+				notes: document.getElementById('notes') ? document.getElementById('notes').value : '', // הוסף אם קיים
 				date: visitDate,
 				start_time: document.getElementById('visitTime').value,
-				end_time: endTime,
-				paid: paymentStatus,
-				notes: document.getElementById('notes') ? document.getElementById('notes').value : ''
+				end_time: document.getElementById('visitTime').value
 			};
 			
 			console.log('Visitdata:', visitData);
@@ -3166,7 +2874,7 @@
 						
 						<div class="form-group">
 							<label>יום מועדף:</label>
-							<select id="editLocationDay" value="${location.allowed_day||''}>
+							<select id="editLocationDay">
 								<option value="כל יום" ${location.allowed_day === 'כל יום' ? 'selected' : ''}>כל יום</option>
 								<option value="יום ראשון" ${location.allowed_day === 'יום ראשון' ? 'selected' : ''}>יום ראשון</option>
 								<option value="יום שני" ${location.allowed_day === 'יום שני' ? 'selected' : ''}>יום שני</option>
@@ -3201,13 +2909,13 @@
 						</div>
 						
 						<div class="form-group">
-							<label>הערות:</label>
-							<textarea id="editLocationNotes" rows="3">${location.notes || ''}</textarea>
+							<label>בקשות לקוח:</label>
+							<textarea id="editLocationClientRequests" rows="2">${location.client_requests || ''}</textarea>
 						</div>
 						
 						<div class="form-group">
-							<label>בקשות לקוח:</label>
-							<textarea id="editLocationClientRequests" rows="2">${location.client_requests || ''}</textarea>
+							<label>הערות:</label>
+							<textarea id="editLocationNotes" rows="3">${location.notes || ''}</textarea>
 						</div>
 						
 						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
@@ -3234,7 +2942,7 @@
 				// קריאת כל הנתונים מהענן
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:P' // ✅ שונה מ-A:O ל-A:P
+					range: 'Locations!A:O'
 				});
 				
 				const rows = response.result.values || [];
@@ -3265,13 +2973,12 @@
 						updatedLocation.active,
 						updatedLocation.notes,
 						updatedLocation.last_visit || '',
-						updatedLocation.next_visit || '',
-						updatedLocation.client_requests || '' // ✅ הוסף שדה client_requests
+						updatedLocation.next_visit || ''
 					];
 					
 					await gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: SPREADSHEET_ID,
-						range: `Locations!A${rowToUpdate}:P${rowToUpdate}`, // ✅ שונה מ-O ל-P
+						range: `Locations!A${rowToUpdate}:O${rowToUpdate}`,
 						valueInputOption: 'USER_ENTERED',
 						resource: {
 							values: [updatedRow]
@@ -3912,7 +3619,7 @@
 						const workDone = row[7] || '';          // work_done
 						const duration = row[8] || 0;           // duration
 						const amount = row[9] || 0;             // amount
-						const paid = row[10] || '';           // paid
+						const paid = row[10] || 'לא';           // paid
 						const expense = row[11] || 0;           // expense
 						const notes = row[12] || '';            // notes
 						
@@ -4248,9 +3955,9 @@
 				const row = document.createElement('tr');
 				
 				// הדגשת שורות לפי סטטוס תשלום
-				if (visit.paid === '0') {
+				if (visit.paid === 'לא') {
 					row.style.backgroundColor = '#fff2cc'; // צהוב עדין לחובות
-				} else if (visit.paid === '1') {
+				} else if (visit.paid === 'כן') {
 					row.style.backgroundColor = '#d4edda'; // ירוק עדין לשולם
 				}
 				
@@ -4268,7 +3975,7 @@
 					</td>
 					<td>
 						<span class="payment-status payment-${visit.paid}">
-							${getPaymentStatusText(visit.paid)}
+							${visit.paid === 'כן' ? '✅ שולם' : visit.paid === 'לא' ? '❌ לא שולם' : '⚪ ללא'}
 						</span>
 					</td>
 					<td>
@@ -4301,7 +4008,7 @@
 			const totalHours = filteredVisits.reduce((sum, visit) => sum + (visit.duration_minutes / 60), 0);
 			const totalIncome = filteredVisits.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			const outstandingDebt = filteredVisits
-				.filter(visit => visit.paid === '0')
+				.filter(visit => visit.paid === 'לא')
 				.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			
 			document.getElementById('visitsCount').textContent = visitsCount;
@@ -4320,7 +4027,7 @@
 			}
 			
 			// חישוב נתונים מפורטים יותר על חובות
-			const unpaidVisits = filteredVisits.filter(visit => visit.paid === '0');
+			const unpaidVisits = filteredVisits.filter(visit => visit.paid === 'לא');
 			const uniqueDebtors = new Set(unpaidVisits.map(visit => visit.location_id)).size;
 			
 			// הצגת מידע נוסף בכרטיסי הסיכום
@@ -4403,9 +4110,9 @@
 						<div class="form-group">
 							<label>סטטוס תשלום:</label>
 							<select id="editPaid">
-								<option value="0" ${visit.paid === '0' ? 'selected' : ''}>לא שולם</option>
-								<option value="1" ${visit.paid === '1' ? 'selected' : ''}>שולם</option>
-								<option value="2" ${visit.paid === '2' ? 'selected' : ''}>ללא תשלום</option>
+								<option value="לא" ${visit.paid === 'לא' ? 'selected' : ''}>לא שולם</option>
+								<option value="כן" ${visit.paid === 'כן' ? 'selected' : ''}>שולם</option>
+								<option value="ללא תשלום" ${visit.paid === 'ללא תשלום' ? 'selected' : ''}>ללא תשלום</option>
 							</select>
 						</div>
 						
@@ -4851,9 +4558,10 @@
 				switch (sheetName) {
 					case 'Locations':
 						headers = [
-							'ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 
-							'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 
-							'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 'client_requests'
+							'ID', 'name', 'full_address', 'neighborhood', 'city', 
+							'contact_person', 'phone', 'allowed_day', 'interval_weeks', 
+							'temp_addition', 'base_amount', 'active', 'notes', 
+							'last_visit', 'next_visit'
 						];
 						break;
 					case 'Visits':
@@ -5683,7 +5391,6 @@
 	   
 	   // פונקציה להצגת חובות
 		function displayDebts() {
-			//// console.log('דוגמאות ערכי paid:', visits.slice(0, 5).map(v => v.paid));
 			const sortBy = document.getElementById('debtSortBy').value;
 			const minAmount = parseFloat(document.getElementById('minDebtAmount').value) || 0;
 			
@@ -5824,7 +5531,7 @@
 		// הצגת פירוט חוב ללקוח
 		function showDebtDetails(locationId) {
 			const location = locations.find(loc => loc.ID == locationId);
-			const locationVisits = visits.filter(v => v.location_id == locationId && v.paid === '0');
+			const locationVisits = visits.filter(v => v.location_id == locationId && v.paid === 'לא');
 			
 			let details = `פירוט חוב עבור: ${location?.name}\n\n`;
 			
@@ -5845,8 +5552,8 @@
 		function markDebtAsPaid(locationId) {
 			if (confirm('לסמן את כל החובות של הלקוח הזה כמסולקים?')) {
 				visits.forEach(visit => {
-					if (visit.location_id == locationId && visit.paid === '0') {
-						visit.paid = '1';
+					if (visit.location_id == locationId && visit.paid === 'לא') {
+						visit.paid = 'כן';
 					}
 				});
 				
@@ -5860,7 +5567,7 @@
 	    // התראה על חובות חמורים
 		function checkCriticalDebts() {
 			const criticalDebts = visits.filter(visit => {
-				if (visit.paid !== '0') return false;
+				if (visit.paid !== 'לא') return false;
 				
 				const daysSince = Math.floor((new Date() - new Date(visit.date)) / (1000 * 60 * 60 * 24));
 				return daysSince > 90 || parseFloat(visit.amount) > 1000;
@@ -5893,7 +5600,7 @@
 				sum + parseFloat(visit.amount || 0), 0);
 			
 			const paidRevenue = monthlyVisits
-				.filter(visit => visit.paid === '1')
+				.filter(visit => visit.paid === 'כן')
 				.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
 			
 			const totalHours = monthlyVisits.reduce((sum, visit) => 
@@ -6060,14 +5767,14 @@
 					location.base_amount,
 					location.active,
 					location.notes,
+					location.client_requests || '',
 					formatDateForSheets(location.last_visit),
-					formatDateForSheets(location.next_visit),
-					location.client_requests || ''
+					formatDateForSheets(location.next_visit)
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.LOCATIONS}!A:P`, 
+					range: `${SHEETS.LOCATIONS}!A:O`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { 
 						values: values,
@@ -6208,14 +5915,6 @@
 					const lastVisit = locationVisits[0];
 					const lastVisitDate = lastVisit.date;
 					
-					// חישוב יום מועדף לפי הביקור האחרון
-					if (!location.allowed_day || location.allowed_day === '') {
-						const lastDate = new Date(lastVisitDate);
-						const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
-						location.allowed_day = dayNames[lastDate.getDay()];
-						console.log(`📅 ${location.name}: יום מועדף חושב כ-${location.allowed_day} (לפי ביקור מ-${lastVisitDate})`);
-					}
-					
 					// חישוב תאריך הטיפול הבא
 					const lastDate = new Date(lastVisitDate);
 					const intervalDays = (location.interval_weeks || 4) * 7; // ברירת מחדל 4 שבועות
@@ -6259,7 +5958,7 @@
 				// קרא את כל הנתונים הנוכחיים מהטבלה
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:P'
+					range: 'Locations!A:O'
 				});
 				
 				const allRows = response.result.values || [];
@@ -6271,8 +5970,7 @@
 					// מצא את השורה המתאימה בטבלה
 					for (let i = 1; i < allRows.length; i++) { // מתחיל מ-1 כדי לדלג על הכותרות
 						if (allRows[i][0] === location.ID) {
-							// עדכן את עמודות התאריכים והיום המועדף
-							updatedRows[i][7] = location.allowed_day;   // allowed_day (עמודה 7)
+							// עדכן את עמודות התאריכים (עמודות 13 ו-14)
 							updatedRows[i][13] = location.last_visit;   // last_visit
 							updatedRows[i][14] = location.next_visit;   // next_visit
 							updatedCount++;
@@ -6284,7 +5982,7 @@
 				// שמור את כל הטבלה המעודכנת בקריאה אחת בלבד
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:P',
+					range: 'Locations!A:O',
 					valueInputOption: 'USER_ENTERED',
 					resource: {
 						values: updatedRows
@@ -6855,13 +6553,11 @@
 				
 				// נסה לשמור בענן
 				if (access_token && SPREADSHEET_ID) {
-					console.log('🔍 About to call saveLocationToSheets with:', updatedLocation.client_requests);
 					// שמור בענן עם בדיקת חיבור
-					saveLocationToSheets(updatedLocation).then(() => {
+					updateLocationInCloud(updatedLocation).then(() => {
 						updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
 						showToast('לקוח עודכן בהצלחה במערכת ובענן!', 'success');
 					}).catch(error => {
-						console.error('❌ saveLocationToSheets failed:', error);
 						if (error.status === 401) {
 							updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
 							showToast('⚠️ החיבור לגוגל פג - הלקוח נשמר מקומית בלבד', 'warning');
@@ -7152,212 +6848,30 @@
 	   
 	   // פונקציה להמרת סטטוס תשלום לקידוד מספרי
 		function mapPaymentStatus(value) {
-			if (!value || value.trim() === '') return "0";
+			if (!value || value.trim() === '') return "0"; // ערך ריק = לא שולם
 			const normalized = value.toString().toLowerCase().trim();
 			
-			// המרה פשוטה לפי הערכים שיכולים להגיע מהייבוא
-			if (normalized === "כן" || normalized === "true" || normalized === "1") return "1";
-			if (normalized === "ללא תשלום" || normalized === "ללא") return "2";
-			return "0"; // כל השאר = לא שולם
+			switch(normalized) {
+				case "כן":
+				case "true": 
+					return "1"; // שולם
+				case "לא":
+				case "false":
+					return "0"; // לא שולם
+				case "ללא תשלום":
+					return "2"; // ללא תשלום
+				default:
+					return "0"; // ברירת מחדל = לא שולם
+			}
 		}
 
 		// פונקציה להצגת טקסט ידידותי
 		function getPaymentStatusText(status) {
 			switch(status) {
+				case "1": return "שולם";
 				case "0": return "לא שולם";
-				case "1": return "שולם"; 
 				case "2": return "ללא תשלום";
 				default: return "לא שולם";
-			}
-		}
-	   
-	   
-	   function parseAddressForImport(customerName) {
-			if (!customerName) return { name: '', fullAddress: '', neighborhood: '', city: '' };
-			
-			const originalAddress = customerName.trim();
-			const parts = originalAddress.split(' ');
-			let city = '';
-			
-			if (parts.length >= 3) {
-				// חיפוש מספר בית (מספר + אולי אות א/ב)
-				let houseNumberIndex = -1;
-				for (let i = 0; i < parts.length; i++) {
-					if (/^\d+[א-ב]?$/.test(parts[i])) {
-						houseNumberIndex = i;
-						break; // לוקח את המספר הראשון שנמצא
-					}
-				}
-				
-				if (houseNumberIndex !== -1 && houseNumberIndex < parts.length - 1) {
-					// יש מספר בית - כל מה שאחריו הוא עיר
-					city = parts.slice(houseNumberIndex + 1).join(' ');
-				} else {
-					// אין מספר בית - כל הכתובת היא עיר
-					city = originalAddress;
-				}
-			} else {
-				// פחות מ-3 מילים - כל הכתובת היא עיר
-				city = originalAddress;
-			}
-			
-			// ✅ המרת הקיצור אחרי שקבענו את העיר
-			if (city === 'ראשלצ') {
-				city = 'ראשון לציון';
-			}
-			
-			return {
-				name: originalAddress, // השם המקורי ללא שינוי
-				fullAddress: originalAddress,
-				neighborhood: '', // ריק למילוי ידני
-				city: city
-			};
-		}
-		
-		
-		// פונקציה לעדכון תאריך טיפול הבא
-		function updateClientNextVisit(clientId, newDate) {
-			if (!newDate) return;
-			
-			const client = locations.find(loc => loc.ID === clientId);
-			if (!client) return;
-			
-			client.next_visit = newDate;
-			client.temp_addition = 0; // איפוס תוספת זמנית
-			
-			// שמירה
-			saveToLocalStorage();
-			
-			// עדכון בענן אם מחובר
-			if (access_token && SPREADSHEET_ID) {
-				updateLocationInCloud(client);
-			}
-			
-			showToast(`תאריך הטיפול הבא עבור ${client.name} עודכן ל-${formatDate(newDate)}`, 'success');
-			
-			// רענון התצוגה
-			loadPlanningDataAdvanced();
-		}
-
-		// פונקציה להפיכת לקוח לפעיל/לא פעיל
-		function toggleClientActive(clientId, activeValue) {
-			const client = locations.find(loc => loc.ID === clientId);
-			if (!client) return;
-			
-			client.active = activeValue;
-			
-			// שמירה
-			saveToLocalStorage();
-			
-			// עדכון בענן אם מחובר
-			if (access_token && SPREADSHEET_ID) {
-				updateLocationInCloud(client);
-			}
-			
-			const statusText = activeValue === "1" ? "פעיל" : "לא פעיל";
-			showToast(`${client.name} הוגדר כ-${statusText}`, 'success');
-			
-			// רענון התצוגה (הלקוח ייעלם אם לא פעיל)
-			loadPlanningDataAdvanced();
-		}
-
-		// פונקציה להצגת היסטוריית טיפולים
-		function showClientHistory(clientId) {
-			const client = locations.find(loc => loc.ID === clientId);
-			if (!client) return;
-			
-			// מציאת 3 הטיפולים האחרונים
-			const clientVisits = visits
-				.filter(visit => visit.location_id === clientId)
-				.sort((a, b) => new Date(b.date) - new Date(a.date))
-				.slice(0, 3);
-			
-			if (clientVisits.length === 0) {
-				alert(`${client.name}\nאין עדיין היסטוריית טיפולים`);
-				return;
-			}
-			
-			// בניית תוכן החלונית
-			let historyHtml = `
-				<div style="background: white; padding: 20px; border-radius: 10px; max-width: 500px; max-height: 400px; overflow-y: auto;">
-					<h3 style="margin-bottom: 15px; color: #333;">📋 היסטוריית טיפולים - ${client.name}</h3>
-					<div style="margin-bottom: 20px; font-size: 12px; color: #666;">
-						כתובת: ${client.full_address}
-					</div>
-					<div style="space-y: 10px;">
-			`;
-			
-			clientVisits.forEach((visit, index) => {
-				const visitDate = formatDate(visit.date);
-				const amount = visit.amount || 0;
-				const workDone = visit.work_done || 'טיפול';
-				const paidStatus = visit.paid === 'כן' ? '✅ שולם' : '❌ לא שולם';
-				const paidColor = visit.paid === 'כן' ? '#28a745' : '#dc3545';
-				
-				historyHtml += `
-					<div style="border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: ${index === 0 ? '#f8f9ff' : '#fafafa'};">
-						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-							<strong style="color: #2c3e50;">📅 ${visitDate}</strong>
-							<span style="font-weight: bold; color: ${paidColor};">${paidStatus}</span>
-						</div>
-						<div style="margin-bottom: 5px; color: #666;">
-							🛠️ עבודה: ${workDone}
-						</div>
-						<div style="display: flex; justify-content: space-between; font-size: 14px;">
-							<span>💰 ₪${amount}</span>
-							${visit.duration_minutes ? `<span>⏱️ ${visit.duration_minutes} דק'</span>` : ''}
-						</div>
-						${visit.notes ? `<div style="margin-top: 8px; font-size: 12px; color: #666; font-style: italic;">📝 ${visit.notes}</div>` : ''}
-					</div>
-				`;
-			});
-			
-			historyHtml += `
-					</div>
-					<div style="text-align: center; margin-top: 20px;">
-						<button onclick="closeModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-							סגור
-						</button>
-					</div>
-				</div>
-			`;
-			
-			// הצגת החלונית
-			showModal(historyHtml);
-		}
-		
-	   
-	   // פונקציה לעדכון לקוח ספציפי בענן
-		async function updateLocationInCloud(client) {
-			if (!await validateToken()) return;
-			
-			try {
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:A'
-				});
-				
-				const rows = response.result.values || [];
-				const rowIndex = rows.findIndex(row => row[0] === client.ID);
-				
-				if (rowIndex > 0) {
-					const rowNumber = rowIndex + 1;
-					const clientRow = [
-						client.ID, client.name, client.full_address, client.neighborhood, client.city,
-						client.contact_person, client.phone, client.allowed_day, client.interval_weeks,
-						client.temp_addition, client.base_amount, client.active, client.notes,
-						client.last_visit, client.next_visit, client.client_requests || '' // ✅ הוסף
-					];
-					
-					await gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: SPREADSHEET_ID,
-						range: `Locations!A${rowNumber}:P${rowNumber}`, // ✅ שונה ל-P
-						valueInputOption: 'USER_ENTERED',
-						resource: { values: [clientRow] }
-					});
-				}
-			} catch (error) {
-				console.error('Error updating client in cloud:', error);
 			}
 		}
 	   
