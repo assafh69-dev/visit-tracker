@@ -1122,6 +1122,95 @@
 				min-width: 60px;
 			}
 		}
+		
+		/* טאבי ימים */
+		.days-tabs-container {
+			margin-bottom: 20px;
+		}
+
+		.days-tabs {
+			display: flex;
+			gap: 5px;
+			margin-bottom: 15px;
+			flex-wrap: wrap;
+			justify-content: center;
+		}
+
+		.day-tab-btn {
+			padding: 10px 15px;
+			border: 2px solid #ddd;
+			background: white;
+			border-radius: 20px;
+			cursor: pointer;
+			font-size: 13px;
+			font-weight: bold;
+			transition: all 0.3s ease;
+			min-width: 100px;
+		}
+
+		.day-tab-btn:hover {
+			background: #f8f9fa;
+			border-color: #3498db;
+		}
+
+		.day-tab-btn.active {
+			background: #3498db;
+			color: white;
+			border-color: #3498db;
+		}
+
+		.days-content {
+			min-height: 200px;
+		}
+
+		.day-content {
+			display: none;
+		}
+
+		.day-content.active {
+			display: block;
+		}
+		
+		
+		/* תגובה למובייל לטאבי ימים */
+		@media (max-width: 768px) {
+			.days-tabs {
+				flex-direction: column;
+				align-items: center;
+				gap: 8px;
+			}
+			
+			.day-tab-btn {
+				min-width: 80%;
+				max-width: 250px;
+				padding: 12px 20px;
+				font-size: 14px;
+			}
+			
+			.days-content {
+				min-height: 150px;
+			}
+		}
+
+		/* אנימציה חלקה לתוכן הימים */
+		.day-content {
+			opacity: 0;
+			transition: opacity 0.3s ease;
+		}
+
+		.day-content.active {
+			display: block;
+			opacity: 1;
+		}
+
+		/* שיפור לכותרת המכיל */
+		.days-tabs-container {
+			background: rgba(255,255,255,0.7);
+			border-radius: 12px;
+			padding: 15px;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+		}
+
 	</style>
    
 </head>
@@ -1151,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -2441,43 +2530,58 @@
 			}
 		}
 
-		// רינדור למצב שבועי עם חלוקה לפי ימים
-		// רינדור למצב שבועי עם חלוקה לפי ימי השבוع
+
+		// רינדור למצב שבועי ומאחרות עם טאבי ימים
 		function renderWeeklyPlanningByDays() {
 			const container = document.getElementById('planningCardsContainer');
 			const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
 			
-			let html = '';
-			
-			dayNames.forEach(dayName => {
-				// סינון לקוחות לפי יום מועדף
+			// יצירת מערך עם נתוני ימים
+			const daysData = dayNames.map(dayName => {
 				const dayClients = planningClients.filter(client => 
 					(client.allowed_day || 'יום ראשון') === dayName
 				);
+				// מיון לקוחות היום
+				dayClients.sort((a, b) => {
+					if (currentPlanningView === 'overdue') {
+						return b.daysOverdue - a.daysOverdue; // מאחרים - לפי דחיפות
+					} else {
+						return a.daysDiff - b.daysDiff; // שבועי - לפי תאריך
+					}
+				});
 				
-				if (dayClients.length > 0) {
-					// מיון לקוחות היום לפי תאריך הטיפול הבא
-					dayClients.sort((a, b) => a.daysDiff - b.daysDiff);
-					
-					html += `
-						<div class="weekly-day-section">
-							<div class="weekly-day-header">${dayName} (${dayClients.length})</div>
-							${dayClients.map(client => renderClientRow(client)).join('')}
-						</div>
-					`;
-				}
+				return { dayName, clients: dayClients };
 			});
 			
-			// אם יש לקוחות ללא יום מועדף מוגדר
-			const noPreferredDay = planningClients.filter(client => !client.allowed_day);
-			if (noPreferredDay.length > 0) {
-				html += `
-					<div class="weekly-day-section">
-						<div class="weekly-day-header">ללא יום מועדף (${noPreferredDay.length})</div>
-						${noPreferredDay.map(client => renderClientRow(client)).join('')}
-					</div>
-				`;
+			// רק ימים עם לקוחות
+			const activeDays = daysData.filter(day => day.clients.length > 0);
+			
+			if (activeDays.length === 0) {
+				container.innerHTML = '<div class="planning-empty-state"><h3>אין לקוחות להציג</h3></div>';
+				return;
 			}
+			
+			// יצירת HTML עם טאבים
+			let html = `
+				<div class="days-tabs-container">
+					<div class="days-tabs">
+						${activeDays.map((day, index) => 
+							`<button class="day-tab-btn ${index === 0 ? 'active' : ''}" 
+									 onclick="switchDayTab('${day.dayName}')" 
+									 data-day="${day.dayName}">
+								${day.dayName} (${day.clients.length})
+							</button>`
+						).join('')}
+					</div>
+					<div class="days-content">
+						${activeDays.map((day, index) => 
+							`<div class="day-content ${index === 0 ? 'active' : ''}" data-day="${day.dayName}">
+								${day.clients.map(client => renderClientRow(client)).join('')}
+							</div>`
+						).join('')}
+					</div>
+				</div>
+			`;
 			
 			container.innerHTML = html;
 		}
@@ -2539,6 +2643,20 @@
 					` : ''}
 				</div>
 			`;
+		}
+	
+		// החלפת טאב יום
+		function switchDayTab(dayName) {
+			// הסרת active מכל הכפתורים
+			document.querySelectorAll('.day-tab-btn').forEach(btn => btn.classList.remove('active'));
+			document.querySelectorAll('.day-content').forEach(content => content.classList.remove('active'));
+			
+			// הוספת active לכפתור ותוכן הנוכחיים
+			const activeBtn = document.querySelector(`[data-day="${dayName}"]`);
+			const activeContent = document.querySelector(`.day-content[data-day="${dayName}"]`);
+			
+			if (activeBtn) activeBtn.classList.add('active');
+			if (activeContent) activeContent.classList.add('active');
 		}
 	
 		// פונקציה חדשה: התחל טיפול (מעבר לטופס עם פרטי לקוח מוכנים)
