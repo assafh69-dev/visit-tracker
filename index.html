@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.6</button>
 			</nav>
         </header>
 
@@ -6128,8 +6128,39 @@
 			}
 		}
 
-		// הצגת פירוט חוב ללקוח במודל נוח
 		function showDebtDetails(locationId) {
+			try {
+				const location = locations.find(loc => loc.ID == locationId);
+				const locationVisits = visits.filter(v => v.location_id == locationId && v.paid === '0');
+				
+				if (!location || locationVisits.length === 0) {
+					alert('לא נמצאו חובות ללקוח זה');
+					return;
+				}
+				
+				let details = 'פירוט חובות - ' + location.name + '\n\n';
+				let totalDebt = 0;
+				
+				locationVisits.forEach(visit => {
+					details += formatDate(visit.date) + '\n';
+					details += (visit.work_done || 'עבודה לא צוינה') + '\n';
+					details += 'סכום: ₪' + visit.amount + '\n\n';
+					totalDebt += parseFloat(visit.amount);
+				});
+				
+				details += 'סה"כ חוב: ₪' + totalDebt.toLocaleString();
+				
+				alert(details);
+				
+			} catch (error) {
+				console.error('Error in showDebtDetails:', error);
+				alert('שגיאה בהצגת פרטי החוב');
+			}
+		}
+
+
+		// הצגת פירוט חוב ללקוח במודל נוח
+		<!-- function showDebtDetails(locationId) {
 			const location = locations.find(loc => loc.ID == locationId);
 			const locationVisits = visits.filter(v => v.location_id == locationId && v.paid === '0');
 			
@@ -6189,7 +6220,7 @@
 			`;
 			
 			showEditModal(modalContent);
-		}
+		}  --> 
 
 		// סימון חוב כמסולק
 		function markDebtAsPaid(locationId) {
