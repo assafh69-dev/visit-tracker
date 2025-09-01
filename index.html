@@ -6193,16 +6193,44 @@
 
 		// סימון חוב כמסולק
 		function markDebtAsPaid(locationId) {
-			if (confirm('לסמן את כל החובות של הלקוח הזה כמסולקים?')) {
-				visits.forEach(visit => {
-					if (visit.location_id == locationId && visit.paid === '0') {
-						visit.paid = '1';
-					}
+			const location = locations.find(loc => loc.ID == locationId);
+			if (!location) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			const unpaidVisits = visits.filter(v => v.location_id == locationId && v.paid === '0');
+			
+			if (unpaidVisits.length === 0) {
+				showToast('אין חובות פתוחים ללקוח זה', 'info');
+				return;
+			}
+			
+			const totalDebt = unpaidVisits.reduce((sum, v) => sum + parseFloat(v.amount), 0);
+			
+			if (confirm(`לסמן את כל החובות של ${location.name} כמסולקים?\n\nסה"כ: ₪${totalDebt.toLocaleString()}\nמספר טיפולים: ${unpaidVisits.length}`)) {
+				// עדכון כל הביקורים החייבים
+				unpaidVisits.forEach(visit => {
+					visit.paid = '1';
 				});
 				
+				// שמירה מקומית
 				saveToLocalStorage();
+				
+				// שמירה בענן אם מחובר
+				if (access_token && SPREADSHEET_ID) {
+					saveAllToSheets().then(() => {
+						console.log('✅ חובות עודכנו בענן');
+					}).catch(error => {
+						console.error('❌ שגיאה בעדכון ענן:', error);
+						showToast('החובות עודכנו מקומית, אך לא בענן', 'warning');
+					});
+				}
+				
+				// רענון התצוגה
 				displayDebts();
-				showToast('החובות סומנו כמסולקים!', 'success');
+				
+				showToast(`החובות של ${location.name} סומנו כמסולקים! (₪${totalDebt.toLocaleString()})`, 'success');
 			}
 		}
 
