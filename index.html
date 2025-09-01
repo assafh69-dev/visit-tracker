@@ -717,12 +717,66 @@
 				box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 			}
 
+			/***************************************************************/	
 			/* צבעי רמזור */
-			.planning-status-green { border-right: 4px solid #4CAF50; }
-			.planning-status-yellow { border-right: 4px solid #FFC107; }
-			.planning-status-orange { border-right: 4px solid #FF9800; }
-			.planning-status-red { border-right: 4px solid #F44336; }
+			/* צבעי סטטוס משופרים לתכנון */
+			.planning-status-green { 
+				border-right: 4px solid #27ae60;
+				background: linear-gradient(90deg, rgba(39, 174, 96, 0.1), white);
+			}
 
+			.planning-status-yellow { 
+				border-right: 4px solid #f39c12;
+				background: linear-gradient(90deg, rgba(243, 156, 18, 0.1), white);
+			}
+
+			.planning-status-orange { 
+				border-right: 4px solid #e67e22;
+				background: linear-gradient(90deg, rgba(230, 126, 34, 0.1), white);
+			}
+
+			.planning-status-red { 
+				border-right: 4px solid #e74c3c;
+				background: linear-gradient(90deg, rgba(231, 76, 60, 0.1), white);
+			}
+
+			.planning-status-gray {
+				border-right: 4px solid #95a5a6;
+				background: linear-gradient(90deg, rgba(149, 165, 166, 0.1), white);
+			}
+
+			/* כפתור התחל טיפול מעוצב */
+			.planning-complete {
+				background: linear-gradient(45deg, #27ae60, #2ecc71);
+				color: white;
+				font-size: 14px;
+				font-weight: bold;
+				width: 36px;
+				height: 36px;
+			}
+
+			.planning-complete:hover {
+				background: linear-gradient(45deg, #219a52, #27ae60);
+				transform: scale(1.05);
+			}
+
+			/* עיצוב משופר לכותרות יום בשבוע */
+			.weekly-day-header {
+				background: linear-gradient(45deg, #3498db, #2980b9);
+				color: white;
+				padding: 12px 15px;
+				border-radius: 8px;
+				margin-bottom: 12px;
+				font-size: 15px;
+				font-weight: bold;
+				text-align: center;
+				box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+			}
+			
+			
+			
+			
+			/****************************************************************/
 			.planning-row-main {
 				display: flex;
 				align-items: center;
@@ -780,11 +834,7 @@
 				transition: all 0.3s ease;
 			}
 
-			.planning-complete {
-				background: #4CAF50;
-				color: white;
-			}
-
+			
 			.planning-postpone {
 				background: #FF9800;
 				color: white;
@@ -843,12 +893,18 @@
 			/* שאר הסטיילים הקיימים נשארים */
 			.planning-date-header {
 				text-align: center;
-				background: linear-gradient(45deg, #4CAF50, #45a049);
+				background: linear-gradient(45deg, #3498db, #2980b9); /* שינוי מירוק לכחול */
 				color: white;
 				padding: 15px;
 				border-radius: 10px;
 				margin-bottom: 20px;
-				box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+				box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3); /* עדכון צל לכחול */
+			}
+
+			.planning-tab-btn.active {
+				background: #3498db; /* שינוי מירוק לכחול */
+				color: white;
+				border-color: #3498db;
 			}
 
 			.planning-view-tabs {
@@ -868,11 +924,6 @@
 				font-weight: bold;
 			}
 
-			.planning-tab-btn.active {
-				background: #4CAF50;
-				color: white;
-				border-color: #4CAF50;
-			}
 
 		/***************************************/
 		/* ייבוא נתונים - כפתורים אחידים */
@@ -960,18 +1011,6 @@
 		/* סטיילינג למצב שבועי */
 		.weekly-day-section {
 			margin-bottom: 25px;
-		}
-
-		.weekly-day-header {
-			background: linear-gradient(45deg, #3498db, #2980b9);
-			color: white;
-			padding: 10px 15px;
-			border-radius: 8px;
-			margin-bottom: 12px;
-			font-size: 16px;
-			font-weight: bold;
-			text-align: center;
-			box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
 		}
 
 		.planning-empty-state {
@@ -1112,7 +1151,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -2198,102 +2237,133 @@
 			const today = new Date();
 			today.setHours(0, 0, 0, 0);
 			
-			/// console.log('🔍 טוען לקוחות מתקדם - סה"כ לקוחות:', locations.length);
+			console.log('🔄 טוען לקוחות לתכנון - תצוגה:', currentPlanningView);
 			
-			// סינון לקוחות פעילים - תיקון לבעיית active = true
-			let filteredClients = locations.filter(location => {
-				const isActive = location.active === "1";
-				const hasNextVisit = location.next_visit && location.next_visit.trim() !== '';
-				const hasInterval = location.interval_weeks && location.interval_weeks > 0;
+			// סינון לקוחות פעילים בלבד
+			const activeClients = locations.filter(client => client.active === "1");
+			console.log('📊 לקוחות פעילים:', activeClients.length);
+			
+			// חישוב נתונים לכל לקוח פעיל
+			planningClients = activeClients.map(client => {
+				const nextVisitDate = new Date(client.next_visit);
+				nextVisitDate.setHours(0, 0, 0, 0);
 				
-				return isActive && hasNextVisit && hasInterval;
-			});
-			
-			console.log('🔍 לקוחות פעילים עם תאריכים:', filteredClients.length);
-			
-			// חישוב ימים באיחור לכל לקוח
-			filteredClients = filteredClients.map(location => {
-				const nextVisitDate = new Date(location.next_visit);
-				const daysOverdue = Math.floor((today - nextVisitDate) / (1000 * 60 * 60 * 24));
-				
-				// קביעת סטטוס צבע
-				let status = 'green';
-				if (daysOverdue > 14) status = 'red';
-				else if (daysOverdue > 7) status = 'orange';  
-				else if (daysOverdue > 0) status = 'yellow';
+				const daysDiff = Math.floor((nextVisitDate - today) / (1000 * 60 * 60 * 24));
+				const daysOverdue = daysDiff < 0 ? Math.abs(daysDiff) : 0;
 				
 				return {
-					...location,
+					...client,
+					nextVisitDate: nextVisitDate,
+					daysDiff: daysDiff,
 					daysOverdue: daysOverdue,
-					status: status,
-					scheduledTime: location.scheduled_time || '09:00'
+					status: calculateClientStatus(daysDiff, daysOverdue)
 				};
 			});
 			
-			////////<<<<<<<<<<<<<<<<<<<<<<<<<
-			/// const today = new Date();
-			/// const todayName = today.toLocaleDateString('en-US', { weekday: 'long' });
-			/// console.log(todayName);
-			////////<<<<<<<<<<<<<<<<<<<<<<<<<
-			
 			// סינון לפי תצוגה נוכחית
+			planningClients = filterClientsByView(planningClients);
+			
+			// מיון הלקוחות
+			sortPlanningClients();
+			
+			console.log('✅ לקוחות לתצוגה:', planningClients.length);
+		}
+	
+		// חישוב סטטוס לקוח לפי הפרש ימים
+		function calculateClientStatus(daysDiff, daysOverdue) {
+			if (daysOverdue > 14) return 'red';        // איחור מעל שבועיים
+			if (daysOverdue > 0) return 'orange';      // איחור עד שבועיים  
+			if (daysDiff === 0) return 'green';        // היום בדיוק
+			if (daysDiff <= 7) return 'yellow';        // השבוע הקרוב
+			return 'gray';                             // עתידי רחוק
+		}
+
+		// סינון לקוחות לפי התצוגה הנבחרת
+		function filterClientsByView(clients) {
+			const today = new Date();
+			const todayDay = today.getDay(); // 0=ראשון, 1=שני וכו'
+			const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
+			
 			switch (currentPlanningView) {
 				case 'daily':
-					const today = new Date();
-					const todayName = today.toLocaleDateString('he-IL', { weekday: 'long' }).normalize('NFC');
-
-					planningClients = filteredClients.filter(client => {
-						// console.log('Today\'s name:', todayName, ' | client.allowed_day:', client.allowed_day);
-						const isDueOrOverdue = client.daysOverdue >= 0;
-						const clientDayNormalized = client.allowed_day ? client.allowed_day.normalize('NFC') : '';
-						const isRightDay = !client.allowed_day || client.allowed_day === 'כל יום' || clientDayNormalized === todayName;
-						return isDueOrOverdue && isRightDay;
-					});
-					break;
-				case 'weekly':
-					// במצב שבועי - מיון לפי ימים בשבוע
-					planningClients = filteredClients.filter(client => client.daysOverdue >= -7);
+					// רק לקוחות שהיום בדיוק התאריך שלהם (בלי מאחרים)
+					return clients.filter(client => client.daysDiff === 0);
 					
-					// מיון לפי יום בשבוע ואז לפי זמן מתוכנן
-					planningClients.sort((a, b) => {
-						const dayOrder = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
-						const dayA = dayOrder.indexOf(a.allowed_day || 'יום ראשון');
-						const dayB = dayOrder.indexOf(b.allowed_day || 'יום ראשון');
-						
-						if (dayA !== dayB) return dayA - dayB;
-						return a.scheduledTime.localeCompare(b.scheduledTime);
-					});
-					break;
+				case 'weekly':
+					// רק תאריכים מדויקים (לא מאחרים) - מהשבוע הקרוב
+					return clients.filter(client => 
+						client.daysDiff >= 0 && client.daysDiff <= 7
+					);
+					
 				case 'overdue':
-					// רק לקוחות שכבר מאחרים
-					planningClients = filteredClients.filter(client => client.daysOverdue > 0);
-					break;
-			}
-			
-			/// console.log(`🔍 תוצאות סינון "${currentPlanningView}":`, planningClients.length, 'לקוחות');
-			
-			// מיון לפי זמן מתוכנן (רק בתצוגה יומית)
-			if (currentPlanningView === 'daily') {
-				planningClients.sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
-			} else {
-				planningClients.sort((a, b) => new Date(a.next_visit) - new Date(b.next_visit));
+					// רק מאחרים
+					return clients.filter(client => client.daysOverdue > 0);
+					
+				default:
+					return clients;
 			}
 		}
 	
-		// החלפת תצוגת תכנון
+		// מיון לקוחות לפי התצוגה הנוכחית
+		function sortPlanningClients() {
+			planningClients.sort((a, b) => {
+				switch (currentPlanningView) {
+					case 'daily':
+						// מיון לפי שעה מועדפת אם קיימת, אחרת לפי שם
+						return (a.name || '').localeCompare(b.name || '');
+						
+					case 'weekly':
+						// מיון לפי יום בשבוע, ואז לפי תאריך
+						const dayOrder = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
+						const aDay = dayOrder.indexOf(a.allowed_day || 'יום ראשון');
+						const bDay = dayOrder.indexOf(b.allowed_day || 'יום ראשון');
+						if (aDay !== bDay) return aDay - bDay;
+						return a.daysDiff - b.daysDiff;
+						
+					case 'overdue':
+						// מיון לפי חומרת האיחור (הכי מאחר ראשון)
+						return b.daysOverdue - a.daysOverdue;
+						
+					default:
+						return 0;
+				}
+			});
+		}
+	
+		// החלפת תצוגת תכנון עם לוגיקה מעודכנת
 		function switchPlanningView(view) {
+			console.log('🔄 מחליף תצוגת תכנון ל:', view);
+			
+			// עדכון משתנה גלובלי
 			currentPlanningView = view;
 			
-			// עדכון כפתורי טאב
+			// עדכון מצב כפתורי טאב
 			document.querySelectorAll('.planning-tab-btn').forEach(btn => btn.classList.remove('active'));
 			const activeBtn = document.querySelector(`[onclick="switchPlanningView('${view}')"]`);
 			if (activeBtn) activeBtn.classList.add('active');
 			
-			// טעינה מחדש
+			// עדכון כותרת לפי תצוגה
+			updatePlanningDateHeader();
+			
+			// טעינה מחדש עם הסינון החדש
 			loadPlanningDataAdvanced();
+			
+			// הצגת מספר תוצאות
+			setTimeout(() => {
+				let viewName = '';
+				switch(view) {
+					case 'daily': viewName = 'יומי'; break;
+					case 'weekly': viewName = 'שבועי'; break;  
+					case 'overdue': viewName = 'מאחרים'; break;
+				}
+				
+				if (planningClients.length > 0) {
+					showToast(`מצב ${viewName}: ${planningClients.length} לקוחות`, 'info');
+				}
+			}, 200);
 		}
 
-		// עדכון כותרת תאריך
+		// עדכון כותרת תאריך משופרת
 		function updatePlanningDateHeader() {
 			const today = new Date();
 			const dayName = today.toLocaleDateString('he-IL', { weekday: 'long' });
@@ -2304,23 +2374,31 @@
 			});
 			
 			let headerTitle = '';
+			let headerSubtitle = '';
+			
 			switch (currentPlanningView) {
 				case 'daily':
 					headerTitle = `היום - ${dayName}`;
+					headerSubtitle = 'לקוחות מתוכננים להיום';
 					break;
 				case 'weekly':
 					headerTitle = `השבוע - ${dayName}`;
+					headerSubtitle = 'תכנון לימים הקרובים';
 					break;
 				case 'overdue':
-					headerTitle = 'מאחרות - טיפולים שדחויים';
+					headerTitle = 'טיפולים מאחרים';
+					headerSubtitle = 'דורשים קביעת מועד חדש';
 					break;
+				default:
+					headerTitle = `תכנון - ${dayName}`;
+					headerSubtitle = dateFormatted;
 			}
 			
 			const titleElement = document.getElementById('planningDateTitle');
 			const dateElement = document.getElementById('planningDateFormatted');
 			
 			if (titleElement) titleElement.textContent = headerTitle;
-			if (dateElement) dateElement.textContent = dateFormatted;
+			if (dateElement) dateElement.textContent = headerSubtitle;
 		}
 
 		// רינדור כרטיסי לקוחות לתכנון
@@ -2333,10 +2411,22 @@
 			}
 			
 			if (planningClients.length === 0) {
+				let emptyMessage = '';
+				switch (currentPlanningView) {
+					case 'daily':
+						emptyMessage = '<h3>😊 אין לקוחות מתוכננים להיום</h3><p>כל הטיפולים מעודכנים!</p>';
+						break;
+					case 'weekly':
+						emptyMessage = '<h3>📅 אין לקוחות מתוכננים השבוע</h3><p>תכנון נקי לשבוע הקרוב!</p>';
+						break;
+					case 'overdue':
+						emptyMessage = '<h3>✅ אין לקוחות מאחרים</h3><p>כל הטיפולים במועדם!</p>';
+						break;
+				}
+				
 				container.innerHTML = `
 					<div class="planning-empty-state">
-						<h3>😊 אין לקוחות לתצוגה זו</h3>
-						<p>כל הטיפולים מעודכנים!</p>
+						${emptyMessage}
 					</div>
 				`;
 				return;
@@ -2352,6 +2442,7 @@
 		}
 
 		// רינדור למצב שבועי עם חלוקה לפי ימים
+		// רינדור למצב שבועי עם חלוקה לפי ימי השבוع
 		function renderWeeklyPlanningByDays() {
 			const container = document.getElementById('planningCardsContainer');
 			const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
@@ -2359,19 +2450,34 @@
 			let html = '';
 			
 			dayNames.forEach(dayName => {
+				// סינון לקוחות לפי יום מועדף
 				const dayClients = planningClients.filter(client => 
 					(client.allowed_day || 'יום ראשון') === dayName
 				);
 				
 				if (dayClients.length > 0) {
+					// מיון לקוחות היום לפי תאריך הטיפול הבא
+					dayClients.sort((a, b) => a.daysDiff - b.daysDiff);
+					
 					html += `
 						<div class="weekly-day-section">
-							<h4 class="weekly-day-header">---- ${dayName} -------</h4>
+							<div class="weekly-day-header">${dayName} (${dayClients.length})</div>
 							${dayClients.map(client => renderClientRow(client)).join('')}
 						</div>
 					`;
 				}
 			});
+			
+			// אם יש לקוחות ללא יום מועדף מוגדר
+			const noPreferredDay = planningClients.filter(client => !client.allowed_day);
+			if (noPreferredDay.length > 0) {
+				html += `
+					<div class="weekly-day-section">
+						<div class="weekly-day-header">ללא יום מועדף (${noPreferredDay.length})</div>
+						${noPreferredDay.map(client => renderClientRow(client)).join('')}
+					</div>
+				`;
+			}
 			
 			container.innerHTML = html;
 		}
@@ -2385,8 +2491,23 @@
 		// רינדור שורת לקוח (משותף לשני המצבים)
 		function renderClientRow(client) {
 			const nextVisitFormatted = formatDate(client.next_visit);
-			const overdueDaysText = client.daysOverdue > 0 ? 
-				` (איחור ${client.daysOverdue} ימים)` : '';
+			let statusText = '';
+			
+			// טקסט סטטוס לפי תצוגה
+			switch (currentPlanningView) {
+				case 'daily':
+					statusText = 'מתוכנן להיום';
+					break;
+				case 'weekly':
+					const daysDiffText = client.daysDiff === 0 ? 'היום' : 
+									   client.daysDiff === 1 ? 'מחר' : 
+									   `בעוד ${client.daysDiff} ימים`;
+					statusText = daysDiffText;
+					break;
+				case 'overdue':
+					statusText = client.daysOverdue === 1 ? 'איחור יום אחד' : `איחור ${client.daysOverdue} ימים`;
+					break;
+			}
 			
 			return `
 				<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
@@ -2394,15 +2515,18 @@
 						<div class="planning-client-info">
 							<div class="planning-client-name">${client.name}</div>
 							<div class="planning-client-address">${client.full_address}</div>
-							<div class="planning-client-date">📅 ${nextVisitFormatted}${overdueDaysText}</div>
+							<div class="planning-client-date">📅 ${nextVisitFormatted} (${statusText})</div>
 						</div>
 						<div class="planning-client-price">₪${client.base_amount || 0}</div>
 						<div class="planning-client-actions">
-							<button class="planning-action-btn planning-complete" title="התחלת טיפול" onclick="completePlanningVisit('${client.ID}')">▶</button>
+							${currentPlanningView === 'daily' ? 
+								`<button class="planning-action-btn planning-complete" title="התחל טיפול" onclick="startTreatment('${client.ID}')">▶</button>` : 
+								''
+							}
 							<input type="date" class="planning-date-input" value="${client.next_visit}" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא">
 							<select class="planning-active-toggle" onchange="toggleClientActive('${client.ID}', this.value)" title="סטטוס לקוח">
-								<option value="1" ${client.active === "1" ? 'selected' : ''}>פעיל</option>
-								<option value="0" ${client.active === "0" ? 'selected' : ''}>לא פעיל</option>
+								<option value="1" selected>פעיל</option>
+								<option value="0">לא פעיל</option>
 							</select>
 							<button class="planning-history-btn" onclick="showClientHistory('${client.ID}')" title="היסטוריית טיפולים">📋</button>
 						</div>
@@ -2410,11 +2534,66 @@
 					${(client.notes || client.client_requests) ? `
 						<div class="planning-row-details">
 							${client.client_requests ? `<div class="client-requests">📝 בקשות: ${client.client_requests}</div>` : ''}
-							${client.notes ? `<div class="client-notes">💬 הערות: ${client.notes}</div>` : ''}
+							${client.notes ? `<div class="client-notes">💭 הערות: ${client.notes}</div>` : ''}
 						</div>
 					` : ''}
 				</div>
 			`;
+		}
+	
+		// פונקציה חדשה: התחל טיפול (מעבר לטופס עם פרטי לקוח מוכנים)
+		function startTreatment(clientId) {
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) {
+				showToast('לא נמצא לקוח', 'error');
+				return;
+			}
+			
+			// מעבר לטאב טיפול חדש
+			showSection('visit');
+			
+			// מילוי פרטי הלקוח בטופס
+			setTimeout(() => {
+				const locationSelect = document.getElementById('visitLocation');
+				if (locationSelect) {
+					locationSelect.value = clientId;
+					// הפעלת אירוע שינוי למילוי פרטים נוספים
+					locationSelect.dispatchEvent(new Event('change'));
+				}
+				
+				// מילוי תאריך היום
+				const dateInput = document.getElementById('visitDate');
+				if (dateInput) {
+					dateInput.value = new Date().toISOString().split('T')[0];
+				}
+				
+				showToast(`התחיל טיפול עבור ${client.name}`, 'success');
+			}, 100);
+		}
+
+		// עדכון פונקציית החלפת סטטוס פעיל/לא פעיל
+		function toggleClientActive(clientId, newStatus) {
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) return;
+			
+			const oldStatus = client.active;
+			client.active = newStatus;
+			
+			// שמירה מקומית
+			saveToLocalStorage();
+			
+			// שמירה בענן אם מחובר
+			if (access_token && SPREADSHEET_ID) {
+				updateLocationInCloud(client);
+			}
+			
+			const statusText = newStatus === "1" ? "פעיל" : "לא פעיל";
+			showToast(`${client.name} הוגדר כ${statusText}`, 'info');
+			
+			// רענון התצוגה רק אם הלקוח הפך ללא פעיל
+			if (newStatus === "0") {
+				loadPlanningDataAdvanced();
+			}
 		}
 	
 		// עדכון שעה מתוכננת ללקוח
@@ -7221,27 +7400,48 @@
 		
 		
 		// פונקציה לעדכון תאריך טיפול הבא
+		// עדכון תאריך טיפול הבא ללקוח
 		function updateClientNextVisit(clientId, newDate) {
-			if (!newDate) return;
-			
 			const client = locations.find(loc => loc.ID === clientId);
-			if (!client) return;
-			
-			client.next_visit = newDate;
-			client.temp_addition = 0; // איפוס תוספת זמנית
-			
-			// שמירה
-			saveToLocalStorage();
-			
-			// עדכון בענן אם מחובר
-			if (access_token && SPREADSHEET_ID) {
-				updateLocationInCloud(client);
+			if (!client) {
+				showToast('לא נמצא לקוח', 'error');
+				return;
 			}
 			
-			showToast(`תאריך הטיפול הבא עבור ${client.name} עודכן ל-${formatDate(newDate)}`, 'success');
+			// בדיקת תקינות התאריך
+			if (!newDate || isNaN(new Date(newDate))) {
+				showToast('תאריך לא תקין', 'error');
+				return;
+			}
+			
+			const oldDate = client.next_visit;
+			client.next_visit = newDate;
+			
+			// איפוס הוספות זמניות
+			if (client.temp_addition) {
+				client.temp_addition = 0;
+			}
+			
+			// שמירה מקומית
+			saveToLocalStorage();
+			
+			// שמירה בענן אם מחובר
+			if (access_token && SPREADSHEET_ID) {
+				updateLocationInCloud(client).then(() => {
+					console.log('✅ תאריך עודכן בענן');
+				}).catch(error => {
+					console.error('❌ שגיאה בעדכון ענן:', error);
+					showToast('התאריך עודכן מקומית, אך לא בענן', 'warning');
+				});
+			}
+			
+			const formattedDate = formatDate(newDate);
+			showToast(`תאריך הטיפול הבא עבור ${client.name} עודכן ל-${formattedDate}`, 'success');
 			
 			// רענון התצוגה
-			loadPlanningDataAdvanced();
+			setTimeout(() => {
+				loadPlanningDataAdvanced();
+			}, 300);
 		}
 
 		// פונקציה להפיכת לקוח לפעיל/לא פעיל
