@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -6081,10 +6081,10 @@
 						</span>
 					</td>
 					<td style="text-align: center;">
-						<button class="action-btn" onclick="showDebtDetails(${location.ID})" style="background: #007bff; margin: 2px;">
+						<button class="action-btn" onclick="showDebtDetails('${location.ID}')" style="background: #007bff; margin: 2px;">
 							🔍 פירוט
 						</button>
-						<button class="action-btn" onclick="markDebtAsPaid(${location.ID})" style="background: #28a745; margin: 2px;">
+						<button class="action-btn" onclick="markDebtAsPaid('${location.ID}')" style="background: #28a745; margin: 2px;">
 							✅ סולק
 						</button>
 					</td>
