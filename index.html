@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -1602,8 +1602,22 @@
 					</div>
 					
 					<div class="import-other-buttons">
-						<button onclick="importFromTelegram()">💬 ייבוא מטלגרם</button>
+						<button onclick="importFromTelegramToHelper()" class="btn btn-warning">
+							📱 יבוא מטלגרם לטבלת עזר
+						</button>
+						<button onclick="importFromTelegramHelper()" class="btn btn-info">
+							⬇️ יבוא מטבלת עזר טלגרם
+						</button>
 					</div>
+
+					<!-- הוסף גם כפתור ליצירת טבלת עזר חדשה: -->
+					<div style="margin-top: 10px;">
+						<button onclick="createTelegramHelperTable()" class="btn btn-secondary" style="font-size: 12px;">
+							🗂️ צור טבלת עזר טלגרם חדשה
+						</button>
+					</div>
+					
+					<div id="telegramHelperStatus" style="margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 5px; font-size: 14px;"></div>
 					
 					<details>
 						<summary>⚙️ ייבוא חלקי (למתקדמים)</summary>
@@ -5496,7 +5510,10 @@
 			
 			// הוסף את זה בסוף הפונקציה
 			if (tabName === 'system') {
-				setTimeout(updateImportTableStatus, 100);
+				setTimeout(() => {
+					updateImportTableStatus();
+					updateTelegramHelperStatus(); // הוסף שורה זו
+				}, 100);
 			}
 		}
 	   
@@ -5560,19 +5577,39 @@
 			fileInput.click();
 		}
 
-		// פונקציה ראשית לפרסור הטקסט
+		// הוסף פונקציה להצגת מידע על טבלת עזר טלגרם
+		function updateTelegramHelperStatus() {
+			const telegramTableId = localStorage.getItem('telegramHelperTableId');
+			const statusDiv = document.getElementById('telegramHelperStatus');
+			
+			if (statusDiv) {
+				if (telegramTableId) {
+					statusDiv.innerHTML = `
+						<span style="color: green;">✓ טבלת עזר טלגרם מוכנה</span>
+						<br>
+						<a href="https://docs.google.com/spreadsheets/d/${telegramTableId}" target="_blank" style="font-size: 12px;">
+							פתח בגוגל שיטס
+						</a>
+					`;
+				} else {
+					statusDiv.innerHTML = `
+						<span style="color: orange;">⚠ לא נמצאה טבלת עזר טלגרם</span>
+						<br>
+						<span style="font-size: 12px;">צור טבלה חדשה תחילה</span>
+					`;
+				}
+			}
+		}
+
+		// פונקציה ראשית משופרת לפיענוח טקסט טלגרם
 		function parseTelegramText(text) {
 			const lines = text.split('\n');
 			const visits = [];
 			
 			let currentDate = '';
 			let currentTime = '';
-			let currentAddress = '';
-			let currentClient = null;
-			let workDone = '';
-			let duration = 0;
-			
-			console.log('🔍 Parsing', lines.length, 'lines...');
+			let currentVisit = null;
+			let pendingNotes = [];
 			
 			for (let i = 0; i < lines.length; i++) {
 				const line = lines[i].trim();
@@ -5580,68 +5617,150 @@
 				
 				// זיהוי תאריך
 				if (isDateLine(line)) {
+					// אם יש ביקור פתוח, סגור אותו
+					if (currentVisit) {
+						visits.push(finalizeVisit(currentVisit, pendingNotes));
+						currentVisit = null;
+						pendingNotes = [];
+					}
 					currentDate = parseTelegramDate(line);
-					console.log('📅 Found date:', currentDate);
 					continue;
 				}
 				
 				// זיהוי שעה
 				if (isTimeLine(line)) {
 					currentTime = line;
-					console.log('🕐 Found time:', currentTime);
 					continue;
 				}
 				
-				// זיהוי כתובת לקוח
-				const foundClient = findClientInText(line);
-				if (foundClient) {
-					currentClient = foundClient;
-					currentAddress = foundClient.full_address;
-					console.log('👤 Found client:', foundClient.name, 'at', currentAddress);
-					continue;
-				}
-				
-				// זיהוי סיום עבודה
-				if (line.startsWith('סיום')) {
-					workDone = line.replace('סיום', '').trim();
-					console.log('🔧 Found work:', workDone);
+				// זיהוי שורה של Assaf H
+				if (line === 'Assaf H') {
+					const nextLine = lines[i + 1];
+					if (!nextLine) continue;
 					
-					// חפש זמן בשורות הבאות
-					for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
-						const nextLine = lines[j].trim();
-						const foundDuration = parseWorkDuration(nextLine);
-						if (foundDuration > 0) {
-							duration = foundDuration;
-							console.log('⏱️ Found duration:', duration, 'minutes');
-							break;
+					// בדוק אם זה תחילת ביקור חדש
+					if (isNewVisitStart(nextLine, locations)) {
+						// סגור ביקור קודם אם קיים
+						if (currentVisit) {
+							visits.push(finalizeVisit(currentVisit, pendingNotes));
+							pendingNotes = [];
+						}
+						
+						// התחל ביקור חדש
+						const client = findClientSmart(nextLine, locations);
+						currentVisit = {
+							date: currentDate,
+							time: currentTime,
+							client: client,
+							workDescription: [nextLine],
+							duration: 0,
+							workType: identifyWorkType(nextLine),
+							notes: []
+						};
+					}
+					// בדוק אם זה סיום ביקור
+					else if (currentVisit && isVisitEnd(nextLine)) {
+						currentVisit.workDescription.push(nextLine);
+						const duration = extractTimeFromText(nextLine);
+						if (duration > 0) {
+							currentVisit.duration = duration;
+						}
+						
+						// בדוק אם יש זמן בשורות הבאות
+						if (currentVisit.duration === 0 && i + 2 < lines.length) {
+							const timeInfo = extractTimeFromText(lines[i + 2]);
+							if (timeInfo > 0) {
+								currentVisit.duration = timeInfo;
+							}
+						}
+						
+						visits.push(finalizeVisit(currentVisit, pendingNotes));
+						currentVisit = null;
+						pendingNotes = [];
+					}
+					// אחרת, זה פרט נוסף על הביקור הנוכחי
+					else if (currentVisit) {
+						currentVisit.workDescription.push(nextLine);
+						
+						// בדוק אם יש זמן בשורה זו
+						const duration = extractTimeFromText(nextLine);
+						if (duration > 0 && currentVisit.duration === 0) {
+							currentVisit.duration = duration;
+						}
+						
+						// עדכן סוג עבודה אם נמצא סוג חדש
+						const workType = identifyWorkType(nextLine);
+						if (workType !== 'כללי' && currentVisit.workType === 'כללי') {
+							currentVisit.workType = workType;
 						}
 					}
 					
-					// צור ביקור אם יש מספיק מידע
-					if (currentDate && currentClient && workDone) {
-						const visit = {
-							date: currentDate,
-							time: currentTime,
-							client_name: currentClient.name,
-							client_id: currentClient.ID,
-							address: currentAddress,
-							work_done: workDone,
-							duration_minutes: duration || 60, // ברירת מחדל שעה
-							raw_text: `${line}\n${lines.slice(i+1, i+3).join('\n')}`
-						};
-						
-						visits.push(visit);
-						console.log('✅ Created visit:', visit);
+					// איסוף הערות
+					const notes = extractNotes(nextLine);
+					if (notes) {
+						if (currentVisit) {
+							currentVisit.notes.push(notes);
+						} else {
+							pendingNotes.push(notes);
+						}
 					}
 					
-					// איפוס למצב הבא
-					workDone = '';
-					duration = 0;
+					i++; // דלג על השורה הבאה כי כבר עיבדנו אותה
+				}
+				// שורות אחרות שעלולות להכיל מידע
+				else {
+					const notes = extractNotes(line);
+					if (notes) {
+						if (currentVisit) {
+							currentVisit.notes.push(notes);
+						} else {
+							pendingNotes.push(notes);
+						}
+					}
+					
+					// בדוק אם יש זמן בשורות עצמאיות
+					if (currentVisit && currentVisit.duration === 0) {
+						const duration = extractTimeFromText(line);
+						if (duration > 0) {
+							currentVisit.duration = duration;
+						}
+					}
 				}
 			}
 			
-			console.log('📊 Total parsed visits:', visits.length);
+			// סגור ביקור אחרון אם קיים
+			if (currentVisit) {
+				visits.push(finalizeVisit(currentVisit, pendingNotes));
+			}
+			
 			return visits;
+		}
+
+		// פונקציה עזר לסיום ביקור
+		function finalizeVisit(visit, pendingNotes) {
+			const client = visit.client;
+			
+			// אם לא נמצא זמן, נסה לחשב מהשעות או קבע ברירת מחדל
+			if (visit.duration === 0) {
+				if (visit.time) {
+					// כאן אפשר להוסיף לוגיקה לחישוב זמן מהפרש שעות
+					visit.duration = 60; // ברירת מחדל של שעה
+				} else {
+					visit.duration = 60;
+				}
+			}
+			
+			// פורמט שמתאים בדיוק לקוד הקיים של confirmTelegramImport
+			return {
+				date: visit.date,
+				time: visit.time || '',
+				client_name: client ? client.name : 'לא זוהה',
+				client_id: client ? client.ID : null,
+				address: client ? client.full_address : '',
+				work_done: visit.workDescription.join(' '),
+				duration_minutes: visit.duration,
+				raw_text: visit.workDescription.join('\n') + '\n' + [...visit.notes, ...pendingNotes].join('\n')
+			};
 		}
 
 		// פונקציות עזר לזיהוי דפוסים
@@ -5676,33 +5795,301 @@
 			return '';
 		}
 
-		function findClientInText(text) {
-			// חפש לקוח לפי כתובת או שם מהרשימה הקיימת
-			for (const location of locations) {
-				// התאמה מדויקת לשם
-				if (location.name && text.includes(location.name)) {
-					return location;
-				}
+		// יצירת טבלת עזר טלגרם חדשה
+		async function createTelegramHelperTable() {
+			if (!await validateToken()) {
+				showToast('נדרש חיבור לגוגל תחילה', 'warning');
+				return null;
+			}
+			
+			try {
+				showLoading('יוצר טבלת עזר טלגרם...');
 				
-				// התאמה לרחוב
-				if (location.street && text.includes(location.street)) {
-					return location;
-				}
+				const response = await gapi.client.sheets.spreadsheets.create({
+					resource: {
+						properties: {
+							title: `טבלת עזר טלגרם - ${new Date().toLocaleDateString('he-IL')}`
+						},
+						sheets: [{
+							properties: { title: 'Visits' }
+						}]
+					}
+				});
 				
-				// התאמה לכתובת מלאה
-				if (location.full_address && text.toLowerCase().includes(location.full_address.toLowerCase())) {
-					return location;
-				}
+				const spreadsheetId = response.result.spreadsheetId;
 				
-				// חיפוש גמיש יותר - לפי חלקי כתובת
-				if (location.full_address) {
-					const addressParts = location.full_address.split(' ');
-					if (addressParts.length >= 2) {
-						const street = addressParts.slice(0, -1).join(' ');
-						const number = addressParts[addressParts.length - 1];
+				// הוסף כותרות
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: spreadsheetId,
+					range: 'Visits!A1:M1',
+					valueInputOption: 'RAW',
+					resource: {
+						values: [[
+							'year', 'month', 'day', 'customer', 'contact_person', 
+							'treatment', 'date', 'work_done', 'duration', 'amount', 
+							'paid', 'expense', 'notes'
+						]]
+					}
+				});
+				
+				localStorage.setItem('telegramHelperTableId', spreadsheetId);
+				
+				showToast('✅ טבלת עזר טלגרם נוצרה בהצלחה!', 'success');
+				
+				return spreadsheetId;
+				
+			} catch (error) {
+				console.error('Error creating telegram helper table:', error);
+				showToast('שגיאה ביצירת טבלת עזר טלגרם', 'error');
+				return null;
+			} finally {
+				hideLoading();
+			}
+		}
+
+
+		// פונקציה חדשה - יבוא מטלגרם לטבלת עזר טלגרם
+		async function importFromTelegramToHelper() {
+			const fileInput = document.createElement('input');
+			fileInput.type = 'file';
+			fileInput.accept = '.txt';
+			fileInput.multiple = true;
+			
+			fileInput.onchange = async (event) => {
+				const files = Array.from(event.target.files);
+				if (files.length === 0) return;
+				
+				try {
+					showLoading(`מפרסר ${files.length} קבצי טלגרם לטבלת עזר...`);
+					
+					let allParsedVisits = [];
+					
+					for (let i = 0; i < files.length; i++) {
+						const file = files[i];
+						console.log(`📄 Processing file ${i+1}/${files.length}: ${file.name}`);
 						
-						if (text.includes(street) && text.includes(number)) {
-							return location;
+						const text = await file.text();
+						const parsedVisits = parseTelegramText(text);
+						
+						console.log(`📄 File ${file.name}: found ${parsedVisits.length} visits`);
+						allParsedVisits = allParsedVisits.concat(parsedVisits);
+						
+						if (i < files.length - 1) {
+							await new Promise(resolve => setTimeout(resolve, 300));
+						}
+					}
+					
+					if (allParsedVisits.length > 0) {
+						// שלח ישירות לטבלת עזר טלגרם
+						await saveTelegramDataToHelper(allParsedVisits);
+						showToast(`נתונים נשמרו בטבלת עזר טלגרם: ${allParsedVisits.length} ביקורים`, 'success');
+					} else {
+						showToast('לא נמצאו ביקורים בקבצים', 'warning');
+					}
+					
+				} catch (error) {
+					console.error('Error parsing telegram files:', error);
+					showToast('שגיאה בפרסור קבצי טלגרם', 'error');
+				} finally {
+					hideLoading();
+				}
+			};
+			
+			fileInput.click();
+		}
+
+		// פונקציה לשמירת נתונים בטבלת עזר טלגרם
+		async function saveTelegramDataToHelper(parsedVisits) {
+			if (!await validateToken()) {
+				showToast('נדרש חיבור לגוגל', 'error');
+				return;
+			}
+			
+			try {
+				// בדוק אם טבלת עזר טלגרם קיימת
+				let telegramTableId = localStorage.getItem('telegramHelperTableId');
+				
+				if (!telegramTableId) {
+					// צור טבלת עזר חדשה
+					telegramTableId = await createTelegramHelperTable();
+					if (!telegramTableId) return;
+				}
+				
+				// המר את הנתונים לפורמט CSV
+				const csvData = parsedVisits.map(visit => [
+					visit.date.split('-')[0], // year
+					visit.date.split('-')[1], // month
+					visit.date.split('-')[2], // day
+					visit.client_name,
+					'', // contact_person - ימולא מהמערכת
+					identifyWorkType(visit.work_done),
+					visit.date,
+					visit.work_done,
+					visit.duration_minutes.toString(),
+					'0', // amount
+					'לא', // paid
+					'0', // expense
+					visit.raw_text || '' // notes
+				]);
+				
+				// שמור לטבלת עזר טלגרם
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: telegramTableId,
+					range: 'Visits!A:M',
+					valueInputOption: 'USER_ENTERED',
+					resource: {
+						values: csvData
+					}
+				});
+				
+				console.log(`✅ Saved ${parsedVisits.length} visits to telegram helper table`);
+				
+			} catch (error) {
+				console.error('Error saving to telegram helper table:', error);
+				showToast('שגיאה בשמירה לטבלת עזר טלגרם', 'error');
+			}
+		}
+
+		// פונקציה ליבוא מטבלת עזר טלגרם למערכת הראשית
+		async function importFromTelegramHelper() {
+			if (!await validateToken()) {
+				showToast('נדרש חיבור לגוגל', 'error');
+				return;
+			}
+			
+			const telegramTableId = localStorage.getItem('telegramHelperTableId');
+			if (!telegramTableId) {
+				showToast('לא נמצאה טבלת עזר טלגרם. צור טבלה חדשה תחילה.', 'warning');
+				return;
+			}
+			
+			try {
+				showLoading('מייבא נתונים מטבלת עזר טלגרם...');
+				
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: telegramTableId,
+					range: 'Visits!A2:M1000'
+				});
+				
+				if (!response.result.values || response.result.values.length === 0) {
+					showToast('טבלת עזר טלגרם ריקה', 'warning');
+					return;
+				}
+				
+				let importedCount = 0;
+				
+				for (const row of response.result.values) {
+					if (row[0] && row[3]) { // יש שנה ושם לקוח
+						const visitData = {
+							ID: generateID(),
+							date: `${row[0]}-${row[1].padStart(2, '0')}-${row[2].padStart(2, '0')}`,
+							location_id: findLocationByName(row[3])?.ID || null,
+							visit_type: row[5] || 'כללי',
+							work_done: row[7] || '',
+							duration_minutes: parseInt(row[8]) || 60,
+							start_time: '',
+							end_time: '',
+							amount: parseInt(row[9]) || 0,
+							expense: parseInt(row[11]) || 0,
+							paid: row[10] || 'לא',
+							notes: `יובא מטבלת עזר טלגרם: ${row[12] || ''}`
+						};
+						
+						visits.push(visitData);
+						importedCount++;
+					}
+				}
+				
+				// שמור הכל
+				saveToLocalStorage();
+				loadReceiptsTable();
+				loadFilterOptions();
+				await saveAllToSheetsOptimized();
+				
+				showToast(`יובאו בהצלחה ${importedCount} ביקורים מטבלת עזר טלגרם!`, 'success');
+				
+			} catch (error) {
+				console.error('Error importing from telegram helper:', error);
+				showToast('שגיאה ביבוא מטבלת עזר טלגרם', 'error');
+			} finally {
+				hideLoading();
+			}
+		}
+
+		// פונקציה עזר למציאת לקוח לפי שם
+		function findLocationByName(customerName) {
+			if (!customerName) return null;
+			
+			return locations.find(loc => 
+				loc.name && loc.name.toLowerCase().includes(customerName.toLowerCase())
+			) || null;
+		}
+
+
+		// פונקציה משופרת לזיהוי לקוחות - תחליף את findClientInText הקיימת
+		function findClientSmart(text, locations) {
+			if (!text || !locations) return null;
+			
+			const textLower = text.toLowerCase().trim();
+			
+			// שלב 1: התאמה ישירה מלאה
+			for (const location of locations) {
+				if (location.name && textLower.includes(location.name.toLowerCase())) {
+					return location;
+				}
+				if (location.full_address && textLower.includes(location.full_address.toLowerCase())) {
+					return location;
+				}
+			}
+			
+			// שלב 2: זיהוי לפי רחוב + מספר (עם או בלי עיר)
+			const addressMatch = textLower.match(/([א-ת\s']+)\s+(\d+)/);
+			if (addressMatch) {
+				const street = addressMatch[1].trim();
+				const number = addressMatch[2];
+				
+				for (const location of locations) {
+					if (location.name) {
+						const locationParts = location.name.toLowerCase().split(' ');
+						if (locationParts.length >= 2) {
+							const locationStreet = locationParts[0];
+							const locationNumber = locationParts[1];
+							
+							if (street.includes(locationStreet) && number === locationNumber) {
+								return location;
+							}
+						}
+					}
+				}
+			}
+			
+			// שלב 3: זיהוי שמות חלקיים (כמו "ויניק" במקום "ויניק 49 ראשלצ")
+			const words = textLower.split(/\s+/);
+			for (const word of words) {
+				if (word.length >= 3) { // רק מילים של 3 אותיות או יותר
+					for (const location of locations) {
+						if (location.name && location.name.toLowerCase().startsWith(word)) {
+							// וודא שזה השם היחיד שמתחיל כך
+							const matches = locations.filter(loc => 
+								loc.name && loc.name.toLowerCase().startsWith(word)
+							);
+							if (matches.length === 1) {
+								return location;
+							}
+						}
+					}
+				}
+			}
+			
+			// שלב 4: זיהוי לפי רחוב בלבד (לשמות ידועים)
+			for (const word of words) {
+				if (word.length >= 4) {
+					for (const location of locations) {
+						if (location.name) {
+							const locationStreet = location.name.toLowerCase().split(' ')[0];
+							if (locationStreet === word) {
+								return location;
+							}
 						}
 					}
 				}
@@ -5711,26 +6098,244 @@
 			return null;
 		}
 
-		function parseWorkDuration(text) {
-			const patterns = {
-				'שעתיים וחצי': 150,
-				'שעה ורבע נטו': 75,
-				'שעה ורבע': 75,
-				'שעה וחצי': 90,
-				'שעתיים': 120,
-				'שעה': 60,
-				'חצי שעה': 30
-			};
+
+		// פונקציה משופרת לחילוץ זמנים - תחליף את extractDuration הקיימת
+		function extractTimeFromText(text) {
+			if (!text) return 0;
 			
-			for (const [pattern, minutes] of Object.entries(patterns)) {
-				if (text.includes(pattern)) {
-					return minutes;
-				}
+			const textLower = text.toLowerCase().trim();
+			
+			// דפוס 1: מספר + "שעות"
+			let match = textLower.match(/(\d+(?:\.\d+)?)\s*שעות/);
+			if (match) {
+				return Math.round(parseFloat(match[1]) * 60);
+			}
+			
+			// דפוס 2: "שעתיים" עם וריאציות
+			if (textLower.includes('שעתיים')) {
+				if (textLower.includes('וחצי')) return 150;
+				if (textLower.includes('ורבע')) return 135;
+				if (textLower.includes('ושלושת רבעי')) return 165;
+				return 120;
+			}
+			
+			// דפוס 3: "שעה" עם וריאציות
+			if (textLower.includes('שעה') && !textLower.includes('שעות')) {
+				if (textLower.includes('וחצי')) return 90;
+				if (textLower.includes('ורבע')) return 75;
+				if (textLower.includes('ושלושת רבעי')) return 105;
+				return 60;
+			}
+			
+			// דפוס 4: "חצי שעה", "רבע שעה"
+			if (textLower.includes('חצי שעה')) return 30;
+			if (textLower.includes('רבע שעה')) return 15;
+			
+			// דפוס 5: מספר עשרוני עם שעות (כמו "1.75 שעות")
+			match = textLower.match(/(\d+\.\d+)\s*שעה/);
+			if (match) {
+				return Math.round(parseFloat(match[1]) * 60);
+			}
+			
+			// דפוס 6: כמויות מילוליות
+			if (textLower.includes('כשעתיים')) return 120;
+			if (textLower.includes('כשעה')) return 60;
+			if (textLower.includes('כמעט שעתיים')) return 115;
+			if (textLower.includes('כמעט שעה')) return 55;
+			
+			// דפוס 7: דקות
+			match = textLower.match(/(\d+)\s*דק/);
+			if (match) {
+				return parseInt(match[1]);
+			}
+			
+			// דפוס 8: ביטויים מיוחדים
+			if (textLower.includes('לפני רבע שעה')) return 15;
+			if (textLower.includes('לפני חצי שעה')) return 30;
+			if (textLower.includes('לפני כשעה')) return 60;
+			
+			// דפוס 9: מספרים עם נקודה (כמו "2.5" או "3.25")
+			match = textLower.match(/(\d+)\.(\d+)/);
+			if (match) {
+				const hours = parseInt(match[1]);
+				const fraction = parseInt(match[2]);
+				if (fraction === 5) return hours * 60 + 30; // .5 = חצי שעה
+				if (fraction === 25) return hours * 60 + 15; // .25 = רבע שעה
+				if (fraction === 75) return hours * 60 + 45; // .75 = שלושת רבעי שעה
+			}
+			
+			// דפוס 10: טווחי זמן (כמו "2-3 שעות")
+			match = textLower.match(/(\d+)-(\d+)\s*שעות/);
+			if (match) {
+				const avg = (parseInt(match[1]) + parseInt(match[2])) / 2;
+				return Math.round(avg * 60);
 			}
 			
 			return 0;
 		}
 
+
+		// פונקציה משופרת לזיהוי סוגי עבודה - תחליף את getWorkType הקיימת
+		function identifyWorkType(text) {
+			if (!text) return 'כללי';
+			
+			const textLower = text.toLowerCase().trim();
+			
+			// סוגי עבודה ספציפיים
+			if (textLower.includes('חרמש')) return 'חרמש';
+			if (textLower.includes('גיזום')) return 'גיזום';
+			if (textLower.includes('כיסוח') || textLower.includes('מכסחת')) return 'כיסוח';
+			if (textLower.includes('מפוח')) return 'מפוח';
+			if (textLower.includes('שתילה') || textLower.includes('שתלתי')) return 'שתילה';
+			if (textLower.includes('ריסוס') || textLower.includes('ריססתי')) return 'ריסוס';
+			
+			// השקיה ותיקונים
+			if (textLower.includes('השקיה') || textLower.includes('השקייה')) return 'השקיה';
+			if (textLower.includes('תיקוני השקיה') || textLower.includes('בדיקת השקיה')) return 'השקיה';
+			if (textLower.includes('החלפת סוללות') || textLower.includes('החלפת מחשב')) return 'השקיה';
+			if (textLower.includes('מחשב השקיה') || textLower.includes('ברז חשמלי')) return 'השקיה';
+			if (textLower.includes('צנרת') || textLower.includes('טפטוף')) return 'השקיה';
+			if (textLower.includes('ממטירים') || textLower.includes('מתזים')) return 'השקיה';
+			
+			// עבודות פינוי וניקיון
+			if (textLower.includes('הוצאת גזם') || textLower.includes('פינוי גזם')) return 'הוצאת גזם';
+			if (textLower.includes('פינוי') && textLower.includes('גזם')) return 'הוצאת גזם';
+			if (textLower.includes('איסוף') || textLower.includes('גירוף')) return 'ניקיון';
+			if (textLower.includes('ניקיון') || textLower.includes('לנקות')) return 'ניקיון';
+			
+			// עבודות מסור
+			if (textLower.includes('מסור') || textLower.includes('חיתוך')) return 'גיזום';
+			if (textLower.includes('כריתת ענפים') || textLower.includes('הורדת ענפים')) return 'גיזום';
+			
+			// עבודות תחזוקה מיוחדות
+			if (textLower.includes('תיקון') || textLower.includes('החלפה')) return 'תחזוקה';
+			if (textLower.includes('התקנה') || textLower.includes('התקנת')) return 'תחזוקה';
+			
+			// זיהוי לפי כלים שמוזכרים
+			if (textLower.includes('מגזמת')) return 'גיזום';
+			if (textLower.includes('מרסס')) return 'ריסוס';
+			
+			// אם מוזכרים מספר סוגי עבודה - החזר את הראשי
+			const workTypes = [];
+			if (textLower.includes('חרמש')) workTypes.push('חרמש');
+			if (textLower.includes('גיזום')) workTypes.push('גיזום');
+			if (textLower.includes('מפוח')) workTypes.push('מפוח');
+			if (textLower.includes('איסוף')) workTypes.push('ניקיון');
+			
+			if (workTypes.length > 0) {
+				return workTypes[0]; // החזר את הראשון שנמצא
+			}
+			
+			// בדיקות מיוחדות לפי הקשר
+			if (textLower.includes('בדיקה') || textLower.includes('סיור')) return 'בדיקה';
+			if (textLower.includes('טיפול ראשוני') || textLower.includes('הערכה')) return 'הערכה';
+			
+			return 'כללי';
+		}
+		
+		
+		// פונקציה לזיהוי האם שורה מציינת תחילת ביקור חדש
+		function isNewVisitStart(text, locations) {
+			if (!text) return false;
+			
+			const textLower = text.toLowerCase().trim();
+			
+			// זיהוי ישירות של לקוח
+			if (findClientSmart(text, locations)) return true;
+			
+			// דפוסי כתובות ישראליות
+			if (/[א-ת\s']+\s+\d+/.test(text)) return true;
+			
+			// מילות מפתח שמציינות התחלת עבודה
+			const startKeywords = [
+				'מתחיל', 'התחלתי', 'מתחילים',
+				'יציאה', 'הגעתי', 'נוסע ל',
+				'בדיקת השקיה', 'טיפול ראשוני',
+				'החלפת', 'התקנת', 'תיקון'
+			];
+			
+			for (const keyword of startKeywords) {
+				if (textLower.includes(keyword)) return true;
+			}
+			
+			// זיהוי לפי שמות גנים/אזורים מוכרים
+			const gardenKeywords = [
+				'מבצע נחשון', 'מבצע משה', 'המרגנית',
+				'אזר', 'גן יבנה', 'שיינקין'
+			];
+			
+			for (const keyword of gardenKeywords) {
+				if (textLower.includes(keyword.toLowerCase())) return true;
+			}
+			
+			return false;
+		}
+
+		// פונקציה לזיהוי האם שורה מציינת סיום ביקור
+		function isVisitEnd(text) {
+			if (!text) return false;
+			
+			const textLower = text.toLowerCase().trim();
+			
+			// מילות סיום מפורשות
+			if (textLower.includes('סיום') || textLower.includes('סיימתי')) return true;
+			
+			// ביטויי זמן שמציינים סיום
+			if (textLower.includes('שעות') || textLower.includes('שעה')) {
+				// אם יש זמן + ביטוי סיכום
+				if (textLower.includes('סהכ') || textLower.includes('עד כה') || 
+					textLower.includes('כולל') || textLower.includes('לקח')) {
+					return true;
+				}
+			}
+			
+			// ביטויי מעבר לביקור הבא
+			if (textLower.includes('נוסע ל') || textLower.includes('עובר ל') ||
+				textLower.includes('ממשיך ל') || textLower.includes('הביתה')) {
+				return true;
+			}
+			
+			// הפסקות שמסיימות ביקור
+			if (textLower.includes('הפסקה בבית') || textLower.includes('בבית')) {
+				return true;
+			}
+			
+			return false;
+		}
+
+		// פונקציה לזיהוי הערות שכדאי לשמור
+		function extractNotes(text) {
+			if (!text) return '';
+			
+			const textLower = text.toLowerCase();
+			let notes = [];
+			
+			// הערות על תשלום
+			if (textLower.includes('קיבלתי') && /\d+/.test(text)) {
+				notes.push(text);
+			}
+			
+			// הערות על המשך עבודה
+			if (textLower.includes('לחזור') || textLower.includes('להמשיך') ||
+				textLower.includes('נשאר') || textLower.includes('צריך')) {
+				notes.push(text);
+			}
+			
+			// בעיות או תקלות
+			if (textLower.includes('בעיה') || textLower.includes('תקלה') ||
+				textLower.includes('לא עובד') || textLower.includes('נשבר')) {
+				notes.push(text);
+			}
+			
+			// הערות על מזג אוויר או תנאים
+			if (textLower.includes('גשם') || textLower.includes('חום') ||
+				textLower.includes('רטוב') || textLower.includes('יבש')) {
+				notes.push(text);
+			}
+			
+			return notes.join(' | ');
+		}
+		
 		// תצוגה מקדימה של הביקורים שנמצאו
 		function showTelegramPreview(parsedVisits) {
 			let previewHTML = `
