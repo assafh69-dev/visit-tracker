@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -1609,6 +1609,24 @@
 							⬇️ יבוא מטבלת עזר טלגרם
 						</button>
 					</div>
+
+					<div style="margin: 25px 0; padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
+						<div style="text-align: center;">
+							<h3 style="color: white; margin-bottom: 10px; font-size: 1.4em;">💰 ייבוא הכנסות מטלגרם</h3>
+							<p style="color: rgba(255,255,255,0.9); margin-bottom: 20px; font-size: 14px;">
+								העלה קובץ ייצוא הכנסות מטלגרם לייבוא אוטומטי למערכת
+							</p>
+							<input type="file" id="telegramIncomeFile" accept=".txt,.json" style="display: none;" onchange="handleTelegramIncomeFileUpload(event)">
+							<button class="btn" onclick="document.getElementById('telegramIncomeFile').click()" 
+									style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3); padding: 12px 30px; font-size: 16px; border-radius: 8px; transition: all 0.3s ease; backdrop-filter: blur(10px);">
+								📁 בחר קובץ הכנסות מטלגרם
+							</button>
+						</div>
+						<div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 12px; text-align: center; color: rgba(255,255,255,0.8);">
+							תומך בקבצי .txt ו-.json מייצוא טלגרם
+						</div>
+					</div>
+
 
 					<!-- הוסף גם כפתור ליצירת טבלת עזר חדשה: -->
 					<div style="margin-top: 10px;">
@@ -8372,6 +8390,493 @@
 			}
 		}
 	   
+	   
+	   // ===== פונקציות פענוח הכנסות מטלגרם =====
+
+		// המרת תאריך מפורמט טלגרם ל-ISO
+		function parseTelegramDateToISO(dateStr) {
+			const months = {
+				'January': '01', 'February': '02', 'March': '03', 'April': '04',
+				'May': '05', 'June': '06', 'July': '07', 'August': '08',
+				'September': '09', 'October': '10', 'November': '11', 'December': '12'
+			};
+			
+			const parts = dateStr.split(' ');
+			if (parts.length === 3) {
+				const day = parts[0].padStart(2, '0');
+				const month = months[parts[1]] || '01';
+				const year = parts[2];
+				return `${year}-${month}-${day}`;
+			}
+			return dateStr;
+		}
+
+		// פענוח שורת הכנסה בודדת
+		function parseIncomeLineFromTelegram(line, date, time) {
+			try {
+				// חילוץ כתובת לקוח
+				let clientAddress = '';
+				const dotIndex = line.indexOf('.');
+				if (dotIndex > 0) {
+					clientAddress = line.substring(0, dotIndex).trim();
+				} else {
+					const beforeReceived = line.split('קיבלתי')[0].trim();
+					clientAddress = beforeReceived.replace(/[.,]$/, '');
+				}
+
+				// חילוץ סכום - גרסה משופרת
+				let amount = 0;
+				const amountPatterns = [
+					/קיבלתי\s+תשלום\s+(\d+)/,     
+					/קיבלתי\s+(\d+)/,              
+					/קיבלתי\s+צ'ק\s+(\d+)/,        
+					/קיבלתי\s+עוד\s+(\d+)/,        
+					/(\d+)\s+מזומן/,               
+					/(\d+)\s+ביט/,                 
+					/(\d+)\s+העברה/,               
+					/(\d+)\s+פייבוקס/,
+					/(\d+)\s+צ'ק/
+				];
+				
+				for (const pattern of amountPatterns) {
+					const match = line.match(pattern);
+					if (match) {
+						amount = parseInt(match[1]);
+						break;
+					}
+				}
+				
+				// אם עדיין לא מצאנו, חפש מספרים גדולים
+				if (amount === 0) {
+					const allNumbers = line.match(/\d+/g);
+					if (allNumbers && allNumbers.length > 0) {
+						const numbers = allNumbers.map(n => parseInt(n)).filter(n => n >= 50);
+						if (numbers.length > 0) {
+							amount = Math.max(...numbers);
+						}
+					}
+				}
+
+				// זיהוי אמצעי תשלום - עם תיקון "לא צוין" = מזומן
+				let paymentMethod = 'מזומן'; // ברירת מחדל במקום "לא צוין"
+				if (line.includes('העברה לחשבון') || line.includes('העברה')) {
+					paymentMethod = 'העברה בנקאית';
+				} else if (line.includes('צ\'ק')) {
+					paymentMethod = 'צ\'ק';
+				} else if (line.includes('ביט')) {
+					paymentMethod = 'ביט';
+				} else if (line.includes('מזומן')) {
+					paymentMethod = 'מזומן';
+				} else if (line.includes('פייבוקס')) {
+					paymentMethod = 'פייבוקס';
+				}
+
+				// חילוץ הערות
+				let notes = '';
+				if (line.includes('עבור')) {
+					const match = line.match(/עבור[^.]+/);
+					if (match) notes += match[0] + ' ';
+				}
+				if (line.includes('שכחתי') || line.includes('לא רשמתי') || line.includes('לא עדכנתי')) {
+					notes += 'לא תועד מיד ';
+				}
+				if (line.includes('על החשבון') || line.includes('חוב')) {
+					notes += 'תשלום על חשבון ';
+				}
+
+				return {
+					date: date,
+					time: time,
+					client_address: clientAddress,
+					amount: amount,
+					payment_method: paymentMethod,
+					notes: notes.trim(),
+					raw_text: line
+				};
+			} catch (error) {
+				console.error('שגיאה בפענוח שורת הכנסה:', line, error);
+				return null;
+			}
+		}
+
+		// פענוח מלא של נתוני הכנסות מטלגרם
+		function parseIncomesFromTelegramText(telegramText) {
+			const lines = telegramText.split('\n').map(line => line.replace(/\r$/, '').trim());
+			const incomes = [];
+			let currentDate = '';
+			let currentTime = '';
+			
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i];
+				
+				// זיהוי תאריך (15 August 2024)
+				if (/^\d{1,2} \w+ \d{4}$/.test(line)) {
+					currentDate = parseTelegramDateToISO(line);
+					continue;
+				}
+				
+				// זיהוי שעה (20:04)
+				if (/^\d{1,2}:\d{2}$/.test(line)) {
+					currentTime = line;
+					continue;
+				}
+				
+				// זיהוי הודעת הכנסה (מכילה "קיבלתי" ומספר)
+				if (line.includes('קיבלתי') && /\d+/.test(line)) {
+					const income = parseIncomeLineFromTelegram(line, currentDate, currentTime);
+					if (income && income.amount > 0) {
+						incomes.push(income);
+					}
+				}
+			}
+			
+			return incomes;
+		}
+	   
+	   
+	   // ===== פונקציות העלאה וטיפול בקובץ הכנסות טלגרם =====
+
+		// מערך גלובלי לאחסון הכנסות מטלגרם
+		let telegramIncomes = [];
+
+		// פונקציה לטיפול בהעלאת קובץ הכנסות מטלגרם
+		async function handleTelegramIncomeFileUpload(event) {
+			const file = event.target.files[0];
+			if (!file) {
+				showToast('לא נבחר קובץ', 'warning');
+				return;
+			}
+
+			console.log('✅ מערכת ייבוא הכנסות מטלגרם מופעלת');
+
+			try {
+				showLoading('קורא קובץ הכנסות מטלגרם...');
+				
+				const text = await file.text();
+				console.log('📄 קובץ נקרא:', file.name, 'גודל:', text.length, 'תווים');
+				
+				// פענוח הנתונים
+				const parsedIncomes = parseIncomesFromTelegramText(text);
+				
+				if (parsedIncomes.length === 0) {
+					hideLoading();
+					showToast('לא נמצאו הכנסות בקובץ', 'warning');
+					return;
+				}
+				
+				// שמירה במערך הגלובלי
+				telegramIncomes = parsedIncomes;
+				
+				hideLoading();
+				
+				// הצגת תוצאות
+				const totalAmount = parsedIncomes.reduce((sum, income) => sum + income.amount, 0);
+				showToast(`🎉 נמצאו ${parsedIncomes.length} הכנסות, סך ${totalAmount.toLocaleString()} ש"ח`, 'success', 4000);
+				
+				// הצגת תצוגה מקדימה
+				showTelegramIncomesPreview(parsedIncomes);
+				
+			} catch (error) {
+				console.error('שגיאה בקריאת קובץ הכנסות:', error);
+				hideLoading();
+				showToast('שגיאה בקריאת הקובץ', 'error');
+			}
+		}
+
+		// הצגת תצוגה מקדימה של ההכנסות שנמצאו
+		function showTelegramIncomesPreview(incomes) {
+			const totalAmount = incomes.reduce((sum, income) => sum + income.amount, 0);
+			
+			// התפלגות אמצעי תשלום
+			const paymentMethods = {};
+			incomes.forEach(income => {
+				paymentMethods[income.payment_method] = (paymentMethods[income.payment_method] || 0) + 1;
+			});
+			
+			let previewHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 900px; max-height: 70vh; overflow-y: auto; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
+					<h3 style="margin-bottom: 20px; color: #2c3e50;">💰 תצוגה מקדימה - הכנסות מטלגרם</h3>
+					
+					<div style="margin-bottom: 25px; padding: 18px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #27ae60;">
+						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; text-align: center;">
+							<div>
+								<strong style="font-size: 20px; color: #27ae60;">${incomes.length}</strong><br>
+								<span style="color: #666;">הכנסות נמצאו</span>
+							</div>
+							<div>
+								<strong style="font-size: 20px; color: #27ae60;">${totalAmount.toLocaleString()}</strong><br>
+								<span style="color: #666;">ש"ח סה"כ</span>
+							</div>
+							<div>
+								<strong style="font-size: 20px; color: #27ae60;">${Object.keys(paymentMethods).length}</strong><br>
+								<span style="color: #666;">אמצעי תשלום</span>
+							</div>
+						</div>
+					</div>
+					
+					<div style="margin-bottom: 20px;">
+						<h4 style="color: #34495e; margin-bottom: 10px;">📊 פילוח אמצעי תשלום:</h4>
+						<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+							${Object.entries(paymentMethods).map(([method, count]) => 
+								`<span style="background: #3498db; color: white; padding: 5px 12px; border-radius: 15px; font-size: 13px;">
+									${method}: ${count}
+								</span>`
+							).join('')}
+						</div>
+					</div>
+					
+					<div style="margin-bottom: 20px;">
+						<h4 style="color: #34495e; margin-bottom: 15px;">📋 דוגמאות (10 ראשונות):</h4>
+						<div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px;">
+							<table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+								<thead style="background: #f8f9fa; position: sticky; top: 0;">
+									<tr>
+										<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">תאריך</th>
+										<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">לקוח</th>
+										<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">סכום</th>
+										<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">תשלום</th>
+										<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">הערות</th>
+									</tr>
+								</thead>
+								<tbody>
+									${incomes.slice(0, 10).map((income, index) => `
+										<tr style="background: ${index % 2 === 0 ? '#f8f9fa' : 'white'};">
+											<td style="padding: 8px; border: 1px solid #ddd;">${income.date}</td>
+											<td style="padding: 8px; border: 1px solid #ddd; max-width: 150px; word-wrap: break-word;">${income.client_address}</td>
+											<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #27ae60;">${income.amount}</td>
+											<td style="padding: 8px; border: 1px solid #ddd;">${income.payment_method}</td>
+											<td style="padding: 8px; border: 1px solid #ddd; font-size: 11px; color: #666;">${income.notes || '-'}</td>
+										</tr>
+									`).join('')}
+								</tbody>
+							</table>
+						</div>
+						${incomes.length > 10 ? `<p style="text-align: center; color: #666; margin-top: 10px;">ועוד ${incomes.length - 10} הכנסות...</p>` : ''}
+					</div>
+					
+					<div style="text-align: center; gap: 15px; display: flex; justify-content: center;">
+						<button class="btn btn-success" onclick="confirmTelegramIncomesImport()" style="padding: 12px 25px; font-size: 16px;">
+							✅ ייבא ${incomes.length} הכנסות למערכת
+						</button>
+						<button class="btn btn-secondary" onclick="cancelTelegramIncomesImport()" style="padding: 12px 25px; font-size: 16px;">
+							❌ ביטול
+						</button>
+					</div>
+				</div>
+			`;
+			
+			showModal(previewHTML);
+		}
+
+		// ביטול ייבוא הכנסות
+		function cancelTelegramIncomesImport() {
+			telegramIncomes = [];
+			closeModal();
+			showToast('ייבוא הכנסות בוטל', 'info');
+		}
+
+
+		// ===== פונקציות אישור ייבוא הכנסות =====
+
+		// אישור ייבוא ההכנסות למערכת
+		async function confirmTelegramIncomesImport() {
+			if (!telegramIncomes || telegramIncomes.length === 0) {
+				showToast('אין הכנסות לייבוא', 'warning');
+				return;
+			}
+			
+			try {
+				showLoading('מייבא הכנסות למערכת...');
+				
+				// יצירת מערך הכנסות חדש אם לא קיים
+				if (typeof incomes === 'undefined') {
+					window.incomes = [];
+				}
+				
+				let importedCount = 0;
+				let skippedCount = 0;
+				
+				for (const telegramIncome of telegramIncomes) {
+					// בדיקת כפילות (תאריך + סכום + טקסט חלקי)
+					const isDuplicate = incomes.some(existing => 
+						existing.date === telegramIncome.date &&
+						existing.amount === telegramIncome.amount &&
+						existing.raw_text && 
+						existing.raw_text.includes(telegramIncome.client_address.substring(0, 10))
+					);
+					
+					if (isDuplicate) {
+						skippedCount++;
+						console.log('⚠️ דולג על הכנסה כפולה:', telegramIncome.client_address, telegramIncome.amount);
+						continue;
+					}
+					
+					// יצירת רשומת הכנסה חדשה
+					const newIncome = {
+						ID: generateID(),
+						date: telegramIncome.date,
+						time: telegramIncome.time || '',
+						client_address: telegramIncome.client_address,
+						client_id: null, // יקושר מאוחר יותר
+						amount: telegramIncome.amount,
+						payment_method: telegramIncome.payment_method,
+						notes: telegramIncome.notes,
+						raw_text: telegramIncome.raw_text,
+						matched_to_visit: false,
+						visit_ids: [],
+						imported_from: 'telegram',
+						import_date: new Date().toISOString().split('T')[0]
+					};
+					
+					incomes.push(newIncome);
+					importedCount++;
+				}
+				
+				// שמירה מקומית
+				saveToLocalStorage();
+				
+				// נסיון לשמירה בעננה
+				if (access_token && SPREADSHEET_ID) {
+					try {
+						await saveIncomesToCloud();
+						updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
+					} catch (cloudError) {
+						console.error('שגיאה בשמירה בעננה:', cloudError);
+						updateCloudStatus('⚠️ שמור מקומית בלבד', 'שגיאת עננה');
+					}
+				}
+				
+				hideLoading();
+				closeModal();
+				
+				// הודעת הצלחה
+				let message = `🎉 ייבוא הכנסות הושלם!\n💰 ${importedCount} הכנסות יובאו`;
+				if (skippedCount > 0) {
+					message += `\n⚠️ ${skippedCount} הכנסות דולגו (כפילות)`;
+				}
+				
+				showToast(message, 'success', 5000);
+				
+				// ריענון התצוגה אם נמצאים בעמוד הכנסות
+				if (typeof loadIncomesTable === 'function') {
+					loadIncomesTable();
+				}
+				
+				// איפוס המערך הזמני
+				telegramIncomes = [];
+				
+			} catch (error) {
+				console.error('שגיאה בייבוא הכנסות:', error);
+				hideLoading();
+				showToast('שגיאה בייבוא הכנסות', 'error');
+			}
+		}
+
+		// שמירת הכנסות בעננה (פלייסהולדר - יש להתאים לפי המבנה הקיים)
+		async function saveIncomesToCloud() {
+			if (!access_token || !SPREADSHEET_ID) {
+				throw new Error('לא מחובר לעננה');
+			}
+			
+			// כאן צריך להוסיף את הלוגיקה לשמירה בגוגל שיטס
+			// בהתאם למבנה הקיים של המערכת
+			console.log('💾 שומר הכנסות בעננה...');
+			
+			// דוגמה - יש להתאים לפי המבנה הקיים:
+			/*
+			const headers = ['תאריך', 'שעה', 'כתובת_לקוח', 'סכום', 'אמצעי_תשלום', 'הערות', 'טקסט_מקורי'];
+			const rows = incomes.map(income => [
+				income.date,
+				income.time,
+				income.client_address,
+				income.amount,
+				income.payment_method,
+				income.notes,
+				income.raw_text
+			]);
+			
+			await gapi.client.sheets.spreadsheets.values.update({
+				spreadsheetId: SPREADSHEET_ID,
+				range: 'Incomes!A1',
+				valueInputOption: 'RAW',
+				resource: {
+					values: [headers, ...rows]
+				}
+			});
+			*/
+		}
+
+		// הוספת כפתור העלאה לממשק (להוסיף למקום המתאים בממשק)
+		function addTelegramIncomeUploadButton() {
+			const uploadHTML = `
+				<div class="upload-section" style="margin: 20px 0; padding: 20px; border: 2px dashed #3498db; border-radius: 10px; text-align: center;">
+					<h3 style="color: #3498db; margin-bottom: 15px;">📤 ייבוא הכנסות מטלגרם</h3>
+					<p style="color: #666; margin-bottom: 20px;">בחר קובץ טקסט עם ייצוא הכנסות מטלגרם</p>
+					<input type="file" id="telegramIncomeFile" accept=".txt,.json" style="display: none;" onchange="handleTelegramIncomeFileUpload(event)">
+					<button class="btn btn-primary" onclick="document.getElementById('telegramIncomeFile').click()" style="padding: 12px 25px; font-size: 16px;">
+						📁 בחר קובץ הכנסות מטלגרם
+					</button>
+				</div>
+			`;
+			
+			return uploadHTML;
+		}
+
+
+// ===== פונקציות עזר נוספות למערכת הכנסות =====
+
+// יצירת פונקציה לטעינת רשימת הכנסות (אם לא קיימת)
+function loadIncomesTable() {
+    if (typeof incomes === 'undefined' || !incomes.length) {
+        console.log('📊 אין הכנסות להצגה');
+        return;
+    }
+    
+    console.log(`📊 טוען ${incomes.length} הכנסות לתצוגה`);
+    // כאן תוסיף את הלוגיקה להצגת הכנסות בממשק בעתיד
+}
+
+// אתחול מערך הכנסות אם לא קיים
+if (typeof incomes === 'undefined') {
+    window.incomes = [];
+}
+
+// הוספה לפונקציית שמירה מקומית הקיימת
+function saveIncomesToLocalStorage() {
+    if (typeof incomes !== 'undefined' && incomes.length > 0) {
+        localStorage.setItem('incomes', JSON.stringify(incomes));
+        console.log('💾 שמר', incomes.length, 'הכנסות מקומית');
+    }
+}
+
+// הוספה לפונקציית טעינה מקומית הקיימת  
+function loadIncomesFromLocalStorage() {
+    const savedIncomes = localStorage.getItem('incomes');
+    if (savedIncomes) {
+        try {
+            window.incomes = JSON.parse(savedIncomes);
+            console.log('📂 טען', incomes.length, 'הכנסות מהזיכרון המקומי');
+        } catch (error) {
+            console.error('שגיאה בטעינת הכנסות:', error);
+            window.incomes = [];
+        }
+    } else {
+        window.incomes = [];
+    }
+}
+
+// שמירת הכנסות בעננה (יש להתאים לפי המבנה הקיים)
+async function saveIncomesToCloud() {
+    if (!access_token || !SPREADSHEET_ID) {
+        throw new Error('לא מחובר לעננה');
+    }
+    
+    console.log('💾 שומר הכנסות בעננה...');
+    // כאן תוסיף את הלוגיקה לשמירה בגוגל שיטס בעתיד
+}
+
+console.log('✅ מערכת ייבוא הכנסות מטלגרם מוכנה');
+
    </script>
 </body>
 </html>
