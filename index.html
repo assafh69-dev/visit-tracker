@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -6414,7 +6414,7 @@
 			showModal(previewHTML);
 		}
 
-		// אישור ייבוא הביקורים מטלגרם
+		// אישור ייבוא הביקורים מטלגרם - גירסה מעודכנת
 		async function confirmTelegramImport() {
 			if (!window.pendingTelegramVisits || window.pendingTelegramVisits.length === 0) {
 				showToast('אין ביקורים לייבוא', 'warning');
@@ -6424,29 +6424,69 @@
 			try {
 				showLoading('מייבא ביקורים מטלגרם...');
 				
+				// שלב 1: שמור לטבלת TelegramVisits (זמני)
+				const telegramVisitsWithIds = window.pendingTelegramVisits.map(visit => ({
+					...visit,
+					ID: generateID()
+				}));
+				
+				await saveTelegramVisitsToCloud(telegramVisitsWithIds);
+				
+				// שלב 2: המר לביקורים רגילים במערכת
 				let importedCount = 0;
 				
-				for (const telegramVisit of window.pendingTelegramVisits) {
-					// צור ביקור חדש במבנה המערכת
+				for (const telegramVisit of telegramVisitsWithIds) {
+					// מצא או צור לקוח
+					let locationId = null;
+					const existingLocation = locations.find(loc => 
+						loc.name.toLowerCase() === telegramVisit.client_name.toLowerCase()
+					);
+					
+					if (existingLocation) {
+						locationId = existingLocation.ID;
+					} else {
+						// צור לקוח חדש אם לא קיים
+						locationId = generateID();
+						const newLocation = {
+							ID: locationId,
+							name: telegramVisit.client_name,
+							full_address: '',
+							neighborhood: '',
+							city: '',
+							contact_person: '',
+							phone: '',
+							allowed_day: 'יום ראשון',
+							interval_weeks: 4,
+							temp_addition: false,
+							base_amount: 0,
+							active: true,
+							notes: 'נוצר אוטומטית מייבוא טלגרם',
+							last_visit: telegramVisit.date,
+							next_visit: '',
+							client_requests: ''
+						};
+						locations.push(newLocation);
+					}
+					
+					// צור ביקור במערכת הראשית
 					const visitData = {
 						ID: generateID(),
 						date: telegramVisit.date,
-						location_id: telegramVisit.client_id,
-						visit_type: 'גינון', // ברירת מחדל
+						location_id: locationId,
+						location_name: telegramVisit.client_name,
+						visit_type: telegramVisit.visit_type || 'כללי',
 						work_done: telegramVisit.work_done,
 						duration_minutes: telegramVisit.duration_minutes,
+						num_workers: 1,
 						start_time: telegramVisit.time || '',
 						end_time: '',
 						amount: 0, // יחושב לפי זמן ותעריף
 						expense: 0,
 						paid: 'לא',
-						notes: `יובא מטלגרם: ${telegramVisit.raw_text}`
+						notes: `ייובא מטלגרם: ${telegramVisit.raw_text}`
 					};
 					
-					// הוסף למערכת
 					visits.push(visitData);
-					// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
-					//await updateSingleLocationTreatmentDates(visitData.location_id);
 					importedCount++;
 				}
 				
@@ -6454,27 +6494,27 @@
 				saveToLocalStorage();
 				
 				// עדכן תצוגות
-				loadReceiptsTable(); // זה מעדכן גם טבלת ביקורים
+				loadLocationsTable();
+				loadReceiptsTable();
 				loadFilterOptions();
 				
-				// שמור לענן
-				/// await saveAllToSheets();
+				// שמור לעלנן
 				await saveAllToSheetsOptimized();
 				
-				showToast(`🎉 ייבוא טלגרם הושלם!
-				💬 ${importedCount} ביקורים יובאו
-				✅ הכל נשמר לענן!
-				🕐 תהליך הושלם`, 'success', 6000);;
+				hideLoading();
+				closeModal();
 				
-				// נקה ונסגור
+				showToast(`🎉 ייבוא טלגרם הושלם!
+		📱 ${importedCount} ביקורים יובאו
+		💾 הכל נשמר לעלנן!`, 'success', 5000);
+				
+				// נקה את הנתונים הזמניים
 				window.pendingTelegramVisits = null;
-				closeTelegramPreview();
 				
 			} catch (error) {
-				console.error('Error importing telegram visits:', error);
-				showToast('שגיאה בייבוא מטלגרם', 'error');
-			} finally {
+				console.error('שגיאה בייבוא מטלגרם:', error);
 				hideLoading();
+				showToast('שגיאה בייבוא מטלגרם', 'error');
 			}
 		}
 
@@ -8040,7 +8080,10 @@
 						
 						// מציאה או יצירת הטבלה הראשית
 						await findOrCreateMainSpreadsheet();
-						
+
+						// ודא שכל הטבלאות החדשות קיימות
+						await ensureNewTablesExist();
+
 						// טעינה אוטומטית של נתונים אם קיימים
 						if (SPREADSHEET_ID) {
 							try {
@@ -8678,7 +8721,67 @@
 
 		// ===== פונקציות אישור ייבוא הכנסות =====
 
-		// אישור ייבוא ההכנסות למערכת
+		// ===== פונקציות וידוא קיום גיליונות נדרשים =====
+
+		// וידוא קיום גיליון הכנסות במערכת הראשית
+		async function ensureIncomesSheetExists() {
+			if (!await validateToken()) return false;
+			
+			try {
+				const response = await gapi.client.sheets.spreadsheets.get({
+					spreadsheetId: SPREADSHEET_ID
+				});
+				
+				const existingSheets = response.result.sheets.map(sheet => sheet.properties.title);
+				
+				if (!existingSheets.includes('Incomes')) {
+					console.log('יוצר גיליון הכנסות...');
+					
+					await gapi.client.sheets.spreadsheets.batchUpdate({
+						spreadsheetId: SPREADSHEET_ID,
+						resource: {
+							requests: [{
+								addSheet: {
+									properties: {
+										title: 'Incomes',
+										gridProperties: {
+											rowCount: 1000,
+											columnCount: 12
+										}
+									}
+								}
+							}]
+						}
+					});
+					
+					// הוספת כותרות
+					const headers = [
+						'ID', 'תאריך', 'שעה', 'כתובת_לקוח', 'מזהה_לקוח', 
+						'סכום', 'אמצעי_תשלום', 'הערות', 'טקסט_מקורי', 
+						'מקור_ייבוא', 'תאריך_ייבוא', 'סטטוס'
+					];
+					
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: 'Incomes!A1:L1',
+						valueInputOption: 'RAW',
+						resource: { values: [headers] }
+					});
+					
+					console.log('✅ גיליון הכנסות נוצר');
+				}
+				
+				return true;
+				
+			} catch (error) {
+				console.error('שגיאה בוידוא גיליון הכנסות:', error);
+				return false;
+			}
+		}
+
+	
+
+		// אישור ייבוא ההכנסות מטלגרם - גירסה מעודכנת
 		async function confirmTelegramIncomesImport() {
 			if (!telegramIncomes || telegramIncomes.length === 0) {
 				showToast('אין הכנסות לייבוא', 'warning');
@@ -8686,17 +8789,35 @@
 			}
 			
 			try {
+				showLoading('מכין מערכת לייבוא הכנסות...');
+				
+				// ודא שהטבלות קיימות
+				await ensureNewTablesExist();
+				
 				showLoading('מייבא הכנסות למערכת...');
 				
-				// יצירת מערך הכנסות חדש אם לא קיים
-				if (typeof incomes === 'undefined') {
-					window.incomes = [];
-				}
+				// הוסף ID לכל הכנסה
+				const incomesWithIds = telegramIncomes.map(income => ({
+					...income,
+					ID: generateID(),
+					import_date: new Date().toISOString().split('T')[0],
+					matched_to_visit: false,
+					visit_ids: [],
+					processed: false
+				}));
+				
+				// שמור לטבלת TelegramIncomes
+				await saveTelegramIncomesToCloud(incomesWithIds);
 				
 				let importedCount = 0;
 				let skippedCount = 0;
 				
-				for (const telegramIncome of telegramIncomes) {
+				// יצירת מערך incomes אם לא קיים
+				if (typeof incomes === 'undefined') {
+					window.incomes = [];
+				}
+				
+				for (const telegramIncome of incomesWithIds) {
 					// בדיקת כפילות (תאריך + סכום + טקסט חלקי)
 					const isDuplicate = incomes.some(existing => 
 						existing.date === telegramIncome.date &&
@@ -8711,9 +8832,9 @@
 						continue;
 					}
 					
-					// יצירת רשומת הכנסה חדשה
+					// יצירת רשומת הכנסה חדשה במערכת הישנה (לתאימות לאחור)
 					const newIncome = {
-						ID: generateID(),
+						ID: telegramIncome.ID,
 						date: telegramIncome.date,
 						time: telegramIncome.time || '',
 						client_address: telegramIncome.client_address,
@@ -8725,7 +8846,7 @@
 						matched_to_visit: false,
 						visit_ids: [],
 						imported_from: 'telegram',
-						import_date: new Date().toISOString().split('T')[0]
+						import_date: telegramIncome.import_date
 					};
 					
 					incomes.push(newIncome);
@@ -8734,17 +8855,6 @@
 				
 				// שמירה מקומית
 				saveToLocalStorage();
-				
-				// נסיון לשמירה בעננה
-				if (access_token && SPREADSHEET_ID) {
-					try {
-						await saveIncomesToCloud();
-						updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
-					} catch (cloudError) {
-						console.error('שגיאה בשמירה בעננה:', cloudError);
-						updateCloudStatus('⚠️ שמור מקומית בלבד', 'שגיאת עננה');
-					}
-				}
 				
 				hideLoading();
 				closeModal();
@@ -8757,7 +8867,7 @@
 				
 				showToast(message, 'success', 5000);
 				
-				// ריענון התצוגה אם נמצאים בעמוד הכנסות
+				// רענון התצוגה אם נמצאים בעמוד הכנסות
 				if (typeof loadIncomesTable === 'function') {
 					loadIncomesTable();
 				}
@@ -8772,40 +8882,49 @@
 			}
 		}
 
-		// שמירת הכנסות בעננה (פלייסהולדר - יש להתאים לפי המבנה הקיים)
-		async function saveIncomesToCloud() {
-			if (!access_token || !SPREADSHEET_ID) {
-				throw new Error('לא מחובר לעננה');
+		// פונקציה נוספת - שמירת הכנסות מטלגרם לטבלה החדשה
+		async function saveTelegramIncomesToCloud(telegramIncomes) {
+			if (!access_token || !SPREADSHEET_ID || !telegramIncomes || telegramIncomes.length === 0) {
+				return false;
 			}
 			
-			// כאן צריך להוסיף את הלוגיקה לשמירה בגוגל שיטס
-			// בהתאם למבנה הקיים של המערכת
-			console.log('💾 שומר הכנסות בעננה...');
-			
-			// דוגמה - יש להתאים לפי המבנה הקיים:
-			/*
-			const headers = ['תאריך', 'שעה', 'כתובת_לקוח', 'סכום', 'אמצעי_תשלום', 'הערות', 'טקסט_מקורי'];
-			const rows = incomes.map(income => [
-				income.date,
-				income.time,
-				income.client_address,
-				income.amount,
-				income.payment_method,
-				income.notes,
-				income.raw_text
-			]);
-			
-			await gapi.client.sheets.spreadsheets.values.update({
-				spreadsheetId: SPREADSHEET_ID,
-				range: 'Incomes!A1',
-				valueInputOption: 'RAW',
-				resource: {
-					values: [headers, ...rows]
-				}
-			});
-			*/
+			try {
+				console.log('💾 שומר הכנסות טלגרם...');
+				
+				// הכן נתונים לשמירה
+				const rows = telegramIncomes.map(income => [
+					income.ID,
+					income.date,
+					income.time || '',
+					income.client_address,
+					income.amount,
+					income.payment_method,
+					income.notes || '',
+					income.raw_text || '',
+					income.matched_to_visit || false,
+					income.visit_ids ? income.visit_ids.join(',') : '',
+					income.processed || false,
+					income.import_date || new Date().toISOString().split('T')[0]
+				]);
+				
+				// שמור לטבלה
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'TelegramIncomes!A:L',
+					valueInputOption: 'USER_ENTERED',
+					resource: { values: rows }
+				});
+				
+				console.log(`✅ נשמרו ${telegramIncomes.length} הכנסות טלגרם`);
+				return true;
+				
+			} catch (error) {
+				console.error('שגיאה בשמירת הכנסות טלגרם:', error);
+				return false;
+			}
 		}
-
+		
+		
 		// הוספת כפתור העלאה לממשק (להוסיף למקום המתאים בממשק)
 		function addTelegramIncomeUploadButton() {
 			const uploadHTML = `
@@ -8823,59 +8942,368 @@
 		}
 
 
-// ===== פונקציות עזר נוספות למערכת הכנסות =====
+		// ===== פונקציות עזר נוספות למערכת הכנסות =====
 
-// יצירת פונקציה לטעינת רשימת הכנסות (אם לא קיימת)
-function loadIncomesTable() {
-    if (typeof incomes === 'undefined' || !incomes.length) {
-        console.log('📊 אין הכנסות להצגה');
-        return;
-    }
-    
-    console.log(`📊 טוען ${incomes.length} הכנסות לתצוגה`);
-    // כאן תוסיף את הלוגיקה להצגת הכנסות בממשק בעתיד
-}
+		// יצירת פונקציה לטעינת רשימת הכנסות (אם לא קיימת)
+		function loadIncomesTable() {
+			if (typeof incomes === 'undefined' || !incomes.length) {
+				console.log('📊 אין הכנסות להצגה');
+				return;
+			}
+			
+			console.log(`📊 טוען ${incomes.length} הכנסות לתצוגה`);
+			// כאן תוסיף את הלוגיקה להצגת הכנסות בממשק בעתיד
+		}
 
-// אתחול מערך הכנסות אם לא קיים
-if (typeof incomes === 'undefined') {
-    window.incomes = [];
-}
+		// אתחול מערך הכנסות אם לא קיים
+		if (typeof incomes === 'undefined') {
+			window.incomes = [];
+		}
 
-// הוספה לפונקציית שמירה מקומית הקיימת
-function saveIncomesToLocalStorage() {
-    if (typeof incomes !== 'undefined' && incomes.length > 0) {
-        localStorage.setItem('incomes', JSON.stringify(incomes));
-        console.log('💾 שמר', incomes.length, 'הכנסות מקומית');
-    }
-}
+		// הוספה לפונקציית שמירה מקומית הקיימת
+		function saveIncomesToLocalStorage() {
+			if (typeof incomes !== 'undefined' && incomes.length > 0) {
+				localStorage.setItem('incomes', JSON.stringify(incomes));
+				console.log('💾 שמר', incomes.length, 'הכנסות מקומית');
+			}
+		}
 
-// הוספה לפונקציית טעינה מקומית הקיימת  
-function loadIncomesFromLocalStorage() {
-    const savedIncomes = localStorage.getItem('incomes');
-    if (savedIncomes) {
-        try {
-            window.incomes = JSON.parse(savedIncomes);
-            console.log('📂 טען', incomes.length, 'הכנסות מהזיכרון המקומי');
-        } catch (error) {
-            console.error('שגיאה בטעינת הכנסות:', error);
-            window.incomes = [];
-        }
-    } else {
-        window.incomes = [];
-    }
-}
+		// הוספה לפונקציית טעינה מקומית הקיימת  
+		function loadIncomesFromLocalStorage() {
+			const savedIncomes = localStorage.getItem('incomes');
+			if (savedIncomes) {
+				try {
+					window.incomes = JSON.parse(savedIncomes);
+					console.log('📂 טען', incomes.length, 'הכנסות מהזיכרון המקומי');
+				} catch (error) {
+					console.error('שגיאה בטעינת הכנסות:', error);
+					window.incomes = [];
+				}
+			} else {
+				window.incomes = [];
+			}
+		}
 
-// שמירת הכנסות בעננה (יש להתאים לפי המבנה הקיים)
-async function saveIncomesToCloud() {
-    if (!access_token || !SPREADSHEET_ID) {
-        throw new Error('לא מחובר לעננה');
-    }
-    
-    console.log('💾 שומר הכנסות בעננה...');
-    // כאן תוסיף את הלוגיקה לשמירה בגוגל שיטס בעתיד
-}
+		// שמירת הכנסות בעננה (יש להתאים לפי המבנה הקיים)
+		async function saveIncomesToCloud() {
+			if (!access_token || !SPREADSHEET_ID) {
+				throw new Error('לא מחובר לעננה');
+			}
+			
+			console.log('💾 שומר הכנסות בעננה...');
+			// כאן תוסיף את הלוגיקה לשמירה בגוגל שיטס בעתיד
+		}
 
-console.log('✅ מערכת ייבוא הכנסות מטלגרם מוכנה');
+
+		// ===== פונקציות יצירת גיליונות נוספים במערכת =====
+
+		// יצירת גיליון הכנסות בקובץ הראשי
+		async function createIncomesSheet() {
+			if (!await validateToken()) {
+				showToast('התחבר לגוגל קודם', 'warning');
+				return false;
+			}
+			
+			try {
+				showLoading('יוצר גיליון הכנסות...');
+				
+				// בדיקה אם הגיליון כבר קיים
+				const sheetsResponse = await gapi.client.sheets.spreadsheets.get({
+					spreadsheetId: SPREADSHEET_ID
+				});
+				
+				const existingSheet = sheetsResponse.result.sheets.find(sheet => 
+					sheet.properties.title === 'Incomes'
+				);
+				
+				if (existingSheet) {
+					hideLoading();
+					showToast('גיליון הכנסות כבר קיים', 'info');
+					return true;
+				}
+				
+				// יצירת הגיליון החדש
+				await gapi.client.sheets.spreadsheets.batchUpdate({
+					spreadsheetId: SPREADSHEET_ID,
+					resource: {
+						requests: [{
+							addSheet: {
+								properties: {
+									title: 'Incomes',
+									gridProperties: {
+										rowCount: 1000,
+										columnCount: 10
+									}
+								}
+							}
+						}]
+					}
+				});
+				
+				// הוספת כותרות
+				const headers = [
+					'ID', 'תאריך', 'שעה', 'כתובת_לקוח', 'מזהה_לקוח', 
+					'סכום', 'אמצעי_תשלום', 'הערות', 'טקסט_מקורי', 'מקור_ייבוא'
+				];
+				
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Incomes!A1:J1',
+					valueInputOption: 'RAW',
+					resource: { values: [headers] }
+				});
+				
+				hideLoading();
+				showToast('✅ גיליון הכנסות נוצר בהצלחה!', 'success');
+				return true;
+				
+			} catch (error) {
+				console.error('שגיאה ביצירת גיליון הכנסות:', error);
+				hideLoading();
+				showToast('שגיאה ביצירת גיליון הכנסות', 'error');
+				return false;
+			}
+		}
+
+		
+
+		// ===== מערכת טבלאות חדשה לטלגרם ותשלומים =====
+
+		// פונקציה מרכזית ליצירת כל הטבלאות החדשות הנדרשות
+		async function ensureNewTablesExist() {
+			if (!await validateToken()) {
+				showToast('נדרש חיבור לגוגל', 'warning');
+				return false;
+			}
+			
+			try {
+				console.log('🔍 בודק קיום טבלאות חדשות...');
+				
+				// רשימת הטבלאות החדשות הנדרשות
+				const requiredTables = [
+					{ name: 'TelegramVisits', columns: 10 },
+					{ name: 'TelegramIncomes', columns: 12 },
+					{ name: 'Payments', columns: 10 },
+					{ name: 'PaymentVisitLink', columns: 6 }
+				];
+				
+				// בדיקת קיום הטבלאות הנוכחיות
+				const response = await gapi.client.sheets.spreadsheets.get({
+					spreadsheetId: SPREADSHEET_ID
+				});
+				
+				const existingSheets = response.result.sheets.map(sheet => sheet.properties.title);
+				console.log('📋 גיליונות קיימים:', existingSheets);
+				
+				// יצירת הטבלאות החסרות
+				let createdCount = 0;
+				
+				for (const table of requiredTables) {
+					if (!existingSheets.includes(table.name)) {
+						console.log(`🔨 יוצר טבלה: ${table.name}`);
+						
+						// יצירת הגיליון
+						await gapi.client.sheets.spreadsheets.batchUpdate({
+							spreadsheetId: SPREADSHEET_ID,
+							resource: {
+								requests: [{
+									addSheet: {
+										properties: {
+											title: table.name,
+											gridProperties: {
+												rowCount: 1000,
+												columnCount: table.columns
+											}
+										}
+									}
+								}]
+							}
+						});
+						
+						// הוספת כותרות
+						await addHeadersToNewTable(table.name);
+						createdCount++;
+						
+						console.log(`✅ נוצר בהצלחה: ${table.name}`);
+					} else {
+						console.log(`ℹ️ קיים כבר: ${table.name}`);
+					}
+				}
+				
+				if (createdCount > 0) {
+					showToast(`✅ נוצרו ${createdCount} טבלאות חדשות!`, 'success');
+				} else {
+					console.log('✅ כל הטבלאות כבר קיימות');
+				}
+				
+				return true;
+				
+			} catch (error) {
+				console.error('שגיאה ביצירת הטבלאות החדשות:', error);
+				showToast('שגיאה ביצירת טבלאות חדשות', 'error');
+				return false;
+			}
+		}
+
+		// הוספת כותרות לטבלאות החדשות
+		async function addHeadersToNewTable(tableName) {
+			let headers = [];
+			
+			switch (tableName) {
+				case 'TelegramVisits':
+					headers = [
+						'ID', 'date', 'time', 'client_name', 'visit_type', 
+						'work_done', 'duration_minutes', 'raw_text', 'processed', 'created_at'
+					];
+					break;
+					
+				case 'TelegramIncomes':
+					headers = [
+						'ID', 'date', 'time', 'client_address', 'amount', 'payment_method',
+						'notes', 'raw_text', 'matched_to_visit', 'visit_ids', 'processed', 'created_at'
+					];
+					break;
+					
+				case 'Payments':
+					headers = [
+						'ID', 'date', 'time', 'amount', 'payment_method', 'source_type',
+						'client_id', 'notes', 'status', 'created_at'
+					];
+					break;
+					
+				case 'PaymentVisitLink':
+					headers = [
+						'ID', 'payment_id', 'visit_id', 'amount_allocated', 'link_type', 'created_at'
+					];
+					break;
+			}
+			
+			if (headers.length > 0) {
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${tableName}!A1:${String.fromCharCode(64 + headers.length)}1`,
+					valueInputOption: 'RAW',
+					resource: { values: [headers] }
+				});
+			}
+		}
+
+		// ===== פונקציות שמירה לטבלאות החדשות =====
+
+		// שמירת ביקורים מטלגרם לטבלת TelegramVisits
+		async function saveTelegramVisitsToCloud(telegramVisits) {
+			if (!access_token || !SPREADSHEET_ID || !telegramVisits || telegramVisits.length === 0) {
+				return false;
+			}
+			
+			try {
+				console.log('💾 שומר ביקורי טלגרם...');
+				
+				// ודא שהטבלה קיימת
+				await ensureNewTablesExist();
+				
+				// הכן נתונים לשמירה
+				const rows = telegramVisits.map(visit => [
+					visit.ID || generateID(),
+					visit.date,
+					visit.time || '',
+					visit.client_name,
+					visit.visit_type || 'general',
+					visit.work_done,
+					visit.duration_minutes || 60,
+					visit.raw_text || '',
+					false, // processed
+					new Date().toISOString()
+				]);
+				
+				// שמור לטבלה
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'TelegramVisits!A:J',
+					valueInputOption: 'USER_ENTERED',
+					resource: { values: rows }
+				});
+				
+				console.log(`✅ נשמרו ${telegramVisits.length} ביקורי טלגרם`);
+				return true;
+				
+			} catch (error) {
+				console.error('שגיאה בשמירת ביקורי טלגרם:', error);
+				return false;
+			}
+		}
+
+		// טעינת ביקורים מטלגרם מהעלנן
+		async function loadTelegramVisitsFromCloud() {
+			if (!access_token || !SPREADSHEET_ID) {
+				return [];
+			}
+			
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'TelegramVisits!A2:J1000'
+				});
+				
+				if (!response.result.values) {
+					return [];
+				}
+				
+				return response.result.values.map(row => ({
+					ID: row[0] || '',
+					date: row[1] || '',
+					time: row[2] || '',
+					client_name: row[3] || '',
+					visit_type: row[4] || '',
+					work_done: row[5] || '',
+					duration_minutes: parseInt(row[6]) || 60,
+					raw_text: row[7] || '',
+					processed: row[8] === 'true' || row[8] === true,
+					created_at: row[9] || ''
+				}));
+				
+			} catch (error) {
+				console.error('שגיאה בטעינת ביקורי טלגרם:', error);
+				return [];
+			}
+		}
+
+		// טעינת הכנסות מטלגרם מהעלנן
+		async function loadTelegramIncomesFromCloud() {
+			if (!access_token || !SPREADSHEET_ID) {
+				return [];
+			}
+			
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'TelegramIncomes!A2:L1000'
+				});
+				
+				if (!response.result.values) {
+					return [];
+				}
+				
+				return response.result.values.map(row => ({
+					ID: row[0] || '',
+					date: row[1] || '',
+					time: row[2] || '',
+					client_address: row[3] || '',
+					amount: parseFloat(row[4]) || 0,
+					payment_method: row[5] || '',
+					notes: row[6] || '',
+					raw_text: row[7] || '',
+					matched_to_visit: row[8] === 'true' || row[8] === true,
+					visit_ids: row[9] ? row[9].split(',') : [],
+					processed: row[10] === 'true' || row[10] === true,
+					created_at: row[11] || ''
+				}));
+				
+			} catch (error) {
+				console.error('שגיאה בטעינת הכנסות מטלגרם:', error);
+				return [];
+			}
+		}
 
    </script>
 </body>
