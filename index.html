@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -2064,7 +2064,7 @@
 					visitData.ID,
 					visitData.date,
 					visitData.location_id,
-					visitData.location_name || '', // ← הוסף את השדה החדש!
+					visitData.location_name || '', 
 					visitData.visit_type,
 					visitData.work_done,
 					visitData.duration_minutes,
@@ -2073,14 +2073,12 @@
 					visitData.end_time,
 					visitData.amount,
 					visitData.expense || 0,
-					visitData.paid,
 					visitData.notes
 				]];
 				
-				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.VISITS}!A:N`, // ← שנה מ-A:M ל-A:N
+					range: `${SHEETS.VISITS}!A:M`, // ← חזרנו ל-M כי הסרנו paid
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: values }
 				});
@@ -5981,7 +5979,7 @@
 							end_time: '',
 							amount: parseInt(row[9]) || 0,
 							expense: parseInt(row[11]) || 0,
-							notes: `יובא מטבלת עזר טלגרם: ${row[12] || ''}`
+							notes: row[12] || ''
 						};
 						
 						visits.push(visitData);
@@ -7699,16 +7697,15 @@
 			if (!visitsArray.length) return true;
 			
 			try {
-				// הסרנו את location_name שלא קיים בביקורים - אופס, זה כן צריך להיות!
 				const values = visitsArray.map(visit => [
 					visit.ID, visit.date, visit.location_id, visit.location_name, visit.visit_type, visit.work_done,
 					visit.duration_minutes, visit.num_workers, visit.start_time, visit.end_time,
-					visit.amount, visit.expense, visit.paid, visit.notes
+					visit.amount, visit.expense, visit.notes
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Visits!A2:N2', // ← עכשיו N כי יש עמודה נוספת
+					range: 'Visits!A2:M2', // ← חזרנו ל-M כי הסרנו paid
 					valueInputOption: 'USER_ENTERED',
 					resource: { values }
 				});
