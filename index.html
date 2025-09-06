@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -5536,64 +5536,7 @@
 		}
 	   
 	   
-	   // ייבוא מטקסט טלגרם - פונקציה ראשית
-		async function importFromTelegram() {
-			// יצירת input קובץ עם תמיכה בקבצים מרובים
-			const fileInput = document.createElement('input');
-			fileInput.type = 'file';
-			fileInput.accept = '.txt';
-			fileInput.multiple = true; // תמיכה בקבצים מרובים!
-			
-			fileInput.onchange = async (event) => {
-				const files = Array.from(event.target.files);
-				if (files.length === 0) return;
-				
-				try {
-					showLoading(`מפרסר ${files.length} קבצי טלגרם...`);
-					
-					let allParsedVisits = [];
-					
-					// עבור על כל הקבצים
-					for (let i = 0; i < files.length; i++) {
-						const file = files[i];
-						console.log(`📄 Processing file ${i+1}/${files.length}: ${file.name}`);
-						
-						const text = await file.text();
-						const parsedVisits = parseTelegramText(text);
-						
-						console.log(`📄 File ${file.name}: found ${parsedVisits.length} visits`);
-						allParsedVisits = allParsedVisits.concat(parsedVisits);
-						
-						// המתנה קצרה בין קבצים
-						if (i < files.length - 1) {
-							await new Promise(resolve => setTimeout(resolve, 300));
-						}
-					}
-					
-					if (allParsedVisits.length > 0) {
-						showToast(`נמצאו ${allParsedVisits.length} ביקורים מ-${files.length} קבצים`, 'success');
-						
-						// פתרון פשוט - אישור ישיר
-						if (confirm(`נמצאו ${allParsedVisits.length} ביקורים מטלגרם.\n\nהאם לייבא אותם למערכת?`)) {
-							window.pendingTelegramVisits = allParsedVisits;
-							await confirmTelegramImport();
-						} else {
-							showToast('ייבוא בוטל', 'info');
-						}
-					} else {
-						showToast('לא נמצאו ביקורים בקבצים', 'warning');
-					}
-					
-				} catch (error) {
-					console.error('Error parsing telegram files:', error);
-					showToast('שגיאה בפרסור קבצי טלגרם', 'error');
-				} finally {
-					hideLoading();
-				}
-			};
-			
-			fileInput.click();
-		}
+
 
 		// הוסף פונקציה להצגת מידע על טבלת עזר טלגרם
 		function updateTelegramHelperStatus() {
@@ -5924,16 +5867,17 @@
 			}
 			
 			try {
-				// בדוק אם טבלת עזר טלגרם קיימת
+				// שמור לשתי המערכות: הישנה והחדשה
+				
+				// 1. שמירה למערכת הישנה (טבלה נפרדת)
 				let telegramTableId = localStorage.getItem('telegramHelperTableId');
 				
 				if (!telegramTableId) {
-					// צור טבלת עזר חדשה
 					telegramTableId = await createTelegramHelperTable();
 					if (!telegramTableId) return;
 				}
 				
-				// המר את הנתונים לפורמט CSV
+				// המר את הנתונים לפורמט CSV הישן
 				const csvData = parsedVisits.map(visit => [
 					visit.date.split('-')[0], // year
 					visit.date.split('-')[1], // month
@@ -5950,7 +5894,7 @@
 					visit.raw_text || '' // notes
 				]);
 				
-				// שמור לטבלת עזר טלגרם
+				// שמור לטבלת עזר הישנה
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: telegramTableId,
 					range: 'Visits!A:M',
@@ -5960,7 +5904,10 @@
 					}
 				});
 				
-				console.log(`✅ Saved ${parsedVisits.length} visits to telegram helper table`);
+				// 2. שמירה למערכת החדשה (TelegramVisits)
+				await saveTelegramVisitsToCloud(parsedVisits);
+				
+				console.log(`✅ שמר ${parsedVisits.length} ביקורים לשתי המערכות`);
 				
 			} catch (error) {
 				console.error('Error saving to telegram helper table:', error);
@@ -6354,65 +6301,7 @@
 			return notes.join(' | ');
 		}
 		
-		// תצוגה מקדימה של הביקורים שנמצאו
-		function showTelegramPreview(parsedVisits) {
-			let previewHTML = `
-				<div style="background: white; padding: 20px; border-radius: 10px; max-width: 800px; max-height: 600px; overflow-y: auto;">
-					<h3 style="margin-bottom: 20px;">📋 תצוגה מקדימה - ביקורים שנמצאו</h3>
-					
-					<div style="margin-bottom: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
-						<p><strong>נמצאו ${parsedVisits.length} ביקורים פוטנציאליים</strong></p>
-						<p style="font-size: 14px; color: #666;">בדוק את הנתונים ואשר ייבוא</p>
-					</div>
-					
-					<div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px;">
-						<table style="width: 100%; border-collapse: collapse;">
-							<thead style="background: #f8f9fa; position: sticky; top: 0;">
-								<tr>
-									<th style="padding: 10px; border: 1px solid #ddd;">תאריך</th>
-									<th style="padding: 10px; border: 1px solid #ddd;">שעה</th>
-									<th style="padding: 10px; border: 1px solid #ddd;">לקוח</th>
-									<th style="padding: 10px; border: 1px solid #ddd;">עבודה</th>
-									<th style="padding: 10px; border: 1px solid #ddd;">זמן (דק')</th>
-								</tr>
-							</thead>
-							<tbody>
-			`;
-			
-			parsedVisits.forEach((visit, index) => {
-				previewHTML += `
-					<tr style="background: ${index % 2 === 0 ? '#f8f9fa' : 'white'};">
-						<td style="padding: 8px; border: 1px solid #ddd;">${visit.date}</td>
-						<td style="padding: 8px; border: 1px solid #ddd;">${visit.time}</td>
-						<td style="padding: 8px; border: 1px solid #ddd;">${visit.client_name}</td>
-						<td style="padding: 8px; border: 1px solid #ddd;">${visit.work_done}</td>
-						<td style="padding: 8px; border: 1px solid #ddd;">${visit.duration_minutes}</td>
-					</tr>
-				`;
-			});
-			
-			previewHTML += `
-							</tbody>
-						</table>
-					</div>
-					
-					<div style="margin-top: 20px; text-align: center; gap: 10px; display: flex; justify-content: center;">
-						<button class="btn btn-success" onclick="confirmTelegramImport()">
-							✅ אשר ייבוא (${parsedVisits.length} ביקורים)
-						</button>
-						<button class="btn btn-secondary" onclick="closeTelegramPreview()">
-							❌ ביטול
-						</button>
-					</div>
-				</div>
-			`;
-			
-			// שמור את הנתונים למשתנה גלובלי לייבוא
-			window.pendingTelegramVisits = parsedVisits;
-			
-			// הצג מודל
-			showModal(previewHTML);
-		}
+	
 
 		// אישור ייבוא הביקורים מטלגרם - גירסה מעודכנת
 		async function confirmTelegramImport() {
@@ -6518,11 +6407,7 @@
 			}
 		}
 
-		// סגירת תצוגה מקדימה
-		function closeTelegramPreview() {
-			window.pendingTelegramVisits = null;
-			closeModal();
-		}
+		
 
 
 		function showModal(content) {
