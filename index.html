@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -3250,6 +3250,41 @@
 				}
 				
 				visits.push(newVisit);
+
+				// יצירת תשלום אם הביקור מסומן כשולם
+				if (visitData.paid && (visitData.paid === '1' || visitData.paid === 'כן' || visitData.paid === 'שולם')) {
+					const payment = {
+						ID: generateID(),
+						date: newVisit.date,
+						time: newVisit.start_time || new Date().toTimeString().substr(0, 5),
+						amount: newVisit.amount || 0,
+						payment_method: 'cash',
+						source_type: 'new_visit_payment',
+						client_id: newVisit.location_id,
+						notes: `תשלום עבור ביקור חדש - ${newVisit.work_done}`,
+						status: 'completed',
+						created_at: new Date().toISOString()
+					};
+					
+					payments.push(payment);
+					
+					const link = {
+						ID: generateID(),
+						payment_id: payment.ID,
+						visit_id: newVisit.ID,
+						amount_allocated: newVisit.amount || 0,
+						link_type: 'full_payment',
+						created_at: new Date().toISOString()
+					};
+					
+					paymentVisitLinks.push(link);
+					
+					// שמירה לענן
+					if (access_token) {
+						await savePaymentToCloud(payment);
+						await savePaymentVisitLinkToCloud(link);
+					}
+				}
 
 				// תוספה - שמירה לגוגל שיטס
 				if (access_token) {
@@ -5990,6 +6025,7 @@
 				}
 				
 				let importedCount = 0;
+				let createdPayments = 0;
 				
 				for (const row of response.result.values) {
 					if (row[0] && row[3]) { // יש שנה ושם לקוח
@@ -6011,16 +6047,60 @@
 						
 						visits.push(visitData);
 						importedCount++;
+						
+						// יצירת תשלום אם הטיפול מסומן כשולם (row[10] = 'paid' column מטבלת העזר)
+						const paidStatus = row[10] || 'לא';
+						if (paidStatus === '1' || paidStatus === 'כן' || paidStatus === 'שולם') {
+							const payment = {
+								ID: generateID(),
+								date: visitData.date, // אותו תאריך כמו הביקור
+								time: '12:00', // שעה ברירת מחדל
+								amount: visitData.amount,
+								payment_method: 'cash',
+								source_type: 'import_from_helper',
+								client_id: visitData.location_id,
+								notes: `תשלום עבור ייבוא מטבלת עזר - ${visitData.work_done}`,
+								status: 'completed',
+								created_at: new Date().toISOString()
+							};
+							
+							payments.push(payment);
+				
+							// יצירת קישור בין התשלום לביקור
+							const link = {
+								ID: generateID(),
+								payment_id: payment.ID,
+								visit_id: visitData.ID,
+								amount_allocated: visitData.amount,
+								link_type: 'full_payment',
+								created_at: new Date().toISOString()
+							};
+							
+							paymentVisitLinks.push(link);
+							createdPayments++;
+						}
+						
 					}
 				}
 				
-				// שמור הכל
+				// שמור הכל כולל תשלומים
 				saveToLocalStorage();
 				loadReceiptsTable();
 				loadFilterOptions();
 				await saveAllToSheetsOptimized();
-				
-				showToast(`יובאו בהצלחה ${importedCount} ביקורים מטבלת עזר טלגרם!`, 'success');
+
+				// שמירת תשלומים לענן
+				if (payments.length > 0) {
+					for (const payment of payments) {
+						await savePaymentToCloud(payment);
+					}
+					for (const link of paymentVisitLinks) {
+						await savePaymentVisitLinkToCloud(link);
+					}
+				}
+
+				showToast(`יובאו בהצלחה ${importedCount} ביקורים מטבלת עזר טלגרם!
+				💰 נוצרו ${createdPayments} תשלומים`, 'success');
 				
 			} catch (error) {
 				console.error('Error importing from telegram helper:', error);
@@ -7533,11 +7613,12 @@
 								continue;
 							}
 							
+							const paidStatus = row[10] || '';
 							const visitData = {
 								ID: generateID(),
 								date: visitDate,
 								location_id: existingCustomer.ID,
-								location_name: customerName, // ← הוספנו את השם!
+								location_name: customerName,
 								visit_type: row[5] || 'regular',
 								work_done: workDone,
 								duration_minutes: (parseFloat(row[8]) || 0) * 60,
@@ -7546,12 +7627,40 @@
 								end_time: '',
 								amount: amount,
 								expense: parseFloat(row[11]) || 0,
-								paid: mapPaymentStatus(row[10]),
 								notes: row[12] || ''
 							};
-							
+
 							visits.push(visitData);
 							newVisits.push(visitData);
+
+							// יצירת תשלום אם הביקור מסומן כשולם
+							if (paidStatus === '1' || paidStatus === 'כן' || paidStatus === 'שולם') {
+								const payment = {
+									ID: generateID(),
+									date: visitDate,
+									time: '12:00',
+									amount: amount,
+									payment_method: 'cash',
+									source_type: 'import_from_helper_fast',
+									client_id: existingCustomer.ID,
+									notes: `תשלום עבור ייבוא מהיר - ${workDone}`,
+									status: 'completed',
+									created_at: new Date().toISOString()
+								};
+								
+								payments.push(payment);
+								
+								const link = {
+									ID: generateID(),
+									payment_id: payment.ID,
+									visit_id: visitData.ID,
+									amount_allocated: amount,
+									link_type: 'full_payment',
+									created_at: new Date().toISOString()
+								};
+								
+								paymentVisitLinks.push(link);
+							}
 							//** עדכון תאריכי טיפול לאחר הוספת ביקור חדש
 							//** await updateSingleLocationTreatmentDates(visitData.location_id);
 							stats.visits.imported++;
@@ -7649,6 +7758,20 @@
 				
 				const saveResults = await Promise.all(savePromises);
 				const allSaved = saveResults.every(result => result === true);
+				
+				// שמירת תשלומים לענן
+				if (payments.length > 0) {
+					for (const payment of payments) {
+						await savePaymentToCloud(payment);
+					}
+					for (const link of paymentVisitLinks) {
+						await savePaymentVisitLinkToCloud(link);
+					}
+				}
+
+				const saveResults = await Promise.all(savePromises);
+				const allSaved = saveResults.every(result => result === true);
+				
 				
 				// ======== שלב 6: עדכון ממשק ========
 				saveToLocalStorage();
