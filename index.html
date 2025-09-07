@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -7459,6 +7459,7 @@
 			}
 			
 			console.log('🚀 Starting FAST complete import from helper table...');
+			console.log('🔍 Import Table ID:', importTableId);
 			
 			try {
 				showLoading('מייבא נתונים מהר מטבלת העזר...');
@@ -7516,6 +7517,13 @@
 					visits: visitsResponse.result.values?.length || 0,
 					receipts: receiptsResponse.result.values?.length || 0
 				});
+				
+				if (visitsResponse.result.values && visitsResponse.result.values.length > 0) {
+					console.log('🔍 First 5 rows from visits table:');
+					visitsResponse.result.values.slice(0, 5).forEach((row, index) => {
+						console.log(`Row ${index}: Year=${row[0]}, Month=${row[1]}, Day=${row[2]}, Customer=${row[3]}`);
+					});
+				}
 				
 				// ======== שלב 2: עיבוד לקוחות ========
 				if (locationsResponse.result.values?.length > 0) {
