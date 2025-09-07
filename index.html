@@ -7595,6 +7595,7 @@
 							const month = String(row[1]).padStart(2, '0');
 							const day = String(row[2]).padStart(2, '0');
 							const visitDate = `${year}-${month}-${day}`;
+							console.log(`🔍 Processing visit: ${customerName} on ${visitDate} (original year: ${year})`);
 							
 							const workDone = row[7] || '';
 							const amount = parseFloat(row[9]) || 0;
