@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
 			</nav>
         </header>
 
@@ -7760,12 +7760,22 @@
 				const allSaved = saveResults.every(result => result === true);
 				
 				// שמירת תשלומים לענן
+				// שמירת תשלומים בקבוצות - לא אחד אחד
 				if (payments.length > 0) {
-					for (const payment of payments) {
-						await savePaymentToCloud(payment);
-					}
-					for (const link of paymentVisitLinks) {
-						await savePaymentVisitLinkToCloud(link);
+					console.log(`💰 שומר ${payments.length} תשלומים ו-${paymentVisitLinks.length} קישורים...`);
+					
+					try {
+						// שמירת תשלומים בבאץ'
+						await savePaymentsBatch(payments);
+						
+						// שמירת קישורים בבאץ'
+						await savePaymentLinksBatch(paymentVisitLinks);
+						
+						console.log(`✅ נשמרו כל התשלומים והקישורים בהצלחה`);
+						
+					} catch (error) {
+						console.error('❌ שגיאה בשמירת תשלומים:', error);
+						showToast('חלק מהתשלומים לא נשמרו לענן', 'warning');
 					}
 				}
 
@@ -9712,6 +9722,75 @@
 				return false;
 			}
 		}
+
+		// שמירת תשלומים בקבוצה
+		async function savePaymentsBatch(paymentsArray) {
+			if (!paymentsArray.length || !access_token || !SPREADSHEET_ID) {
+				return false;
+			}
+			
+			try {
+				const values = paymentsArray.map(payment => [
+					payment.ID,
+					payment.date,
+					payment.time,
+					payment.amount,
+					payment.payment_method,
+					payment.source_type,
+					payment.client_id,
+					payment.notes,
+					payment.status,
+					payment.created_at
+				]);
+				
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Payments!A:J',
+					valueInputOption: 'USER_ENTERED',
+					resource: { values }
+				});
+				
+				console.log(`✅ נשמרו ${paymentsArray.length} תשלומים בענן`);
+				return true;
+				
+			} catch (error) {
+				console.error('שגיאה בשמירת תשלומים בקבוצה:', error);
+				return false;
+			}
+		}
+
+		// שמירת קישורי תשלום-ביקור בקבוצה
+		async function savePaymentLinksBatch(linksArray) {
+			if (!linksArray.length || !access_token || !SPREADSHEET_ID) {
+				return false;
+			}
+			
+			try {
+				const values = linksArray.map(link => [
+					link.ID,
+					link.payment_id,
+					link.visit_id,
+					link.amount_allocated,
+					link.link_type,
+					link.created_at
+				]);
+				
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'PaymentVisitLink!A:F',
+					valueInputOption: 'USER_ENTERED',
+					resource: { values }
+				});
+				
+				console.log(`✅ נשמרו ${linksArray.length} קישורי תשלום-ביקור בענן`);
+				return true;
+				
+			} catch (error) {
+				console.error('שגיאה בשמירת קישורים בקבוצה:', error);
+				return false;
+			}
+		}
+
 
    </script>
 </body>
