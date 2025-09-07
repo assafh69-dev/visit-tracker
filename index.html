@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -7277,7 +7277,7 @@
 						const lastDate = new Date(lastVisitDate);
 						const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
 						location.allowed_day = dayNames[lastDate.getDay()];
-						console.log(`📅 ${location.name}: יום מועדף חושב כ-${location.allowed_day} (לפי ביקור מ-${lastVisitDate})`);
+						/// console.log(`📅 ${location.name}: יום מועדף חושב כ-${location.allowed_day} (לפי ביקור מ-${lastVisitDate})`);
 					}
 					
 					// חישוב תאריך הטיפול הבא
@@ -7295,7 +7295,7 @@
 					
 					updatedLocations.push(location);
 					
-					console.log(`📅 ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
+					// console.log(`📅 ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
 				}
 			}
 			
@@ -7395,7 +7395,7 @@
 				// עדכון בגוגל שיטס
 				await updateTreatmentDatesInSheets([location]);
 				
-				console.log(`📅 עודכן לקוח ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
+				// console.log(`📅 עודכן לקוח ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
 				// רענן נתוני תכנון
 				refreshPlanningAfterTreatmentUpdate();
 			}
@@ -7609,7 +7609,7 @@
 							
 							if (isDuplicateVisit) {
 								stats.visits.skipped++;
-								console.log(`⚠️ Duplicate visit skipped: ${customerName} on ${visitDate}`);
+								// console.log(`⚠️ Duplicate visit skipped: ${customerName} on ${visitDate}`);
 								continue;
 							}
 							
@@ -7714,7 +7714,7 @@
 							
 							if (isDuplicateReceipt) {
 								stats.receipts.skipped++;
-								console.log(`⚠️ Duplicate receipt skipped: ${bookNumber}/${receiptNumber}`);
+								// console.log(`⚠️ Duplicate receipt skipped: ${bookNumber}/${receiptNumber}`);
 								continue;
 							}
 							
