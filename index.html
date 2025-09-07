@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -5171,12 +5171,13 @@
 		}
 		
 		// פונקציה חדשה לבדיקה ותיקון מבנה הטבלה
+		// פונקציה חדשה לבדיקה ותיקון מבנה הטבלה
 		async function checkAndFixTableStructure() {
 			console.log('Checking and fixing table structure...');
 			
 			try {
-				// בדיקת כותרות בכל גיליון
-				const sheetsToCheck = ['Locations', 'Visits', 'Receipts'];
+				// בדיקת כותרות בכל גיליון - כולל החדשים
+				const sheetsToCheck = ['Locations', 'Visits', 'Receipts', 'TelegramVisits', 'TelegramIncomes', 'Payments', 'PaymentVisitLink'];
 				
 				for (const sheetName of sheetsToCheck) {
 					try {
@@ -5227,6 +5228,32 @@
 						headers = [
 							'ID', 'book_number', 'receipt_number', 'date', 'location_id', 
 							'location_name', 'amount', 'payment_type', 'notes'
+						];
+						break;
+					case 'TelegramVisits':
+						headers = [
+							'ID', 'date', 'time', 'client_name', 'visit_type', 
+							'work_done', 'duration_minutes', 'raw_text', 'processed', 'created_at'
+						];
+						break;
+						
+					case 'TelegramIncomes':
+						headers = [
+							'ID', 'date', 'time', 'client_address', 'amount', 'payment_method',
+							'notes', 'raw_text', 'matched_to_visit', 'visit_ids', 'processed', 'created_at'
+						];
+						break;
+						
+					case 'Payments':
+						headers = [
+							'ID', 'date', 'time', 'amount', 'payment_method', 'source_type',
+							'client_id', 'notes', 'status', 'created_at'
+						];
+						break;
+						
+					case 'PaymentVisitLink':
+						headers = [
+							'ID', 'payment_id', 'visit_id', 'amount_allocated', 'link_type', 'created_at'
 						];
 						break;
 				}
