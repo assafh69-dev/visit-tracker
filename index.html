@@ -1934,7 +1934,7 @@
 		console.log('API Key:', API_KEY);
 		console.log('Client ID:', CLIENT_ID);
 //////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-				// משתנים למערכת החיפוש
+			// משתנים למערכת החיפוש
 		let originalPlanningClients = []; // גיבוי של הרשימה המקורית
 		let currentSearchTerm = '';
 		let currentCityFilter = '';
@@ -2036,7 +2036,7 @@
 		    }
 		}
 		
-		// החלת כל הסינונים יחד
+		// החלת כל הסינונים יחד - עם תיקון לראשון לציון
 		function applyPlanningFilters() {
 		    // שמירת הרשימה המקורית אם זה הפעם הראשונה
 		    if (originalPlanningClients.length === 0) {
@@ -2062,37 +2062,45 @@
 		        });
 		    }
 		    
-				/ סינון לפי עיר - גרסה מתוקנת לראשון לציון
-		if (currentCityFilter) {
-		    filteredClients = filteredClients.filter(client => {
-		        const fullAddress = (client.full_address || '').toLowerCase();
-		        
-		        switch (currentCityFilter) {
-		            case 'ראשלצ':
-		                return fullAddress.includes('ראשון לציון') || 
-		                       fullAddress.includes('ראשל"צ') || 
-		                       fullAddress.includes('ראשלצ');
-		                
-		            case 'חולון':
-		                return fullAddress.includes('חולון');
-		                
-		            case 'בת ים':
-		                return fullAddress.includes('בת ים') || fullAddress.includes('בת-ים');
-		                
-		            case 'אחר':
-		                return !fullAddress.includes('ראשון לציון') && 
-		                       !fullAddress.includes('ראשל"צ') && 
-		                       !fullAddress.includes('ראשלצ') && 
-		                       !fullAddress.includes('חולון') && 
-		                       !fullAddress.includes('בת ים') && 
-		                       !fullAddress.includes('בת-ים');
-		                
-		            default:
-		                return true;
-		        }
-		    });
-		}	
-				
+		    // סינון לפי עיר - גרסה מתוקנת לראשון לציון
+		    if (currentCityFilter) {
+		        filteredClients = filteredClients.filter(client => {
+		            const fullAddress = (client.full_address || '').toLowerCase();
+		            
+		            switch (currentCityFilter) {
+		                case 'ראשלצ':
+		                    return fullAddress.includes('ראשון לציון') || 
+		                           fullAddress.includes('ראשל"צ') || 
+		                           fullAddress.includes('ראשלצ');
+		                    
+		                case 'חולון':
+		                    return fullAddress.includes('חולון');
+		                    
+		                case 'בת ים':
+		                    return fullAddress.includes('בת ים') || fullAddress.includes('בת-ים');
+		                    
+		                case 'אחר':
+		                    return !fullAddress.includes('ראשון לציון') && 
+		                           !fullAddress.includes('ראשל"צ') && 
+		                           !fullAddress.includes('ראשלצ') && 
+		                           !fullAddress.includes('חולון') && 
+		                           !fullAddress.includes('בת ים') && 
+		                           !fullAddress.includes('בת-ים');
+		                    
+		                default:
+		                    return true;
+		            }
+		        });
+		    }
+		    
+		    // עדכון הרשימה הגלובלית ורינדור מחדש
+		    planningClients = filteredClients;
+		    renderPlanningCards();
+		    
+		    // עדכון מספר תוצאות
+		    updateSearchResultsCount();
+		}
+		
 		// עדכון מספר תוצאות
 		function updateSearchResultsCount() {
 		    const totalCount = originalPlanningClients.length;
@@ -10276,5 +10284,6 @@
    </script>
 </body>
 </html>
+
 
 
