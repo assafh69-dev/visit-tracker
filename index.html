@@ -1404,7 +1404,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
 			</nav>
         </header>
 
@@ -1437,7 +1437,7 @@
             <label>סינון לפי עיר:</label>
             <select id="planningCityFilter" onchange="handleCityFilter(this.value)">
                 <option value="">כל הערים</option>
-                <option value="ראשלצ">ראש לציון</option>
+                <option value="ראשלצ">ראשון לציון</option>
                 <option value="חולון">חולון</option>
                 <option value="בת ים">בת ים</option>
                 <option value="אחר">אחר</option>
@@ -2062,28 +2062,37 @@
 		        });
 		    }
 		    
-		    // סינון לפי עיר
-		    if (currentCityFilter) {
-		        filteredClients = filteredClients.filter(client => {
-		            const clientCity = (client.city || '').trim();
-		            
-		            if (currentCityFilter === 'אחר') {
-		                return !['ראש לציון', 'חולון', 'בת ים'].includes(clientCity);
-		            } else {
-		                return clientCity.includes(currentCityFilter) || 
-		                       (currentCityFilter === 'ראשלצ' && clientCity.includes('ראש לציון'));
-		            }
-		        });
-		    }
-		    
-		    // עדכון הרשימה הגלובלית ורינדור מחדש
-		    planningClients = filteredClients;
-		    renderPlanningCards();
-		    
-		    // עדכון מספר תוצאות
-		    updateSearchResultsCount();
-		}
-		
+				/ סינון לפי עיר - גרסה מתוקנת לראשון לציון
+		if (currentCityFilter) {
+		    filteredClients = filteredClients.filter(client => {
+		        const fullAddress = (client.full_address || '').toLowerCase();
+		        
+		        switch (currentCityFilter) {
+		            case 'ראשלצ':
+		                return fullAddress.includes('ראשון לציון') || 
+		                       fullAddress.includes('ראשל"צ') || 
+		                       fullAddress.includes('ראשלצ');
+		                
+		            case 'חולון':
+		                return fullAddress.includes('חולון');
+		                
+		            case 'בת ים':
+		                return fullAddress.includes('בת ים') || fullAddress.includes('בת-ים');
+		                
+		            case 'אחר':
+		                return !fullAddress.includes('ראשון לציון') && 
+		                       !fullAddress.includes('ראשל"צ') && 
+		                       !fullAddress.includes('ראשלצ') && 
+		                       !fullAddress.includes('חולון') && 
+		                       !fullAddress.includes('בת ים') && 
+		                       !fullAddress.includes('בת-ים');
+		                
+		            default:
+		                return true;
+		        }
+		    });
+		}	
+				
 		// עדכון מספר תוצאות
 		function updateSearchResultsCount() {
 		    const totalCount = originalPlanningClients.length;
@@ -10267,4 +10276,5 @@
    </script>
 </body>
 </html>
+
 
