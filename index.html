@@ -1007,6 +1007,8 @@
 			}
 		}
 		/***************************************/
+		
+		/***************************************/
 
 		/* סטיילינג למצב שבועי */
 		.weekly-day-section {
@@ -1026,6 +1028,168 @@
 
 
 /***************************************/
+				/* CSS למערכת החיפוש */
+		.planning-search-container {
+		    background: rgba(255,255,255,0.9);
+		    border-radius: 12px;
+		    padding: 20px;
+		    margin-bottom: 20px;
+		    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+		    border: 1px solid #e0e0e0;
+		}
+		
+		.search-row {
+		    display: flex;
+		    gap: 20px;
+		    align-items: end;
+		    flex-wrap: wrap;
+		}
+		
+		.search-field {
+		    flex: 1;
+		    min-width: 200px;
+		}
+		
+		.search-field label {
+		    display: block;
+		    font-weight: bold;
+		    margin-bottom: 5px;
+		    color: #333;
+		    font-size: 14px;
+		}
+		
+		/* תיבת חיפוש כתובת */
+		.autocomplete-wrapper {
+		    position: relative;
+		}
+		
+		#planningAddressSearch {
+		    width: 100%;
+		    padding: 12px 15px;
+		    border: 2px solid #ddd;
+		    border-radius: 8px;
+		    font-size: 14px;
+		    transition: all 0.3s ease;
+		    background: white;
+		}
+		
+		#planningAddressSearch:focus {
+		    outline: none;
+		    border-color: #3498db;
+		    box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
+		}
+		
+		/* רשימת הצעות השלמה */
+		.suggestions-dropdown {
+		    position: absolute;
+		    top: 100%;
+		    left: 0;
+		    right: 0;
+		    background: white;
+		    border: 1px solid #ddd;
+		    border-top: none;
+		    border-radius: 0 0 8px 8px;
+		    max-height: 200px;
+		    overflow-y: auto;
+		    z-index: 1000;
+		    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+		}
+		
+		.suggestion-item {
+		    padding: 12px 15px;
+		    cursor: pointer;
+		    border-bottom: 1px solid #f0f0f0;
+		    transition: background 0.2s ease;
+		}
+		
+		.suggestion-item:hover {
+		    background: #f8f9fa;
+		}
+		
+		.suggestion-item:last-child {
+		    border-bottom: none;
+		}
+		
+		.suggestion-item.highlighted {
+		    background: #3498db;
+		    color: white;
+		}
+		
+		.suggestion-client-name {
+		    font-weight: bold;
+		    color: #333;
+		    margin-bottom: 3px;
+		}
+		
+		.suggestion-client-address {
+		    font-size: 12px;
+		    color: #666;
+		}
+		
+		.suggestion-item.highlighted .suggestion-client-name,
+		.suggestion-item.highlighted .suggestion-client-address {
+		    color: white;
+		}
+		
+		/* בחירת עיר */
+		#planningCityFilter {
+		    width: 100%;
+		    padding: 12px 15px;
+		    border: 2px solid #ddd;
+		    border-radius: 8px;
+		    font-size: 14px;
+		    background: white;
+		    cursor: pointer;
+		    transition: all 0.3s ease;
+		}
+		
+		#planningCityFilter:focus {
+		    outline: none;
+		    border-color: #3498db;
+		    box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
+		}
+		
+		/* כפתור איפוס */
+		.clear-search-btn {
+		    padding: 12px 20px;
+		    background: #e74c3c;
+		    color: white;
+		    border: none;
+		    border-radius: 8px;
+		    cursor: pointer;
+		    font-weight: bold;
+		    transition: all 0.3s ease;
+		    font-size: 14px;
+		}
+		
+		.clear-search-btn:hover {
+		    background: #c0392b;
+		    transform: translateY(-1px);
+		}
+		
+		/* תגובה למובייל */
+		@media (max-width: 768px) {
+		    .search-row {
+		        flex-direction: column;
+		        gap: 15px;
+		    }
+		    
+		    .search-field {
+		        min-width: 100%;
+		    }
+		    
+		    .clear-search-btn {
+		        width: 100%;
+		        padding: 15px;
+		        font-size: 16px;
+		    }
+		}
+		
+		/* אינדיקטור חיפוש פעיל */
+		.search-active {
+		    border-left: 4px solid #3498db;
+		    background: rgba(52, 152, 219, 0.05);
+		}
 /***************************************/
 
 		/* עדכון CSS לכרטיסיות תכנון - מבנה דו-שורתי */
@@ -1240,7 +1404,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -1254,6 +1418,40 @@
                 <h3 id="planningDateTitle">היום - רביעי</h3>
                 <p id="planningDateFormatted">28 בנובמבר 2024</p>
             </div>
+
+
+			<div class="planning-search-container">
+    <div class="search-row">
+        <!-- חיפוש כתובת עם השלמה אוטומטית -->
+        <div class="search-field">
+            <label>חיפוש לפי כתובת:</label>
+            <div class="autocomplete-wrapper">
+                <input type="text" id="planningAddressSearch" placeholder="הקלד כתובת לקוח..."
+                       autocomplete="off" oninput="handleAddressSearch(this.value)">
+                <div id="addressSuggestions" class="suggestions-dropdown" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <!-- פילטר ערים -->
+        <div class="search-field">
+            <label>סינון לפי עיר:</label>
+            <select id="planningCityFilter" onchange="handleCityFilter(this.value)">
+                <option value="">כל הערים</option>
+                <option value="ראשלצ">ראש לציון</option>
+                <option value="חולון">חולון</option>
+                <option value="בת ים">בת ים</option>
+                <option value="אחר">אחר</option>
+            </select>
+        </div>
+        
+        <!-- כפתור איפוס -->
+        <div class="search-field">
+            <button id="clearSearchBtn" onclick="clearPlanningSearch()" class="clear-search-btn">
+                🗑️ איפוס חיפוש
+            </button>
+        </div>
+    </div>
+</div>	
 
             <!-- טאבים -->
             <div class="planning-view-tabs">
@@ -1736,6 +1934,271 @@
 		console.log('API Key:', API_KEY);
 		console.log('Client ID:', CLIENT_ID);
 //////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+				// משתנים למערכת החיפוש
+		let originalPlanningClients = []; // גיבוי של הרשימה המקורית
+		let currentSearchTerm = '';
+		let currentCityFilter = '';
+		let highlightedIndex = -1;
+		
+		// פונקציה לטיפול בחיפוש כתובת עם השלמה אוטומטית
+		function handleAddressSearch(searchTerm) {
+		    currentSearchTerm = searchTerm.trim();
+		    
+		    if (!searchTerm || searchTerm.length < 2) {
+		        hideSuggestions();
+		        applyPlanningFilters();
+		        return;
+		    }
+		    
+		    // חיפוש לקוחות התואמים
+		    const matchingClients = getMatchingClients(searchTerm);
+		    showSuggestions(matchingClients);
+		    
+		    // סינון התצוגה הנוכחית
+		    applyPlanningFilters();
+		}
+		
+		// מציאת לקוחות התואמים לחיפוש
+		function getMatchingClients(searchTerm) {
+		    const term = searchTerm.toLowerCase();
+		    
+		    return locations
+		        .filter(client => client.active === "1")
+		        .filter(client => {
+		            const clientName = (client.name || '').toLowerCase();
+		            const clientAddress = (client.full_address || '').toLowerCase();
+		            const clientStreet = (client.street || '').toLowerCase();
+		            const clientCity = (client.city || '').toLowerCase();
+		            
+		            return clientName.includes(term) || 
+		                   clientAddress.includes(term) || 
+		                   clientStreet.includes(term) || 
+		                   clientCity.includes(term);
+		        })
+		        .slice(0, 8); // מגבלה של 8 הצעות
+		}
+		
+		// הצגת הצעות השלמה
+		function showSuggestions(clients) {
+		    const suggestionsDiv = document.getElementById('addressSuggestions');
+		    
+		    if (clients.length === 0) {
+		        hideSuggestions();
+		        return;
+		    }
+		    
+		    const suggestionsHTML = clients.map((client, index) => `
+		        <div class="suggestion-item" data-index="${index}" onclick="selectSuggestion('${client.ID}')">
+		            <div class="suggestion-client-name">${client.name}</div>
+		            <div class="suggestion-client-address">${client.full_address}</div>
+		        </div>
+		    `).join('');
+		    
+		    suggestionsDiv.innerHTML = suggestionsHTML;
+		    suggestionsDiv.style.display = 'block';
+		    highlightedIndex = -1;
+		}
+		
+		// הסתרת הצעות
+		function hideSuggestions() {
+		    const suggestionsDiv = document.getElementById('addressSuggestions');
+		    suggestionsDiv.style.display = 'none';
+		    highlightedIndex = -1;
+		}
+		
+		// בחירת הצעה מהרשימה
+		function selectSuggestion(clientId) {
+		    const client = locations.find(c => c.ID === clientId);
+		    if (!client) return;
+		    
+		    // עדכון שדה החיפוש
+		    document.getElementById('planningAddressSearch').value = client.full_address;
+		    currentSearchTerm = client.full_address;
+		    
+		    // הסתרת הצעות והחלת סינון
+		    hideSuggestions();
+		    applyPlanningFilters();
+		    
+		    // הדגשת המכולה כאקטיבית
+		    document.querySelector('.planning-search-container').classList.add('search-active');
+		    
+		    showToast(`נבחרה כתובת: ${client.name}`, 'success');
+		}
+		
+		// טיפול בסינון לפי עיר
+		function handleCityFilter(city) {
+		    currentCityFilter = city;
+		    applyPlanningFilters();
+		    
+		    if (city) {
+		        document.querySelector('.planning-search-container').classList.add('search-active');
+		        showToast(`מסונן לפי עיר: ${city || 'כל הערים'}`, 'info');
+		    }
+		}
+		
+		// החלת כל הסינונים יחד
+		function applyPlanningFilters() {
+		    // שמירת הרשימה המקורית אם זה הפעם הראשונה
+		    if (originalPlanningClients.length === 0) {
+		        originalPlanningClients = [...planningClients];
+		    }
+		    
+		    // התחלה מהרשימה המקורית
+		    let filteredClients = [...originalPlanningClients];
+		    
+		    // סינון לפי חיפוש כתובת
+		    if (currentSearchTerm) {
+		        const term = currentSearchTerm.toLowerCase();
+		        filteredClients = filteredClients.filter(client => {
+		            const clientName = (client.name || '').toLowerCase();
+		            const clientAddress = (client.full_address || '').toLowerCase();
+		            const clientStreet = (client.street || '').toLowerCase();
+		            const clientCity = (client.city || '').toLowerCase();
+		            
+		            return clientName.includes(term) || 
+		                   clientAddress.includes(term) || 
+		                   clientStreet.includes(term) || 
+		                   clientCity.includes(term);
+		        });
+		    }
+		    
+		    // סינון לפי עיר
+		    if (currentCityFilter) {
+		        filteredClients = filteredClients.filter(client => {
+		            const clientCity = (client.city || '').trim();
+		            
+		            if (currentCityFilter === 'אחר') {
+		                return !['ראש לציון', 'חולון', 'בת ים'].includes(clientCity);
+		            } else {
+		                return clientCity.includes(currentCityFilter) || 
+		                       (currentCityFilter === 'ראשלצ' && clientCity.includes('ראש לציון'));
+		            }
+		        });
+		    }
+		    
+		    // עדכון הרשימה הגלובלית ורינדור מחדש
+		    planningClients = filteredClients;
+		    renderPlanningCards();
+		    
+		    // עדכון מספר תוצאות
+		    updateSearchResultsCount();
+		}
+		
+		// עדכון מספר תוצאות
+		function updateSearchResultsCount() {
+		    const totalCount = originalPlanningClients.length;
+		    const filteredCount = planningClients.length;
+		    
+		    if (currentSearchTerm || currentCityFilter) {
+		        let filterDescription = [];
+		        if (currentSearchTerm) filterDescription.push(`"${currentSearchTerm}"`);
+		        if (currentCityFilter) filterDescription.push(currentCityFilter);
+		        
+		        showToast(`נמצאו ${filteredCount} מתוך ${totalCount} לקוחות עבור: ${filterDescription.join(', ')}`, 'info');
+		    }
+		}
+		
+		// איפוס חיפוש
+		function clearPlanningSearch() {
+		    // איפוס שדות
+		    document.getElementById('planningAddressSearch').value = '';
+		    document.getElementById('planningCityFilter').value = '';
+		    
+		    // איפוס משתנים
+		    currentSearchTerm = '';
+		    currentCityFilter = '';
+		    
+		    // החזרת הרשימה המקורית
+		    if (originalPlanningClients.length > 0) {
+		        planningClients = [...originalPlanningClients];
+		        originalPlanningClients = [];
+		    }
+		    
+		    // הסתרת הצעות ורינדור מחדש
+		    hideSuggestions();
+		    renderPlanningCards();
+		    
+		    // הסרת הדגשה
+		    document.querySelector('.planning-search-container').classList.remove('search-active');
+		    
+		    showToast('החיפוש אופס', 'success');
+		}
+		
+		// טיפול בלחיצות מקלדת בשדה החיפוש
+		document.addEventListener('DOMContentLoaded', function() {
+		    const addressInput = document.getElementById('planningAddressSearch');
+		    if (addressInput) {
+		        addressInput.addEventListener('keydown', function(e) {
+		            const suggestionsDiv = document.getElementById('addressSuggestions');
+		            const items = suggestionsDiv.querySelectorAll('.suggestion-item');
+		            
+		            if (items.length === 0) return;
+		            
+		            switch(e.key) {
+		                case 'ArrowDown':
+		                    e.preventDefault();
+		                    highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
+		                    updateHighlight(items);
+		                    break;
+		                    
+		                case 'ArrowUp':
+		                    e.preventDefault();
+		                    highlightedIndex = Math.max(highlightedIndex - 1, -1);
+		                    updateHighlight(items);
+		                    break;
+		                    
+		                case 'Enter':
+		                    e.preventDefault();
+		                    if (highlightedIndex >= 0) {
+		                        items[highlightedIndex].click();
+		                    }
+		                    break;
+		                    
+		                case 'Escape':
+		                    hideSuggestions();
+		                    break;
+		            }
+		        });
+		    }
+		});
+		
+		// עדכון הדגשה ברשימת הצעות
+		function updateHighlight(items) {
+		    items.forEach((item, index) => {
+		        if (index === highlightedIndex) {
+		            item.classList.add('highlighted');
+		        } else {
+		            item.classList.remove('highlighted');
+		        }
+		    });
+		}
+		
+		// סגירת הצעות בלחיצה מחוץ לתיבה
+		document.addEventListener('click', function(e) {
+		    const searchContainer = document.querySelector('.planning-search-container');
+		    const suggestionsDiv = document.getElementById('addressSuggestions');
+		    
+		    if (!searchContainer.contains(e.target)) {
+		        hideSuggestions();
+		    }
+		});
+		
+		// עדכון הפונקציה loadPlanningDataAdvanced לשמירת הרשימה המקורית
+		const originalLoadPlanningDataAdvanced = loadPlanningDataAdvanced;
+		function loadPlanningDataAdvanced() {
+		    originalLoadPlanningDataAdvanced();
+		    
+		    // שמירת הרשימה המקורית לחיפוש
+		    originalPlanningClients = [...planningClients];
+		    
+		    // החלת סינונים אם יש
+		    if (currentSearchTerm || currentCityFilter) {
+		        applyPlanningFilters();
+		    }
+		}
+//////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+		
 
 
 		let gapi_loaded = false;
@@ -9804,3 +10267,4 @@
    </script>
 </body>
 </html>
+
