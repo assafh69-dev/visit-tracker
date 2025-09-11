@@ -1493,7 +1493,7 @@
 				<div id="lastSaved" style="font-size: 12px; color: white; margin-top: 4px;"></div>
 			</div>
             <nav class="nav-buttons">
-				<button onclick="showSection('planning')" class="nav-btn active">תכנון יומי</button>
+				<button onclick="showSection('planning')" class="nav-btn active">תכנון</button>
 				<button onclick="showSection('visit')" class="nav-btn">טיפול חדש</button>
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
@@ -1552,7 +1552,7 @@
             <div class="planning-view-tabs">
                 <button class="planning-tab-btn active" onclick="switchPlanningView('daily')">יומי</button>
                 <button class="planning-tab-btn" onclick="switchPlanningView('weekly')">שבועי</button>
-                <button class="planning-tab-btn" onclick="switchPlanningView('overdue')">מאוחרות</button>
+                <button class="planning-tab-btn" onclick="switchPlanningView('overdue')">מאחרות</button>
             </div>
 
             <!-- כרטיסי לקוחות -->
@@ -3560,7 +3560,7 @@
 				btn.classList.remove('active');
 				if ((filter === 'today' && btn.textContent === 'היום') ||
 					(filter === 'week' && btn.textContent === 'השבוע') ||
-					(filter === 'overdue' && btn.textContent === 'מאוחרות')) {
+					(filter === 'overdue' && btn.textContent === 'מאחרות')) {
 					btn.classList.add('active');
 				}
 			});
@@ -10353,6 +10353,7 @@
    </script>
 </body>
 </html>
+
 
 
 
