@@ -1320,11 +1320,7 @@
 		    transform: translateY(-1px);
 		}
 		
-		/* סימון ימים מותרים בלוח השנה */
-		.planning-date-input.highlight-allowed-days {
-		    border-left: 4px solid #ff69b4;
-		    background: linear-gradient(90deg, rgba(255, 192, 203, 0.1) 0%, white 20%);
-		}
+	
 		
 		.planning-date-input.highlight-allowed-days::-webkit-calendar-picker-indicator {
 		    background: linear-gradient(45deg, #ff69b4, #ffc0cb);
@@ -8729,16 +8725,12 @@ function setNextAllowedDay(clientId, allowedDay) {
 		    const dateInput = document.getElementById(`dateInput_${clientId}`);
 		    if (!dateInput) return;
 		    
-		    // הוספת class להדגשה
-		    dateInput.classList.add('highlight-allowed-days');
-		    
-		    // הוספת attribute עם היום המותר
+		    // רק הוספת attribute עם היום המותר
 		    dateInput.setAttribute('data-allowed-day', allowedDay);
 		    
-		    // עדכון tooltip
-		    const currentTitle = dateInput.getAttribute('title') || '';
-		    dateInput.setAttribute('title', `${currentTitle} | יום מותר: ${allowedDay}`);
-		} 
+		    // קריאה לפונקציה להדגשת ימים מותרים
+		    highlightAllowedDaysInCalendar(clientId, allowedDay);
+		}
 	   ////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 	   
@@ -10633,6 +10625,7 @@ function setNextAllowedDay(clientId, allowedDay) {
    </script>
 </body>
 </html>
+
 
 
 
