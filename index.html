@@ -1007,6 +1007,101 @@
 			}
 		}
 		/***************************************/
+				/* Client search autocomplete styles */
+		.client-search-container {
+		    position: relative;
+		    display: flex;
+		    gap: 10px;
+		    align-items: center;
+		}
+		
+		.client-search-input {
+		    flex: 1;
+		    padding: 10px;
+		    border: 2px solid #ddd;
+		    border-radius: 6px;
+		    font-size: 16px;
+		}
+		
+		.client-search-input:focus {
+		    border-color: #4CAF50;
+		    outline: none;
+		}
+		
+		.client-suggestions {
+		    position: absolute;
+		    top: 100%;
+		    left: 0;
+		    right: 0;
+		    background: white;
+		    border: 2px solid #ddd;
+		    border-top: none;
+		    border-radius: 0 0 6px 6px;
+		    max-height: 200px;
+		    overflow-y: auto;
+		    z-index: 1000;
+		    display: none;
+		}
+		
+		.suggestion-item {
+		    padding: 10px;
+		    cursor: pointer;
+		    border-bottom: 1px solid #eee;
+		}
+		
+		.suggestion-item:hover {
+		    background-color: #f5f5f5;
+		}
+		
+		.suggestion-item:last-child {
+		    border-bottom: none;
+		}
+		
+		.suggestion-client-name {
+		    font-weight: bold;
+		    color: #333;
+		}
+		
+		.suggestion-client-address {
+		    font-size: 12px;
+		    color: #666;
+		    margin-top: 2px;
+		}
+		
+		.add-client-btn {
+		    background: #28a745;
+		    color: white;
+		    border: none;
+		    padding: 10px 15px;
+		    border-radius: 6px;
+		    cursor: pointer;
+		    white-space: nowrap;
+		}
+		
+		.add-client-btn:hover {
+		    background: #218838;
+		}
+		
+		.time-now-btn {
+		    background: #007bff;
+		    color: white;
+		    border: none;
+		    padding: 6px 10px;
+		    border-radius: 4px;
+		    cursor: pointer;
+		    font-size: 12px;
+		    margin-left: 5px;
+		}
+		
+		.time-now-btn:hover {
+		    background: #0056b3;
+		}
+		
+		.time-input-container {
+		    display: flex;
+		    align-items: center;
+		    gap: 5px;
+		}
 		
 		/***************************************/
 
@@ -1404,7 +1499,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
 			</nav>
         </header>
 
@@ -1501,10 +1596,22 @@
                 <div class="form-container">
                     <form id="visitForm">
                         <div class="form-group">
-							<label for="locationSelect">בחר לקוח:</label>
-							<select id="locationSelect" required>
-								<option value="">בחר לקוח...</option>
-							</select>
+						    <label for="clientSearch">×'×—×¨ ×œ×§×•×—:</label>
+						    <div class="client-search-container">
+						        <div style="position: relative; flex: 1;">
+						            <input type="text" id="clientSearch" class="client-search-input" 
+						                   placeholder="×"×§×œ×" ×©× ×œ×§×•×— ××• ×›×ª×•×'×ª..."
+						                   oninput="searchClients(this.value)" 
+						                   onfocus="showAllClients()"
+						                   onblur="hideClientSuggestions()" 
+						                   autocomplete="off">
+						            <div id="clientSuggestions" class="client-suggestions"></div>
+						            <input type="hidden" id="selectedClientId" required>
+						        </div>
+						        <button type="button" class="add-client-btn" onclick="addNewClient()">
+						            + ×"×•×¡×£ ×œ×§×•×— ×—×"×©
+						        </button>
+						    </div>
 						</div>
 
 						<!-- הוסף כאן -->
@@ -1514,13 +1621,23 @@
 						</div>
 
 						<div class="form-group">
-							<label for="visitTime">שעת התחלה:</label>
-							<input type="time" id="visitTime" required>
+						    <label for="visitTime">×©×¢×ª ×"×ª×—×œ×":</label>
+						    <div class="time-input-container">
+						        <input type="time" id="visitTime" required onchange="calculateDurationFromTimes()">
+						        <button type="button" class="time-now-btn" onclick="setCurrentTime('visitTime')">
+						            ×©×¢×" × ×•×›×—×™×ª
+						        </button>
+						    </div>
 						</div>
-						
+
 						<div class="form-group">
-							<label for="endTime">שעת סיום:</label>
-							<input type="time" id="endTime">
+						    <label for="endTime">×©×¢×ª ×¡×™×•×:</label>
+						    <div class="time-input-container">
+						        <input type="time" id="endTime" onchange="calculateDurationFromTimes()">
+						        <button type="button" class="time-now-btn" onclick="setCurrentTime('endTime')">
+						            ×©×¢×" × ×•×›×—×™×ª
+						        </button>
+						    </div>
 						</div>
 						
                         <div class="form-group">
@@ -1530,18 +1647,38 @@
                                 <option value="חלקי">חלקי</option>
                             </select>
                         </div>
+						
                         <div class="form-group">
                             <label for="workDone">מה בוצע:</label>
                             <textarea id="workDone" placeholder="תיאור העבודה שבוצעה"></textarea>
                         </div>
+						
                         <div class="form-group">
-							<label for="manualDurationMinutes">משך הטיפול (דקות):</label>
-							<div style="display: flex; gap: 10px; align-items: center;">
-								<input type="number" id="manualDurationMinutes" placeholder="90" min="0" onchange="updateHoursDisplay()" style="flex: 1;">
-								<span style="color: #666; font-size: 14px;">שעות:</span>
-								<input type="text" id="calculatedHours" readonly style="width: 80px; background: #f8f9fa; color: #666; border: 2px solid #e9ecef; border-radius: 6px; padding: 8px; text-align: center;" placeholder="1.5">
-							</div>
+						    <label for="manualDurationMinutes">×ž×©×š ×"×˜×™×¤×•×œ:</label>
+						    <div style="display: flex; gap: 10px; align-items: center;">
+						        <div style="display: flex; flex-direction: column; gap: 5px;">
+						            <div style="display: flex; gap: 5px; align-items: center;">
+						                <input type="number" id="durationHours" placeholder="1" min="0" max="23" 
+						                       onchange="updateDurationFromHoursMinutes()" 
+						                       style="width: 60px; text-align: center;">
+						                <span style="color: #666;">×©×¢×•×ª</span>
+						            </div>
+						        </div>
+						        <div style="display: flex; flex-direction: column; gap: 5px;">
+						            <div style="display: flex; gap: 5px; align-items: center;">
+						                <input type="number" id="durationMinutes" placeholder="30" min="0" max="59" 
+						                       onchange="updateDurationFromHoursMinutes()" 
+						                       style="width: 60px; text-align: center;">
+						                <span style="color: #666;">×"×§×•×ª</span>
+						            </div>
+						        </div>
+						        <input type="hidden" id="manualDurationMinutes" onchange="updateHoursDisplay()">
+						        <span style="color: #888; font-size: 12px;" id="totalDurationDisplay">
+						            (×¡×"×³×" 0 ×"×§×•×ª)
+						        </span>
+						    </div>
 						</div>
+						
                         <div class="form-group">
 							<label for="numberOfWorkersVisit">מספר עובדים בטיפול:</label>
 							<div style="display: flex; gap: 10px; align-items: center;">
@@ -1933,6 +2070,218 @@
 		console.log('Spreadsheet ID:', SPREADSHEET_ID);
 		console.log('API Key:', API_KEY);
 		console.log('Client ID:', CLIENT_ID);
+//////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+		// משתנים גלובליים לחיפוש לקוחות
+let clientSearchTimeout;
+let selectedClientData = null;
+
+// פונקציה לחיפוש לקוחות
+function searchClients(searchTerm) {
+    clearTimeout(clientSearchTimeout);
+    
+    clientSearchTimeout = setTimeout(() => {
+        if (searchTerm.length < 1) {
+            hideClientSuggestions();
+            return;
+        }
+        
+        const filteredClients = locations
+            .filter(location => location.active === "1")
+            .filter(location => {
+                const name = (location.name || '').toLowerCase();
+                const address = (location.full_address || '').toLowerCase();
+                const contact = (location.contact_person || '').toLowerCase();
+                const term = searchTerm.toLowerCase();
+                
+                return name.includes(term) || 
+                       address.includes(term) || 
+                       contact.includes(term);
+            })
+            .slice(0, 8);
+        
+        showClientSuggestions(filteredClients);
+    }, 300);
+}
+
+// הצגת כל הלקוחות כשנוגעים בשדה
+function showAllClients() {
+    const activeClients = locations
+        .filter(location => location.active === "1")
+        .slice(0, 8);
+    showClientSuggestions(activeClients);
+}
+
+// הצגת הצעות לקוחות
+function showClientSuggestions(clients) {
+    const suggestionsDiv = document.getElementById('clientSuggestions');
+    
+    if (clients.length === 0) {
+        hideClientSuggestions();
+        return;
+    }
+    
+    const suggestionsHTML = clients.map(client => `
+        <div class="suggestion-item" onmousedown="selectClient('${client.ID}')">
+            <div class="suggestion-client-name">${client.name}</div>
+            <div class="suggestion-client-address">${client.full_address}</div>
+        </div>
+    `).join('');
+    
+    suggestionsDiv.innerHTML = suggestionsHTML;
+    suggestionsDiv.style.display = 'block';
+}
+
+// הסתרת הצעות
+function hideClientSuggestions() {
+    setTimeout(() => {
+        document.getElementById('clientSuggestions').style.display = 'none';
+    }, 200);
+}
+
+// בחירת לקוח מהרשימה
+function selectClient(clientId) {
+    const client = locations.find(c => c.ID === clientId);
+    if (!client) return;
+    
+    document.getElementById('clientSearch').value = `${client.name} - ${client.full_address}`;
+    document.getElementById('selectedClientId').value = clientId;
+    selectedClientData = client;
+    
+    hideClientSuggestions();
+    
+    // עדכון שדה הסכום לפי הסכום הבסיסי של הלקוח
+    if (client.base_amount && client.base_amount > 0) {
+        document.getElementById('amount').value = client.base_amount;
+        calculateTreatmentCost();
+    }
+}
+
+// הוספת לקוח חדש
+function addNewClient() {
+    const searchValue = document.getElementById('clientSearch').value.trim();
+    
+    if (!searchValue) {
+        showToast('אנא הזן שם לקוח חדש', 'warning');
+        return;
+    }
+    
+    const confirmed = confirm(`האם אתה בטוח שברצונך להוסיף לקוח חדש בשם: "${searchValue}"?`);
+    
+    if (confirmed) {
+        // יצירת לקוח חדש
+        const newClient = {
+            ID: generateID(),
+            name: searchValue,
+            full_address: 'כתובת לא הוזנה',
+            neighborhood: '',
+            city: '',
+            contact_person: '',
+            phone: '',
+            allowed_day: 'כל יום',
+            interval_weeks: 4,
+            temp_addition: 0,
+            base_amount: 0,
+            active: "1",
+            notes: 'לקוח חדש - נוסף ממסך טיפול',
+            last_visit: '',
+            next_visit: '',
+            client_requests: ''
+        };
+        
+        locations.push(newClient);
+        selectClient(newClient.ID);
+        
+        saveToLocalStorage();
+        showToast(`לקוח חדש "${searchValue}" נוסף בהצלחה!`, 'success');
+        
+        // שמירה לענן אם מחובר
+        if (access_token) {
+            saveLocationToSheets(newClient).catch(error => {
+                console.log('שמירה לענן נכשלה, נשמר מקומית');
+            });
+        }
+    }
+}
+
+// הגדרת השעה הנוכחית
+function setCurrentTime(timeInputId) {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const currentTime = `${hours}:${minutes}`;
+    
+    document.getElementById(timeInputId).value = currentTime;
+    
+    // חישוב משך טיפול אם שני השדות מלאים
+    calculateDurationFromTimes();
+    
+    showToast(`שעה נוכחית: ${currentTime}`, 'info');
+}
+
+// חישוב משך טיפול מהפרש שעות
+function calculateDurationFromTimes() {
+    const startTime = document.getElementById('visitTime').value;
+    const endTime = document.getElementById('endTime').value;
+    
+    if (!startTime || !endTime) return;
+    
+    const start = new Date(`2000-01-01T${startTime}`);
+    const end = new Date(`2000-01-01T${endTime}`);
+    
+    if (end <= start) {
+        showToast('שעת סיום חייבת להיות אחרי שעת התחלה', 'warning');
+        return;
+    }
+    
+    const diffMs = end - start;
+    const totalMinutes = Math.round(diffMs / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    // עדכון השדות
+    document.getElementById('durationHours').value = hours;
+    document.getElementById('durationMinutes').value = minutes;
+    document.getElementById('manualDurationMinutes').value = totalMinutes;
+    
+    updateTotalDurationDisplay();
+    calculateTreatmentCost();
+}
+
+// עדכון משך טיפול משדות שעות ודקות
+function updateDurationFromHoursMinutes() {
+    const hours = parseInt(document.getElementById('durationHours').value) || 0;
+    const minutes = parseInt(document.getElementById('durationMinutes').value) || 0;
+    const totalMinutes = (hours * 60) + minutes;
+    
+    document.getElementById('manualDurationMinutes').value = totalMinutes;
+    updateTotalDurationDisplay();
+    calculateTreatmentCost();
+}
+
+// עדכון תצוגת סך המשך
+function updateTotalDurationDisplay() {
+    const hours = parseInt(document.getElementById('durationHours').value) || 0;
+    const minutes = parseInt(document.getElementById('durationMinutes').value) || 0;
+    const totalMinutes = (hours * 60) + minutes;
+    
+    const displayText = hours > 0 ? 
+        `(סך הכל: ${hours} שעות ו-${minutes} דקות = ${totalMinutes} דקות)` :
+        `(סך הכל: ${minutes} דקות)`;
+    
+    document.getElementById('totalDurationDisplay').textContent = displayText;
+}
+
+// עדכון הפונקציה הקיימת updateHoursDisplay
+function updateHoursDisplay() {
+    const totalMinutes = parseInt(document.getElementById('manualDurationMinutes').value) || 0;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    document.getElementById('durationHours').value = hours;
+    document.getElementById('durationMinutes').value = minutes;
+    
+    updateTotalDurationDisplay();
+}
 //////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 			// משתנים למערכת החיפוש
 		let originalPlanningClients = []; // גיבוי של הרשימה המקורית
@@ -3640,7 +3989,7 @@
 			event.preventDefault();
 			
 			const formData = new FormData(event.target);
-			const selectedLocationId = document.getElementById('locationSelect').value;
+			const selectedLocation = document.getElementById('selectedClientId').value;
 			const visitDate = document.getElementById('visitDate').value; // התאריך הנוכחי
 			const endTime = document.getElementById('endTime').value;
 			const paymentStatus = document.getElementById('paymentStatus').value;
@@ -10284,6 +10633,7 @@
    </script>
 </body>
 </html>
+
 
 
 
