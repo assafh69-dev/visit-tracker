@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
+html<!DOCTYPE html>
+< lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1327,6 +1327,40 @@
 		    border-radius: 3px;
 		}
 /***************************************/
+				.planning-add-btn {
+		    background: #28a745;
+		    color: white;
+		    border: none;
+		    padding: 4px 8px;
+		    border-radius: 50%;
+		    font-size: 14px;
+		    cursor: pointer;
+		    margin-left: 3px;
+		    width: 28px;
+		    height: 28px;
+		    display: flex;
+		    align-items: center;
+		    justify-content: center;
+		    font-weight: bold;
+		}
+		
+		.planning-add-btn:hover {
+		    background: #218838;
+		    transform: scale(1.1);
+		}
+/***************************************/
+				.planning-date-input {
+		    position: relative;
+		}
+		
+		.planning-date-input::-webkit-calendar-picker-indicator {
+		    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23007bff"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>');
+		    background-size: 16px 16px;
+		    background-repeat: no-repeat;
+		    background-position: center;
+		    cursor: pointer;
+		}
+/***************************************/
 		/* סימון ימים מותרים בלוח השנה */
 		.planning-date-input[data-allowed-days] {
 		    position: relative;
@@ -1551,7 +1585,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
 			</nav>
         </header>
 
@@ -1705,7 +1739,7 @@
                             <textarea id="workDone" placeholder="תיאור העבודה שבוצעה"></textarea>
                         </div>
 						
-                        <div class="form-group">
+                       <div class="form-group">
 						    <label for="manualDurationMinutes">משך הטיפול:</label>
 						    <div style="display: flex; gap: 10px; align-items: center;">
 						        <div style="display: flex; flex-direction: column; gap: 5px;">
@@ -1724,10 +1758,23 @@
 						                <span style="color: #666;">דקות</span>
 						            </div>
 						        </div>
-						        <input type="hidden" id="manualDurationMinutes" onchange="updateHoursDisplay()">
-						        <span style="color: #888; font-size: 12px;" id="totalDurationDisplay">
-						            (סה"כ 0 דקות)
-						        </span>
+						        <div style="display: flex; flex-direction: column; gap: 5px;">
+						            <div style="display: flex; gap: 5px; align-items: center;">
+						                <input type="number" id="totalMinutesDisplay" step="1" min="0"
+						                       onchange="updateHoursFromMinutes()" placeholder="90"
+						                       style="width: 80px; text-align: center;">
+						                <span style="color: #666;">סה"כ דקות</span>
+						            </div>
+						        </div>
+						        <div style="display: flex; flex-direction: column; gap: 5px;">
+						            <div style="display: flex; gap: 5px; align-items: center;">
+						                <input type="number" id="decimalHoursDisplay" step="0.1" min="0"
+						                       onchange="updateFromDecimalHours()" placeholder="1.5"
+						                       style="width: 80px; text-align: center;">
+						                <span style="color: #666;">שעות עשרוני</span>
+						            </div>
+						        </div>
+						        <input type="hidden" id="manualDurationMinutes">
 						    </div>
 						</div>
 						
@@ -2208,7 +2255,7 @@
 		    }
 		}
 		
-		// הוספת לקוח חדש
+				// הוספת לקוח חדש
 		function addNewClient() {
 		    const searchValue = document.getElementById('clientSearch').value.trim();
 		    
@@ -2217,42 +2264,16 @@
 		        return;
 		    }
 		    
-		    const confirmed = confirm(`האם אתה בטוח שברצונך להוסיף לקוח חדש בשם: "${searchValue}"?`);
+		    // במקום יצירה מיידית - פתח טופס הוספת לקוח כמו במסך לקוחות
+		    showAddLocationForm();
 		    
-		    if (confirmed) {
-		        // יצירת לקוח חדש
-		        const newClient = {
-		            ID: generateID(),
-		            name: searchValue,
-		            full_address: 'כתובת לא הוזנה',
-		            neighborhood: '',
-		            city: '',
-		            contact_person: '',
-		            phone: '',
-		            allowed_day: 'כל יום',
-		            interval_weeks: 4,
-		            temp_addition: 0,
-		            base_amount: 0,
-		            active: "1",
-		            notes: 'לקוח חדש - נוסף ממסך טיפול',
-		            last_visit: '',
-		            next_visit: '',
-		            client_requests: ''
-		        };
-		        
-		        locations.push(newClient);
-		        selectClient(newClient.ID);
-		        
-		        saveToLocalStorage();
-		        showToast(`לקוח חדש "${searchValue}" נוסף בהצלחה!`, 'success');
-		        
-		        // שמירה לענן אם מחובר
-		        if (access_token) {
-		            saveLocationToSheets(newClient).catch(error => {
-		                console.log('שמירה לענן נכשלה, נשמר מקומית');
-		            });
+		    // מלא את שם הלקוח מהחיפוש
+		    setTimeout(() => {
+		        const nameField = document.getElementById('locationName');
+		        if (nameField) {
+		            nameField.value = searchValue;
 		        }
-		    }
+		    }, 100);
 		}
 		
 		// הגדרת השעה הנוכחית
@@ -3321,7 +3342,7 @@ function setNextAllowedDay(clientId, allowedDay) {
 		                        ''
 		                    }
 		                    <button class="planning-quick-btn" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}')" title="קבע ליום המותר הקרוב">
-		                        ⚡ שבוע קרוב
+		                        +
 		                    </button>
 		                    <input type="date" class="planning-date-input highlight-allowed-days" value="${defaultDate}" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא | יום מותר: ${client.allowed_day}" id="dateInput_${client.ID}" data-allowed-day="${client.allowed_day}">
 		                    <select class="planning-active-toggle" onchange="toggleClientActive('${client.ID}', this.value)" title="סטטוס לקוח">
@@ -3365,8 +3386,13 @@ function setNextAllowedDay(clientId, allowedDay) {
 		    const dateInput = document.getElementById(`dateInput_${clientId}`);
 		    if (!dateInput) return;
 		    
-		    // הוספת class להדגשה
-		    dateInput.classList.add('highlight-allowed-days');
+		    // הגדרת ברירת מחדל ליום הנוכחי
+		    if (!dateInput.value) {
+		        dateInput.value = new Date().toISOString().split('T')[0];
+		    }
+		    
+			    dateInput.setAttribute('data-allowed-day', allowedDay);
+			}
 		    
 		    // שמירת הערך המקורי
 		    let originalValue = dateInput.value;
@@ -3776,6 +3802,51 @@ function setNextAllowedDay(clientId, allowedDay) {
 		}
 	
 	/////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+				// עדכון משך טיפול משדות שעות ודקות
+		function updateDurationFromHoursMinutes() {
+		    const hours = parseInt(document.getElementById('durationHours').value) || 0;
+		    const minutes = parseInt(document.getElementById('durationMinutes').value) || 0;
+		    const totalMinutes = (hours * 60) + minutes;
+		    const decimalHours = totalMinutes / 60;
+		    
+		    document.getElementById('manualDurationMinutes').value = totalMinutes;
+		    document.getElementById('totalMinutesDisplay').value = totalMinutes;
+		    document.getElementById('decimalHoursDisplay').value = decimalHours.toFixed(1);
+		    
+		    calculateTreatmentCost();
+		}
+		
+		// עדכון מדקות כללי
+		function updateHoursFromMinutes() {
+		    const totalMinutes = parseInt(document.getElementById('totalMinutesDisplay').value) || 0;
+		    const hours = Math.floor(totalMinutes / 60);
+		    const minutes = totalMinutes % 60;
+		    const decimalHours = totalMinutes / 60;
+		    
+		    document.getElementById('durationHours').value = hours;
+		    document.getElementById('durationMinutes').value = minutes;
+		    document.getElementById('manualDurationMinutes').value = totalMinutes;
+		    document.getElementById('decimalHoursDisplay').value = decimalHours.toFixed(1);
+		    
+		    calculateTreatmentCost();
+		}
+		
+		// עדכון משעות עשרוני
+		function updateFromDecimalHours() {
+		    const decimalHours = parseFloat(document.getElementById('decimalHoursDisplay').value) || 0;
+		    const totalMinutes = Math.round(decimalHours * 60);
+		    const hours = Math.floor(totalMinutes / 60);
+		    const minutes = totalMinutes % 60;
+		    
+		    document.getElementById('durationHours').value = hours;
+		    document.getElementById('durationMinutes').value = minutes;
+		    document.getElementById('manualDurationMinutes').value = totalMinutes;
+		    document.getElementById('totalMinutesDisplay').value = totalMinutes;
+		    
+		    calculateTreatmentCost();
+		}
+    /////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 
 
 		// תוספה - עדכון סטטיסטיקות
@@ -10622,6 +10693,7 @@ function setNextAllowedDay(clientId, allowedDay) {
    </script>
 </body>
 </html>
+
 
 
 
