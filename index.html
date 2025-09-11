@@ -8800,6 +8800,118 @@ function setNextAllowedDay(clientId, allowedDay) {
 		    highlightAllowedDaysInCalendar(clientId, allowedDay);
 		}
 	   ////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+				// פונקציות בסיסיות שחסרות
+				// פונקציות נוספות שחסרות
+		function loadPlanningData() {
+		    // טוען נתוני תכנון
+		    console.log('טוען נתוני תכנון...');
+		    // הוסף כאן את הלוגיקה לטעינת נתוני התכנון
+		}
+		
+		function loadVisitsHistory() {
+		    // טוען היסטוריית ביקורים
+		    console.log('טוען היסטוריית ביקורים...');
+		}
+		
+		function loadLocationsTable() {
+		    // טוען טבלת לקוחות
+		    console.log('טוען טבלת לקוחות...');
+		}
+		
+		function loadReceiptsTable() {
+		    // טוען טבלת קבלות
+		    console.log('טוען טבלת קבלות...');
+		}
+		
+		function displayDebts() {
+		    // מציג חובות
+		    console.log('מציג חובות...');
+		}
+		
+		// משתנה גלובלי לתצוגת תכנון
+		let currentPlanningView = 'daily';
+		let access_token = null;
+		
+		// פונקציה להצגת הודעות
+		function showToast(message, type = 'info', duration = 3000) {
+		    console.log(`${type.toUpperCase()}: ${message}`);
+		    
+		    // יצירת אלמנט toast
+		    const toast = document.createElement('div');
+		    toast.className = `toast ${type}`;
+		    toast.textContent = message;
+		    
+		    document.body.appendChild(toast);
+		    
+		    // הסרה אחרי זמן מוגדר
+		    setTimeout(() => {
+		        if (toast.parentNode) {
+		            toast.parentNode.removeChild(toast);
+		        }
+		    }, duration);
+		}
+		function showSection(sectionName) {
+		    // הסתר את כל הסקשנים
+		    document.querySelectorAll('.section').forEach(section => {
+		        section.classList.remove('active');
+		    });
+		    
+		    // הסתר את כל הכפתורים
+		    document.querySelectorAll('.nav-btn').forEach(btn => {
+		        btn.classList.remove('active');
+		    });
+		    
+		    // הצג את הסקשן הנבחר
+		    const targetSection = document.getElementById(sectionName);
+		    if (targetSection) {
+		        targetSection.classList.add('active');
+		    }
+		    
+		    // סמן את הכפתור כפעיל
+		    event.target.classList.add('active');
+		    
+		    // טען נתונים לפי הסקשן
+		    switch(sectionName) {
+		        case 'planning':
+		            loadPlanningData();
+		            break;
+		        case 'history':
+		            loadVisitsHistory();
+		            break;
+		        case 'locations':
+		            loadLocationsTable();
+		            break;
+		        case 'receipts':
+		            loadReceiptsTable();
+		            break;
+		        case 'debts':
+		            displayDebts();
+		            break;
+		    }
+		}
+		
+		function switchPlanningView(view) {
+		    currentPlanningView = view;
+		    
+		    // עדכן כפתורים
+		    document.querySelectorAll('.planning-tab-btn').forEach(btn => btn.classList.remove('active'));
+		    const activeBtn = document.querySelector(`[onclick="switchPlanningView('${view}')"]`);
+		    if (activeBtn) activeBtn.classList.add('active');
+		    
+		    loadPlanningData();
+		}
+		
+		function connectToGoogleSheets() {
+		    if (!access_token) {
+		        showToast('התחבר לגוגל תחילה', 'warning');
+		        return;
+		    }
+		    
+		    showToast('מתחבר לגוגל שיטס...', 'info');
+		    // כאן תוכל להוסיף לוגיקת חיבור
+		}
+	   ////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 
 	   
 	   // החלף את validateToken בפונקציה זו:
