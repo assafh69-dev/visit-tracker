@@ -1302,6 +1302,35 @@
 		    background: rgba(52, 152, 219, 0.05);
 		}
 /***************************************/
+				/* כפתור מהיר */
+		.planning-quick-btn {
+		    background: #28a745;
+		    color: white;
+		    border: none;
+		    padding: 6px 10px;
+		    border-radius: 4px;
+		    font-size: 11px;
+		    cursor: pointer;
+		    white-space: nowrap;
+		    margin-right: 5px;
+		}
+		
+		.planning-quick-btn:hover {
+		    background: #218838;
+		    transform: translateY(-1px);
+		}
+		
+		/* סימון ימים מותרים בלוח השנה */
+		.planning-date-input.highlight-allowed-days {
+		    border-left: 4px solid #ff69b4;
+		    background: linear-gradient(90deg, rgba(255, 192, 203, 0.1) 0%, white 20%);
+		}
+		
+		.planning-date-input.highlight-allowed-days::-webkit-calendar-picker-indicator {
+		    background: linear-gradient(45deg, #ff69b4, #ffc0cb);
+		    border-radius: 3px;
+		}
+/***************************************/
 		/* סימון ימים מותרים בלוח השנה */
 		.planning-date-input[data-allowed-days] {
 		    position: relative;
@@ -3259,10 +3288,14 @@ function setNextAllowedDay(clientId, allowedDay) {
 			container.innerHTML = planningClients.map(client => renderClientRow(client)).join('');
 		}
 
-			// רינדור שורת לקוח (משותף לשני המצבים)
+					// רינדור שורת לקוח (משותף לשני המצבים)
+				// רינדור שורת לקוח (משותף לשני המצבים)
 		function renderClientRow(client) {
 		    const nextVisitFormatted = formatDate(client.next_visit);
 		    let statusText = '';
+		    
+		    // וידוא שיש תאריך תקין - אם לא, קבע לתאריך היום
+		    const defaultDate = client.next_visit || new Date().toISOString().split('T')[0];
 		    
 		    // טקסט סטטוס לפי תצוגה
 		    switch (currentPlanningView) {
@@ -3280,7 +3313,7 @@ function setNextAllowedDay(clientId, allowedDay) {
 		            break;
 		    }
 		    
-		    return `
+		    const rowHTML = `
 		        <div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
 		            <div class="planning-row-main">
 		                <div class="planning-client-info">
@@ -3297,7 +3330,7 @@ function setNextAllowedDay(clientId, allowedDay) {
 		                    <button class="planning-quick-btn" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}')" title="קבע ליום המותר הקרוב">
 		                        ⚡ שבוע קרוב
 		                    </button>
-		                    <input type="date" class="planning-date-input" value="${client.next_visit || new Date().toISOString().split('T')[0]}" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא | יום מותר: ${client.allowed_day}" id="dateInput_${client.ID}">
+		                    <input type="date" class="planning-date-input highlight-allowed-days" value="${defaultDate}" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא | יום מותר: ${client.allowed_day}" id="dateInput_${client.ID}" data-allowed-day="${client.allowed_day}">
 		                    <select class="planning-active-toggle" onchange="toggleClientActive('${client.ID}', this.value)" title="סטטוס לקוח">
 		                        <option value="1" selected>פעיל</option>
 		                        <option value="0">לא פעיל</option>
@@ -3313,8 +3346,14 @@ function setNextAllowedDay(clientId, allowedDay) {
 		            ` : ''}
 		        </div>
 		    `;
+		    
+		    // קריאה לפונקציה להדגשת ימים מותרים אחרי יצירת ה-HTML
+		    setTimeout(() => {
+		        enhanceDateInputWithAllowedDays(client.ID, client.allowed_day);
+		    }, 100);
+		    
+		    return rowHTML;
 		}
-	
 		// החלפת טאב יום
 		function switchDayTab(dayName) {
 			// הסרת active מכל הכפתורים
@@ -3328,7 +3367,150 @@ function setNextAllowedDay(clientId, allowedDay) {
 			if (activeBtn) activeBtn.classList.add('active');
 			if (activeContent) activeContent.classList.add('active');
 		}
-	
+				// הוספת מידע על ימים מותרים לשדה התאריך
+		function enhanceDateInputWithAllowedDays(clientId, allowedDay) {
+		    const dateInput = document.getElementById(`dateInput_${clientId}`);
+		    if (!dateInput) return;
+		    
+		    // הוספת class להדגשה
+		    dateInput.classList.add('highlight-allowed-days');
+		    
+		    // שמירת הערך המקורי
+		    let originalValue = dateInput.value;
+		    
+		    // Override של פתיחת הלוח
+		    dateInput.addEventListener('mousedown', (e) => {
+		        // שמירת הערך המקורי
+		        originalValue = dateInput.value;
+		        
+		        // החלפה לתאריך היום
+		        const today = new Date().toISOString().split('T')[0];
+		        dateInput.value = today;
+		        
+		        // הדגשת ימים מותרים
+		        highlightAllowedDaysInCalendar(clientId, allowedDay);
+		    });
+		    
+		    // מעקב אחר שינויים
+		    dateInput.addEventListener('change', (e) => {
+		        const newValue = e.target.value;
+		        if (newValue && newValue !== originalValue) {
+		            // עדכון הלקוח עם התאריך החדש
+		            updateClientNextVisit(clientId, newValue);
+		            originalValue = newValue; // עדכון הערך המקורי
+		        }
+		    });
+		    
+		    // אם לוחצים ESC או סוגרים בלי לבחור
+		    dateInput.addEventListener('keydown', (e) => {
+		        if (e.key === 'Escape') {
+		            dateInput.value = originalValue;
+		            dateInput.blur();
+		        }
+		    });
+		}
+		
+		// פונקציה להדגשת ימים מותרים בלוח השנה
+		function highlightAllowedDaysInCalendar(clientId, allowedDay) {
+		    const dateInput = document.getElementById(`dateInput_${clientId}`);
+		    if (!dateInput) return;
+		    
+		    // קוד CSS מתקדם להדגשה
+		    const style = document.createElement('style');
+		    style.id = `calendar-style-${clientId}`;
+		    
+		    // מיפוי ימים לאינדקסים
+		    const dayMapping = {
+		        'יום ראשון': 0,
+		        'יום שני': 1,
+		        'יום שלישי': 2,
+		        'יום רביעי': 3,
+		        'יום חמישי': 4,
+		        'יום שישי': 5,
+		        'יום שבת': 6,
+		        'כל יום': 'all'
+		    };
+		    
+		    let cssRule = '';
+		    
+		    if (allowedDay === 'כל יום') {
+		        // אם מותר כל יום - הדגש הכל בקלילות
+		        cssRule = `
+		            #dateInput_${clientId}::-webkit-calendar-picker-indicator {
+		                background: linear-gradient(45deg, #ff69b4, #ffc0cb) !important;
+		                border-radius: 3px !important;
+		            }
+		        `;
+		    } else {
+		        // הדגש רק את היום המותר
+		        const dayIndex = dayMapping[allowedDay];
+		        cssRule = `
+		            #dateInput_${clientId}::-webkit-calendar-picker-indicator {
+		                background: linear-gradient(45deg, #ff69b4, #ffc0cb) !important;
+		                border-radius: 3px !important;
+		                box-shadow: 0 0 8px rgba(255, 105, 180, 0.6) !important;
+		            }
+		        `;
+		    }
+		    
+		    style.textContent = cssRule;
+		    
+		    // הסר סטייל קודם והוסף חדש
+		    const existingStyle = document.getElementById(`calendar-style-${clientId}`);
+		    if (existingStyle) existingStyle.remove();
+		    
+		    document.head.appendChild(style);
+		}
+		
+		// קביעת היום המותר הקרוב ביותר
+		function setNextAllowedDay(clientId, allowedDay) {
+		    if (allowedDay === 'כל יום') {
+		        // אם מותר כל יום, קבע לעוד שבוע מהיום
+		        const nextWeek = new Date();
+		        nextWeek.setDate(nextWeek.getDate() + 7);
+		        const dateString = nextWeek.toISOString().split('T')[0];
+		        
+		        document.getElementById(`dateInput_${clientId}`).value = dateString;
+		        updateClientNextVisit(clientId, dateString);
+		        showToast('נקבע לעוד שבוע מהיום', 'success');
+		        return;
+		    }
+		    
+		    const daysOfWeek = {
+		        'יום ראשון': 0,
+		        'יום שני': 1,
+		        'יום שלישי': 2, 
+		        'יום רביעי': 3,
+		        'יום חמישי': 4,
+		        'יום שישי': 5,
+		        'יום שבת': 6
+		    };
+		    
+		    const targetDayIndex = daysOfWeek[allowedDay];
+		    if (targetDayIndex === undefined) {
+		        showToast('יום לא מוכר', 'error');
+		        return;
+		    }
+		    
+		    const today = new Date();
+		    const currentDayIndex = today.getDay();
+		    
+		    // חישוב כמה ימים עד היום המותר הבא
+		    let daysUntilTarget = targetDayIndex - currentDayIndex;
+		    if (daysUntilTarget <= 0) {
+		        daysUntilTarget += 7; // השבוע הבא
+		    }
+		    
+		    const targetDate = new Date(today);
+		    targetDate.setDate(today.getDate() + daysUntilTarget);
+		    
+		    const dateString = targetDate.toISOString().split('T')[0];
+		    document.getElementById(`dateInput_${clientId}`).value = dateString;
+		    updateClientNextVisit(clientId, dateString);
+		    
+		    showToast(`נקבע ל${allowedDay} הקרוב (${targetDate.toLocaleDateString('he-IL')})`, 'success');
+		}
+			
 		// פונקציה חדשה: התחל טיפול (מעבר לטופס עם פרטי לקוח מוכנים)
 		function startTreatment(clientId) {
 			const client = locations.find(loc => loc.ID === clientId);
@@ -10451,6 +10633,7 @@ function setNextAllowedDay(clientId, allowedDay) {
    </script>
 </body>
 </html>
+
 
 
 
