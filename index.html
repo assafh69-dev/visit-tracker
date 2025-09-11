@@ -1121,7 +1121,23 @@
 			color: #4CAF50;
 		}
 
-
+/***************************************/
+		.planning-quick-btn {
+		    background: #28a745;
+		    color: white;
+		    border: none;
+		    padding: 6px 10px;
+		    border-radius: 4px;
+		    font-size: 11px;
+		    cursor: pointer;
+		    white-space: nowrap;
+		    margin-right: 5px;
+		}
+		
+		.planning-quick-btn:hover {
+		    background: #218838;
+		    transform: translateY(-1px);
+		}
 /***************************************/
 				/* CSS למערכת החיפוש */
 		.planning-search-container {
@@ -1286,7 +1302,21 @@
 		    background: rgba(52, 152, 219, 0.05);
 		}
 /***************************************/
-
+		/* סימון ימים מותרים בלוח השנה */
+		.planning-date-input[data-allowed-days] {
+		    position: relative;
+		}
+		
+		/* CSS להדגשת הימים המותרים - יישום באמצעות JavaScript */
+		.planning-date-input.highlight-allowed-days::-webkit-calendar-picker-indicator {
+		    background: linear-gradient(45deg, #ff69b4, #ffc0cb);
+		    border-radius: 3px;
+		}
+		
+		.planning-date-input.highlight-allowed-days {
+		    border-left: 4px solid #ff69b4;
+		}
+/***************************************/
 		/* עדכון CSS לכרטיסיות תכנון - מבנה דו-שורתי */
 		.planning-row-details {
 			background: #f8f9fa;
@@ -2283,7 +2313,55 @@
 		    updateTotalDurationDisplay();
 		}
 //////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
+		// קביעת היום המותר הקרוב ביותר
+function setNextAllowedDay(clientId, allowedDay) {
+    if (allowedDay === 'כל יום') {
+        // אם מותר כל יום, קבע לעוד שבוע מהיום
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        const dateString = nextWeek.toISOString().split('T')[0];
+        
+        document.getElementById(`dateInput_${clientId}`).value = dateString;
+        updateClientNextVisit(clientId, dateString);
+        showToast('נקבע לעוד שבוע מהיום', 'success');
+        return;
+    }
+    
+    const daysOfWeek = {
+        'יום ראשון': 0,
+        'יום שני': 1,
+        'יום שלישי': 2, 
+        'יום רביעי': 3,
+        'יום חמישי': 4,
+        'יום שישי': 5,
+        'יום שבת': 6
+    };
+    
+    const targetDayIndex = daysOfWeek[allowedDay];
+    if (targetDayIndex === undefined) {
+        showToast('יום לא מוכר', 'error');
+        return;
+    }
+    
+    const today = new Date();
+    const currentDayIndex = today.getDay();
+    
+    // חישוב כמה ימים עד היום המותר הבא
+    let daysUntilTarget = targetDayIndex - currentDayIndex;
+    if (daysUntilTarget <= 0) {
+        daysUntilTarget += 7; // השבוע הבא
+    }
+    
+    const targetDate = new Date(today);
+    targetDate.setDate(today.getDate() + daysUntilTarget);
+    
+    const dateString = targetDate.toISOString().split('T')[0];
+    document.getElementById(`dateInput_${clientId}`).value = dateString;
+    updateClientNextVisit(clientId, dateString);
+    
+    showToast(`נקבע ל${allowedDay} הקרוב (${targetDate.toLocaleDateString('he-IL')})`, 'success');
+}
+//////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 		
 
 
@@ -3181,57 +3259,60 @@
 			container.innerHTML = planningClients.map(client => renderClientRow(client)).join('');
 		}
 
-		// רינדור שורת לקוח (משותף לשני המצבים)
+			// רינדור שורת לקוח (משותף לשני המצבים)
 		function renderClientRow(client) {
-			const nextVisitFormatted = formatDate(client.next_visit);
-			let statusText = '';
-			
-			// טקסט סטטוס לפי תצוגה
-			switch (currentPlanningView) {
-				case 'daily':
-					statusText = 'מתוכנן להיום';
-					break;
-				case 'weekly':
-					const daysDiffText = client.daysDiff === 0 ? 'היום' : 
-									   client.daysDiff === 1 ? 'מחר' : 
-									   `בעוד ${client.daysDiff} ימים`;
-					statusText = daysDiffText;
-					break;
-				case 'overdue':
-					statusText = client.daysOverdue === 1 ? 'איחור יום אחד' : `איחור ${client.daysOverdue} ימים`;
-					break;
-			}
-			
-			return `
-				<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
-					<div class="planning-row-main">
-						<div class="planning-client-info">
-							<div class="planning-client-name">${client.name}</div>
-							<div class="planning-client-address">${client.full_address}</div>
-							<div class="planning-client-date">📅 ${nextVisitFormatted} (${statusText})</div>
-						</div>
-						<div class="planning-client-price">₪${client.base_amount || 0}</div>
-						<div class="planning-client-actions">
-							${currentPlanningView === 'daily' ? 
-								`<button class="planning-action-btn planning-complete" title="התחל טיפול" onclick="startTreatment('${client.ID}')">▶</button>` : 
-								''
-							}
-							<input type="date" class="planning-date-input" value="${client.next_visit}" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא">
-							<select class="planning-active-toggle" onchange="toggleClientActive('${client.ID}', this.value)" title="סטטוס לקוח">
-								<option value="1" selected>פעיל</option>
-								<option value="0">לא פעיל</option>
-							</select>
-							<button class="planning-history-btn" onclick="showClientHistory('${client.ID}')" title="היסטוריית טיפולים">📋</button>
-						</div>
-					</div>
-					${(client.notes || client.client_requests) ? `
-						<div class="planning-row-details">
-							${client.client_requests ? `<div class="client-requests">📝 בקשות: ${client.client_requests}</div>` : ''}
-							${client.notes ? `<div class="client-notes">💭 הערות: ${client.notes}</div>` : ''}
-						</div>
-					` : ''}
-				</div>
-			`;
+		    const nextVisitFormatted = formatDate(client.next_visit);
+		    let statusText = '';
+		    
+		    // טקסט סטטוס לפי תצוגה
+		    switch (currentPlanningView) {
+		        case 'daily':
+		            statusText = 'מתוכנן להיום';
+		            break;
+		        case 'weekly':
+		            const daysDiffText = client.daysDiff === 0 ? 'היום' : 
+		                               client.daysDiff === 1 ? 'מחר' : 
+		                               `בעוד ${client.daysDiff} ימים`;
+		            statusText = daysDiffText;
+		            break;
+		        case 'overdue':
+		            statusText = client.daysOverdue === 1 ? 'איחור יום אחד' : `איחור ${client.daysOverdue} ימים`;
+		            break;
+		    }
+		    
+		    return `
+		        <div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
+		            <div class="planning-row-main">
+		                <div class="planning-client-info">
+		                    <div class="planning-client-name">${client.name}</div>
+		                    <div class="planning-client-address">${client.full_address}</div>
+		                    <div class="planning-client-date">📅 ${nextVisitFormatted} (${statusText})</div>
+		                </div>
+		                <div class="planning-client-price">₪${client.base_amount || 0}</div>
+		                <div class="planning-client-actions">
+		                    ${currentPlanningView === 'daily' ?
+		                        `<button class="planning-action-btn planning-complete" title="התחל טיפול" onclick="startTreatment('${client.ID}')">▶</button>` : 
+		                        ''
+		                    }
+		                    <button class="planning-quick-btn" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}')" title="קבע ליום המותר הקרוב">
+		                        ⚡ שבוע קרוב
+		                    </button>
+		                    <input type="date" class="planning-date-input" value="${client.next_visit || new Date().toISOString().split('T')[0]}" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא | יום מותר: ${client.allowed_day}" id="dateInput_${client.ID}">
+		                    <select class="planning-active-toggle" onchange="toggleClientActive('${client.ID}', this.value)" title="סטטוס לקוח">
+		                        <option value="1" selected>פעיל</option>
+		                        <option value="0">לא פעיל</option>
+		                    </select>
+		                    <button class="planning-history-btn" onclick="showClientHistory('${client.ID}')" title="היסטוריית טיפולים">📋</button>
+		                </div>
+		            </div>
+		            ${(client.notes || client.client_requests) ? `
+		                <div class="planning-row-details">
+		                    ${client.client_requests ? `<div class="client-requests">📝 בקשות: ${client.client_requests}</div>` : ''}
+		                    ${client.notes ? `<div class="client-notes">📌 הערות: ${client.notes}</div>` : ''}
+		                </div>
+		            ` : ''}
+		        </div>
+		    `;
 		}
 	
 		// החלפת טאב יום
@@ -8461,6 +8542,23 @@
 
 	   
 	   ////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+			  // הוספת מידע על ימים מותרים לשדה התאריך
+		function enhanceDateInputWithAllowedDays(clientId, allowedDay) {
+		    const dateInput = document.getElementById(`dateInput_${clientId}`);
+		    if (!dateInput) return;
+		    
+		    // הוספת class להדגשה
+		    dateInput.classList.add('highlight-allowed-days');
+		    
+		    // הוספת attribute עם היום המותר
+		    dateInput.setAttribute('data-allowed-day', allowedDay);
+		    
+		    // עדכון tooltip
+		    const currentTitle = dateInput.getAttribute('title') || '';
+		    dateInput.setAttribute('title', `${currentTitle} | יום מותר: ${allowedDay}`);
+		} 
+	   ////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 	   
 	   // החלף את validateToken בפונקציה זו:
 		async function validateToken() {
@@ -10353,6 +10451,7 @@
    </script>
 </body>
 </html>
+
 
 
 
