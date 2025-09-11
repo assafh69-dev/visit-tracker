@@ -1585,7 +1585,7 @@ html<!DOCTYPE html>
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 			</nav>
         </header>
 
@@ -3381,6 +3381,7 @@ function setNextAllowedDay(clientId, allowedDay) {
 			if (activeBtn) activeBtn.classList.add('active');
 			if (activeContent) activeContent.classList.add('active');
 		}
+		
 				// הוספת מידע על ימים מותרים לשדה התאריך
 		function enhanceDateInputWithAllowedDays(clientId, allowedDay) {
 		    const dateInput = document.getElementById(`dateInput_${clientId}`);
@@ -3388,9 +3389,7 @@ function setNextAllowedDay(clientId, allowedDay) {
 		    
 		    // הגדרת ברירת מחדל ליום הנוכחי
 		    if (!dateInput.value) {
-		        dateInput.value = new Date().toISOString().split('T')[0];
-		    }
-		    
+		        dateInput.value = new Date().toISOString().split('T')[0];		    
 			    dateInput.setAttribute('data-allowed-day', allowedDay);
 			}
 		    
@@ -10805,6 +10804,7 @@ function setNextAllowedDay(clientId, allowedDay) {
    </script>
 </body>
 </html>
+
 
 
 
