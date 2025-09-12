@@ -1265,7 +1265,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2	</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3	</button>
 			</nav>
         </header>
 
@@ -1544,6 +1544,61 @@
             <!-- locations Section -->
             <section id="locations" class="section">
                 <h2>ניהול לקוחות</h2>
+				<!-- פאנל סינון -->
+				<div class="filter-panel-compact" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+					<div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+						<div style="flex: 1; min-width: 150px;">
+							<label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">שם לקוח:</label>
+							<input type="text" id="filterClientName" placeholder="חפש לקוח..." onkeyup="filterLocationsTable()" 
+								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+						</div>
+						
+						<div style="flex: 0 0 120px;">
+							<label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">יום מועדף:</label>
+							<select id="filterDay" onchange="filterLocationsTable()" 
+									style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+								<option value="">כל הימים</option>
+								<option value="כל יום">כל יום</option>
+								<option value="יום ראשון">יום ראשון</option>
+								<option value="יום שני">יום שני</option>
+								<option value="יום שלישי">יום שלישי</option>
+								<option value="יום רביעי">יום רביעי</option>
+								<option value="יום חמישי">יום חמישי</option>
+								<option value="יום שישי">יום שישי</option>
+							</select>
+						</div>
+						
+						<div style="flex: 0 0 100px;">
+							<label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">מרווח שבועות:</label>
+							<select id="filterInterval" onchange="filterLocationsTable()" 
+									style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+								<option value="">הכל</option>
+								<option value="1">1</option>
+								<option value="2">2</option>
+								<option value="4">4</option>
+								<option value="8">8</option>
+								<option value="12">12</option>
+								<option value="52">52</option>
+							</select>
+						</div>
+						
+						<div style="flex: 0 0 100px;">
+							<label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">סטטוס:</label>
+							<select id="filterActive" onchange="filterLocationsTable()" 
+									style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+								<option value="">הכל</option>
+								<option value="1">פעיל</option>
+								<option value="0">לא פעיל</option>
+							</select>
+						</div>
+						
+						<div style="flex: 0 0 80px;">
+							<button onclick="clearLocationFilters()" style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 20px;">
+								נקה סינון
+							</button>
+						</div>
+					</div>
+				</div>
 				<button onclick="showAddLocationForm()" class="add-btn">הוסף לקוח חדש</button>
                 <div class="table-container">
                     <table id="locationsTable" class="data-table">
@@ -3201,15 +3256,21 @@
 			const tbody = document.getElementById('locationsTableBody');
 			tbody.innerHTML = '';
 			
-			locations.forEach(location => {
+			// קבלת נתונים מסוננים
+			const filteredLocations = getFilteredLocations();
+			
+			filteredLocations.forEach(location => {
+				// המרת סטטוס פעילות למלל
+				const activeStatus = location.active === "1" ? "פעיל" : "לא פעיל";
+				
 				const row = document.createElement('tr');
 				row.innerHTML = `
 					<td>${location.name}</td>
 					<td>${location.full_address}</td>
 					<td>${location.contact_person}</td>
 					<td>${location.allowed_day}</td>
-					<td>${location.interval_weeks} שבועות</td>
-					<td>${location.active}</td>
+					<td>${location.interval_weeks}</td>
+					<td>${activeStatus}</td>
 					<td>
 						<button class="action-btn edit-btn" onclick="editLocation('${location.ID}')">ערוך</button>
 						<button class="action-btn delete-btn" onclick="deleteLocation('${location.ID}')">מחק</button>
@@ -10042,6 +10103,55 @@
 				}
 			});
 		}
+
+		// סינון טבלת לקוחות
+		function filterLocationsTable() {
+			loadLocationsTable(); // טען מחדש עם סינון
+		}
+
+		// קבלת רשימה מסוננת של לקוחות
+		function getFilteredLocations() {
+			let filteredData = [...locations];
+			
+			// סינון לפי שם
+			const nameFilter = document.getElementById('filterClientName')?.value.toLowerCase();
+			if (nameFilter) {
+				filteredData = filteredData.filter(location => 
+					location.name.toLowerCase().includes(nameFilter) ||
+					location.full_address.toLowerCase().includes(nameFilter)
+				);
+			}
+			
+			// סינון לפי יום
+			const dayFilter = document.getElementById('filterDay')?.value;
+			if (dayFilter) {
+				filteredData = filteredData.filter(location => location.allowed_day === dayFilter);
+			}
+			
+			// סינון לפי מרווח
+			const intervalFilter = document.getElementById('filterInterval')?.value;
+			if (intervalFilter) {
+				filteredData = filteredData.filter(location => location.interval_weeks == intervalFilter);
+			}
+			
+			// סינון לפי סטטוס
+			const activeFilter = document.getElementById('filterActive')?.value;
+			if (activeFilter !== "") {
+				filteredData = filteredData.filter(location => location.active === activeFilter);
+			}
+			
+			return filteredData;
+		}
+
+		// ניקוי סינונים
+		function clearLocationFilters() {
+			document.getElementById('filterClientName').value = '';
+			document.getElementById('filterDay').value = '';
+			document.getElementById('filterInterval').value = '';
+			document.getElementById('filterActive').value = '';
+			loadLocationsTable();
+		}
+
 
    </script>
 </body>
