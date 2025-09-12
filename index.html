@@ -1285,7 +1285,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5	</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0	</button>
 			</nav>
         </header>
 
@@ -10027,28 +10027,13 @@
 
 		// פתיחת בוחר תאריך
 		function openDatePicker(clientId) {
-			const dateInput = document.getElementById(`dateInput_${clientId}`);
-			if (!dateInput) {
-				console.log('לא נמצא אלמנט התאריך עבור:', clientId);
-				return;
-			}
-			
 			const today = new Date().toISOString().split('T')[0];
+			const selectedDate = prompt('בחר תאריך (YYYY-MM-DD):', today);
 			
-			// הגדר לתאריך היום כברירת מחדל
-			dateInput.value = today;
-			
-			// יצירת אירוע click מלאכותי
-			dateInput.style.display = 'block';
-			dateInput.style.position = 'absolute';
-			dateInput.style.left = '-9999px';
-			dateInput.focus();
-			dateInput.click();
-			
-			// אחרי לחיצה, החזר להסתרה
-			setTimeout(() => {
-				dateInput.style.display = 'none';
-			}, 100);
+			if (selectedDate && !isNaN(new Date(selectedDate))) {
+				updateClientNextVisit(clientId, selectedDate);
+				showToast(`תאריך עודכן ל-${selectedDate}`, 'success');
+			}
 		}
 
 		// קביעת טיפול לשבוע/שבועיים
