@@ -1211,6 +1211,51 @@
 			box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 		}
 
+		.calendar-btn {
+			background: #3498db;
+			color: white;
+			border: none;
+			padding: 6px 8px;
+			border-radius: 50%;
+			cursor: pointer;
+			font-size: 12px;
+			width: 28px;
+			height: 28px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.calendar-btn:hover {
+			background: #2980b9;
+			transform: scale(1.1);
+		}
+
+		.week-btn {
+			background: #28a745;
+			color: white;
+			border: none;
+			padding: 4px 6px;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 10px;
+			margin-left: 2px;
+		}
+
+		.week-btn:hover {
+			background: #218838;
+			transform: scale(1.05);
+		}
+
+		.week-btn-double {
+			background: #17a2b8;
+		}
+
+		.week-btn-double:hover {
+			background: #138496;
+		}
+
+
 	</style>
    
 </head>
@@ -1240,7 +1285,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0	</button>
 			</nav>
         </header>
 
@@ -2708,7 +2753,16 @@
 								`<button class="planning-action-btn planning-complete" title="התחל טיפול" onclick="startTreatment('${client.ID}')">▶</button>` : 
 								''
 							}
-							<input type="date" class="planning-date-input" value="${client.next_visit}" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא">
+							<button class="calendar-btn" onclick="openDatePicker('${client.ID}')" title="בחר תאריך טיפול">
+								📅
+							</button>
+							<button class="week-btn" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
+								+1W
+							</button>
+							<button class="week-btn week-btn-double" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 2)" title="שבועיים">
+								+2W
+							</button>
+							<input type="date" id="dateInput_${client.ID}" style="display: none;" onchange="updateClientNextVisit('${client.ID}', this.value)">
 							<select class="planning-active-toggle" onchange="toggleClientActive('${client.ID}', this.value)" title="סטטוס לקוח">
 								<option value="1" selected>פעיל</option>
 								<option value="0">לא פעיל</option>
@@ -3126,8 +3180,7 @@
             });
         }
 
-        // חישוב משך טיפול מהפרש שעות
-		function calculateDurationFromTimes() {
+       function calculateDurationFromTimes() {
 			const startTime = document.getElementById('visitTime').value;
 			const endTime = document.getElementById('endTime').value;
 			
@@ -3147,16 +3200,21 @@
 			const minutes = totalMinutes % 60;
 			const decimalHours = (totalMinutes / 60).toFixed(1);
 			
-			// עדכון כל השדות
-			document.getElementById('durationHours').value = hours;
-			document.getElementById('durationMinutes').value = minutes;
-			document.getElementById('manualDurationMinutes').value = totalMinutes;
-			document.getElementById('calculatedHours').value = decimalHours;
+			// בדיקה שהאלמנטים קיימים לפני עדכון
+			const durationHoursEl = document.getElementById('durationHours');
+			const durationMinutesEl = document.getElementById('durationMinutes');
+			const manualDurationEl = document.getElementById('manualDurationMinutes');
+			const calculatedHoursEl = document.getElementById('calculatedHours');
+			
+			if (durationHoursEl) durationHoursEl.value = hours;
+			if (durationMinutesEl) durationMinutesEl.value = minutes;
+			if (manualDurationEl) manualDurationEl.value = totalMinutes;
+			if (calculatedHoursEl) calculatedHoursEl.value = decimalHours;
 			
 			// עדכון המחיר אוטומטית
-			calculateTreatmentCost();
-			
-			console.log(`עודכן משך טיפול: ${hours}:${minutes} (${totalMinutes} דקות, ${decimalHours} שעות)`);
+			if (typeof calculateTreatmentCost === 'function') {
+				calculateTreatmentCost();
+			}
 		}
 
 	    function loadLocationsTable() {
@@ -9965,6 +10023,45 @@
 			calculateDurationFromTimes();
 			
 			showToast(`שעה נוכחית: ${currentTime}`, 'info');
+		}
+
+		// פתיחת בוחר תאריך
+		function openDatePicker(clientId) {
+			const dateInput = document.getElementById(`dateInput_${clientId}`);
+			const today = new Date().toISOString().split('T')[0];
+			
+			// הגדר לתאריך היום כברירת מחדל
+			dateInput.value = today;
+			
+			// פתח את בוחר התאריך
+			dateInput.click();
+		}
+
+		// קביעת טיפול לשבוע/שבועיים
+		function setNextAllowedDay(clientId, allowedDay, weeksAhead = 1) {
+			// הפונקציה הזו אולי כבר קיימת - אם כן, רק הוסף את הפרמטר weeksAhead
+			const today = new Date();
+			const targetDate = new Date(today.getTime() + (weeksAhead * 7 * 24 * 60 * 60 * 1000));
+			const dateString = targetDate.toISOString().split('T')[0];
+			
+			updateClientNextVisit(clientId, dateString);
+			
+			const weekText = weeksAhead === 1 ? 'שבוע' : 'שבועיים';
+			showToast(`נקבע לעוד ${weekText}`, 'success');
+		}
+
+		function loadLocationsForSelect() {
+			const select = document.getElementById('locationSelect');
+			if (!select) return; // הוסף בדיקה
+			
+			select.innerHTML = '<option value="">בחר לקוח...</option>';
+			
+			locations.filter(location => location.active === "1").forEach(location => {
+				const option = document.createElement('option');
+				option.value = location.ID;
+				option.textContent = `${location.name} - ${location.full_address}`;
+				select.appendChild(option);
+			});
 		}
 
 
