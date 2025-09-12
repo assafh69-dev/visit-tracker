@@ -1,5 +1,5 @@
-html<!DOCTYPE html>
-< lang="he" dir="rtl">
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1007,103 +1007,6 @@ html<!DOCTYPE html>
 			}
 		}
 		/***************************************/
-				/* Client search autocomplete styles */
-		.client-search-container {
-		    position: relative;
-		    display: flex;
-		    gap: 10px;
-		    align-items: center;
-		}
-		
-		.client-search-input {
-		    flex: 1;
-		    padding: 10px;
-		    border: 2px solid #ddd;
-		    border-radius: 6px;
-		    font-size: 16px;
-		}
-		
-		.client-search-input:focus {
-		    border-color: #4CAF50;
-		    outline: none;
-		}
-		
-		.client-suggestions {
-		    position: absolute;
-		    top: 100%;
-		    left: 0;
-		    right: 0;
-		    background: white;
-		    border: 2px solid #ddd;
-		    border-top: none;
-		    border-radius: 0 0 6px 6px;
-		    max-height: 200px;
-		    overflow-y: auto;
-		    z-index: 1000;
-		    display: none;
-		}
-		
-		.suggestion-item {
-		    padding: 10px;
-		    cursor: pointer;
-		    border-bottom: 1px solid #eee;
-		}
-		
-		.suggestion-item:hover {
-		    background-color: #f5f5f5;
-		}
-		
-		.suggestion-item:last-child {
-		    border-bottom: none;
-		}
-		
-		.suggestion-client-name {
-		    font-weight: bold;
-		    color: #333;
-		}
-		
-		.suggestion-client-address {
-		    font-size: 12px;
-		    color: #666;
-		    margin-top: 2px;
-		}
-		
-		.add-client-btn {
-		    background: #28a745;
-		    color: white;
-		    border: none;
-		    padding: 10px 15px;
-		    border-radius: 6px;
-		    cursor: pointer;
-		    white-space: nowrap;
-		}
-		
-		.add-client-btn:hover {
-		    background: #218838;
-		}
-		
-		.time-now-btn {
-		    background: #007bff;
-		    color: white;
-		    border: none;
-		    padding: 6px 10px;
-		    border-radius: 4px;
-		    cursor: pointer;
-		    font-size: 12px;
-		    margin-left: 5px;
-		}
-		
-		.time-now-btn:hover {
-		    background: #0056b3;
-		}
-		
-		.time-input-container {
-		    display: flex;
-		    align-items: center;
-		    gap: 5px;
-		}
-		
-		/***************************************/
 
 		/* סטיילינג למצב שבועי */
 		.weekly-day-section {
@@ -1121,276 +1024,10 @@ html<!DOCTYPE html>
 			color: #4CAF50;
 		}
 
-/***************************************/
-		.planning-quick-btn {
-		    background: #28a745;
-		    color: white;
-		    border: none;
-		    padding: 6px 10px;
-		    border-radius: 4px;
-		    font-size: 11px;
-		    cursor: pointer;
-		    white-space: nowrap;
-		    margin-right: 5px;
-		}
-		
-		.planning-quick-btn:hover {
-		    background: #218838;
-		    transform: translateY(-1px);
-		}
-/***************************************/
-				/* CSS למערכת החיפוש */
-		.planning-search-container {
-		    background: rgba(255,255,255,0.9);
-		    border-radius: 12px;
-		    padding: 20px;
-		    margin-bottom: 20px;
-		    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-		    border: 1px solid #e0e0e0;
-		}
-		
-		.search-row {
-		    display: flex;
-		    gap: 20px;
-		    align-items: end;
-		    flex-wrap: wrap;
-		}
-		
-		.search-field {
-		    flex: 1;
-		    min-width: 200px;
-		}
-		
-		.search-field label {
-		    display: block;
-		    font-weight: bold;
-		    margin-bottom: 5px;
-		    color: #333;
-		    font-size: 14px;
-		}
-		
-		/* תיבת חיפוש כתובת */
-		.autocomplete-wrapper {
-		    position: relative;
-		}
-		
-		#planningAddressSearch {
-		    width: 100%;
-		    padding: 12px 15px;
-		    border: 2px solid #ddd;
-		    border-radius: 8px;
-		    font-size: 14px;
-		    transition: all 0.3s ease;
-		    background: white;
-		}
-		
-		#planningAddressSearch:focus {
-		    outline: none;
-		    border-color: #3498db;
-		    box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
-		}
-		
-		/* רשימת הצעות השלמה */
-		.suggestions-dropdown {
-		    position: absolute;
-		    top: 100%;
-		    left: 0;
-		    right: 0;
-		    background: white;
-		    border: 1px solid #ddd;
-		    border-top: none;
-		    border-radius: 0 0 8px 8px;
-		    max-height: 200px;
-		    overflow-y: auto;
-		    z-index: 1000;
-		    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-		}
-		
-		.suggestion-item {
-		    padding: 12px 15px;
-		    cursor: pointer;
-		    border-bottom: 1px solid #f0f0f0;
-		    transition: background 0.2s ease;
-		}
-		
-		.suggestion-item:hover {
-		    background: #f8f9fa;
-		}
-		
-		.suggestion-item:last-child {
-		    border-bottom: none;
-		}
-		
-		.suggestion-item.highlighted {
-		    background: #3498db;
-		    color: white;
-		}
-		
-		.suggestion-client-name {
-		    font-weight: bold;
-		    color: #333;
-		    margin-bottom: 3px;
-		}
-		
-		.suggestion-client-address {
-		    font-size: 12px;
-		    color: #666;
-		}
-		
-		.suggestion-item.highlighted .suggestion-client-name,
-		.suggestion-item.highlighted .suggestion-client-address {
-		    color: white;
-		}
-		
-		/* בחירת עיר */
-		#planningCityFilter {
-		    width: 100%;
-		    padding: 12px 15px;
-		    border: 2px solid #ddd;
-		    border-radius: 8px;
-		    font-size: 14px;
-		    background: white;
-		    cursor: pointer;
-		    transition: all 0.3s ease;
-		}
-		
-		#planningCityFilter:focus {
-		    outline: none;
-		    border-color: #3498db;
-		    box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
-		}
-		
-		/* כפתור איפוס */
-		.clear-search-btn {
-		    padding: 12px 20px;
-		    background: #e74c3c;
-		    color: white;
-		    border: none;
-		    border-radius: 8px;
-		    cursor: pointer;
-		    font-weight: bold;
-		    transition: all 0.3s ease;
-		    font-size: 14px;
-		}
-		
-		.clear-search-btn:hover {
-		    background: #c0392b;
-		    transform: translateY(-1px);
-		}
-		
-		/* תגובה למובייל */
-		@media (max-width: 768px) {
-		    .search-row {
-		        flex-direction: column;
-		        gap: 15px;
-		    }
-		    
-		    .search-field {
-		        min-width: 100%;
-		    }
-		    
-		    .clear-search-btn {
-		        width: 100%;
-		        padding: 15px;
-		        font-size: 16px;
-		    }
-		}
-		
-		/* אינדיקטור חיפוש פעיל */
-		.search-active {
-		    border-left: 4px solid #3498db;
-		    background: rgba(52, 152, 219, 0.05);
-		}
-/***************************************/
-				/* כפתור מהיר */
-		.planning-quick-btn {
-		    background: #28a745;
-		    color: white;
-		    border: none;
-		    padding: 6px 10px;
-		    border-radius: 4px;
-		    font-size: 11px;
-		    cursor: pointer;
-		    white-space: nowrap;
-		    margin-right: 5px;
-		}
-		
-		.planning-quick-btn:hover {
-		    background: #218838;
-		    transform: translateY(-1px);
-		}
-		
-	
-		
-		.planning-date-input.highlight-allowed-days::-webkit-calendar-picker-indicator {
-		    background: linear-gradient(45deg, #ff69b4, #ffc0cb);
-		    border-radius: 3px;
-		}
-/***************************************/
-		.planning-add-btn {
-		    background: #28a745;
-		    color: white;
-		    border: none;
-		    padding: 4px 8px;
-		    border-radius: 50%;
-		    font-size: 14px;
-		    cursor: pointer;
-		    margin-left: 3px;
-		    width: 28px;
-		    height: 28px;
-		    display: flex;
-		    align-items: center;
-		    justify-content: center;
-		    font-weight: bold;
-		}
-		
-		.planning-add-btn:hover {
-		    background: #218838;
-		    transform: scale(1.1);
-		}
-/***************************************/
-		.planning-date-input {
-		    position: relative;
-		}
-		
-		.planning-date-input::-webkit-calendar-picker-indicator {
-		    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23007bff"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>');
-		    background-size: 16px 16px;
-		    background-repeat: no-repeat;
-		    background-position: center;
-		    cursor: pointer;
-		}
-		
-		.planning-add-btn-double {
-			background: #17a2b8; /* צבע כחול */
-			margin-left: 2px;
-		}
 
-		.planning-add-btn-double:hover {
-			background: #138496;
-			transform: scale(1.1);
-		}
+/***************************************/
+/***************************************/
 
-		/* וודא שהכפתורים נראים יפה זה ליד זה */
-		.planning-client-actions {
-			display: flex;
-			gap: 2px;
-			align-items: center;
-			flex-wrap: nowrap;
-		}
-/***************************************/
-		/* סימון ימים מותרים בלוח השנה */
-		.planning-date-input[data-allowed-days] {
-		    position: relative;
-		}
-		
-		/* CSS להדגשת הימים המותרים - יישום באמצעות JavaScript */
-		
-		
-		.planning-date-input.highlight-allowed-days {
-		    border-left: 4px solid #ff69b4;
-		}
-/***************************************/
 		/* עדכון CSS לכרטיסיות תכנון - מבנה דו-שורתי */
 		.planning-row-details {
 			background: #f8f9fa;
@@ -1603,7 +1240,7 @@ html<!DOCTYPE html>
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -1617,40 +1254,6 @@ html<!DOCTYPE html>
                 <h3 id="planningDateTitle">היום - רביעי</h3>
                 <p id="planningDateFormatted">28 בנובמבר 2024</p>
             </div>
-
-
-			<div class="planning-search-container">
-    <div class="search-row">
-        <!-- חיפוש כתובת עם השלמה אוטומטית -->
-        <div class="search-field">
-            <label>חיפוש לפי כתובת:</label>
-            <div class="autocomplete-wrapper">
-                <input type="text" id="planningAddressSearch" placeholder="הקלד כתובת לקוח..."
-                       autocomplete="off" oninput="handleAddressSearch(this.value)">
-                <div id="addressSuggestions" class="suggestions-dropdown" style="display: none;"></div>
-            </div>
-        </div>
-        
-        <!-- פילטר ערים -->
-        <div class="search-field">
-            <label>סינון לפי עיר:</label>
-            <select id="planningCityFilter" onchange="handleCityFilter(this.value)">
-                <option value="">כל הערים</option>
-                <option value="ראשלצ">ראשון לציון</option>
-                <option value="חולון">חולון</option>
-                <option value="בת ים">בת ים</option>
-                <option value="אחר">אחר</option>
-            </select>
-        </div>
-        
-        <!-- כפתור איפוס -->
-        <div class="search-field">
-            <button id="clearSearchBtn" onclick="clearPlanningSearch()" class="clear-search-btn">
-                🗑️ איפוס חיפוש
-            </button>
-        </div>
-    </div>
-</div>	
 
             <!-- טאבים -->
             <div class="planning-view-tabs">
@@ -1700,22 +1303,10 @@ html<!DOCTYPE html>
                 <div class="form-container">
                     <form id="visitForm">
                         <div class="form-group">
-						    <label for="clientSearch">בחר לקוח:</label>
-						    <div class="client-search-container">
-						        <div style="position: relative; flex: 1;">
-						            <input type="text" id="clientSearch" class="client-search-input" 
-						                   placeholder="הקלד שם לקוח או כתובת..."
-						                   oninput="searchClients(this.value)" 
-						                   onfocus="showAllClients()"
-						                   onblur="hideClientSuggestions()" 
-						                   autocomplete="off">
-						            <div id="clientSuggestions" class="client-suggestions"></div>
-						            <input type="hidden" id="selectedClientId" required>
-						        </div>
-						        <button type="button" class="add-client-btn" onclick="addNewClient()">
-						            + הוסף לקוח חדש
-						        </button>
-						    </div>
+							<label for="locationSelect">בחר לקוח:</label>
+							<select id="locationSelect" required>
+								<option value="">בחר לקוח...</option>
+							</select>
 						</div>
 
 						<!-- הוסף כאן -->
@@ -1725,23 +1316,13 @@ html<!DOCTYPE html>
 						</div>
 
 						<div class="form-group">
-						    <label for="visitTime">שעת התחלה:</label>
-						    <div class="time-input-container">
-						        <input type="time" id="visitTime" required onchange="calculateDurationFromTimes()">
-						        <button type="button" class="time-now-btn" onclick="setCurrentTime('visitTime')">
-						            שעה נוכחית
-						        </button>
-						    </div>
+							<label for="visitTime">שעת התחלה:</label>
+							<input type="time" id="visitTime" required>
 						</div>
 						
 						<div class="form-group">
-						    <label for="endTime">שעת סיום:</label>
-						    <div class="time-input-container">
-						        <input type="time" id="endTime" onchange="calculateDurationFromTimes()">
-						        <button type="button" class="time-now-btn" onclick="setCurrentTime('endTime')">
-						            שעה נוכחית
-						        </button>
-						    </div>
+							<label for="endTime">שעת סיום:</label>
+							<input type="time" id="endTime">
 						</div>
 						
                         <div class="form-group">
@@ -1751,51 +1332,18 @@ html<!DOCTYPE html>
                                 <option value="חלקי">חלקי</option>
                             </select>
                         </div>
-						
                         <div class="form-group">
                             <label for="workDone">מה בוצע:</label>
                             <textarea id="workDone" placeholder="תיאור העבודה שבוצעה"></textarea>
                         </div>
-						
-                       <div class="form-group">
-						    <label for="manualDurationMinutes">משך הטיפול:</label>
-						    <div style="display: flex; gap: 10px; align-items: center;">
-						        <div style="display: flex; flex-direction: column; gap: 5px;">
-						            <div style="display: flex; gap: 5px; align-items: center;">
-						                <input type="number" id="durationHours" placeholder="1" min="0" max="23" 
-						                       onchange="updateDurationFromHoursMinutes()" 
-						                       style="width: 60px; text-align: center;">
-						                <span style="color: #666;">שעות</span>
-						            </div>
-						        </div>
-						        <div style="display: flex; flex-direction: column; gap: 5px;">
-						            <div style="display: flex; gap: 5px; align-items: center;">
-						                <input type="number" id="durationMinutes" placeholder="30" min="0" max="59" 
-						                       onchange="updateDurationFromHoursMinutes()" 
-						                       style="width: 80px; text-align: center;">
-						                <span style="color: #666;">דקות</span>
-						            </div>
-						        </div>
-						        <div style="display: flex; flex-direction: column; gap: 5px;">
-						            <div style="display: flex; gap: 5px; align-items: center;">
-						                <input type="number" id="totalMinutesDisplay" step="1" min="0"
-						                       onchange="updateHoursFromMinutes()" placeholder="90"
-						                       style="width: 80px; text-align: center;">
-						                <span style="color: #666;">סה"כ דקות</span>
-						            </div>
-						        </div>
-						        <div style="display: flex; flex-direction: column; gap: 5px;">
-						            <div style="display: flex; gap: 5px; align-items: center;">
-						                <input type="number" id="decimalHoursDisplay" step="0.1" min="0"
-						                       onchange="updateFromDecimalHours()" placeholder="1.5"
-						                       style="width: 80px; text-align: center;">
-						                <span style="color: #666;">שעות עשרוני</span>
-						            </div>
-						        </div>
-						        <input type="hidden" id="manualDurationMinutes">
-						    </div>
+                        <div class="form-group">
+							<label for="manualDurationMinutes">משך הטיפול (דקות):</label>
+							<div style="display: flex; gap: 10px; align-items: center;">
+								<input type="number" id="manualDurationMinutes" placeholder="90" min="0" onchange="updateHoursDisplay()" style="flex: 1;">
+								<span style="color: #666; font-size: 14px;">שעות:</span>
+								<input type="text" id="calculatedHours" readonly style="width: 80px; background: #f8f9fa; color: #666; border: 2px solid #e9ecef; border-radius: 6px; padding: 8px; text-align: center;" placeholder="1.5">
+							</div>
 						</div>
-						
                         <div class="form-group">
 							<label for="numberOfWorkersVisit">מספר עובדים בטיפול:</label>
 							<div style="display: flex; gap: 10px; align-items: center;">
@@ -2188,243 +1736,6 @@ html<!DOCTYPE html>
 		console.log('API Key:', API_KEY);
 		console.log('Client ID:', CLIENT_ID);
 //////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-				// משתנים גלובליים לחיפוש לקוחות
-		let clientSearchTimeout;
-		let selectedClientData = null;
-		
-		// פונקציה לחיפוש לקוחות
-		function searchClients(searchTerm) {
-		    clearTimeout(clientSearchTimeout);
-		    
-		    clientSearchTimeout = setTimeout(() => {
-		        if (searchTerm.length < 1) {
-		            hideClientSuggestions();
-		            return;
-		        }
-		        
-		        const filteredClients = locations
-		            .filter(location => location.active === "1")
-		            .filter(location => {
-		                const name = (location.name || '').toLowerCase();
-		                const address = (location.full_address || '').toLowerCase();
-		                const contact = (location.contact_person || '').toLowerCase();
-		                const term = searchTerm.toLowerCase();
-		                
-		                return name.includes(term) || 
-		                       address.includes(term) || 
-		                       contact.includes(term);
-		            })
-		            .slice(0, 8);
-		        
-		        showClientSuggestions(filteredClients);
-		    }, 300);
-		}
-		
-		// הצגת כל הלקוחות כשנוגעים בשדה
-		function showAllClients() {
-		    const activeClients = locations
-		        .filter(location => location.active === "1")
-		        .slice(0, 8);
-		    showClientSuggestions(activeClients);
-		}
-		
-		// הצגת הצעות לקוחות
-		function showClientSuggestions(clients) {
-		    const suggestionsDiv = document.getElementById('clientSuggestions');
-		    
-		    if (clients.length === 0) {
-		        hideClientSuggestions();
-		        return;
-		    }
-		    
-		    const suggestionsHTML = clients.map(client => `
-		        <div class="suggestion-item" onmousedown="selectClient('${client.ID}')">
-		            <div class="suggestion-client-name">${client.name}</div>
-		            <div class="suggestion-client-address">${client.full_address}</div>
-		        </div>
-		    `).join('');
-		    
-		    suggestionsDiv.innerHTML = suggestionsHTML;
-		    suggestionsDiv.style.display = 'block';
-		}
-		
-		// הסתרת הצעות
-		function hideClientSuggestions() {
-		    setTimeout(() => {
-		        document.getElementById('clientSuggestions').style.display = 'none';
-		    }, 200);
-		}
-		
-		// בחירת לקוח מהרשימה
-		function selectClient(clientId) {
-		    const client = locations.find(c => c.ID === clientId);
-		    if (!client) return;
-		    
-		    document.getElementById('clientSearch').value = `${client.name} - ${client.full_address}`;
-		    document.getElementById('selectedClientId').value = clientId;
-		    selectedClientData = client;
-		    
-		    hideClientSuggestions();
-		    
-		    // עדכון שדה הסכום לפי הסכום הבסיסי של הלקוח
-		    if (client.base_amount && client.base_amount > 0) {
-		        document.getElementById('amount').value = client.base_amount;
-		        calculateTreatmentCost();
-		    }
-		}
-		
-				// הוספת לקוח חדש
-		function addNewClient() {
-		    const searchValue = document.getElementById('clientSearch').value.trim();
-		    
-		    if (!searchValue) {
-		        showToast('אנא הזן שם לקוח חדש', 'warning');
-		        return;
-		    }
-		    
-		    // במקום יצירה מיידית - פתח טופס הוספת לקוח כמו במסך לקוחות
-		    showAddLocationForm();
-		    
-		    // מלא את שם הלקוח מהחיפוש
-		    setTimeout(() => {
-		        const nameField = document.getElementById('locationName');
-		        if (nameField) {
-		            nameField.value = searchValue;
-		        }
-		    }, 100);
-		}
-		
-		// הגדרת השעה הנוכחית
-		function setCurrentTime(timeInputId) {
-		    const now = new Date();
-		    const hours = String(now.getHours()).padStart(2, '0');
-		    const minutes = String(now.getMinutes()).padStart(2, '0');
-		    const currentTime = `${hours}:${minutes}`;
-		    
-		    document.getElementById(timeInputId).value = currentTime;
-		    
-		    // חישוב משך טיפול אם שני השדות מלאים
-		    calculateDurationFromTimes();
-		    
-		    showToast(`שעה נוכחית: ${currentTime}`, 'info');
-		}
-		
-		// חישוב משך טיפול מהפרש שעות
-		function calculateDurationFromTimes() {
-		    const startTime = document.getElementById('visitTime').value;
-		    const endTime = document.getElementById('endTime').value;
-		    
-		    if (!startTime || !endTime) return;
-		    
-		    const start = new Date(`2000-01-01T${startTime}`);
-		    const end = new Date(`2000-01-01T${endTime}`);
-		    
-		    if (end <= start) {
-		        showToast('שעת סיום חייבת להיות אחרי שעת התחלה', 'warning');
-		        return;
-		    }
-		    
-		    const diffMs = end - start;
-		    const totalMinutes = Math.round(diffMs / (1000 * 60));
-		    const hours = Math.floor(totalMinutes / 60);
-		    const minutes = totalMinutes % 60;
-		    
-		    // עדכון השדות
-		    document.getElementById('durationHours').value = hours;
-		    document.getElementById('durationMinutes').value = minutes;
-		    document.getElementById('manualDurationMinutes').value = totalMinutes;
-		    
-		    updateTotalDurationDisplay();
-		    calculateTreatmentCost();
-		}
-		
-		// עדכון משך טיפול משדות שעות ודקות
-		function updateDurationFromHoursMinutes() {
-		    const hours = parseInt(document.getElementById('durationHours').value) || 0;
-		    const minutes = parseInt(document.getElementById('durationMinutes').value) || 0;
-		    const totalMinutes = (hours * 60) + minutes;
-		    
-		    document.getElementById('manualDurationMinutes').value = totalMinutes;
-		    updateTotalDurationDisplay();
-		    calculateTreatmentCost();
-		}
-		
-		// עדכון תצוגת סך המשך
-		function updateTotalDurationDisplay() {
-		    const hours = parseInt(document.getElementById('durationHours').value) || 0;
-		    const minutes = parseInt(document.getElementById('durationMinutes').value) || 0;
-		    const totalMinutes = (hours * 60) + minutes;
-		    
-		    const displayText = hours > 0 ? 
-		        `(סה"כ: ${hours} שעות ו-${minutes} דקות = ${totalMinutes} דקות)` :
-		        `(סה"כ: ${minutes} דקות)`;
-		    
-		    document.getElementById('totalDurationDisplay').textContent = displayText;
-		}
-		
-		// עדכון הפונקציה הקיימת updateHoursDisplay
-		function updateHoursDisplay() {
-		    const totalMinutes = parseInt(document.getElementById('manualDurationMinutes').value) || 0;
-		    const hours = Math.floor(totalMinutes / 60);
-		    const minutes = totalMinutes % 60;
-		    
-		    document.getElementById('durationHours').value = hours;
-		    document.getElementById('durationMinutes').value = minutes;
-		    
-		    updateTotalDurationDisplay();
-		}
-		
-		//////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-		// קביעת היום המותר הקרוב ביותר
-		function setNextAllowedDay(clientId, allowedDay) {
-			if (allowedDay === 'כל יום') {
-				// אם מותר כל יום, קבע לעוד שבוע מהיום
-				const nextWeek = new Date();
-				nextWeek.setDate(nextWeek.getDate() + 7);
-				const dateString = nextWeek.toISOString().split('T')[0];
-				
-				document.getElementById(`dateInput_${clientId}`).value = dateString;
-				updateClientNextVisit(clientId, dateString);
-				showToast('נקבע לעוד שבוע מהיום', 'success');
-				return;
-			}
-			
-			const daysOfWeek = {
-				'יום ראשון': 0,
-				'יום שני': 1,
-				'יום שלישי': 2, 
-				'יום רביעי': 3,
-				'יום חמישי': 4,
-				'יום שישי': 5,
-				'יום שבת': 6
-			};
-			
-			const targetDayIndex = daysOfWeek[allowedDay];
-			if (targetDayIndex === undefined) {
-				showToast('יום לא מוכר', 'error');
-				return;
-			}
-			
-			const today = new Date();
-			const currentDayIndex = today.getDay();
-			
-			// חישוב כמה ימים עד היום המותר הבא
-			let daysUntilTarget = targetDayIndex - currentDayIndex;
-			if (daysUntilTarget <= 0) {
-				daysUntilTarget += 7; // השבוע הבא
-			}
-			
-			const targetDate = new Date(today);
-			targetDate.setDate(today.getDate() + daysUntilTarget);
-			
-			const dateString = targetDate.toISOString().split('T')[0];
-			document.getElementById(`dateInput_${clientId}`).value = dateString;
-			updateClientNextVisit(clientId, dateString);
-			
-			showToast(`נקבע ל${allowedDay} הקרוב (${targetDate.toLocaleDateString('he-IL')})`, 'success');
-		}
-//////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-		
 
 
 		let gapi_loaded = false;
@@ -3321,75 +2632,59 @@ html<!DOCTYPE html>
 			container.innerHTML = planningClients.map(client => renderClientRow(client)).join('');
 		}
 
-					// רינדור שורת לקוח (משותף לשני המצבים)
-				// רינדור שורת לקוח (משותף לשני המצבים)
+		// רינדור שורת לקוח (משותף לשני המצבים)
 		function renderClientRow(client) {
-		    const nextVisitFormatted = formatDate(client.next_visit);
-		    let statusText = '';
-		    
-		    // וידוא שיש תאריך תקין - אם לא, קבע לתאריך היום
-		    const defaultDate = client.next_visit || new Date().toISOString().split('T')[0];
-		    
-		    // טקסט סטטוס לפי תצוגה
-		    switch (currentPlanningView) {
-		        case 'daily':
-		            statusText = 'מתוכנן להיום';
-		            break;
-		        case 'weekly':
-		            const daysDiffText = client.daysDiff === 0 ? 'היום' : 
-		                               client.daysDiff === 1 ? 'מחר' : 
-		                               `בעוד ${client.daysDiff} ימים`;
-		            statusText = daysDiffText;
-		            break;
-		        case 'overdue':
-		            statusText = client.daysOverdue === 1 ? 'איחור יום אחד' : `איחור ${client.daysOverdue} ימים`;
-		            break;
-		    }
-		    
-		    const rowHTML = `
-		        <div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
-		            <div class="planning-row-main">
-		                <div class="planning-client-info">
-		                    <div class="planning-client-name">${client.name}</div>
-		                    <div class="planning-client-address">${client.full_address}</div>
-		                    <div class="planning-client-date">📅 ${nextVisitFormatted} (${statusText})</div>
-		                </div>
-		                <div class="planning-client-price">₪${client.base_amount || 0}</div>
-		                <div class="planning-client-actions">
-		                    ${currentPlanningView === 'daily' ?
-		                        `<button class="planning-action-btn planning-complete" title="התחל טיפול" onclick="startTreatment('${client.ID}')">▶</button>` : 
-		                        ''
-		                    }
-		                    <input type="date" class="planning-date-input" value="${defaultDate}" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא | יום מותר: ${client.allowed_day}" id="dateInput_${client.ID}" data-allowed-day="${client.allowed_day}">
-							<button class="planning-add-btn" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
-								+1W
-							</button>
-							<button class="planning-add-btn planning-add-btn-double" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 2)" title="שבועיים">
-								+2W
-							</button>
-		                    <select class="planning-active-toggle" onchange="toggleClientActive('${client.ID}', this.value)" title="סטטוס לקוח">
-		                        <option value="1" selected>פעיל</option>
-		                        <option value="0">לא פעיל</option>
-		                    </select>
-		                    <button class="planning-history-btn" onclick="showClientHistory('${client.ID}')" title="היסטוריית טיפולים">📋</button>
-		                </div>
-		            </div>
-		            ${(client.notes || client.client_requests) ? `
-		                <div class="planning-row-details">
-		                    ${client.client_requests ? `<div class="client-requests">📝 בקשות: ${client.client_requests}</div>` : ''}
-		                    ${client.notes ? `<div class="client-notes">📌 הערות: ${client.notes}</div>` : ''}
-		                </div>
-		            ` : ''}
-		        </div>
-		    `;
-		    
-		    // קריאה לפונקציה להדגשת ימים מותרים אחרי יצירת ה-HTML
-		    setTimeout(() => {
-		        enhanceDateInputWithAllowedDays(client.ID, client.allowed_day);
-		    }, 100);
-		    
-		    return rowHTML;
+			const nextVisitFormatted = formatDate(client.next_visit);
+			let statusText = '';
+			
+			// טקסט סטטוס לפי תצוגה
+			switch (currentPlanningView) {
+				case 'daily':
+					statusText = 'מתוכנן להיום';
+					break;
+				case 'weekly':
+					const daysDiffText = client.daysDiff === 0 ? 'היום' : 
+									   client.daysDiff === 1 ? 'מחר' : 
+									   `בעוד ${client.daysDiff} ימים`;
+					statusText = daysDiffText;
+					break;
+				case 'overdue':
+					statusText = client.daysOverdue === 1 ? 'איחור יום אחד' : `איחור ${client.daysOverdue} ימים`;
+					break;
+			}
+			
+			return `
+				<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
+					<div class="planning-row-main">
+						<div class="planning-client-info">
+							<div class="planning-client-name">${client.name}</div>
+							<div class="planning-client-address">${client.full_address}</div>
+							<div class="planning-client-date">📅 ${nextVisitFormatted} (${statusText})</div>
+						</div>
+						<div class="planning-client-price">₪${client.base_amount || 0}</div>
+						<div class="planning-client-actions">
+							${currentPlanningView === 'daily' ? 
+								`<button class="planning-action-btn planning-complete" title="התחל טיפול" onclick="startTreatment('${client.ID}')">▶</button>` : 
+								''
+							}
+							<input type="date" class="planning-date-input" value="${client.next_visit}" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא">
+							<select class="planning-active-toggle" onchange="toggleClientActive('${client.ID}', this.value)" title="סטטוס לקוח">
+								<option value="1" selected>פעיל</option>
+								<option value="0">לא פעיל</option>
+							</select>
+							<button class="planning-history-btn" onclick="showClientHistory('${client.ID}')" title="היסטוריית טיפולים">📋</button>
+						</div>
+					</div>
+					${(client.notes || client.client_requests) ? `
+						<div class="planning-row-details">
+							${client.client_requests ? `<div class="client-requests">📝 בקשות: ${client.client_requests}</div>` : ''}
+							${client.notes ? `<div class="client-notes">💭 הערות: ${client.notes}</div>` : ''}
+						</div>
+					` : ''}
+				</div>
+			`;
 		}
+	
 		// החלפת טאב יום
 		function switchDayTab(dayName) {
 			// הסרת active מכל הכפתורים
@@ -3403,160 +2698,7 @@ html<!DOCTYPE html>
 			if (activeBtn) activeBtn.classList.add('active');
 			if (activeContent) activeContent.classList.add('active');
 		}
-		
-				// הוספת מידע על ימים מותרים לשדה התאריך
-		function enhanceDateInputWithAllowedDays(clientId, allowedDay) {
-		    const dateInput = document.getElementById(`dateInput_${clientId}`);
-		    if (!dateInput) return;
-		    
-		    // הגדרת ברירת מחדל ליום הנוכחי
-		    if (!dateInput.value) {
-		        dateInput.value = new Date().toISOString().split('T')[0];		    
-			    dateInput.setAttribute('data-allowed-day', allowedDay);
-			}
-		    
-		    // שמירת הערך המקורי
-		    let originalValue = dateInput.value;
-		    
-		    // Override של פתיחת הלוח
-		    dateInput.addEventListener('mousedown', (e) => {
-		        // שמירת הערך המקורי
-		        originalValue = dateInput.value;
-		        
-		        // החלפה לתאריך היום
-		        const today = new Date().toISOString().split('T')[0];
-		        dateInput.value = today;
-		        
-		        // הדגשת ימים מותרים
-		        highlightAllowedDaysInCalendar(clientId, allowedDay);
-		    });
-		    
-		    // מעקב אחר שינויים
-		    dateInput.addEventListener('change', (e) => {
-		        const newValue = e.target.value;
-		        if (newValue && newValue !== originalValue) {
-		            // עדכון הלקוח עם התאריך החדש
-		            updateClientNextVisit(clientId, newValue);
-		            originalValue = newValue; // עדכון הערך המקורי
-		        }
-		    });
-		    
-		    // אם לוחצים ESC או סוגרים בלי לבחור
-		    dateInput.addEventListener('keydown', (e) => {
-		        if (e.key === 'Escape') {
-		            dateInput.value = originalValue;
-		            dateInput.blur();
-		        }
-		    });
-		}
-		
-		// פונקציה להדגשת ימים מותרים בלוח השנה
-		function highlightAllowedDaysInCalendar(clientId, allowedDay) {
-		    const dateInput = document.getElementById(`dateInput_${clientId}`);
-		    if (!dateInput) return;
-		    
-		    // קוד CSS מתקדם להדגשה
-		    const style = document.createElement('style');
-		    style.id = `calendar-style-${clientId}`;
-		    
-		    // מיפוי ימים לאינדקסים
-		    const dayMapping = {
-		        'יום ראשון': 0,
-		        'יום שני': 1,
-		        'יום שלישי': 2,
-		        'יום רביעי': 3,
-		        'יום חמישי': 4,
-		        'יום שישי': 5,
-		        'יום שבת': 6,
-		        'כל יום': 'all'
-		    };
-		    
-		    let cssRule = '';
-		    
-		    if (allowedDay === 'כל יום') {
-		        // אם מותר כל יום - הדגש הכל בקלילות
-		        cssRule = `
-		            #dateInput_${clientId}::-webkit-calendar-picker-indicator {
-		                background: linear-gradient(45deg, #ff69b4, #ffc0cb) !important;
-		                border-radius: 3px !important;
-		            }
-		        `;
-		    } else {
-		        // הדגש רק את היום המותר
-		        const dayIndex = dayMapping[allowedDay];
-		        cssRule = `
-		            #dateInput_${clientId}::-webkit-calendar-picker-indicator {
-		                background: linear-gradient(45deg, #ff69b4, #ffc0cb) !important;
-		                border-radius: 3px !important;
-		                box-shadow: 0 0 8px rgba(255, 105, 180, 0.6) !important;
-		            }
-		        `;
-		    }
-		    
-		    style.textContent = cssRule;
-		    
-		    // הסר סטייל קודם והוסף חדש
-		    const existingStyle = document.getElementById(`calendar-style-${clientId}`);
-		    if (existingStyle) existingStyle.remove();
-		    
-		    document.head.appendChild(style);
-		}
-		
-		// קביעת היום המותר הקרוב ביותר
-		function setNextAllowedDay(clientId, allowedDay, weeksAhead = 1) {
-			if (allowedDay === 'כל יום') {
-				// אם מותר כל יום, קבע לעוד X שבועות מהיום
-				const targetDate = new Date();
-				targetDate.setDate(targetDate.getDate() + (weeksAhead * 7));
-				const dateString = targetDate.toISOString().split('T')[0];
-				
-				document.getElementById(`dateInput_${clientId}`).value = dateString;
-				updateClientNextVisit(clientId, dateString);
-				
-				const weekText = weeksAhead === 1 ? 'שבוע' : 'שבועיים';
-				showToast(`נקבע לעוד ${weekText} מהיום`, 'success');
-				return;
-			}
-			
-			const daysOfWeek = {
-				'יום ראשון': 0,
-				'יום שני': 1,
-				'יום שלישי': 2, 
-				'יום רביעי': 3,
-				'יום חמישי': 4,
-				'יום שישי': 5,
-				'יום שבת': 6
-			};
-			
-			const targetDayIndex = daysOfWeek[allowedDay];
-			if (targetDayIndex === undefined) {
-				showToast('יום לא מוכר', 'error');
-				return;
-			}
-			
-			const today = new Date();
-			const currentDayIndex = today.getDay();
-			
-			// חישוב כמה ימים עד היום המותר הבא
-			let daysUntilTarget = targetDayIndex - currentDayIndex;
-			if (daysUntilTarget <= 0) {
-				daysUntilTarget += 7; // השבוע הבא
-			}
-			
-			// הוספת השבועות הנוספים
-			daysUntilTarget += (weeksAhead - 1) * 7;
-			
-			const targetDate = new Date(today);
-			targetDate.setDate(today.getDate() + daysUntilTarget);
-			
-			const dateString = targetDate.toISOString().split('T')[0];
-			document.getElementById(`dateInput_${clientId}`).value = dateString;
-			updateClientNextVisit(clientId, dateString);
-			
-			const weekText = weeksAhead === 1 ? 'שבוע' : `${weeksAhead} שבועות`;
-			showToast(`נקבע ל${allowedDay} בעוד ${weekText} (${targetDate.toLocaleDateString('he-IL')})`, 'success');
-		}
-			
+	
 		// פונקציה חדשה: התחל טיפול (מעבר לטופס עם פרטי לקוח מוכנים)
 		function startTreatment(clientId) {
 			const client = locations.find(loc => loc.ID === clientId);
@@ -3829,51 +2971,6 @@ html<!DOCTYPE html>
 		}
 	
 	/////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-				// עדכון משך טיפול משדות שעות ודקות
-		function updateDurationFromHoursMinutes() {
-		    const hours = parseInt(document.getElementById('durationHours').value) || 0;
-		    const minutes = parseInt(document.getElementById('durationMinutes').value) || 0;
-		    const totalMinutes = (hours * 60) + minutes;
-		    const decimalHours = totalMinutes / 60;
-		    
-		    document.getElementById('manualDurationMinutes').value = totalMinutes;
-		    document.getElementById('totalMinutesDisplay').value = totalMinutes;
-		    document.getElementById('decimalHoursDisplay').value = decimalHours.toFixed(1);
-		    
-		    calculateTreatmentCost();
-		}
-		
-		// עדכון מדקות כללי
-		function updateHoursFromMinutes() {
-		    const totalMinutes = parseInt(document.getElementById('totalMinutesDisplay').value) || 0;
-		    const hours = Math.floor(totalMinutes / 60);
-		    const minutes = totalMinutes % 60;
-		    const decimalHours = totalMinutes / 60;
-		    
-		    document.getElementById('durationHours').value = hours;
-		    document.getElementById('durationMinutes').value = minutes;
-		    document.getElementById('manualDurationMinutes').value = totalMinutes;
-		    document.getElementById('decimalHoursDisplay').value = decimalHours.toFixed(1);
-		    
-		    calculateTreatmentCost();
-		}
-		
-		// עדכון משעות עשרוני
-		function updateFromDecimalHours() {
-		    const decimalHours = parseFloat(document.getElementById('decimalHoursDisplay').value) || 0;
-		    const totalMinutes = Math.round(decimalHours * 60);
-		    const hours = Math.floor(totalMinutes / 60);
-		    const minutes = totalMinutes % 60;
-		    
-		    document.getElementById('durationHours').value = hours;
-		    document.getElementById('durationMinutes').value = minutes;
-		    document.getElementById('manualDurationMinutes').value = totalMinutes;
-		    document.getElementById('totalMinutesDisplay').value = totalMinutes;
-		    
-		    calculateTreatmentCost();
-		}
-    /////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
 
 
 		// תוספה - עדכון סטטיסטיקות
@@ -3914,7 +3011,7 @@ html<!DOCTYPE html>
 				btn.classList.remove('active');
 				if ((filter === 'today' && btn.textContent === 'היום') ||
 					(filter === 'week' && btn.textContent === 'השבוע') ||
-					(filter === 'overdue' && btn.textContent === 'מאחרות')) {
+					(filter === 'overdue' && btn.textContent === 'מאוחרות')) {
 					btn.classList.add('active');
 				}
 			});
@@ -3988,19 +3085,17 @@ html<!DOCTYPE html>
             });
         }
 
-       function loadLocationsForSelect() {
-			const select = document.getElementById('locationSelect');
-			if (!select) return; // הוסף את השורה הזו
-			
-			select.innerHTML = '<option value="">בחר לקוח...</option>';
-			
-			locations.filter(location => location.active === "1").forEach(location => {
-				const option = document.createElement('option');
-				option.value = location.ID;
-				option.textContent = `${location.name} - ${location.full_address}`;
-				select.appendChild(option);
-			});
-		}
+        function loadLocationsForSelect() {
+            const select = document.getElementById('locationSelect');
+            select.innerHTML = '<option value="">בחר לקוח...</option>';
+            
+            locations.filter(location => location.active === "1").forEach(location => {
+                const option = document.createElement('option');
+                option.value = location.ID;
+                option.textContent = `${location.name} - ${location.full_address}`;
+                select.appendChild(option);
+            });
+        }
 
        function loadLocationsTable() {
 			const tbody = document.getElementById('locationsTableBody');
@@ -4065,7 +3160,7 @@ html<!DOCTYPE html>
 			event.preventDefault();
 			
 			const formData = new FormData(event.target);
-			const selectedLocation = document.getElementById('selectedClientId').value;
+			const selectedLocationId = document.getElementById('locationSelect').value;
 			const visitDate = document.getElementById('visitDate').value; // התאריך הנוכחי
 			const endTime = document.getElementById('endTime').value;
 			const paymentStatus = document.getElementById('paymentStatus').value;
@@ -8817,128 +7912,6 @@ html<!DOCTYPE html>
 
 	   
 	   ////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-			  // הוספת מידע על ימים מותרים לשדה התאריך
-		function enhanceDateInputWithAllowedDays(clientId, allowedDay) {
-		    const dateInput = document.getElementById(`dateInput_${clientId}`);
-		    if (!dateInput) return;
-		    
-		    // רק הוספת attribute עם היום המותר
-		    dateInput.setAttribute('data-allowed-day', allowedDay);
-		    
-		    // קריאה לפונקציה להדגשת ימים מותרים
-		    highlightAllowedDaysInCalendar(clientId, allowedDay);
-		}
-	   ////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-				// פונקציות בסיסיות שחסרות
-				// פונקציות נוספות שחסרות
-		function loadPlanningData() {
-		    // טוען נתוני תכנון
-		    console.log('טוען נתוני תכנון...');
-		    // הוסף כאן את הלוגיקה לטעינת נתוני התכנון
-		}
-		
-		function loadVisitsHistory() {
-		    // טוען היסטוריית ביקורים
-		    console.log('טוען היסטוריית ביקורים...');
-		}
-		
-		function loadLocationsTable() {
-		    // טוען טבלת לקוחות
-		    console.log('טוען טבלת לקוחות...');
-		}
-		
-		function loadReceiptsTable() {
-		    // טוען טבלת קבלות
-		    console.log('טוען טבלת קבלות...');
-		}
-		
-		function displayDebts() {
-		    // מציג חובות
-		    console.log('מציג חובות...');
-		}
-		
-
-		// פונקציה להצגת הודעות
-		function showToast(message, type = 'info', duration = 3000) {
-		    console.log(`${type.toUpperCase()}: ${message}`);
-		    
-		    // יצירת אלמנט toast
-		    const toast = document.createElement('div');
-		    toast.className = `toast ${type}`;
-		    toast.textContent = message;
-		    
-		    document.body.appendChild(toast);
-		    
-		    // הסרה אחרי זמן מוגדר
-		    setTimeout(() => {
-		        if (toast.parentNode) {
-		            toast.parentNode.removeChild(toast);
-		        }
-		    }, duration);
-		}
-		function showSection(sectionName) {
-		    // הסתר את כל הסקשנים
-		    document.querySelectorAll('.section').forEach(section => {
-		        section.classList.remove('active');
-		    });
-		    
-		    // הסתר את כל הכפתורים
-		    document.querySelectorAll('.nav-btn').forEach(btn => {
-		        btn.classList.remove('active');
-		    });
-		    
-		    // הצג את הסקשן הנבחר
-		    const targetSection = document.getElementById(sectionName);
-		    if (targetSection) {
-		        targetSection.classList.add('active');
-		    }
-		    
-		    // סמן את הכפתור כפעיל
-		    event.target.classList.add('active');
-		    
-		    // טען נתונים לפי הסקשן
-		    switch(sectionName) {
-		        case 'planning':
-		            loadPlanningData();
-		            break;
-		        case 'history':
-		            loadVisitsHistory();
-		            break;
-		        case 'locations':
-		            loadLocationsTable();
-		            break;
-		        case 'receipts':
-		            loadReceiptsTable();
-		            break;
-		        case 'debts':
-		            displayDebts();
-		            break;
-		    }
-		}
-		
-		function switchPlanningView(view) {
-		    currentPlanningView = view;
-		    
-		    // עדכן כפתורים
-		    document.querySelectorAll('.planning-tab-btn').forEach(btn => btn.classList.remove('active'));
-		    const activeBtn = document.querySelector(`[onclick="switchPlanningView('${view}')"]`);
-		    if (activeBtn) activeBtn.classList.add('active');
-		    
-		    loadPlanningData();
-		}
-		
-		function connectToGoogleSheets() {
-		    if (!access_token) {
-		        showToast('התחבר לגוגל תחילה', 'warning');
-		        return;
-		    }
-		    
-		    showToast('מתחבר לגוגל שיטס...', 'info');
-		    // כאן תוכל להוסיף לוגיקת חיבור
-		}
-	   ////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-
 	   
 	   // החלף את validateToken בפונקציה זו:
 		async function validateToken() {
@@ -10831,4 +9804,3 @@ html<!DOCTYPE html>
    </script>
 </body>
 </html>
-
