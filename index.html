@@ -1211,26 +1211,6 @@
 			box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 		}
 
-		.calendar-btn {
-			background: #3498db;
-			color: white;
-			border: none;
-			padding: 6px 8px;
-			border-radius: 50%;
-			cursor: pointer;
-			font-size: 12px;
-			width: 28px;
-			height: 28px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-		}
-
-		.calendar-btn:hover {
-			background: #2980b9;
-			transform: scale(1.1);
-		}
-
 		.week-btn {
 			background: #28a745;
 			color: white;
@@ -2654,6 +2634,8 @@
 				// במצב יומי או מאחרות - רשימה רגילה
 				renderRegularPlanningList();
 			}
+			
+			setTimeout(setTodayAsDefault, 100);
 		}
 
 
@@ -2716,6 +2698,7 @@
 		function renderRegularPlanningList() {
 			const container = document.getElementById('planningCardsContainer');
 			container.innerHTML = planningClients.map(client => renderClientRow(client)).join('');
+			setTimeout(setTodayAsDefault, 100);
 		}
 
 		// רינדור שורת לקוח (משותף לשני המצבים)
@@ -10025,16 +10008,6 @@
 			showToast(`שעה נוכחית: ${currentTime}`, 'info');
 		}
 
-		// פתיחת בוחר תאריך
-		function openDatePicker(clientId) {
-			const today = new Date().toISOString().split('T')[0];
-			const selectedDate = prompt('בחר תאריך (YYYY-MM-DD):', today);
-			
-			if (selectedDate && !isNaN(new Date(selectedDate))) {
-				updateClientNextVisit(clientId, selectedDate);
-				showToast(`תאריך עודכן ל-${selectedDate}`, 'success');
-			}
-		}
 
 		// קביעת טיפול לשבוע/שבועיים
 		function setNextAllowedDay(clientId, allowedDay, weeksAhead = 1) {
@@ -10063,6 +10036,15 @@
 			});
 		}
 
+		// הגדרת תאריך היום לכל שדות התאריך
+		function setTodayAsDefault() {
+			const today = new Date().toISOString().split('T')[0];
+			document.querySelectorAll('.planning-date-input').forEach(input => {
+				if (!input.value) {
+					input.value = today;
+				}
+			});
+		}
 
    </script>
 </body>
