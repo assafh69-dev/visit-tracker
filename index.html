@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
 			</nav>
         </header>
 
@@ -3115,16 +3115,18 @@
         }
 
         function loadLocationsForSelect() {
-            const select = document.getElementById('locationSelect');
-            select.innerHTML = '<option value="">בחר לקוח...</option>';
-            
-            locations.filter(location => location.active === "1").forEach(location => {
-                const option = document.createElement('option');
-                option.value = location.ID;
-                option.textContent = `${location.name} - ${location.full_address}`;
-                select.appendChild(option);
-            });
-        }
+			const select = document.getElementById('locationSelect');
+			if (!select) return; // הוסף את השורה הזו - יפתור את השגיאה
+			
+			select.innerHTML = '<option value="">בחר לקוח...</option>';
+			
+			locations.filter(location => location.active === "1").forEach(location => {
+				const option = document.createElement('option');
+				option.value = location.ID;
+				option.textContent = `${location.name} - ${location.full_address}`;
+				select.appendChild(option);
+			});
+		}
 
        function loadLocationsTable() {
 			const tbody = document.getElementById('locationsTableBody');
