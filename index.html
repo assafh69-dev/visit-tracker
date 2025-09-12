@@ -1265,7 +1265,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3	</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4	</button>
 			</nav>
         </header>
 
@@ -1599,7 +1599,17 @@
 						</div>
 					</div>
 				</div>
-				<button onclick="showAddLocationForm()" class="add-btn">הוסף לקוח חדש</button>
+				<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+					<button onclick="showAddLocationForm()" class="add-btn">הוסף לקוח חדש</button>
+					
+					<div id="locationsStatsBox" style="background: #e8f4fd; border: 1px solid #3498db; border-radius: 6px; padding: 8px 12px; font-size: 13px; color: #2c3e50;">
+						<span id="locationsCount">0</span> לקוחות מוצגים
+						<span style="margin-right: 10px; color: #666;">|</span>
+						<span style="color: #27ae60; font-weight: bold;" id="activeCount">0</span> פעילים
+						<span style="margin-right: 10px; color: #666;">|</span>
+						<span style="color: #e74c3c; font-weight: bold;" id="inactiveCount">0</span> לא פעילים
+					</div>
+				</div>
                 <div class="table-container">
                     <table id="locationsTable" class="data-table">
                         <thead>
@@ -3259,6 +3269,9 @@
 			// קבלת נתונים מסוננים
 			const filteredLocations = getFilteredLocations();
 			
+			// עדכון סטטיסטיקות
+			updateLocationsStats(filteredLocations);
+			
 			filteredLocations.forEach(location => {
 				// המרת סטטוס פעילות למלל
 				const activeStatus = location.active === "1" ? "פעיל" : "לא פעיל";
@@ -3278,6 +3291,16 @@
 				`;
 				tbody.appendChild(row);
 			});
+		}
+
+		// עדכון סטטיסטיקות הלקוחות
+		function updateLocationsStats(filteredData) {
+			const activeClients = filteredData.filter(loc => loc.active === "1").length;
+			const inactiveClients = filteredData.filter(loc => loc.active === "0").length;
+			
+			document.getElementById('locationsCount').textContent = filteredData.length;
+			document.getElementById('activeCount').textContent = activeClients;
+			document.getElementById('inactiveCount').textContent = inactiveClients;
 		}
 
         function loadReceiptsTable() {
