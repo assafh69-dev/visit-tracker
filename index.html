@@ -1603,7 +1603,7 @@ html<!DOCTYPE html>
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 			</nav>
         </header>
 
@@ -3988,17 +3988,19 @@ html<!DOCTYPE html>
             });
         }
 
-        function loadLocationsForSelect() {
-            const select = document.getElementById('locationSelect');
-            select.innerHTML = '<option value="">בחר לקוח...</option>';
-            
-            locations.filter(location => location.active === "1").forEach(location => {
-                const option = document.createElement('option');
-                option.value = location.ID;
-                option.textContent = `${location.name} - ${location.full_address}`;
-                select.appendChild(option);
-            });
-        }
+       function loadLocationsForSelect() {
+			const select = document.getElementById('locationSelect');
+			if (!select) return; // הוסף את השורה הזו
+			
+			select.innerHTML = '<option value="">בחר לקוח...</option>';
+			
+			locations.filter(location => location.active === "1").forEach(location => {
+				const option = document.createElement('option');
+				option.value = location.ID;
+				option.textContent = `${location.name} - ${location.full_address}`;
+				select.appendChild(option);
+			});
+		}
 
        function loadLocationsTable() {
 			const tbody = document.getElementById('locationsTableBody');
@@ -10829,6 +10831,4 @@ html<!DOCTYPE html>
    </script>
 </body>
 </html>
-
-
 
