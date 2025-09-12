@@ -1302,11 +1302,40 @@
                 <h2>טיפול חדש</h2>
                 <div class="form-container">
                     <form id="visitForm">
-                        <div class="form-group">
-							<label for="locationSelect">בחר לקוח:</label>
-							<select id="locationSelect" required>
-								<option value="">בחר לקוח...</option>
-							</select>
+                        <!-- החלף את שדה בחירת הלקוח הנוכחי ב: -->
+						<div class="form-group">
+							<label for="clientSelect">בחר לקוח:</label>
+							<div style="display: flex; gap: 10px; align-items: stretch;">
+								<div class="hybrid-client-selector" style="flex: 1; position: relative;">
+									<input type="text" 
+										   id="clientSearchInput" 
+										   class="client-search-input" 
+										   placeholder="בחר לקוח או התחל להקליד לחיפוש..."
+										   style="width: 100%; padding: 12px 35px 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;"
+										   oninput="handleClientSearch(this.value)"
+										   onfocus="showClientDropdown()"
+										   onblur="hideClientDropdown()"
+										   autocomplete="off">
+									
+									<!-- חץ dropdown -->
+									<span class="dropdown-arrow" onclick="toggleClientDropdown()" 
+										  style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 12px; color: #666;">
+										▼
+									</span>
+									
+									<!-- רשימת השלמות -->
+									<div id="clientDropdown" class="client-dropdown" 
+										 style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+									</div>
+									
+									<input type="hidden" id="selectedClientId" required>
+								</div>
+								
+								<button type="button" class="add-btn" onclick="openAddClientModal()" 
+										style="padding: 12px 20px; white-space: nowrap;">
+									+ הוסף לקוח חדש
+								</button>
+							</div>
 						</div>
 
 						<!-- הוסף כאן -->
