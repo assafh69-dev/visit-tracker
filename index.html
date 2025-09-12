@@ -1240,7 +1240,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -1346,12 +1346,24 @@
 
 						<div class="form-group">
 							<label for="visitTime">שעת התחלה:</label>
-							<input type="time" id="visitTime" required>
+							<div style="display: flex; align-items: center; gap: 5px;">
+								<input type="time" id="visitTime" required onchange="calculateDurationFromTimes()" style="flex: 1;">
+								<button type="button" onclick="setCurrentTime('visitTime')" title="קבע שעה נוכחית"
+										style="background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+									🕐
+								</button>
+							</div>
 						</div>
-						
+
 						<div class="form-group">
 							<label for="endTime">שעת סיום:</label>
-							<input type="time" id="endTime">
+							<div style="display: flex; align-items: center; gap: 5px;">
+								<input type="time" id="endTime" onchange="calculateDurationFromTimes()" style="flex: 1;">
+								<button type="button" onclick="setCurrentTime('endTime')" title="קבע שעה נוכחית"
+										style="background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+									🕐
+								</button>
+							</div>
 						</div>
 						
                         <div class="form-group">
@@ -3114,21 +3126,40 @@
             });
         }
 
-        function loadLocationsForSelect() {
-			const select = document.getElementById('locationSelect');
-			if (!select) return; // הוסף את השורה הזו - יפתור את השגיאה
+        // חישוב משך טיפול מהפרש שעות
+		function calculateDurationFromTimes() {
+			const startTime = document.getElementById('visitTime').value;
+			const endTime = document.getElementById('endTime').value;
 			
-			select.innerHTML = '<option value="">בחר לקוח...</option>';
+			if (!startTime || !endTime) return;
 			
-			locations.filter(location => location.active === "1").forEach(location => {
-				const option = document.createElement('option');
-				option.value = location.ID;
-				option.textContent = `${location.name} - ${location.full_address}`;
-				select.appendChild(option);
-			});
+			const start = new Date(`2000-01-01T${startTime}`);
+			const end = new Date(`2000-01-01T${endTime}`);
+			
+			if (end <= start) {
+				showToast('שעת סיום חייבת להיות אחרי שעת התחלה', 'warning');
+				return;
+			}
+			
+			const diffMs = end - start;
+			const totalMinutes = Math.round(diffMs / (1000 * 60));
+			const hours = Math.floor(totalMinutes / 60);
+			const minutes = totalMinutes % 60;
+			const decimalHours = (totalMinutes / 60).toFixed(1);
+			
+			// עדכון כל השדות
+			document.getElementById('durationHours').value = hours;
+			document.getElementById('durationMinutes').value = minutes;
+			document.getElementById('manualDurationMinutes').value = totalMinutes;
+			document.getElementById('calculatedHours').value = decimalHours;
+			
+			// עדכון המחיר אוטומטית
+			calculateTreatmentCost();
+			
+			console.log(`עודכן משך טיפול: ${hours}:${minutes} (${totalMinutes} דקות, ${decimalHours} שעות)`);
 		}
 
-       function loadLocationsTable() {
+	    function loadLocationsTable() {
 			const tbody = document.getElementById('locationsTableBody');
 			tbody.innerHTML = '';
 			
@@ -3150,7 +3181,7 @@
 			});
 		}
 
-       function loadReceiptsTable() {
+        function loadReceiptsTable() {
 			const tbody = document.getElementById('receiptsTableBody');
 			tbody.innerHTML = '';
 			
@@ -9920,6 +9951,22 @@
 		function openAddClientModal() {
 			showAddLocationForm();
 		}
+
+		// הגדרת השעה הנוכחית
+		function setCurrentTime(timeInputId) {
+			const now = new Date();
+			const hours = String(now.getHours()).padStart(2, '0');
+			const minutes = String(now.getMinutes()).padStart(2, '0');
+			const currentTime = `${hours}:${minutes}`;
+			
+			document.getElementById(timeInputId).value = currentTime;
+			
+			// חישוב משך טיפול אם שני השדות מלאים
+			calculateDurationFromTimes();
+			
+			showToast(`שעה נוכחית: ${currentTime}`, 'info');
+		}
+
 
    </script>
 </body>
