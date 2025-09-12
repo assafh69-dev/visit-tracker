@@ -1327,7 +1327,7 @@ html<!DOCTYPE html>
 		    border-radius: 3px;
 		}
 /***************************************/
-				.planning-add-btn {
+		.planning-add-btn {
 		    background: #28a745;
 		    color: white;
 		    border: none;
@@ -1349,7 +1349,7 @@ html<!DOCTYPE html>
 		    transform: scale(1.1);
 		}
 /***************************************/
-				.planning-date-input {
+		.planning-date-input {
 		    position: relative;
 		}
 		
@@ -1359,6 +1359,24 @@ html<!DOCTYPE html>
 		    background-repeat: no-repeat;
 		    background-position: center;
 		    cursor: pointer;
+		}
+		
+		.planning-add-btn-double {
+			background: #17a2b8; /* צבע כחול */
+			margin-left: 2px;
+		}
+
+		.planning-add-btn-double:hover {
+			background: #138496;
+			transform: scale(1.1);
+		}
+
+		/* וודא שהכפתורים נראים יפה זה ליד זה */
+		.planning-client-actions {
+			display: flex;
+			gap: 2px;
+			align-items: center;
+			flex-wrap: nowrap;
 		}
 /***************************************/
 		/* סימון ימים מותרים בלוח השנה */
@@ -1585,7 +1603,7 @@ html<!DOCTYPE html>
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 			</nav>
         </header>
 
@@ -3342,10 +3360,13 @@ html<!DOCTYPE html>
 		                        `<button class="planning-action-btn planning-complete" title="התחל טיפול" onclick="startTreatment('${client.ID}')">▶</button>` : 
 		                        ''
 		                    }
-		                    <button class="planning-quick-btn" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}')" title="קבע ליום המותר הקרוב">
-		                        +
-		                    </button>
-		                    <input type="date" class="planning-date-input highlight-allowed-days" value="${defaultDate}" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא | יום מותר: ${client.allowed_day}" id="dateInput_${client.ID}" data-allowed-day="${client.allowed_day}">
+		                    <input type="date" class="planning-date-input" value="${defaultDate}" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא | יום מותר: ${client.allowed_day}" id="dateInput_${client.ID}" data-allowed-day="${client.allowed_day}">
+							<button class="planning-add-btn" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
+								+1W
+							</button>
+							<button class="planning-add-btn planning-add-btn-double" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 2)" title="שבועיים">
+								+2W
+							</button>
 		                    <select class="planning-active-toggle" onchange="toggleClientActive('${client.ID}', this.value)" title="סטטוס לקוח">
 		                        <option value="1" selected>פעיל</option>
 		                        <option value="0">לא פעיל</option>
@@ -3482,52 +3503,58 @@ html<!DOCTYPE html>
 		}
 		
 		// קביעת היום המותר הקרוב ביותר
-		function setNextAllowedDay(clientId, allowedDay) {
-		    if (allowedDay === 'כל יום') {
-		        // אם מותר כל יום, קבע לעוד שבוע מהיום
-		        const nextWeek = new Date();
-		        nextWeek.setDate(nextWeek.getDate() + 7);
-		        const dateString = nextWeek.toISOString().split('T')[0];
-		        
-		        document.getElementById(`dateInput_${clientId}`).value = dateString;
-		        updateClientNextVisit(clientId, dateString);
-		        showToast('נקבע לעוד שבוע מהיום', 'success');
-		        return;
-		    }
-		    
-		    const daysOfWeek = {
-		        'יום ראשון': 0,
-		        'יום שני': 1,
-		        'יום שלישי': 2, 
-		        'יום רביעי': 3,
-		        'יום חמישי': 4,
-		        'יום שישי': 5,
-		        'יום שבת': 6
-		    };
-		    
-		    const targetDayIndex = daysOfWeek[allowedDay];
-		    if (targetDayIndex === undefined) {
-		        showToast('יום לא מוכר', 'error');
-		        return;
-		    }
-		    
-		    const today = new Date();
-		    const currentDayIndex = today.getDay();
-		    
-		    // חישוב כמה ימים עד היום המותר הבא
-		    let daysUntilTarget = targetDayIndex - currentDayIndex;
-		    if (daysUntilTarget <= 0) {
-		        daysUntilTarget += 7; // השבוע הבא
-		    }
-		    
-		    const targetDate = new Date(today);
-		    targetDate.setDate(today.getDate() + daysUntilTarget);
-		    
-		    const dateString = targetDate.toISOString().split('T')[0];
-		    document.getElementById(`dateInput_${clientId}`).value = dateString;
-		    updateClientNextVisit(clientId, dateString);
-		    
-		    showToast(`נקבע ל${allowedDay} הקרוב (${targetDate.toLocaleDateString('he-IL')})`, 'success');
+		function setNextAllowedDay(clientId, allowedDay, weeksAhead = 1) {
+			if (allowedDay === 'כל יום') {
+				// אם מותר כל יום, קבע לעוד X שבועות מהיום
+				const targetDate = new Date();
+				targetDate.setDate(targetDate.getDate() + (weeksAhead * 7));
+				const dateString = targetDate.toISOString().split('T')[0];
+				
+				document.getElementById(`dateInput_${clientId}`).value = dateString;
+				updateClientNextVisit(clientId, dateString);
+				
+				const weekText = weeksAhead === 1 ? 'שבוע' : 'שבועיים';
+				showToast(`נקבע לעוד ${weekText} מהיום`, 'success');
+				return;
+			}
+			
+			const daysOfWeek = {
+				'יום ראשון': 0,
+				'יום שני': 1,
+				'יום שלישי': 2, 
+				'יום רביעי': 3,
+				'יום חמישי': 4,
+				'יום שישי': 5,
+				'יום שבת': 6
+			};
+			
+			const targetDayIndex = daysOfWeek[allowedDay];
+			if (targetDayIndex === undefined) {
+				showToast('יום לא מוכר', 'error');
+				return;
+			}
+			
+			const today = new Date();
+			const currentDayIndex = today.getDay();
+			
+			// חישוב כמה ימים עד היום המותר הבא
+			let daysUntilTarget = targetDayIndex - currentDayIndex;
+			if (daysUntilTarget <= 0) {
+				daysUntilTarget += 7; // השבוע הבא
+			}
+			
+			// הוספת השבועות הנוספים
+			daysUntilTarget += (weeksAhead - 1) * 7;
+			
+			const targetDate = new Date(today);
+			targetDate.setDate(today.getDate() + daysUntilTarget);
+			
+			const dateString = targetDate.toISOString().split('T')[0];
+			document.getElementById(`dateInput_${clientId}`).value = dateString;
+			updateClientNextVisit(clientId, dateString);
+			
+			const weekText = weeksAhead === 1 ? 'שבוע' : `${weeksAhead} שבועות`;
+			showToast(`נקבע ל${allowedDay} בעוד ${weekText} (${targetDate.toLocaleDateString('he-IL')})`, 'success');
 		}
 			
 		// פונקציה חדשה: התחל טיפול (מעבר לטופס עם פרטי לקוח מוכנים)
@@ -10802,16 +10829,6 @@ html<!DOCTYPE html>
    </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
 
 
 
