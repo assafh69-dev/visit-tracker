@@ -1265,7 +1265,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4	</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5	</button>
 			</nav>
         </header>
 
@@ -1587,7 +1587,7 @@
 							<select id="filterActive" onchange="filterLocationsTable()" 
 									style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
 								<option value="">הכל</option>
-								<option value="1">פעיל</option>
+								<option value="1" selected>פעיל</option>
 								<option value="0">לא פעיל</option>
 							</select>
 						</div>
@@ -2385,8 +2385,9 @@
 					loadVisitsHistory();
 					break;
                 case 'locations':
-                    loadLocationsTable();
-                    break;
+					loadLocationsTable();
+					document.getElementById('filterActive').value = '1'; // ברירת מחדל לפעילים
+					break;
                 case 'receipts':
                     loadReceiptsTable();
                     break;
