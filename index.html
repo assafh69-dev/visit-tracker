@@ -278,38 +278,129 @@
 			background: #fbfcfd;
 		}
 
+		/*************************/
 		/* Filter Panels מעוצבים */
-		.filter-panel, .info-panel {
-			background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
-			border: 2px solid #95a5a6;
-			border-radius: 12px;
+		
+		.filter-panel-unified {
+			background: #f8f9fa;
+			padding: 15px;
+			border-radius: 8px;
 			margin-bottom: 20px;
-			overflow: hidden;
-			box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+			border: 1px solid #e9ecef;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 		}
 
-		.filter-header, .info-header {
-			background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-			padding: 15px 20px;
-			cursor: pointer;
-			color: white;
-			transition: all 0.3s ease;
-			border-bottom: 2px solid #3498db;
+		.filter-panel-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 15px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #dee2e6;
 		}
 
-		.filter-header:hover, .info-header:hover {
-			background: linear-gradient(135deg, #4a6741 0%, #2c3e50 100%);
+		.filter-panel-title {
+			font-size: 14px;
+			font-weight: bold;
+			color: #2c3e50;
+			margin: 0;
 		}
 
-		.filter-content, .info-content {
-			padding: 25px;
+		.filter-row-unified {
+			display: flex;
+			gap: 15px;
+			align-items: center;
+			flex-wrap: wrap;
+			margin-bottom: 10px;
+		}
+
+		.filter-row-unified:last-child {
+			margin-bottom: 0;
+		}
+
+		.filter-group-unified {
+			flex: 1;
+			min-width: 150px;
+		}
+
+		.filter-group-unified.compact {
+			flex: 0 0 120px;
+		}
+
+		.filter-group-unified.small {
+			flex: 0 0 100px;
+		}
+
+		.filter-group-unified.medium {
+			flex: 0 0 140px;
+		}
+
+		.filter-group-unified label {
+			font-size: 12px;
+			font-weight: bold;
+			margin-bottom: 5px;
 			display: block;
-			background: white;
+			color: #495057;
 		}
 
-		.filter-content.collapsed, .info-content.collapsed {
-			display: none;
+		.filter-group-unified input,
+		.filter-group-unified select {
+			width: 100%;
+			padding: 8px;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+			font-size: 13px;
+			background: white;
+			transition: border-color 0.3s ease;
 		}
+
+		.filter-group-unified input:focus,
+		.filter-group-unified select:focus {
+			outline: none;
+			border-color: #3498db;
+			box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+		}
+
+		.filter-clear-btn {
+			background: #e74c3c;
+			color: white;
+			border: none;
+			padding: 8px 12px;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 12px;
+			font-weight: bold;
+			transition: all 0.3s ease;
+		}
+
+		.filter-clear-btn:hover {
+			background: #c0392b;
+			transform: translateY(-1px);
+		}
+
+		/* Mobile responsiveness */
+		@media (max-width: 768px) {
+			.filter-row-unified {
+				flex-direction: column;
+				gap: 10px;
+			}
+			
+			.filter-group-unified,
+			.filter-group-unified.compact,
+			.filter-group-unified.small,
+			.filter-group-unified.medium {
+				flex: none;
+				min-width: auto;
+				width: 100%;
+			}
+			
+			.filter-panel-header {
+				flex-direction: column;
+				gap: 10px;
+				text-align: center;
+			}
+		}
+		/***********************/
 
 		/* Submit Button מעוצב */
 		button[type="submit"] {
@@ -469,32 +560,6 @@
 			color: white;
 		}
 
-		/* כפתורי פילטר */
-		.filter-btn {
-			padding: 10px 18px;
-			border: 2px solid #3498db;
-			background: linear-gradient(45deg, #ecf0f1, #bdc3c7);
-			color: #2c3e50;
-			border-radius: 8px;
-			cursor: pointer;
-			font-size: 14px;
-			font-weight: bold;
-			transition: all 0.3s ease;
-			min-width: 100px;
-		}
-
-		.filter-btn:hover {
-			background: linear-gradient(45deg, #3498db, #2980b9);
-			color: white;
-			transform: translateY(-2px);
-			box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-		}
-
-		.filter-btn.active {
-			background: linear-gradient(45deg, #3498db, #2980b9);
-			color: white;
-			box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-		}
 
 		/* רשימות נפתחות */
 		select, .form-group select {
@@ -545,14 +610,7 @@
 			background: white;
 		}
 
-		/* כפתורי פעולות פילטר */
-		.filter-actions .btn {
-			margin: 5px 8px;
-			padding: 10px 20px;
-			font-size: 14px;
-			min-width: 100px;
-		}
-
+		
 		/* כפתורי ייבוא במערכת */
 		.form-section .btn {
 			margin: 8px 5px;
@@ -1226,69 +1284,6 @@
 			background: #138496;
 		}
 
-	/**********************************/
-	/* Receipt filter panel styles */
-	
-		.filter-panel {
-			background: #f8f9fa;
-			border: 1px solid #dee2e6;
-			border-radius: 10px;
-			padding: 20px;
-			margin-bottom: 20px;
-		}
-
-		.filter-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 15px;
-			padding-bottom: 10px;
-			border-bottom: 2px solid #e9ecef;
-		}
-
-		.filter-header h3 {
-			margin: 0;
-			color: #2c3e50;
-			font-size: 1.2em;
-		}
-
-		.filter-row {
-			display: flex;
-			gap: 15px;
-			margin-bottom: 15px;
-			flex-wrap: wrap;
-		}
-
-		.filter-group {
-			flex: 1;
-			min-width: 200px;
-		}
-
-		.filter-group label {
-			display: block;
-			margin-bottom: 5px;
-			font-weight: bold;
-			color: #495057;
-			font-size: 13px;
-		}
-
-		.filter-group input,
-		.filter-group select {
-			width: 100%;
-			padding: 8px 12px;
-			border: 1px solid #ced4da;
-			border-radius: 6px;
-			font-size: 13px;
-			background: white;
-			transition: border-color 0.3s ease;
-		}
-
-		.filter-group input:focus,
-		.filter-group select:focus {
-			outline: none;
-			border-color: #3498db;
-			box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
-		}
 
 		/* Notes row styles */
 		.notes-row {
@@ -1332,23 +1327,6 @@
 			transform: translateY(-1px);
 		}
 
-		/* Mobile responsiveness */
-		@media (max-width: 768px) {
-			.filter-row {
-				flex-direction: column;
-				gap: 10px;
-			}
-			
-			.filter-group {
-				min-width: auto;
-			}
-			
-			.filter-header {
-				flex-direction: column;
-				gap: 10px;
-				text-align: center;
-			}
-		}
 
 	</style>
    
@@ -1379,7 +1357,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1	</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2	</button>
 			</nav>
         </header>
 
@@ -1562,69 +1540,52 @@
 				<h2>📋 טיפולים</h2>
 				
 				<!-- Filter Panel -->
-				<div class="filter-panel">
-					<div class="filter-header" onclick="toggleFilterPanel()">
-						<h3>🔍 סינון טיפולים <span id="filterIcon">🔽</span></h3>
+				<div class="filter-panel-unified">
+					<div class="filter-panel-header">
+						<h4 class="filter-panel-title">🔍 סינון טיפולים</h4>
+						<button onclick="clearVisitFilters()" class="filter-clear-btn">נקה סינון</button>
 					</div>
-					<div id="filterContent" class="filter-content">
-						<div class="filter-row">
-							<div class="filter-group">
-								<label>לקוח:</label>
-								<select id="filterLocation">
-									<option value="">כל הלקוחות</option>
-								</select>
-							</div>
-							<div class="filter-group">
-								<label>סטטוס תשלום:</label>
-								<select id="filterPayment">
-									<option value="">הכל</option>
-									<option value="כן">שולם</option>
-									<option value="לא">לא שולם</option>
-									<option value="ללא">ללא תשלום</option>
-								</select>
-							</div>
+					
+					<div class="filter-row-unified">
+						<div class="filter-group-unified">
+							<label>לקוח:</label>
+							<select id="filterLocation">
+								<option value="">כל הלקוחות</option>
+							</select>
 						</div>
-						<div class="filter-row">
-							<div class="filter-group">
-								<label>מתאריך:</label>
-								<input type="date" id="filterDateFrom">
-							</div>
-							<div class="filter-group">
-								<label>עד תאריך:</label>
-								<input type="date" id="filterDateTo">
-							</div>
+						<div class="filter-group-unified medium">
+							<label>סטטוס תשלום:</label>
+							<select id="filterPayment">
+								<option value="">הכל</option>
+								<option value="כן">שולם</option>
+								<option value="לא">לא שולם</option>
+								<option value="ללא">ללא תשלום</option>
+							</select>
 						</div>
-						<div class="filter-actions">
-							<button onclick="applyVisitFilters()" class="btn btn-primary">סנן</button>
-							<button onclick="clearVisitFilters()" class="btn btn-secondary">נקה סינון</button>
+					</div>
+					
+					<div class="filter-row-unified">
+						<div class="filter-group-unified compact">
+							<label>מתאריך:</label>
+							<input type="date" id="filterDateFrom">
+						</div>
+						<div class="filter-group-unified compact">
+							<label>עד תאריך:</label>
+							<input type="date" id="filterDateTo">
 						</div>
 					</div>
 				</div>
 
-				<!-- Info Panel -->
-				<div class="info-panel">
-					<div class="info-header" onclick="toggleInfoPanel()">
-						<h3>📊 מידע <span id="infoIcon">🔽</span></h3>
-					</div>
-					<div id="infoContent" class="info-content">
-						<div class="info-grid">
-							<div class="info-item">
-								<span class="info-label">טיפולים מוצגים:</span>
-								<span id="visitsCount" class="info-value">0</span>
-							</div>
-							<div class="info-item">
-								<span class="info-label">סה"כ שעות:</span>
-								<span id="totalHours" class="info-value">0</span>
-							</div>
-							<div class="info-item">
-								<span class="info-label">סה"כ הכנסות:</span>
-								<span id="totalIncome" class="info-value">₪0</span>
-							</div>
-							<div class="info-item">
-								<span class="info-label">חובות פתוחים:</span>
-								<span id="outstandingDebt" class="info-value">₪0</span>
-							</div>
-						</div>
+				<!-- Treatments Stats Box -->
+				<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+					<div id="treatmentsStatsBox" style="background: #e8f5e8; border: 1px solid #27ae60; border-radius: 6px; padding: 8px 12px; font-size: 13px; color: #2c3e50;">
+						<span id="treatmentsCount">0</span> טיפולים מוצגים
+						<span style="margin: 0 10px; color: #666;">|</span>
+						<span style="color: #27ae60; font-weight: bold;" id="treatmentsTotal">₪0</span> סה"כ הכנסות
+						<span style="margin: 0 10px; color: #666;">|</span>
+						<span style="color: #3498db; font-weight: bold;" id="treatmentsPaid">0</span> שולמו
+						<span style="margin: 0 10px; color: #666;">|</span>
+						<span style="color: #e74c3c; font-weight: bold;" id="treatmentsUnpaid">0</span> לא שולמו
 					</div>
 				</div>
 
@@ -1742,19 +1703,21 @@
                 <h2>ניהול קבלות</h2>
                 <button onclick="showAddReceiptForm()" class="add-btn">הוסף קבלה חדשה</button>
 				<!-- Filter Panel for Receipts -->
-				<div class="filter-panel">
-					<div class="filter-header">
-						<h3>🔍 סינון קבלות</h3>
-						<button onclick="clearReceiptFilters()" class="btn btn-secondary">נקה סינון</button>
+				<!-- Unified Filter Panel for Receipts -->
+				<div class="filter-panel-unified">
+					<div class="filter-panel-header">
+						<h4 class="filter-panel-title">🔍 סינון קבלות</h4>
+						<button onclick="clearReceiptFilters()" class="filter-clear-btn">נקה סינון</button>
 					</div>
-					<div class="filter-row">
-						<div class="filter-group">
+					
+					<div class="filter-row-unified">
+						<div class="filter-group-unified medium">
 							<label>פנקס קבלות:</label>
 							<select id="filterReceiptBook" onchange="applyReceiptFilters()">
 								<option value="">כל הפנקסים</option>
 							</select>
 						</div>
-						<div class="filter-group">
+						<div class="filter-group-unified medium">
 							<label>סוג תשלום:</label>
 							<select id="filterPaymentType" onchange="applyReceiptFilters()">
 								<option value="">כל הסוגים</option>
@@ -1764,23 +1727,24 @@
 								<option value="כרטיס אשראי">כרטיס אשראי</option>
 							</select>
 						</div>
-						<div class="filter-group">
+						<div class="filter-group-unified">
 							<label>לקוח:</label>
 							<select id="filterReceiptClient" onchange="applyReceiptFilters()">
 								<option value="">כל הלקוחות</option>
 							</select>
 						</div>
 					</div>
-					<div class="filter-row">
-						<div class="filter-group">
+					
+					<div class="filter-row-unified">
+						<div class="filter-group-unified compact">
 							<label>מתאריך:</label>
 							<input type="date" id="filterReceiptDateFrom" onchange="applyReceiptFilters()">
 						</div>
-						<div class="filter-group">
+						<div class="filter-group-unified compact">
 							<label>עד תאריך:</label>
 							<input type="date" id="filterReceiptDateTo" onchange="applyReceiptFilters()">
 						</div>
-						<div class="filter-group">
+						<div class="filter-group-unified medium">
 							<label>מיון:</label>
 							<select id="receiptSortBy" onchange="applyReceiptFilters()">
 								<option value="date_desc">תאריך (חדש לישן)</option>
@@ -1790,6 +1754,16 @@
 								<option value="book_asc">פנקס (לפי סדר)</option>
 							</select>
 						</div>
+					</div>
+				</div>
+				<!-- Receipt Stats Box -->
+				<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+					<div id="receiptsStatsBox" style="background: #e8f4fd; border: 1px solid #3498db; border-radius: 6px; padding: 8px 12px; font-size: 13px; color: #2c3e50;">
+						<span id="receiptsCount">0</span> קבלות מוצגות
+						<span style="margin: 0 10px; color: #666;">|</span>
+						<span style="color: #27ae60; font-weight: bold;" id="receiptsTotal">₪0</span> סה"כ
+						<span style="margin: 0 10px; color: #666;">|</span>
+						<span style="color: #3498db; font-weight: bold;" id="receiptsAverage">₪0</span> ממוצע
 					</div>
 				</div>
                 <div class="table-container">
@@ -1815,33 +1789,25 @@
 			<section id="debts" class="section">
 				<h2>💰 ניהול חובות</h2>
 				
-				<!-- סיכום כללי -->
-				<div class="summary-cards">
-					<div class="summary-card debt-card">
-						<h3>סה"כ חובות</h3>
-						<div id="totalDebt" class="summary-value">₪0</div>
-					</div>
-					<div class="summary-card">
-						<h3>לקוחות חייבים</h3>
-						<div id="debtorsCount" class="summary-value">0</div>
-					</div>
-					<div class="summary-card">
-						<h3>חוב ממוצע</h3>
-						<div id="averageDebt" class="summary-value">₪0</div>
-					</div>
-					<div class="summary-card">
-						<h3>חוב הכי ישן</h3>
-						<div id="oldestDebt" class="summary-value">-</div>
+				<!-- Debts Stats Box -->
+				<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+					<div id="debtsStatsBox" style="background: #fdf2e8; border: 1px solid #f39c12; border-radius: 6px; padding: 8px 12px; font-size: 13px; color: #2c3e50;">
+						<span id="debtsCount">0</span> חייבים מוצגים
+						<span style="margin: 0 10px; color: #666;">|</span>
+						<span style="color: #e74c3c; font-weight: bold;" id="debtsTotal">₪0</span> סה"כ חוב
+						<span style="margin: 0 10px; color: #666;">|</span>
+						<span style="color: #f39c12; font-weight: bold;" id="debtsAverage">₪0</span> ממוצע
 					</div>
 				</div>
 				
 				<!-- רשימת חובות -->
-				<div class="filter-panel">
-					<div class="filter-header">
-						<h3>🔍 חובות פתוחים</h3>
+				<div class="filter-panel-unified">
+					<div class="filter-panel-header">
+						<h4 class="filter-panel-title">🔍 חובות פתוחים</h4>
 					</div>
-					<div class="filter-row">
-						<div class="filter-group">
+					
+					<div class="filter-row-unified">
+						<div class="filter-group-unified medium">
 							<label>מיון לפי:</label>
 							<select id="debtSortBy" onchange="displayDebts()">
 								<option value="amount_desc">סכום (גבוה לנמוך)</option>
@@ -1851,7 +1817,7 @@
 								<option value="location">לקוח (א-ב)</option>
 							</select>
 						</div>
-						<div class="filter-group">
+						<div class="filter-group-unified compact">
 							<label>סכום מינימלי:</label>
 							<input type="number" id="minDebtAmount" placeholder="0" onchange="displayDebts()">
 						</div>
@@ -3319,6 +3285,7 @@
 			}
 			
 			displayPlanningTable(filteredlocations);
+			updateTreatmentsStats(filteredVisits);
 		}
 
         function displayPlanningTable(locationsToShow) {
@@ -4882,7 +4849,7 @@
 			});
 			
 			displayFilteredVisits(filteredVisits);
-			updateVisitsInfo(filteredVisits);
+			updateTreatmentsStats(filteredVisits);
 		}
 
 		function clearVisitFilters() {
@@ -4892,7 +4859,7 @@
 			document.getElementById('filterDateTo').value = '';
 			
 			displayFilteredVisits(visits);
-			updateVisitsInfo(visits);
+			updateTreatmentsStats(filteredVisits);
 		}
 
 		// תוספה - הצגת טיפולים מסוננים
@@ -4967,60 +4934,13 @@
 			return `<span style="font-size: 11px; color: #666;">${breakdown}</span>`;
 		}
 
-		// תוספה - עדכון פאנל המידע
-		function updateVisitsInfo(filteredVisits) {
-			const visitsCount = filteredVisits.length;
-			const totalHours = filteredVisits.reduce((sum, visit) => sum + (visit.duration_minutes / 60), 0);
-			const totalIncome = filteredVisits.reduce((sum, visit) => sum + parseFloat(visit.amount || 0), 0);
-			const outstandingDebt = filteredVisits
-				.reduce((sum, visit) => {
-					if (!visit.amount || visit.amount <= 0) return sum;
-					const visitAmount = parseFloat(visit.amount);
-					const paidAmount = getVisitPaidAmount(visit.ID);
-					const debt = visitAmount - paidAmount;
-					return sum + (debt > 0 ? debt : 0);
-				}, 0);
-			
-			document.getElementById('visitsCount').textContent = visitsCount;
-			document.getElementById('totalHours').textContent = totalHours.toFixed(2);
-			document.getElementById('totalIncome').textContent = `₪${totalIncome.toLocaleString()}`;
-			document.getElementById('outstandingDebt').textContent = `₪${outstandingDebt.toLocaleString()}`;
-			
-			// הדגשת חובות פתוחים
-			const debtElement = document.getElementById('outstandingDebt');
-			if (outstandingDebt > 0) {
-				debtElement.style.color = '#e74c3c';
-				debtElement.style.fontWeight = 'bold';
-			} else {
-				debtElement.style.color = '#27ae60';
-				debtElement.style.fontWeight = 'bold';
-			}
-			
-			// חישוב נתונים מפורטים יותר על חובות
-			const visitsWithDebt = filteredVisits.filter(visit => {
-				if (!visit.amount || visit.amount <= 0) return false;
-				const visitAmount = parseFloat(visit.amount);
-				const paidAmount = getVisitPaidAmount(visit.ID);
-				return (visitAmount - paidAmount) > 0;
-			});
-			const uniqueDebtors = new Set(visitsWithDebt.map(visit => visit.location_id)).size;
-			
-			// הצגת מידע נוסף בכרטיסי הסיכום
-			if (outstandingDebt > 0) {
-				const avgDebtPerClient = uniqueDebtors > 0 ? Math.round(outstandingDebt / uniqueDebtors) : 0;
-				document.getElementById('outstandingDebt').title = 
-					`${uniqueDebtors} לקוחות חייבים | ממוצע ₪${avgDebtPerClient} ללקוח`;
-			}
-	
-		}
-
-
+		
 
 		// תוספה - טעינה ראשונית של הטאב
 		function loadVisitsHistory() {
 			loadFilterOptions();
 			displayFilteredVisits(visits);
-			updateVisitsInfo(visits);
+			updateTreatmentsStats(visits); // שנה מ-filteredVisits ל-visits
 		}
 
 		async function editVisit(visitId) {
@@ -7074,6 +6994,7 @@
 			
 			// עדכון סיכום
 			updateDebtsSummary(debtsArray);
+			updateDebtsStats(filteredDebts);
 		}
 
 		// עדכון כרטיסי סיכום
@@ -10452,7 +10373,43 @@
 					tbody.appendChild(notesRow);
 				}
 			});
+			updateReceiptsStats(filteredReceipts);
 		}
+
+		// Update stats functions for all tabs
+
+		function updateReceiptsStats(filteredReceipts) {
+			const count = filteredReceipts.length;
+			const total = filteredReceipts.reduce((sum, receipt) => sum + (receipt.amount || 0), 0);
+			const average = count > 0 ? Math.round(total / count) : 0;
+			
+			document.getElementById('receiptsCount').textContent = count;
+			document.getElementById('receiptsTotal').textContent = `₪${total.toLocaleString()}`;
+			document.getElementById('receiptsAverage').textContent = `₪${average.toLocaleString()}`;
+		}
+
+		function updateDebtsStats(filteredDebts) {
+			const count = filteredDebts.length;
+			const total = filteredDebts.reduce((sum, debt) => sum + (debt.totalDebt || 0), 0);
+			const average = count > 0 ? Math.round(total / count) : 0;
+			
+			document.getElementById('debtsCount').textContent = count;
+			document.getElementById('debtsTotal').textContent = `₪${total.toLocaleString()}`;
+			document.getElementById('debtsAverage').textContent = `₪${average.toLocaleString()}`;
+		}
+
+		function updateTreatmentsStats(filteredTreatments) {
+			const count = filteredTreatments.length;
+			const total = filteredTreatments.reduce((sum, treatment) => sum + (treatment.amount || 0), 0);
+			const paidCount = filteredTreatments.filter(t => t.paid === '1').length;
+			const unpaidCount = filteredTreatments.filter(t => t.paid === '0').length;
+			
+			document.getElementById('treatmentsCount').textContent = count;
+			document.getElementById('treatmentsTotal').textContent = `₪${total.toLocaleString()}`;
+			document.getElementById('treatmentsPaid').textContent = paidCount;
+			document.getElementById('treatmentsUnpaid').textContent = unpaidCount;
+		}
+
 
    </script>
 </body>
