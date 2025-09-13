@@ -1357,7 +1357,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2	</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3	</button>
 			</nav>
         </header>
 
@@ -10380,32 +10380,42 @@
 
 		function updateReceiptsStats(filteredReceipts) {
 			const count = filteredReceipts.length;
-			const total = filteredReceipts.reduce((sum, receipt) => sum + (receipt.amount || 0), 0);
+			const total = filteredReceipts.reduce((sum, receipt) => {
+				const amount = parseFloat(receipt.amount) || 0;
+				return sum + amount;
+			}, 0);
 			const average = count > 0 ? Math.round(total / count) : 0;
 			
 			document.getElementById('receiptsCount').textContent = count;
-			document.getElementById('receiptsTotal').textContent = `₪${Math.round(total)}`; // הסר toLocaleString
-			document.getElementById('receiptsAverage').textContent = `₪${average}`;
+			document.getElementById('receiptsTotal').textContent = `${Math.round(total)} ₪`; // העבר את ₪ לסוף
+			document.getElementById('receiptsAverage').textContent = `${average} ₪`;
 		}
+
 
 		function updateDebtsStats(filteredDebts) {
 			const count = filteredDebts.length;
-			const total = filteredDebts.reduce((sum, debt) => sum + (debt.totalDebt || 0), 0);
+			const total = filteredDebts.reduce((sum, debt) => {
+				const amount = parseFloat(debt.totalDebt) || 0;
+				return sum + amount;
+			}, 0);
 			const average = count > 0 ? Math.round(total / count) : 0;
 			
 			document.getElementById('debtsCount').textContent = count;
-			document.getElementById('debtsTotal').textContent = `₪${Math.round(total)}`; // הסר toLocaleString
-			document.getElementById('debtsAverage').textContent = `₪${average}`;
+			document.getElementById('debtsTotal').textContent = `${Math.round(total)} ₪`;
+			document.getElementById('debtsAverage').textContent = `${average} ₪`;
 		}
 
 		function updateTreatmentsStats(filteredTreatments) {
 			const count = filteredTreatments.length;
-			const total = filteredTreatments.reduce((sum, treatment) => sum + (treatment.amount || 0), 0);
+			const total = filteredTreatments.reduce((sum, treatment) => {
+				const amount = parseFloat(treatment.amount) || 0;
+				return sum + amount;
+			}, 0);
 			const paidCount = filteredTreatments.filter(t => t.paid === '1').length;
 			const unpaidCount = filteredTreatments.filter(t => t.paid === '0').length;
 			
 			document.getElementById('treatmentsCount').textContent = count;
-			document.getElementById('treatmentsTotal').textContent = `₪${Math.round(total)}`; // הסר toLocaleString
+			document.getElementById('treatmentsTotal').textContent = `${Math.round(total)} ₪`;
 			document.getElementById('treatmentsPaid').textContent = paidCount;
 			document.getElementById('treatmentsUnpaid').textContent = unpaidCount;
 		}
