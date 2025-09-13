@@ -1327,6 +1327,85 @@
 			transform: translateY(-1px);
 		}
 
+		/****************************/
+		
+		/* Payment status indicators */
+		.payment-status-1 {
+			color: #27ae60;
+			font-weight: bold;
+			background: #d5f4e6;
+			padding: 2px 6px;
+			border-radius: 4px;
+			font-size: 12px;
+		}
+
+		.payment-status-0 {
+			color: #e74c3c;
+			font-weight: bold;
+			background: #fadbd8;
+			padding: 2px 6px;
+			border-radius: 4px;
+			font-size: 12px;
+		}
+
+		.payment-status-2 {
+			color: #f39c12;
+			font-weight: bold;
+			background: #fef5e7;
+			padding: 2px 6px;
+			border-radius: 4px;
+			font-size: 12px;
+		}
+
+		/* Performance optimization - reduce animations on large tables */
+		.data-table tbody tr {
+			transition: none; /* הסר אנימציות בטבלאות גדולות */
+		}
+
+		.data-table tbody tr:hover {
+			background: #f8f9fa;
+			transform: none; /* הסר scale effect שגורם לאיטיות */
+		}
+
+		/* Loading indicator */
+		.loading-indicator {
+			text-align: center;
+			padding: 20px;
+			color: #666;
+			font-style: italic;
+		}
+
+		.loading-indicator::before {
+			content: "⏳ ";
+		}
+
+		/* Quick filter buttons */
+		.filter-quick-btn {
+			background: #3498db;
+			color: white;
+			border: none;
+			padding: 6px 10px;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 11px;
+			font-weight: bold;
+			transition: all 0.3s ease;
+			margin-right: 4px;
+		}
+
+		.filter-quick-btn:hover {
+			background: #2980b9;
+			transform: translateY(-1px);
+		}
+
+		.filter-quick-btn.active {
+			background: #27ae60;
+		}
+
+		.filter-quick-btn.active:hover {
+			background: #219a52;
+		}
+
 
 	</style>
    
@@ -1357,7 +1436,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3	</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4	</button>
 			</nav>
         </header>
 
@@ -1543,7 +1622,12 @@
 				<div class="filter-panel-unified">
 					<div class="filter-panel-header">
 						<h4 class="filter-panel-title">🔍 סינון טיפולים</h4>
-						<button onclick="clearVisitFilters()" class="filter-clear-btn">נקה סינון</button>
+						<div style="display: flex; gap: 8px;">
+							<button onclick="setQuickDateFilter('today')" class="filter-quick-btn">היום</button>
+							<button onclick="setQuickDateFilter('week')" class="filter-quick-btn">השבוע</button>
+							<button onclick="setQuickDateFilter('month')" class="filter-quick-btn active">החודש</button>
+							<button onclick="clearVisitFilters()" class="filter-clear-btn">נקה סינון</button>
+						</div>
 					</div>
 					
 					<div class="filter-row-unified">
@@ -1562,16 +1646,25 @@
 								<option value="ללא">ללא תשלום</option>
 							</select>
 						</div>
+						<div class="filter-group-unified small">
+							<label>מקסימום תוצאות:</label>
+							<select id="maxResults" onchange="applyVisitFilters()">
+								<option value="50">50</option>
+								<option value="100">100</option>
+								<option value="200" selected>200</option>
+								<option value="500">500</option>
+							</select>
+						</div>
 					</div>
 					
 					<div class="filter-row-unified">
 						<div class="filter-group-unified compact">
 							<label>מתאריך:</label>
-							<input type="date" id="filterDateFrom">
+							<input type="date" id="filterDateFrom" onchange="applyVisitFilters()">
 						</div>
 						<div class="filter-group-unified compact">
 							<label>עד תאריך:</label>
-							<input type="date" id="filterDateTo">
+							<input type="date" id="filterDateTo" onchange="applyVisitFilters()">
 						</div>
 					</div>
 				</div>
@@ -4824,29 +4917,38 @@
 			const paymentFilter = document.getElementById('filterPayment').value;
 			const dateFromFilter = document.getElementById('filterDateFrom').value;
 			const dateToFilter = document.getElementById('filterDateTo').value;
+			const maxResults = parseInt(document.getElementById('maxResults').value) || 200;
 			
+			console.log('🔍 מסנן טיפולים...', {locationFilter, paymentFilter, dateFromFilter, dateToFilter, maxResults});
+			
+			// סינון מהיר עם early return
 			let filteredVisits = visits.filter(visit => {
-				// סינון לפי לקוח
-				if (locationFilter && visit.location_id != locationFilter) {
-					return false;
-				}
+				// סינון תאריך קודם כל (הכי חשוב לביצועים)
+				if (dateFromFilter && visit.date < dateFromFilter) return false;
+				if (dateToFilter && visit.date > dateToFilter) return false;
 				
-				// סינון לפי סטטוס תשלום
-				if (paymentFilter && visit.paid !== paymentFilter) {
-					return false;
-				}
+				// סינון לקוח
+				if (locationFilter && visit.location_id != locationFilter) return false;
 				
-				// סינון לפי תאריך
-				if (dateFromFilter && visit.date < dateFromFilter) {
-					return false;
-				}
-				
-				if (dateToFilter && visit.date > dateToFilter) {
-					return false;
+				// סינון תשלום
+				if (paymentFilter) {
+					const paidStatus = visit.paid;
+					if (paymentFilter === 'כן' && paidStatus !== '1') return false;
+					if (paymentFilter === 'לא' && paidStatus !== '0') return false;
+					if (paymentFilter === 'ללא' && paidStatus !== '2') return false;
 				}
 				
 				return true;
 			});
+			
+			const totalFound = filteredVisits.length;
+			console.log(`✅ נמצאו ${totalFound} טיפולים מתוך ${visits.length}`);
+			
+			// הגבלת תוצאות להצגה
+			if (filteredVisits.length > maxResults) {
+				showToast(`מציג ${maxResults} טיפולים מתוך ${totalFound} (שנה במקסימום תוצאות)`, 'info', 3000);
+				filteredVisits = filteredVisits.slice(0, maxResults);
+			}
 			
 			displayFilteredVisits(filteredVisits);
 			updateTreatmentsStats(filteredVisits);
@@ -4865,58 +4967,54 @@
 		// תוספה - הצגת טיפולים מסוננים
 		function displayFilteredVisits(filteredVisits) {
 			const tbody = document.getElementById('visitsHistoryTableBody');
+			
+			// ניקוי מהיר
 			tbody.innerHTML = '';
 			
 			if (filteredVisits.length === 0) {
-				tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">אין טיפולים תואמים לסינון</td></tr>';
+				tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #666;">אין טיפולים תואמים לסינון</td></tr>';
 				return;
 			}
 			
-			// מיון לפי תאריך (החדשים ראשונים)
-			filteredVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
+			// מיון מהיר - החדשים ראשונים
+			filteredVisits.sort((a, b) => b.date.localeCompare(a.date));
+			
+			// יצירת HTML מהיר עם DocumentFragment
+			const fragment = document.createDocumentFragment();
+			
+			// יצירת lookup map ללקוחות (במקום חיפוש בלולאה)
+			const locationMap = new Map();
+			locations.forEach(loc => locationMap.set(loc.ID, loc));
 			
 			filteredVisits.forEach(visit => {
-				const location = locations.find(loc => loc.ID == visit.location_id);
-				const locationName = visit.location_name || (location ? location.name : `לא נמצא (ID: ${visit.location_id})`);
-				//////////console.log(`Visit location_id: ${visit.location_id}, Found location:`, location);   //////>>>>>>>>>>>>>
+				const location = locationMap.get(visit.location_id);
+				const locationName = visit.location_name || location?.name || 'לקוח לא ידוע';
 				
 				const row = document.createElement('tr');
-				
-				// הדגשת שורות לפי סטטוס תשלום
-				// הדגשת שורות לפי סטטוס תשלום - נבדק בטבלת תשלומים
-				const paymentStatus = getVisitPaymentStatus(visit.ID);
-				if (paymentStatus === 'unpaid') {
-					row.style.backgroundColor = '#fff2cc'; // צהוב עדין לחובות
-				} else if (paymentStatus === 'paid') {
-					row.style.backgroundColor = '#d4edda'; // ירוק עדין לשולם
-				}
+				const hours = visit.duration_minutes ? (visit.duration_minutes / 60).toFixed(1) : '0';
+				const paymentText = getPaymentStatusText(visit.paid);
 				
 				row.innerHTML = `
 					<td>${formatDate(visit.date)}</td>
 					<td>${locationName}</td>
-					<td>${visit.visit_type}</td>
-					<td>${visit.work_done}</td>
-					<td>${(visit.duration_minutes / 60).toFixed(2)}</td>
-					<td>
-						<div style="display: flex; flex-direction: column; align-items: center;">
-							<span style="font-weight: bold; color: #27ae60;">₪${visit.amount}</span>
-							${getVisitCostBreakdown(visit)}
-						</div>
-					</td>
-					<td>
-						<td>
-							<span class="payment-status payment-${paymentStatus}">
-								${getPaymentStatusText(paymentStatus)}
-							</span>
-						</td>
-					</td>
+					<td>${visit.visit_type || '-'}</td>
+					<td>${visit.work_done || '-'}</td>
+					<td>${hours}</td>
+					<td>${visit.amount || 0} ₪</td>
+					<td><span class="payment-status-${visit.paid}">${paymentText}</span></td>
 					<td>
 						<button class="action-btn edit-btn" onclick="editVisit('${visit.ID}')">ערוך</button>
 						<button class="action-btn delete-btn" onclick="deleteVisit('${visit.ID}')">מחק</button>
 					</td>
 				`;
-				tbody.appendChild(row);
+				
+				fragment.appendChild(row);
 			});
+			
+			// הוספה אחת לטבלה
+			tbody.appendChild(fragment);
+			
+			console.log(`📊 הוצגו ${filteredVisits.length} טיפולים`);
 		}
 
 		// הוסף פונקציה חדשה להצגת פירוט עלויות:
@@ -4939,8 +5037,28 @@
 		// תוספה - טעינה ראשונית של הטאב
 		function loadVisitsHistory() {
 			loadFilterOptions();
-			displayFilteredVisits(visits);
-			updateTreatmentsStats(visits); // שנה מ-filteredVisits ל-visits
+			
+			// הגדרת סינון ברירת מחדל - חודש אחרון
+			setDefaultDateFilter();
+			
+			// טעינה עם סינון מהחודש האחרון
+			applyVisitFilters();
+		}
+
+		// פונקציה חדשה להגדרת תאריכי ברירת מחדל
+		function setDefaultDateFilter() {
+			const today = new Date();
+			const lastMonth = new Date();
+			lastMonth.setMonth(today.getMonth() - 1);
+			
+			// הגדרת תאריכים בשדות הסינון
+			const dateFromInput = document.getElementById('filterDateFrom');
+			const dateToInput = document.getElementById('filterDateTo');
+			
+			if (dateFromInput && dateToInput) {
+				dateFromInput.value = lastMonth.toISOString().split('T')[0];
+				dateToInput.value = today.toISOString().split('T')[0];
+			}
 		}
 
 		async function editVisit(visitId) {
@@ -10420,6 +10538,56 @@
 			document.getElementById('treatmentsUnpaid').textContent = unpaidCount;
 		}
 
+
+		// פונקציה לסינון מהיר לפי תאריכים
+		function setQuickDateFilter(period) {
+			const today = new Date();
+			const dateFromInput = document.getElementById('filterDateFrom');
+			const dateToInput = document.getElementById('filterDateTo');
+			
+			// הסרת active מכל הכפתורים
+			document.querySelectorAll('.filter-quick-btn').forEach(btn => btn.classList.remove('active'));
+			
+			let fromDate;
+			
+			switch(period) {
+				case 'today':
+					fromDate = new Date(today);
+					break;
+				case 'week':
+					fromDate = new Date(today);
+					fromDate.setDate(today.getDate() - 7);
+					break;
+				case 'month':
+					fromDate = new Date(today);
+					fromDate.setMonth(today.getMonth() - 1);
+					break;
+			}
+			
+			dateFromInput.value = fromDate.toISOString().split('T')[0];
+			dateToInput.value = today.toISOString().split('T')[0];
+			
+			// סימון הכפתור כפעיל
+			event.target.classList.add('active');
+			
+			// הפעלת הסינון
+			applyVisitFilters();
+		}
+
+		// עדכון פונקציית clearVisitFilters
+		function clearVisitFilters() {
+			document.getElementById('filterLocation').value = '';
+			document.getElementById('filterPayment').value = '';
+			document.getElementById('filterDateFrom').value = '';
+			document.getElementById('filterDateTo').value = '';
+			document.getElementById('maxResults').value = '200';
+			
+			// הסרת active מכפתורים מהירים
+			document.querySelectorAll('.filter-quick-btn').forEach(btn => btn.classList.remove('active'));
+			
+			displayFilteredVisits(visits);
+			updateTreatmentsStats(visits);
+		}
 
    </script>
 </body>
