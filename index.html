@@ -1265,7 +1265,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5	</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0	</button>
 			</nav>
         </header>
 
@@ -2798,10 +2798,9 @@
 						</div>
 						<div class="planning-client-price">₪${client.base_amount || 0}</div>
 						<div class="planning-client-actions">
-							${currentPlanningView === 'daily' ? 
-								`<button class="planning-action-btn planning-complete" title="התחל טיפול" onclick="startTreatment('${client.ID}')">▶</button>` : 
-								''
-							}
+							<button class="planning-action-btn planning-complete" title="התחל טיפול" onclick="startTreatment('${client.ID}')">
+								▶
+							</button>
 							<input type="date" class="planning-date-input" value="" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא" id="dateInput_${client.ID}">
 							<button class="week-btn" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
 								+1W
@@ -10176,6 +10175,40 @@
 			loadLocationsTable();
 		}
 
+
+		// התחלת טיפול - מעבר למסך טיפול חדש עם נתונים מוקדמים
+		function startTreatment(clientId) {
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			// מעבר למסך טיפול חדש
+			showSection('visit');
+			
+			// מילוי נתונים אוטומטי
+			setTimeout(() => {
+				// בחירת הלקוח
+				if (document.getElementById('clientSearchInput')) {
+					document.getElementById('clientSearchInput').value = `${client.name} - ${client.full_address}`;
+					document.getElementById('selectedClientId').value = clientId;
+				}
+				
+				// תאריך היום
+				const today = new Date().toISOString().split('T')[0];
+				if (document.getElementById('visitDate')) {
+					document.getElementById('visitDate').value = today;
+				}
+				
+				// סכום בסיסי
+				if (document.getElementById('amount') && client.base_amount) {
+					document.getElementById('amount').value = client.base_amount;
+				}
+				
+				showToast(`התחלת טיפול עבור ${client.name}`, 'success');
+			}, 100);
+		}
 
    </script>
 </body>
