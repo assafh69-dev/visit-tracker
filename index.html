@@ -10384,8 +10384,8 @@
 			const average = count > 0 ? Math.round(total / count) : 0;
 			
 			document.getElementById('receiptsCount').textContent = count;
-			document.getElementById('receiptsTotal').textContent = `₪${total.toLocaleString()}`;
-			document.getElementById('receiptsAverage').textContent = `₪${average.toLocaleString()}`;
+			document.getElementById('receiptsTotal').textContent = `₪${Math.round(total)}`; // הסר toLocaleString
+			document.getElementById('receiptsAverage').textContent = `₪${average}`;
 		}
 
 		function updateDebtsStats(filteredDebts) {
@@ -10394,8 +10394,8 @@
 			const average = count > 0 ? Math.round(total / count) : 0;
 			
 			document.getElementById('debtsCount').textContent = count;
-			document.getElementById('debtsTotal').textContent = `₪${total.toLocaleString()}`;
-			document.getElementById('debtsAverage').textContent = `₪${average.toLocaleString()}`;
+			document.getElementById('debtsTotal').textContent = `₪${Math.round(total)}`; // הסר toLocaleString
+			document.getElementById('debtsAverage').textContent = `₪${average}`;
 		}
 
 		function updateTreatmentsStats(filteredTreatments) {
@@ -10405,7 +10405,7 @@
 			const unpaidCount = filteredTreatments.filter(t => t.paid === '0').length;
 			
 			document.getElementById('treatmentsCount').textContent = count;
-			document.getElementById('treatmentsTotal').textContent = `₪${total.toLocaleString()}`;
+			document.getElementById('treatmentsTotal').textContent = `₪${Math.round(total)}`; // הסר toLocaleString
 			document.getElementById('treatmentsPaid').textContent = paidCount;
 			document.getElementById('treatmentsUnpaid').textContent = unpaidCount;
 		}
