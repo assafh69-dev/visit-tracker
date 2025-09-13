@@ -3622,95 +3622,68 @@
 		// לשנות בפונקציה הקיימת - להוסיף שמירה לשיטס
 		async function saveVisit(visitData) {
 			try {
-				// For now, just add to local array
+				// מצא את הלקוח
+				const location = locations.find(loc => loc.ID === visitData.location_id);
+				
+				// יצירת אובייקט הטיפול המתוקן
 				const newVisit = {
 					ID: generateID(),
-					location_name: location ? location.name : '',
-					notes: visitData.notes || '',     // משתמש בערך מהטופס
-					...visitData                      // שאר הנתונים - ללא paid
+					date: visitData.date,
+					location_id: visitData.location_id,
+					location_name: location ? location.name : 'לקוח לא ידוע',
+					visit_type: visitData.visit_type || 'מלא',
+					work_done: visitData.work_done || '',
+					duration_minutes: visitData.duration_minutes || 0,
+					num_workers: visitData.workers_count || 1,
+					start_time: visitData.start_time || '',
+					end_time: visitData.end_time || '',
+					amount: parseFloat(visitData.amount) || 0,
+					expense: parseFloat(visitData.expense) || 0,
+					paid: visitData.paid || '0',
+					notes: visitData.notes || ''
 				};
 				
 				// בדיקת תקינות
-				const visitErrors = validateVisitData(visitData);
-				if (showValidationErrors(visitErrors)) {
+				if (!newVisit.location_id) {
+					showToast('חובה לבחור לקוח', 'error');
 					return;
 				}
 				
-				// בדיקת כפילויות ביקור
-				const existingVisit = visits.find(visit => 
-					visit.location_id === visitData.location_id &&
-					visit.date === visitData.date &&
-					Math.abs(new Date(`${visit.date} ${visit.start_time}`) - new Date(`${visitData.date} ${visitData.start_time}`)) < 60000 // פחות מדקה הפרש
-				);
-
-				if (existingVisit) {
-					if (!confirm(`כבר קיים ביקור באותה כתובת באותו תאריך ושעה דומה.\n\nהאם להוסיף בכל זאת?`)) {
-						return; // ביטול הוספה
-					}
-				}
-				
+				// הוספה למערך המקומי
 				visits.push(newVisit);
-
-				// יצירת תשלום אם הביקור מסומן כשולם
-				if (visitData.paid && (visitData.paid === '1' || visitData.paid === 'כן' || visitData.paid === 'שולם')) {
-					const payment = {
-						ID: generateID(),
-						date: newVisit.date,
-						time: newVisit.start_time || new Date().toTimeString().substr(0, 5),
-						amount: newVisit.amount || 0,
-						payment_method: 'cash',
-						source_type: 'new_visit_payment',
-						client_id: newVisit.location_id,
-						notes: `תשלום עבור ביקור חדש - ${newVisit.work_done}`,
-						status: 'completed',
-						created_at: new Date().toISOString()
-					};
-					
-					payments.push(payment);
-					
-					const link = {
-						ID: generateID(),
-						payment_id: payment.ID,
-						visit_id: newVisit.ID,
-						amount_allocated: newVisit.amount || 0,
-						link_type: 'full_payment',
-						created_at: new Date().toISOString()
-					};
-					
-					paymentVisitLinks.push(link);
-					
-					// שמירה לענן
-					if (access_token) {
-						await savePaymentToCloud(payment);
-						await savePaymentVisitLinkToCloud(link);
-					}
-				}
-
-				// תוספה - שמירה לגוגל שיטס
-				if (access_token) {
-					await saveVisitToSheets(newVisit);
-				}
-
-				// Update next visitdate if it's a full visit
-				if (visitData.visit_type === 'מלא') {
-				   updateNextVisitDate(visitData.location_id);
-				}
-		
-				showSuccess('טיפול נשמר בהצלחה!');
 				
-				// Reset form
-				document.getElementById('visitForm').reset();
-			   		   
-				// Reload planning data
-				loadPlanningData();
+				// שמירה מקומית
 				saveToLocalStorage();
-				   
+				
+				// שמירה בענן
+				if (access_token) {
+					try {
+						await saveVisitToSheets(newVisit);
+						showToast('טיפול נשמר בהצלחה במערכת ובענן!', 'success');
+					} catch (error) {
+						console.error('Error saving to cloud:', error);
+						showToast('טיפול נשמר מקומית, אך נכשל בשמירה לענן', 'warning');
+					}
+				} else {
+					showToast('טיפול נשמר מקומית - התחבר לענן לשמירה מלאה', 'info');
+				}
+				
+				// עדכון תאריך הטיפול הבא
+				if (visitData.visit_type === 'מלא') {
+					updateNextVisitDate(visitData.location_id);
+				}
+				
+				// רענון תצוגה
+				document.getElementById('visitForm').reset();
+				loadPlanningData();
+				
 			} catch (error) {
 				console.error('Error saving visit:', error);
-				showError('שגיאה בשמירת הטיפול');
+				showToast('שגיאה בשמירת הטיפול', 'error');
 			}
 		}
-
+		
+		
 		function updateNextVisitDate(locationId) {
 			const location = locations.find(g => g.ID == locationId);
 			if (location) {
