@@ -1436,7 +1436,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4	</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5	</button>
 			</nav>
         </header>
 
@@ -3508,15 +3508,66 @@
         function handleVisitSubmit(event) {
 			event.preventDefault();
 			
-			const formData = new FormData(event.target);
-			const selectedLocationId = document.getElementById('locationSelect').value;
-			const visitDate = document.getElementById('visitDate').value; // התאריך הנוכחי
-			const endTime = document.getElementById('endTime').value;
-			const paymentStatus = document.getElementById('paymentStatus').value;
+			// בדיקות בטיחות לכל האלמנטים
+			const clientSearchInput = document.getElementById('clientSearchInput');
+			const selectedClientIdInput = document.getElementById('selectedClientId');
+
+			let selectedLocationId = '';
+			if (selectedClientIdInput && selectedClientIdInput.value) {
+				selectedLocationId = selectedClientIdInput.value;
+			} else if (clientSearchInput && clientSearchInput.value) {
+				// אם אין ID נבחר, נסה למצוא לפי הטקסט
+				const searchValue = clientSearchInput.value;
+				const matchingClient = locations.find(loc => 
+					`${loc.name} - ${loc.full_address}` === searchValue ||
+					loc.name === searchValue
+				);
+				if (matchingClient) {
+					selectedLocationId = matchingClient.ID;
+				}
+			}
+
+			const visitDateElement = document.getElementById('visitDate');
+			const visitDate = visitDateElement ? visitDateElement.value : '';
+
+			const endTimeElement = document.getElementById('endTime');
+			const endTime = endTimeElement ? endTimeElement.value : '';
+
+			const paymentStatusElement = document.getElementById('paymentStatus');
+			const paymentStatus = paymentStatusElement ? paymentStatusElement.value : '0';
+
+			const visitTypeElement = document.getElementById('visitType');
+			const visitType = visitTypeElement ? visitTypeElement.value : 'מלא';
+
+			const workDoneElement = document.getElementById('workDone');
+			const workDone = workDoneElement ? workDoneElement.value : '';
+
+			const amountElement = document.getElementById('amount');
+			const amount = amountElement ? amountElement.value : '0';
+
+			const notesElement = document.getElementById('notes');
+			const notes = notesElement ? notesElement.value : '';
+
+			const manualDurationElement = document.getElementById('manualDurationMinutes');
+			const durationMinutes = manualDurationElement ? parseFloat(manualDurationElement.value) || 0 : 0;
+
+			const numberOfWorkersElement = document.getElementById('numberOfWorkersVisit');
+			const numberOfWorkers = numberOfWorkersElement ? parseInt(numberOfWorkersElement.value) || 1 : 1;
+
+			const expenseElement = document.getElementById('expense');
+			const expense = expenseElement ? expenseElement.value : '0';
+
+			const visitTimeElement = document.getElementById('visitTime');
+			const startTime = visitTimeElement ? visitTimeElement.value : '';
 			
 			// בדיקות בסיסיות
 			if (!selectedLocationId) {
-				showError('אנא בחר לקוח');
+				showToast('אנא בחר לקוח', 'error');
+				return;
+			}
+			
+			if (!visitDate) {
+				showToast('נדרש תאריך טיפול', 'error');
 				return;
 			}
 			
@@ -3534,37 +3585,37 @@
 			}
 
 			// חישוב אוטומטי של משך הזמן אם יש שעת התחלה וסיום
-			let calculatedDuration = document.getElementById('duration_minutes').value;
-			const startTime = document.getElementById('visitTime').value;
+			let calculatedDuration = durationMinutes;
 			if (startTime && endTime) {
 				const start = new Date(`2000-01-01 ${startTime}`);
 				const end = new Date(`2000-01-01 ${endTime}`);
 				const diffMs = end - start;
 				if (diffMs > 0) {
 					calculatedDuration = Math.round(diffMs / (1000 * 60)); // הפרש בדקות
-					document.getElementById('duration_minutes').value = calculatedDuration;
+					if (manualDurationElement) {
+						manualDurationElement.value = calculatedDuration;
+					}
 				}
 			}
 
-
 			const visitData = {
 				location_id: selectedLocationId,  
-				visit_type: document.getElementById('visitType').value,
-				work_done: document.getElementById('workDone').value,
-				duration_minutes: parseFloat(document.getElementById('manualDurationMinutes').value) || 0,
-				workers_count: parseInt(document.getElementById('numberOfWorkersVisit').value) || 1,		
-				amount: document.getElementById('amount').value || 0,
-				expense: document.getElementById('expense').value || 0,
+				visit_type: visitType,
+				work_done: workDone,
+				duration_minutes: calculatedDuration,
+				workers_count: numberOfWorkers,		
+				amount: parseFloat(amount) || 0,
+				expense: parseFloat(expense) || 0,
 				date: visitDate,
-				start_time: document.getElementById('visitTime').value,
+				start_time: startTime,
 				end_time: endTime,
 				paid: paymentStatus,
-				notes: document.getElementById('notes') ? document.getElementById('notes').value : ''
+				notes: notes
 			};
 			
-			console.log('Visitdata:', visitData);
+			console.log('Visit data:', visitData);
 			
-			// Here we would save to Google Sheets
+			// שמירת הטיפול
 			saveVisit(visitData);
 		}
 
@@ -4920,6 +4971,9 @@
 			const maxResults = parseInt(document.getElementById('maxResults').value) || 200;
 			
 			console.log('🔍 מסנן טיפולים...', {locationFilter, paymentFilter, dateFromFilter, dateToFilter, maxResults});
+			
+			const tbody = document.getElementById('visitsHistoryTableBody');
+			tbody.innerHTML = '<tr><td colspan="8" class="loading-indicator">טוען טיפולים...</td></tr>';
 			
 			// סינון מהיר עם early return
 			let filteredVisits = visits.filter(visit => {
@@ -10243,15 +10297,46 @@
 
 		// קביעת טיפול לשבוע/שבועיים
 		function setNextAllowedDay(clientId, allowedDay, weeksAhead = 1) {
-			// הפונקציה הזו אולי כבר קיימת - אם כן, רק הוסף את הפרמטר weeksAhead
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			// מיפוי ימים לא ינדקס השבוע (0=ראשון, 1=שני...)
+			const dayToNumber = {
+				'יום ראשון': 0,
+				'יום שני': 1,
+				'יום שלישי': 2,
+				'יום רביעי': 3,
+				'יום חמישי': 4,
+				'יום שישי': 5,
+				'יום שבת': 6,
+				'כל יום': 0 // ברירת מחדל
+			};
+			
+			const targetDayOfWeek = dayToNumber[allowedDay] || 0;
 			const today = new Date();
-			const targetDate = new Date(today.getTime() + (weeksAhead * 7 * 24 * 60 * 60 * 1000));
+			
+			// חישוב התאריך הנכון - יום מועדף בעוד X שבועות
+			const daysUntilTargetDay = (targetDayOfWeek - today.getDay() + 7) % 7;
+			const targetDate = new Date(today);
+			
+			// אם היום המועדף הוא היום - קח אותו בשבוע הבא
+			if (daysUntilTargetDay === 0 && weeksAhead === 1) {
+				targetDate.setDate(today.getDate() + 7);
+			} else {
+				// אחרת - קח היום המועדף + שבועות נוספים
+				targetDate.setDate(today.getDate() + daysUntilTargetDay + ((weeksAhead - 1) * 7));
+			}
+			
 			const dateString = targetDate.toISOString().split('T')[0];
 			
+			// עדכון התאריך
 			updateClientNextVisit(clientId, dateString);
 			
 			const weekText = weeksAhead === 1 ? 'שבוע' : 'שבועיים';
-			showToast(`נקבע לעוד ${weekText}`, 'success');
+			showToast(`נקבע ${allowedDay} בעוד ${weekText} (${formatDate(dateString)})`, 'success');
 		}
 
 		function loadLocationsForSelect() {
