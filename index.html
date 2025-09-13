@@ -891,16 +891,7 @@
 			}
 
 			/* שאר הסטיילים הקיימים נשארים */
-			.planning-date-header {
-				text-align: center;
-				background: linear-gradient(45deg, #3498db, #2980b9); /* שינוי מירוק לכחול */
-				color: white;
-				padding: 15px;
-				border-radius: 10px;
-				margin-bottom: 20px;
-				box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3); /* עדכון צל לכחול */
-			}
-
+			
 			.planning-tab-btn.active {
 				background: #3498db; /* שינוי מירוק לכחול */
 				color: white;
@@ -1235,6 +1226,129 @@
 			background: #138496;
 		}
 
+	/**********************************/
+	/* Receipt filter panel styles */
+	
+		.filter-panel {
+			background: #f8f9fa;
+			border: 1px solid #dee2e6;
+			border-radius: 10px;
+			padding: 20px;
+			margin-bottom: 20px;
+		}
+
+		.filter-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 15px;
+			padding-bottom: 10px;
+			border-bottom: 2px solid #e9ecef;
+		}
+
+		.filter-header h3 {
+			margin: 0;
+			color: #2c3e50;
+			font-size: 1.2em;
+		}
+
+		.filter-row {
+			display: flex;
+			gap: 15px;
+			margin-bottom: 15px;
+			flex-wrap: wrap;
+		}
+
+		.filter-group {
+			flex: 1;
+			min-width: 200px;
+		}
+
+		.filter-group label {
+			display: block;
+			margin-bottom: 5px;
+			font-weight: bold;
+			color: #495057;
+			font-size: 13px;
+		}
+
+		.filter-group input,
+		.filter-group select {
+			width: 100%;
+			padding: 8px 12px;
+			border: 1px solid #ced4da;
+			border-radius: 6px;
+			font-size: 13px;
+			background: white;
+			transition: border-color 0.3s ease;
+		}
+
+		.filter-group input:focus,
+		.filter-group select:focus {
+			outline: none;
+			border-color: #3498db;
+			box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+		}
+
+		/* Notes row styles */
+		.notes-row {
+			background-color: #f8f9fa;
+			border-top: none !important;
+		}
+
+		.notes-cell {
+			padding: 8px 15px !important;
+			border-top: 1px dashed #dee2e6 !important;
+		}
+
+		.notes-content {
+			font-size: 13px;
+			color: #495057;
+			font-style: italic;
+			background: #e9ecef;
+			padding: 8px 12px;
+			border-radius: 6px;
+			border-left: 4px solid #6c757d;
+		}
+
+		/* Button styles */
+		.btn {
+			padding: 8px 16px;
+			border: none;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 12px;
+			font-weight: bold;
+			transition: all 0.3s ease;
+		}
+
+		.btn-secondary {
+			background: #6c757d;
+			color: white;
+		}
+
+		.btn-secondary:hover {
+			background: #5a6268;
+			transform: translateY(-1px);
+		}
+
+		/* Mobile responsiveness */
+		@media (max-width: 768px) {
+			.filter-row {
+				flex-direction: column;
+				gap: 10px;
+			}
+			
+			.filter-group {
+				min-width: auto;
+			}
+			
+			.filter-header {
+				flex-direction: column;
+				gap: 10px;
+				text-align: center;
+			}
+		}
 
 	</style>
    
@@ -1265,7 +1379,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0	</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1	</button>
 			</nav>
         </header>
 
@@ -1273,13 +1387,7 @@
             <!-- Planning Section -->
 			<section id="planning" class="section active">
 				<h2>📅 תכנון יומי ושבועי</h2>
-            
-            <!-- כותרת תאריך -->
-            <div class="planning-date-header">
-                <h3 id="planningDateTitle">היום - רביעי</h3>
-                <p id="planningDateFormatted">28 בנובמבר 2024</p>
-            </div>
-
+           
             <!-- טאבים -->
             <div class="planning-view-tabs">
                 <button class="planning-tab-btn active" onclick="switchPlanningView('daily')">יומי</button>
@@ -1633,23 +1741,74 @@
             <section id="receipts" class="section">
                 <h2>ניהול קבלות</h2>
                 <button onclick="showAddReceiptForm()" class="add-btn">הוסף קבלה חדשה</button>
+				<!-- Filter Panel for Receipts -->
+				<div class="filter-panel">
+					<div class="filter-header">
+						<h3>🔍 סינון קבלות</h3>
+						<button onclick="clearReceiptFilters()" class="btn btn-secondary">נקה סינון</button>
+					</div>
+					<div class="filter-row">
+						<div class="filter-group">
+							<label>פנקס קבלות:</label>
+							<select id="filterReceiptBook" onchange="applyReceiptFilters()">
+								<option value="">כל הפנקסים</option>
+							</select>
+						</div>
+						<div class="filter-group">
+							<label>סוג תשלום:</label>
+							<select id="filterPaymentType" onchange="applyReceiptFilters()">
+								<option value="">כל הסוגים</option>
+								<option value="מזומן">מזומן</option>
+								<option value="העברה">העברה</option>
+								<option value="צ'ק">צ'ק</option>
+								<option value="כרטיס אשראי">כרטיס אשראי</option>
+							</select>
+						</div>
+						<div class="filter-group">
+							<label>לקוח:</label>
+							<select id="filterReceiptClient" onchange="applyReceiptFilters()">
+								<option value="">כל הלקוחות</option>
+							</select>
+						</div>
+					</div>
+					<div class="filter-row">
+						<div class="filter-group">
+							<label>מתאריך:</label>
+							<input type="date" id="filterReceiptDateFrom" onchange="applyReceiptFilters()">
+						</div>
+						<div class="filter-group">
+							<label>עד תאריך:</label>
+							<input type="date" id="filterReceiptDateTo" onchange="applyReceiptFilters()">
+						</div>
+						<div class="filter-group">
+							<label>מיון:</label>
+							<select id="receiptSortBy" onchange="applyReceiptFilters()">
+								<option value="date_desc">תאריך (חדש לישן)</option>
+								<option value="date_asc">תאריך (ישן לחדש)</option>
+								<option value="amount_desc">סכום (גבוה לנמוך)</option>
+								<option value="amount_asc">סכום (נמוך לגבוה)</option>
+								<option value="book_asc">פנקס (לפי סדר)</option>
+							</select>
+						</div>
+					</div>
+				</div>
                 <div class="table-container">
                     <table id="receiptsTable" class="data-table">
-                        <thead>
+						<thead>
 							<tr>
 								<th>פנקס</th>
 								<th>קבלה</th>
 								<th>תאריך</th>
-								<th>בינה</th>
+								<th>לקוח</th>
 								<th>סכום</th>
 								<th>סוג תשלום</th>
-								<th>קודX</th>  
+								<th>קודX</th>
 								<th>פעולות</th>
 							</tr>
 						</thead>
-                        <tbody id="receiptsTableBody">
-                        </tbody>
-                    </table>
+						<tbody id="receiptsTableBody">
+						</tbody>
+					</table>
                 </div>
             </section>
 
@@ -1939,6 +2098,7 @@
 				loadLocationsForSelect();
 				loadLocationsTable();
 				loadReceiptsTable();
+				loadReceiptFilterOptions();
 				loadPlanningData();
 				
 				hideLoading();
@@ -2268,6 +2428,7 @@
 				loadLocationsForSelect();
 				loadLocationsTable();
 				loadReceiptsTable();
+				loadReceiptFilterOptions();
 				loadPlanningData();
 				
 				hideLoading();
@@ -2390,6 +2551,7 @@
 					break;
                 case 'receipts':
                     loadReceiptsTable();
+					loadReceiptFilterOptions();
                     break;
 				case 'debts':
                     displayDebts();
@@ -2489,7 +2651,7 @@
 		function loadPlanningDataAdvanced() {
 			updatePlanningStats();
 			loadPlanningClientsAdvanced();
-			updatePlanningDateHeader();
+			// updatePlanningDateHeader();
 			renderPlanningCards();
 		}
 
@@ -2604,7 +2766,7 @@
 			if (activeBtn) activeBtn.classList.add('active');
 			
 			// עדכון כותרת לפי תצוגה
-			updatePlanningDateHeader();
+			// updatePlanningDateHeader();
 			
 			// טעינה מחדש עם הסינון החדש
 			loadPlanningDataAdvanced();
@@ -2624,44 +2786,7 @@
 			}, 200);
 		}
 
-		// עדכון כותרת תאריך משופרת
-		function updatePlanningDateHeader() {
-			const today = new Date();
-			const dayName = today.toLocaleDateString('he-IL', { weekday: 'long' });
-			const dateFormatted = today.toLocaleDateString('he-IL', { 
-				day: 'numeric', 
-				month: 'long', 
-				year: 'numeric' 
-			});
-			
-			let headerTitle = '';
-			let headerSubtitle = '';
-			
-			switch (currentPlanningView) {
-				case 'daily':
-					headerTitle = `היום - ${dayName}`;
-					headerSubtitle = 'לקוחות מתוכננים להיום';
-					break;
-				case 'weekly':
-					headerTitle = `השבוע - ${dayName}`;
-					headerSubtitle = 'תכנון לימים הקרובים';
-					break;
-				case 'overdue':
-					headerTitle = 'טיפולים מאחרים';
-					headerSubtitle = 'דורשים קביעת מועד חדש';
-					break;
-				default:
-					headerTitle = `תכנון - ${dayName}`;
-					headerSubtitle = dateFormatted;
-			}
-			
-			const titleElement = document.getElementById('planningDateTitle');
-			const dateElement = document.getElementById('planningDateFormatted');
-			
-			if (titleElement) titleElement.textContent = headerTitle;
-			if (dateElement) dateElement.textContent = headerSubtitle;
-		}
-
+		
 		// רינדור כרטיסי לקוחות לתכנון
 		function renderPlanningCards() {
 			const container = document.getElementById('planningCardsContainer');
@@ -3304,31 +3429,11 @@
 		}
 
         function loadReceiptsTable() {
-			const tbody = document.getElementById('receiptsTableBody');
-			tbody.innerHTML = '';
+			// טעינת אפשרויות הסינון
+			loadReceiptFilterOptions();
 			
-			if (receipts.length === 0) {
-				tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">אין קבלות</td></tr>';
-				return;
-			}
-
-			receipts.forEach(receipt => {
-				const row = document.createElement('tr');
-				row.innerHTML = `
-					<td>${receipt.book_number}</td>
-					<td>${receipt.receipt_number}</td>
-					<td>${formatDate(receipt.date)}</td>
-					<td>${receipt.location_name}</td>
-					<td>${receipt.amount}</td>
-					<td>${receipt.payment_type}</td>
-					<td>${receipt.codeX || ''}</td>
-					<td>
-						<button class="action-btn edit-btn" onclick="editReceipt('${receipt.ID}')">ערוך</button>
-						<button class="action-btn delete-btn" onclick="deleteReceipt('${receipt.ID}')">מחק</button>
-					</td>
-				`;
-				tbody.appendChild(row);
-			});
+			// הצגת כל הקבלות (ללא סינון)
+			displayFilteredReceipts(receipts);
 		}
 
         // Visithandling
@@ -3974,6 +4079,7 @@
 
 			closeModal('receiptModal');
 			loadReceiptsTable();
+			loadReceiptFilterOptions();
 			saveToLocalStorage();
        }
 
@@ -4144,6 +4250,7 @@
 			if (confirm('האם אתה בטוח שברצונך למחוק את הקבלה?')) {
 				receipts = receipts.filter(r => r.ID != receiptId);
 				loadReceiptsTable();
+				loadReceiptFilterOptions();
 				saveToLocalStorage();
 				showSuccess('קבלה נמחקה בהצלחה!');
 			}
@@ -4209,6 +4316,7 @@
 				// עדכון רק הפונקציות שקיימות
 				loadLocationsTable();
 				loadReceiptsTable(); 
+				loadReceiptFilterOptions();
 				loadFilterOptions();
 				
 				showToast('כל הנתונים נוקו בהצלחה', 'success');
@@ -4609,6 +4717,7 @@
 				// שמירה
 				await saveAllToSheets();
 				loadReceiptsTable();
+				loadReceiptFilterOptions();
 				
 				let message = `יובאו ${importedCount} קבלות בהצלחה!`;
 				if (notFoundCustomers.length > 0) {
@@ -7979,7 +8088,9 @@
 				loadLocationsTable();
 				loadReceiptsTable();
 				loadLocationsForSelect();
+				loadReceiptFilterOptions();
 				loadFilterOptions();
+				
 				
 				hideLoading();
 				
@@ -8252,6 +8363,7 @@
 				
 				// עדכן תצוגה
 				loadReceiptsTable();
+				loadReceiptFilterOptions();
 				closeEditModal();
 				
 			} catch (error) {
@@ -10208,6 +10320,138 @@
 				
 				showToast(`התחלת טיפול עבור ${client.name}`, 'success');
 			}, 100);
+		}
+
+		// Receipt filtering functions
+		function loadReceiptFilterOptions() {
+			// Load book numbers
+			const bookSelect = document.getElementById('filterReceiptBook');
+			const uniqueBooks = [...new Set(receipts.map(r => r.book_number).filter(b => b))];
+			bookSelect.innerHTML = '<option value="">כל הפנקסים</option>';
+			uniqueBooks.sort().forEach(book => {
+				bookSelect.innerHTML += `<option value="${book}">${book}</option>`;
+			});
+			
+			// Load clients
+			const clientSelect = document.getElementById('filterReceiptClient');
+			const uniqueClients = [...new Set(receipts.map(r => r.location_name).filter(c => c))];
+			clientSelect.innerHTML = '<option value="">כל הלקוחות</option>';
+			uniqueClients.sort().forEach(client => {
+				clientSelect.innerHTML += `<option value="${client}">${client}</option>`;
+			});
+		}
+
+		function applyReceiptFilters() {
+			let filteredReceipts = [...receipts];
+			
+			// Filter by book
+			const bookFilter = document.getElementById('filterReceiptBook').value;
+			if (bookFilter) {
+				filteredReceipts = filteredReceipts.filter(r => r.book_number === bookFilter);
+			}
+			
+			// Filter by payment type
+			const paymentFilter = document.getElementById('filterPaymentType').value;
+			if (paymentFilter) {
+				filteredReceipts = filteredReceipts.filter(r => r.payment_type === paymentFilter);
+			}
+			
+			// Filter by client
+			const clientFilter = document.getElementById('filterReceiptClient').value;
+			if (clientFilter) {
+				filteredReceipts = filteredReceipts.filter(r => r.location_name === clientFilter);
+			}
+			
+			// Filter by date range
+			const dateFrom = document.getElementById('filterReceiptDateFrom').value;
+			const dateTo = document.getElementById('filterReceiptDateTo').value;
+			
+			if (dateFrom) {
+				filteredReceipts = filteredReceipts.filter(r => r.date >= dateFrom);
+			}
+			if (dateTo) {
+				filteredReceipts = filteredReceipts.filter(r => r.date <= dateTo);
+			}
+			
+			// Sort results
+			const sortBy = document.getElementById('receiptSortBy').value;
+			sortReceiptResults(filteredReceipts, sortBy);
+			
+			// Display filtered results
+			displayFilteredReceipts(filteredReceipts);
+		}
+
+		function sortReceiptResults(receipts, sortBy) {
+			switch(sortBy) {
+				case 'date_desc':
+					receipts.sort((a, b) => new Date(b.date) - new Date(a.date));
+					break;
+				case 'date_asc':
+					receipts.sort((a, b) => new Date(a.date) - new Date(b.date));
+					break;
+				case 'amount_desc':
+					receipts.sort((a, b) => (b.amount || 0) - (a.amount || 0));
+					break;
+				case 'amount_asc':
+					receipts.sort((a, b) => (a.amount || 0) - (b.amount || 0));
+					break;
+				case 'book_asc':
+					receipts.sort((a, b) => (a.book_number || '').localeCompare(b.book_number || ''));
+					break;
+			}
+		}
+
+		function clearReceiptFilters() {
+			document.getElementById('filterReceiptBook').value = '';
+			document.getElementById('filterPaymentType').value = '';
+			document.getElementById('filterReceiptClient').value = '';
+			document.getElementById('filterReceiptDateFrom').value = '';
+			document.getElementById('filterReceiptDateTo').value = '';
+			document.getElementById('receiptSortBy').value = 'date_desc';
+			
+			displayFilteredReceipts(receipts);
+		}
+
+		function displayFilteredReceipts(filteredReceipts) {
+			const tbody = document.getElementById('receiptsTableBody');
+			tbody.innerHTML = '';
+			
+			if (filteredReceipts.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">אין קבלות מתאימות לסינון</td></tr>';
+				return;
+			}
+
+			filteredReceipts.forEach(receipt => {
+				const row = document.createElement('tr');
+				row.innerHTML = `
+					<td>${receipt.book_number || ''}</td>
+					<td>${receipt.receipt_number || ''}</td>
+					<td>${formatDate(receipt.date)}</td>
+					<td>${receipt.location_name || ''}</td>
+					<td>₪${receipt.amount || 0}</td>
+					<td>${receipt.payment_type || ''}</td>
+					<td>${receipt.codeX || ''}</td>
+					<td>
+						<button class="action-btn edit-btn" onclick="editReceipt('${receipt.ID}')">ערוך</button>
+						<button class="action-btn delete-btn" onclick="deleteReceipt('${receipt.ID}')">מחק</button>
+					</td>
+				`;
+				tbody.appendChild(row);
+				
+				// הוספת שורת הערות אם קיימות
+				if (receipt.notes && receipt.notes.trim() !== '') {
+					const notesRow = document.createElement('tr');
+					notesRow.className = 'notes-row';
+					notesRow.innerHTML = `
+						<td colspan="8" class="notes-cell">
+							<div class="notes-content">
+								<strong>📝 הערות:</strong> ${receipt.notes}
+							</div>
+						</td>
+					`;
+					tbody.appendChild(notesRow);
+				}
+			});
 		}
 
    </script>
