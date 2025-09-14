@@ -1431,12 +1431,11 @@
 			</div>
             <nav class="nav-buttons">
 				<button onclick="showSection('planning')" class="nav-btn active">תכנון</button>
-				<button onclick="showSection('visit')" class="nav-btn">טיפול חדש</button>
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5	</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1	</button>
 			</nav>
         </header>
 
@@ -1487,137 +1486,10 @@
             </div>
 			</section>
 
-            <!-- VisitSection -->
-            <section id="visit" class="section">
-                <h2>טיפול חדש</h2>
-                <div class="form-container">
-                    <form id="visitForm">
-                        <!-- החלף את שדה בחירת הלקוח הנוכחי ב: -->
-						<div class="form-group">
-							<label for="clientSelect">בחר לקוח:</label>
-							<div style="display: flex; gap: 10px; align-items: stretch;">
-								<div class="hybrid-client-selector" style="flex: 1; position: relative;">
-									<input type="text" 
-										   id="clientSearchInput" 
-										   class="client-search-input" 
-										   placeholder="בחר לקוח או התחל להקליד לחיפוש..."
-										   style="width: 100%; padding: 12px 35px 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;"
-										   oninput="handleClientSearch(this.value)"
-										   onfocus="showClientDropdown()"
-										   onblur="hideClientDropdown()"
-										   autocomplete="off">
-									
-									<!-- חץ dropdown -->
-									<span class="dropdown-arrow" onclick="toggleClientDropdown()" 
-										  style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 12px; color: #666;">
-										▼
-									</span>
-									
-									<!-- רשימת השלמות -->
-									<div id="clientDropdown" class="client-dropdown" 
-										 style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-									</div>
-									
-									<input type="hidden" id="selectedClientId" required>
-								</div>
-								
-								<button type="button" class="add-btn" onclick="openAddClientModal()" 
-										style="padding: 12px 20px; white-space: nowrap;">
-									+ הוסף לקוח חדש
-								</button>
-							</div>
-						</div>
-
-						<!-- הוסף כאן -->
-						<div class="form-group">
-							<label for="visitDate">תאריך טיפול:</label>
-							<input type="date" id="visitDate" required>
-						</div>
-
-						<div class="form-group">
-							<label for="visitTime">שעת התחלה:</label>
-							<div style="display: flex; align-items: center; gap: 5px;">
-								<input type="time" id="visitTime" required onchange="calculateDurationFromTimes()" style="flex: 1;">
-								<button type="button" onclick="setCurrentTime('visitTime')" title="קבע שעה נוכחית"
-										style="background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
-									🕐
-								</button>
-							</div>
-						</div>
-
-						<div class="form-group">
-							<label for="endTime">שעת סיום:</label>
-							<div style="display: flex; align-items: center; gap: 5px;">
-								<input type="time" id="endTime" onchange="calculateDurationFromTimes()" style="flex: 1;">
-								<button type="button" onclick="setCurrentTime('endTime')" title="קבע שעה נוכחית"
-										style="background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
-									🕐
-								</button>
-							</div>
-						</div>
-						
-                        <div class="form-group">
-                            <label for="visitType">סוג טיפול:</label>
-                            <select id="visitType" required>
-                                <option value="מלא">מלא</option>
-                                <option value="חלקי">חלקי</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="workDone">מה בוצע:</label>
-                            <textarea id="workDone" placeholder="תיאור העבודה שבוצעה"></textarea>
-                        </div>
-                        <div class="form-group">
-							<label for="manualDurationMinutes">משך הטיפול (דקות):</label>
-							<div style="display: flex; gap: 10px; align-items: center;">
-								<input type="number" id="manualDurationMinutes" placeholder="90" min="0" onchange="updateHoursDisplay()" style="flex: 1;">
-								<span style="color: #666; font-size: 14px;">שעות:</span>
-								<input type="text" id="calculatedHours" readonly style="width: 80px; background: #f8f9fa; color: #666; border: 2px solid #e9ecef; border-radius: 6px; padding: 8px; text-align: center;" placeholder="1.5">
-							</div>
-						</div>
-                        <div class="form-group">
-							<label for="numberOfWorkersVisit">מספר עובדים בטיפול:</label>
-							<div style="display: flex; gap: 10px; align-items: center;">
-								<input type="number" id="numberOfWorkersVisit" value="1" min="1" onchange="calculateTreatmentCost()" style="width: 80px;">
-								<span style="color: #666; font-size: 14px;">עובדים (כולל אותך)</span>
-							</div>
-						</div>
-
-						<div class="form-group">
-							<label for="amount">סכום:</label>
-							<div style="display: flex; gap: 10px; align-items: center;">
-								<input type="number" id="amount" placeholder="סכום הטיפול" style="flex: 1;">
-								<button type="button" onclick="calculateTreatmentCost()" style="background: #f39c12; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
-									🔄 חשב
-								</button>
-							</div>
-							<div id="costBreakdown" style="font-size: 12px; color: #666; margin-top: 5px;">
-								<!-- כאן יופיע פירוט החישוב -->
-							</div>
-						</div>
-                        <div class="form-group">
-							<label for="expense">הוצאה:</label>
-							<input type="number" id="expense" placeholder="הוצאות נילוות" onchange="calculateTreatmentCost()">
-						</div>
-						
-						<div class="form-group">
-							<label for="paymentStatus">סטטוס תשלום:</label>
-							<select id="paymentStatus">
-								<option value="0">לא שולם</option>
-								<option value="1">שולם</option>
-								<option value="2">ללא תשלום</option>
-							</select>
-						</div>
-						
-                        <button type="submit">שמור טיפול</button>
-                    </form>
-                </div>
-            </section>
-
 			<!-- History Section -->
 			<section id="history" class="section">
 				<h2>📋 טיפולים</h2>
-				
+				<button onclick="showAddTreatmentForm()" class="add-btn">הוסף טיפול חדש</button>
 				<!-- Filter Panel -->
 				<div class="filter-panel-unified">
 					<div class="filter-panel-header">
@@ -1679,6 +1551,8 @@
 						<span style="color: #3498db; font-weight: bold;" id="treatmentsPaid">0</span> שולמו
 						<span style="margin: 0 10px; color: #666;">|</span>
 						<span style="color: #e74c3c; font-weight: bold;" id="treatmentsUnpaid">0</span> לא שולמו
+						<span style="margin: 0 10px; color: #666;">|</span>
+						<span style="color: #ff6b35; font-weight: bold;" id="treatmentsDebts">₪0</span> חובות פתוחים
 					</div>
 				</div>
 
@@ -1922,12 +1796,10 @@
 						<thead>
 							<tr>
 								<th>לקוח</th>
-								<th>כתובת</th>
-								<th>טלפון</th>
-								<th>מספר טיפולים</th>
+								<th>יום מועדף</th>
 								<th>סה"כ חוב</th>
-								<th>טיפול אחרון</th>
-								<th>ימים</th>
+								<th>מס' טיפולים</th>
+								<th>הערות חוב</th>
 								<th>פעולות</th>
 							</tr>
 						</thead>
@@ -2597,9 +2469,6 @@
             switch(sectionName) {
                 case 'planning':
                     loadPlanningData();
-                    break;
-                case 'visit':
-                    loadLocationsForSelect();
                     break;
 				case 'history':
 					loadVisitsHistory();
@@ -7024,7 +6893,6 @@
 	   
 	   // פונקציה להצגת חובות
 		function displayDebts() {
-			//// console.log('דוגמאות ערכי paid:', visits.slice(0, 5).map(v => v.paid));
 			const sortBy = document.getElementById('debtSortBy').value;
 			const minAmount = parseFloat(document.getElementById('minDebtAmount').value) || 0;
 			
@@ -7033,48 +6901,41 @@
 			
 			visits.forEach(visit => {
 				if (visit.amount > 0) {
-					const visitAmount = parseFloat(visit.amount);
+					const visitAmount = parseFloat(visit.amount) || 0;
 					const paidAmount = getVisitPaidAmount(visit.ID);
 					const debt = visitAmount - paidAmount;
 					
 					if (debt > 0) { // יש חוב
 						if (!debtsByLocation[visit.location_id]) {
-							const location = locations.find(loc => loc.ID == visit.location_id);
+							const location = locations.find(loc => loc.ID === visit.location_id);
 							debtsByLocation[visit.location_id] = {
 								location: location,
-								visits: [],
-								totalDebt: 0
+								totalDebt: 0,
+								visits: []
 							};
 						}
+						
+						debtsByLocation[visit.location_id].totalDebt += debt;
 						debtsByLocation[visit.location_id].visits.push({
 							...visit,
 							debt: debt,
 							paidAmount: paidAmount
 						});
-						debtsByLocation[visit.location_id].totalDebt += debt;
 					}
 				}
 			});
 			
 			// המרה למערך וסינון
-			let debtsArray = Object.values(debtsByLocation)
+			const debtsArray = Object.values(debtsByLocation)
 				.filter(debt => debt.totalDebt >= minAmount);
 			
 			// מיון
 			debtsArray.sort((a, b) => {
-				switch(sortBy) {
-					case 'amount_desc':
-						return b.totalDebt - a.totalDebt;
-					case 'amount_asc':
-						return a.totalDebt - b.totalDebt;
-					case 'date_old':
-						return new Date(a.visits[0].date) - new Date(b.visits[0].date);
-					case 'date_new':
-						return new Date(b.visits[0].date) - new Date(a.visits[0].date);
-					case 'location':
-						return a.location?.name.localeCompare(b.location?.name);
-					default:
-						return b.totalDebt - a.totalDebt;
+				switch (sortBy) {
+					case 'amount_desc': return b.totalDebt - a.totalDebt;
+					case 'amount_asc': return a.totalDebt - b.totalDebt;
+					case 'location': return (a.location?.name || '').localeCompare(b.location?.name || '');
+					default: return b.totalDebt - a.totalDebt;
 				}
 			});
 			
@@ -7083,53 +6944,40 @@
 			tbody.innerHTML = '';
 			
 			debtsArray.forEach(debt => {
-				const location = debt.location || { name: 'לא נמצא', full_address: '', phone: '' };
-				const lastVisit = debt.visits[debt.visits.length - 1];
-				const daysSinceLastVisit = Math.floor((new Date() - new Date(lastVisit.date)) / (1000 * 60 * 60 * 24));
+				const location = debt.location || { name: 'לא נמצא', allowed_day: '', debt_notes: '' };
 				
 				const row = document.createElement('tr');
-				
-				// הדגשת חובות ישנים
-				if (daysSinceLastVisit > 60) {
-					row.style.backgroundColor = '#ffebee'; // אדום עדין
-				} else if (daysSinceLastVisit > 30) {
-					row.style.backgroundColor = '#fff3e0'; // כתום עדין  
-				}
-				
 				row.innerHTML = `
 					<td>
 						<strong>${location.name}</strong>
-						<br><small style="color: #666;">${location.contact_person || ''}</small>
-					</td>
-					<td><small>${location.full_address || ''}</small></td>
-					<td>
-						${location.phone ? 
-							`<a href="tel:${location.phone}" style="color: #007bff; text-decoration: none;">
-								📞 ${location.phone}
-							</a>` : 
-							'<span style="color: #999;">-</span>'
-						}
+						${location.contact_person ? `<br><small style="color: #666;">${location.contact_person}</small>` : ''}
 					</td>
 					<td style="text-align: center;">
 						<span style="background: #e3f2fd; padding: 2px 8px; border-radius: 12px; font-size: 12px;">
+							${location.allowed_day || 'כל יום'}
+						</span>
+					</td>
+					<td style="text-align: center;">
+						<strong style="color: #e74c3c; font-size: 16px;">₪${Math.round(debt.totalDebt).toLocaleString()}</strong>
+					</td>
+					<td style="text-align: center;">
+						<span style="background: #fff3cd; padding: 2px 8px; border-radius: 12px; font-size: 12px;">
 							${debt.visits.length}
 						</span>
 					</td>
-					<td style="text-align: center;">
-						<strong style="color: #e74c3c; font-size: 16px;">₪${debt.totalDebt.toLocaleString()}</strong>
-					</td>
-					<td style="text-align: center;">${formatDate(lastVisit.date)}</td>
-					<td style="text-align: center;">
-						<span style="color: ${daysSinceLastVisit > 60 ? '#e74c3c' : daysSinceLastVisit > 30 ? '#f39c12' : '#666'}; font-weight: bold;">
-							${daysSinceLastVisit}
-						</span>
+					<td>
+						<input type="text" 
+							   value="${location.debt_notes || ''}" 
+							   placeholder="הערות מעקב..."
+							   style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"
+							   onchange="updateDebtNotes('${location.ID}', this.value)">
 					</td>
 					<td style="text-align: center;">
-						<button class="action-btn" onclick="showDebtDetails('${location.ID}')" style="background: #007bff; margin: 2px;">
-							🔍 פירוט
+						<button class="action-btn" onclick="showClientTreatments('${location.ID}')" style="background: #007bff; margin: 2px; padding: 4px 8px; font-size: 11px;">
+							🔧 טיפולים
 						</button>
-						<button class="action-btn" onclick="markDebtAsPaid('${location.ID}')" style="background: #28a745; margin: 2px;">
-							✅ סולק
+						<button class="action-btn" onclick="showClientReceipts('${location.ID}')" style="background: #17a2b8; margin: 2px; padding: 4px 8px; font-size: 11px;">
+							🧾 קבלות
 						</button>
 					</td>
 				`;
@@ -7137,9 +6985,8 @@
 				tbody.appendChild(row);
 			});
 			
-			// עדכון סיכום
-			updateDebtsSummary(debtsArray);
-			updateDebtsStats(filteredDebts);
+			// עדכון סטטיסטיקות
+			updateDebtsStats(debtsArray);
 		}
 
 		// עדכון כרטיסי סיכום
@@ -10568,17 +10415,14 @@
 		}
 
 
-		function updateDebtsStats(filteredDebts) {
-			const count = filteredDebts.length;
-			const total = filteredDebts.reduce((sum, debt) => {
-				const amount = parseFloat(debt.totalDebt) || 0;
-				return sum + amount;
-			}, 0);
+		function updateDebtsStats(debtsArray) {
+			const count = debtsArray.length;
+			const total = debtsArray.reduce((sum, debt) => sum + debt.totalDebt, 0);
 			const average = count > 0 ? Math.round(total / count) : 0;
 			
 			document.getElementById('debtsCount').textContent = count;
-			document.getElementById('debtsTotal').textContent = `${Math.round(total)} ₪`;
-			document.getElementById('debtsAverage').textContent = `${average} ₪`;
+			document.getElementById('debtsTotal').textContent = `₪${Math.round(total).toLocaleString()}`;
+			document.getElementById('debtsAverage').textContent = `₪${average.toLocaleString()}`;
 		}
 
 		function updateTreatmentsStats(filteredTreatments) {
@@ -10590,10 +10434,24 @@
 			const paidCount = filteredTreatments.filter(t => t.paid === '1').length;
 			const unpaidCount = filteredTreatments.filter(t => t.paid === '0').length;
 			
+			// חישוב חובות פתוחים
+			const openDebts = filteredTreatments
+				.filter(t => t.paid === '0')
+				.reduce((sum, treatment) => {
+					const amount = parseFloat(treatment.amount) || 0;
+					return sum + amount;
+				}, 0);
+			
 			document.getElementById('treatmentsCount').textContent = count;
 			document.getElementById('treatmentsTotal').textContent = `${Math.round(total)} ₪`;
 			document.getElementById('treatmentsPaid').textContent = paidCount;
 			document.getElementById('treatmentsUnpaid').textContent = unpaidCount;
+			
+			// הוסף חוב לסטטיסטיקות
+			const debtsElement = document.getElementById('treatmentsDebts');
+			if (debtsElement) {
+				debtsElement.textContent = `${Math.round(openDebts)} ₪`;
+			}
 		}
 
 
@@ -10646,6 +10504,230 @@
 			displayFilteredVisits(visits);
 			updateTreatmentsStats(visits);
 		}
+
+		function showAddTreatmentForm() {
+			const modalContent = `
+				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90vw; max-height: 80vh; overflow-y: auto;">
+					<h3 style="margin-bottom: 20px; color: #2c3e50;">🔧 הוספת טיפול חדש</h3>
+					
+					<form id="modalVisitForm" onsubmit="handleModalVisitSubmit(event)">
+						<div class="form-group">
+							<label for="modalVisitDate">תאריך:</label>
+							<input type="date" id="modalVisitDate" required>
+						</div>
+						
+						<div class="form-group">
+							<label for="modalClientSearchInput">לקוח:</label>
+							<input type="text" id="modalClientSearchInput" placeholder="חפש לקוח..." onkeyup="filterClientOptions('modalClientSearchInput', 'modalClientOptions')" required>
+							<div id="modalClientOptions" class="client-options" style="display: none;"></div>
+							<input type="hidden" id="modalSelectedClientId">
+						</div>
+						
+						<div class="form-group">
+							<label for="modalVisitType">סוג טיפול:</label>
+							<select id="modalVisitType" required>
+								<option value="">בחר סוג טיפול</option>
+								<option value="מלא">מלא</option>
+								<option value="חלקי">חלקי</option>
+								<option value="ביקורת">ביקורת</option>
+							</select>
+						</div>
+						
+						<div class="form-group">
+							<label for="modalWorkDone">עבודה שבוצעה:</label>
+							<textarea id="modalWorkDone" rows="3" placeholder="תיאור העבודה שבוצעה"></textarea>
+						</div>
+						
+						<div class="form-group">
+							<label for="modalVisitTime">שעת התחלה:</label>
+							<input type="time" id="modalVisitTime">
+						</div>
+						
+						<div class="form-group">
+							<label for="modalManualDurationMinutes">משך זמן (דקות):</label>
+							<input type="number" id="modalManualDurationMinutes" min="0" step="1">
+						</div>
+						
+						<div class="form-group">
+							<label for="modalNumberOfWorkersVisit">מספר עובדים:</label>
+							<input type="number" id="modalNumberOfWorkersVisit" value="1" min="1">
+						</div>
+						
+						<div class="form-group">
+							<label for="modalAmount">סכום:</label>
+							<input type="number" id="modalAmount" step="0.01" min="0">
+						</div>
+						
+						<div class="form-group">
+							<label for="modalExpense">הוצאות:</label>
+							<input type="number" id="modalExpense" step="0.01" min="0" value="0">
+						</div>
+						
+						<div class="form-group">
+							<label for="modalNotes">הערות:</label>
+							<textarea id="modalNotes" rows="3" placeholder="הערות נוספות"></textarea>
+						</div>
+						
+						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
+							<button type="submit" class="btn btn-success">
+								💾 שמור טיפול
+							</button>
+							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+								❌ ביטול
+							</button>
+						</div>
+					</form>
+				</div>
+			`;
+			
+			showEditModal(modalContent);
+			
+			// הגדרות ראשוניות
+			setTimeout(() => {
+				// הגדרת תאריך היום
+				document.getElementById('modalVisitDate').value = new Date().toISOString().split('T')[0];
+				
+				// טעינת לקוחות לבחירה
+				loadClientsForModal();
+			}, 100);
+		}
+		
+		// פונקציה לעדכון הערות חוב
+		async function updateDebtNotes(locationId, notes) {
+			const location = locations.find(loc => loc.ID === locationId);
+			if (!location) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			// עדכון מקומי
+			location.debt_notes = notes;
+			saveToLocalStorage();
+			
+			// עדכון בענן
+			if (access_token && SPREADSHEET_ID) {
+				try {
+					await updateLocationInCloud(location);
+					showToast('הערות חוב עודכנו בהצלחה', 'success');
+				} catch (error) {
+					showToast('הערות עודכנו מקומית, אך נכשלו בעדכון ענן', 'warning');
+				}
+			}
+			
+			// רענון תצוגה
+			displayDebts();
+		}
+
+		// מעבר לטאב טיפולים מסונן לפי לקוח
+		function showClientTreatments(locationId) {
+			const location = locations.find(loc => loc.ID === locationId);
+			if (!location) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			// מעבר לטאב טיפולים
+			showSection('history');
+			
+			// המתן רגע שהטאב יטען
+			setTimeout(() => {
+				// הגדר סינון ללקוח הספציפי
+				const clientFilter = document.getElementById('filterClient');
+				if (clientFilter) {
+					clientFilter.value = location.name;
+				}
+				
+				// הגדר סינון לטיפולים לא שולמו
+				const paymentFilter = document.getElementById('filterPayment');
+				if (paymentFilter) {
+					paymentFilter.value = 'לא';
+				}
+				
+				// הפעל את הסינון
+				applyVisitFilters();
+				
+				showToast(`מציג טיפולים לא שולמו של ${location.name}`, 'info');
+			}, 100);
+		}
+
+		// מעבר לטאב קבלות מסונן לפי לקוח
+		function showClientReceipts(locationId) {
+			const location = locations.find(loc => loc.ID === locationId);
+			if (!location) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			// מעבר לטאב קבלות
+			showSection('receipts');
+			
+			// המתן רגע שהטאב יטען
+			setTimeout(() => {
+				// הגדר סינון ללקוח הספציפי
+				const receiptClientFilter = document.getElementById('receiptClientFilter');
+				if (receiptClientFilter) {
+					receiptClientFilter.value = location.name;
+				}
+				
+				// הפעל את הסינון
+				applyReceiptFilters();
+				
+				showToast(`מציג קבלות של ${location.name}`, 'info');
+			}, 100);
+		}
+
+		// טעינת לקוחות לבחירה במודל
+		function loadClientsForModal() {
+			const clientSearchInput = document.getElementById('modalClientSearchInput');
+			const clientOptions = document.getElementById('modalClientOptions');
+			
+			if (!clientSearchInput || !clientOptions) return;
+			
+			// הגדרת מאזין לקלט
+			clientSearchInput.addEventListener('input', function() {
+				filterClientOptions('modalClientSearchInput', 'modalClientOptions');
+			});
+		}
+
+		// סינון אפשרויות לקוחות במודל (מנצל את הפונקציה הקיימת)
+		// הפונקציה filterClientOptions כבר קיימת ותעבוד עם ה-IDs החדשים
+
+		// טיפול בשליחת הטופס מהמודל
+		function handleModalVisitSubmit(event) {
+			event.preventDefault();
+			
+			// איסוף נתונים מהמודל
+			const selectedClientId = document.getElementById('modalSelectedClientId').value;
+			
+			if (!selectedClientId) {
+				showToast('חובה לבחור לקוח', 'error');
+				return;
+			}
+			
+			const visitData = {
+				location_id: selectedClientId,
+				date: document.getElementById('modalVisitDate').value,
+				visit_type: document.getElementById('modalVisitType').value,
+				work_done: document.getElementById('modalWorkDone').value,
+				start_time: document.getElementById('modalVisitTime').value,
+				duration_minutes: parseFloat(document.getElementById('modalManualDurationMinutes').value) || 0,
+				workers_count: parseInt(document.getElementById('modalNumberOfWorkersVisit').value) || 1,
+				amount: parseFloat(document.getElementById('modalAmount').value) || 0,
+				expense: parseFloat(document.getElementById('modalExpense').value) || 0,
+				notes: document.getElementById('modalNotes').value,
+				paid: '0', // ברירת מחדל - לא שולם
+				end_time: '' // נחשב אוטומטית אם נדרש
+			};
+			
+			console.log('Modal visit data:', visitData);
+			
+			// שמירת הטיפול
+			saveVisit(visitData);
+			
+			// סגירת המודל
+			closeEditModal();
+		}
+
 
    </script>
 </body>
