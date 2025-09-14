@@ -1435,8 +1435,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1	</button>
-			</nav>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2
         </header>
 
         <main class="main-content">
@@ -3918,123 +3917,154 @@
 
        // Receipt management
        function showAddReceiptForm() {
-           const modalHTML = `
-               <div class="modal" id="receiptModal">
-                   <div class="modal-content">
-                       <div class="modal-header">
-                           <h3>הוספת קבלה חדשה</h3>
-                           <span class="close" onclick="closeModal('receiptModal')">&times;</span>
-                       </div>
-                       <form id="receiptForm" onsubmit="handleReceiptSubmit(event)">
-                           <div class="form-group">
-                               <label for="receiptBook">מספר פנקס:</label>
-                               <input type="number" id="receiptBook" required>
-                           </div>
-                           <div class="form-group">
-                               <label for="receiptNumber">מספר קבלה:</label>
-                               <input type="number" id="receiptNumber" required>
-                           </div>
-                           <div class="form-group">
-                               <label for="receiptDate">תאריך:</label>
-                               <input type="date" id="receiptDate" required>
-                           </div>
-                           <div class="form-group">
-                               <label for="receiptlocations">גינה:</label>
-                               <select id="receiptlocations" required>
-                                   <option value="">בחר גינה...</option>
-                               </select>
-                           </div>
-                           <div class="form-group">
-                               <label for="receiptAmount">סכום:</label>
-                               <input type="number" id="receiptAmount" required>
-                           </div>
-                           <div class="form-group">
-                               <label for="receiptPaymentType">סוג תשלום:</label>
-                               <select id="receiptPaymentType" required>
-                                   <option value="">בחר סוג...</option>
-                                   <option value="מזומן">מזומן</option>
-                                   <option value="צ'ק">צ'ק</option>
-                                   <option value="העברה">העברה בנקאית</option>
-                                   <option value="ביט">ביט</option>
-                                   <option value="פייבוקס">פייבוקס</option>
-                               </select>
-                           </div>
-                           <div class="form-group">
-                               <label for="receiptNotes">הערות:</label>
-                               <textarea id="receiptNotes"></textarea>
-                           </div>
-                           <button type="submit">שמור קבלה</button>
-                       </form>
-                   </div>
-               </div>
-           `;
-           
-           document.getElementById('modalContainer').innerHTML = modalHTML;
-           document.getElementById('receiptModal').style.display = 'block';
-           
-           // Set default date to today
-           document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
-           
-           // Populate locations select
-           const select = document.getElementById('receiptlocations');
-           locations.forEach(location => {
-               const option = document.createElement('option');
-               option.value = location.ID;
-               option.textContent = `${location.name} - ${location.full_address}`;
-               select.appendChild(option);
-           });
-       }
+			const modalHTML = `
+				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90vw; max-height: 80vh; overflow-y: auto;">
+					<h3 style="margin-bottom: 20px; color: #2c3e50;">🧾 הוספת קבלה חדשה</h3>
+					
+					<form id="receiptForm" onsubmit="handleReceiptSubmit(event)">
+						<div class="form-group">
+							<label for="receiptBook">מספר פנקס:</label>
+							<input type="text" id="receiptBook" required>
+						</div>
+						
+						<div class="form-group">
+							<label for="receiptNumber">מספר קבלה:</label>
+							<input type="text" id="receiptNumber" required>
+						</div>
+						
+						<div class="form-group">
+							<label for="receiptDate">תאריך:</label>
+							<input type="date" id="receiptDate" required>
+						</div>
+						
+						<div class="form-group">
+							<label for="receiptLocation">לקוח:</label>
+							<select id="receiptLocation" required>
+								<option value="">בחר לקוח</option>
+							</select>
+						</div>
+						
+						<div class="form-group">
+							<label for="receiptAmount">סכום (₪):</label>
+							<input type="number" step="0.01" id="receiptAmount" required>
+						</div>
+						
+						<div class="form-group">
+							<label for="receiptPaymentType">סוג תשלום:</label>
+							<select id="receiptPaymentType">
+								<option value="מזומן">מזומן</option>
+								<option value="העברה">העברה</option>
+								<option value="צ'ק">צ'ק</option>
+								<option value="כרטיס אשראי">כרטיס אשראי</option>
+							</select>
+						</div>
+						
+						<div class="form-group">
+							<label for="receiptNotes">הערות:</label>
+							<textarea id="receiptNotes" rows="3"></textarea>
+						</div>
+						
+						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
+							<button type="submit" class="btn btn-success">
+								💾 שמור קבלה
+							</button>
+							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+								❌ ביטול
+							</button>
+						</div>
+					</form>
+				</div>
+			`;
+			
+			showEditModal(modalHTML);
+			
+			// הגדרות ראשוניות
+			setTimeout(() => {
+				// הגדרת תאריך היום
+				document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
+				
+				// טעינת לקוחות לבחירה
+				const receiptLocation = document.getElementById('receiptLocation');
+				locations.forEach(location => {
+					const option = document.createElement('option');
+					option.value = location.ID;
+					option.textContent = `${location.name} - ${location.full_address}`;
+					receiptLocation.appendChild(option);
+				});
+			}, 100);
+		}
 
-       async function handleReceiptSubmit(event) {
-           event.preventDefault();
-           
-           const locationId = document.getElementById('receiptlocation').value;
-           const location = locations.find(g => g.ID == locationId);
-           
-           const receiptData = {
-				ID: Date.now(),
-				book_number: document.getElementById('receiptBook').value,
-				receipt_number: document.getElementById('receiptNumber').value,
-				date: document.getElementById('receiptDate').value,
-				location_id: locationId,        
-				location_name: location ? location.name : '',  // שונה מ-location_name
-				amount: parseFloat(document.getElementById('receiptAmount').value),
-				payment_type: document.getElementById('receiptPaymentType').value,
-				notes: document.getElementById('receiptNotes').value
-			};
-           
-		   // תוספה - בדיקת תקינות לפני שמירה
-			const errors = validateReceiptData(receiptData);
-			if (showValidationErrors(errors)) {
-				return; // יש שגיאות - עצור כאן
-			}
-		   
-		   // בדיקת כפילויות קבלה
-			const existingReceipt = receipts.find(receipt => 
-				(receipt.book_number === receiptData.book_number && receipt.receipt_number === receiptData.receipt_number) ||
-				(receipt.location_id === receiptData.location_id && receipt.date === receiptData.date && receipt.amount === receiptData.amount)
-			);
-
-			if (existingReceipt) {
-				if (!confirm(`כבר קיימת קבלה עם אותו מספר או באותה כתובת/תאריך/סכום.\n\nהאם להוסיף בכל זאת?`)) {
-					return; // ביטול הוספה
+		async function handleReceiptSubmit(event) {
+			event.preventDefault();
+			
+			try {
+				// מצא את הלקוח הנבחר
+				const selectedLocationId = document.getElementById('receiptLocation').value;
+				const location = locations.find(loc => loc.ID === selectedLocationId);
+				
+				if (!selectedLocationId || !location) {
+					showToast('חובה לבחור לקוח', 'error');
+					return;
 				}
-			}
-		   
-            receipts.push(receiptData);
-		   
-			if (access_token) {
-				await saveReceiptToSheets(receiptData);
-				showSuccess('קבלה נשמרה בהצלחה ל-Google Sheets!');
-			} else {
-				showSuccess('קבלה נשמרה מקומית!');
-			}
+				
+				const receiptData = {
+					ID: generateID(),
+					book_number: document.getElementById('receiptBook').value,
+					receipt_number: document.getElementById('receiptNumber').value,
+					date: document.getElementById('receiptDate').value,
+					location_id: selectedLocationId,
+					location_name: location.name,
+					amount: parseFloat(document.getElementById('receiptAmount').value),
+					payment_type: document.getElementById('receiptPaymentType').value,
+					notes: document.getElementById('receiptNotes').value || ''
+				};
+				
+				// בדיקת תקינות
+				const errors = validateReceiptData(receiptData);
+				if (showValidationErrors(errors)) {
+					return;
+				}
+				
+				// בדיקת כפילויות קבלה
+				const existingReceipt = receipts.find(receipt => 
+					(receipt.book_number === receiptData.book_number && receipt.receipt_number === receiptData.receipt_number) ||
+					(receipt.location_id === receiptData.location_id && receipt.date === receiptData.date && receipt.amount === receiptData.amount)
+				);
 
-			closeModal('receiptModal');
-			loadReceiptsTable();
-			loadReceiptFilterOptions();
-			saveToLocalStorage();
-       }
+				if (existingReceipt) {
+					if (!confirm(`כבר קיימת קבלה עם אותו מספר או באותה כתובת/תאריך/סכום.\n\nהאם להוסיף בכל זאת?`)) {
+						return;
+					}
+				}
+				
+				// הוספה למערך
+				receipts.push(receiptData);
+				
+				// שמירה מקומית
+				saveToLocalStorage();
+				
+				// שמירה בענן
+				if (access_token) {
+					try {
+						await saveReceiptToSheets(receiptData);
+						showToast('קבלה נשמרה בהצלחה במערכת ובענן!', 'success');
+					} catch (error) {
+						showToast('קבלה נשמרה מקומית, אך נכשלה בשמירה לענן', 'warning');
+					}
+				} else {
+					showToast('קבלה נשמרה מקומית - התחבר לענן לשמירה מלאה', 'info');
+				}
+
+				// סגירת המודל ורענון
+				closeEditModal();
+				loadReceiptsTable();
+				loadReceiptFilterOptions();
+				
+			} catch (error) {
+				console.error('Error saving receipt:', error);
+				showToast('שגיאה בשמירת הקבלה', 'error');
+			}
+		}
 
        // Utility functions
        function closeModal(modalId) {
