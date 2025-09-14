@@ -1435,7 +1435,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5
         </header>
 
         <main class="main-content">
@@ -10596,10 +10596,10 @@
 			
 			// המתן רגע שהטאב יטען
 			setTimeout(() => {
-				// הגדר סינון ללקוח הספציפי
-				const clientFilter = document.getElementById('filterClient');
+				// הגדר סינון ללקוח הספציפי - תיקון השם!
+				const clientFilter = document.getElementById('filterLocation'); // ← תיקון כאן!
 				if (clientFilter) {
-					clientFilter.value = location.name;
+					clientFilter.value = locationId; // ← גם לפי ID ולא שם!
 				}
 				
 				// הגדר סינון לטיפולים לא שולמו
@@ -10615,7 +10615,7 @@
 			}, 100);
 		}
 
-		// מעבר לטאב קבלות מסונן לפי לקוח
+		// תיקון showClientReceipts
 		function showClientReceipts(locationId) {
 			const location = locations.find(loc => loc.ID === locationId);
 			if (!location) {
@@ -10628,10 +10628,10 @@
 			
 			// המתן רגע שהטאב יטען
 			setTimeout(() => {
-				// הגדר סינון ללקוח הספציפי
-				const receiptClientFilter = document.getElementById('receiptClientFilter');
+				// הגדר סינון ללקוח הספציפי - תיקון השם!
+				const receiptClientFilter = document.getElementById('filterReceiptClient'); // ← תיקון כאן!
 				if (receiptClientFilter) {
-					receiptClientFilter.value = location.name;
+					receiptClientFilter.value = location.name; // ← בקבלות לפי שם
 				}
 				
 				// הפעל את הסינון
@@ -10640,6 +10640,7 @@
 				showToast(`מציג קבלות של ${location.name}`, 'info');
 			}, 100);
 		}
+
 
 		// טעינת לקוחות לבחירה במודל
 		function loadClientsForModal() {
