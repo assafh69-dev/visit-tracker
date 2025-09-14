@@ -1435,7 +1435,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4
         </header>
 
         <main class="main-content">
@@ -9683,74 +9683,6 @@
 			return totalPaid;
 		}
 
-		// עדכון פונקציית חישוב חובות
-		function displayDebts() {
-			const sortBy = document.getElementById('debtSortBy').value;
-			const minAmount = parseFloat(document.getElementById('minDebtAmount').value) || 0;
-			
-			// חישוב חובות לכל לקוח - על בסיס הפרש בין amount לתשלומים
-			const debtsByLocation = {};
-			
-			visits.forEach(visit => {
-				if (visit.amount > 0) {
-					const visitAmount = parseFloat(visit.amount) || 0;
-					const paidAmount = getVisitPaidAmount(visit.ID);
-					const debt = visitAmount - paidAmount;
-					
-					if (debt > 0) { // יש חוב
-						if (!debtsByLocation[visit.location_id]) {
-							const location = locations.find(loc => loc.ID === visit.location_id);
-							debtsByLocation[visit.location_id] = {
-								location: location,
-								totalDebt: 0,
-								visits: []
-							};
-						}
-						
-						debtsByLocation[visit.location_id].totalDebt += debt;
-						debtsByLocation[visit.location_id].visits.push({
-							...visit,
-							debt: debt,
-							paidAmount: paidAmount
-						});
-					}
-				}
-			});
-			
-			// המשך הפונקציה כמו קודם...
-			const debtsArray = Object.values(debtsByLocation)
-				.filter(debt => debt.totalDebt >= minAmount);
-			
-			// מיון
-			debtsArray.sort((a, b) => {
-				switch (sortBy) {
-					case 'amount_desc': return b.totalDebt - a.totalDebt;
-					case 'amount_asc': return a.totalDebt - b.totalDebt;
-					case 'name': return a.location.name.localeCompare(b.location.name);
-					default: return b.totalDebt - a.totalDebt;
-				}
-			});
-			
-			// הצגה...
-			const tbody = document.getElementById('debtsTableBody');
-			tbody.innerHTML = '';
-			
-			debtsArray.forEach(debt => {
-				const row = document.createElement('tr');
-				row.innerHTML = `
-					<td>${debt.location.name}</td>
-					<td>${debt.location.full_address}</td>
-					<td>₪${debt.totalDebt.toLocaleString()}</td>
-					<td>${debt.visits.length}</td>
-					<td>
-						<button onclick="markAllDebtsPaid('${debt.location.ID}')" class="btn btn-success btn-sm">
-							סמן כשולם
-						</button>
-					</td>
-				`;
-				tbody.appendChild(row);
-			});
-		}
 
 		// טעינת תשלומים וקישורים מהענן
 		async function loadPaymentsFromCloud() {
