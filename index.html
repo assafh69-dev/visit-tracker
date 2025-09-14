@@ -1435,7 +1435,7 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3
         </header>
 
         <main class="main-content">
@@ -6973,6 +6973,12 @@
 			const tbody = document.getElementById('debtsTableBody');
 			tbody.innerHTML = '';
 			
+			if (debtsArray.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">אין חובות פתוחים</td></tr>';
+				updateDebtsStats([]);
+				return;
+			}
+			
 			debtsArray.forEach(debt => {
 				const location = debt.location || { name: 'לא נמצא', allowed_day: '', debt_notes: '' };
 				
@@ -10634,18 +10640,15 @@
 			location.debt_notes = notes;
 			saveToLocalStorage();
 			
-			// עדכון בענן
+			// עדכון בענן (אם מחובר)
 			if (access_token && SPREADSHEET_ID) {
 				try {
 					await updateLocationInCloud(location);
-					showToast('הערות חוב עודכנו בהצלחה', 'success');
+					console.log('הערות חוב עודכנו בענן');
 				} catch (error) {
-					showToast('הערות עודכנו מקומית, אך נכשלו בעדכון ענן', 'warning');
+					console.log('הערות עודכנו מקומית בלבד');
 				}
 			}
-			
-			// רענון תצוגה
-			displayDebts();
 		}
 
 		// מעבר לטאב טיפולים מסונן לפי לקוח
