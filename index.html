@@ -1436,7 +1436,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -4706,11 +4706,41 @@
 							end_time: '',
 							amount: parseFloat(amount) || 0,
 							expense: parseFloat(expense) || 0,
-							paid: mapPaymentStatus(paid),
 							notes: notes
 						};
 						
 						visits.push(visitData);
+						
+						// יצירת תשלום אם הטיפול מסומן כשולם
+						if (paid === '1' || paid === 'כן' || paid === 'שולם') {
+							const payment = {
+								ID: generateID(),
+								date: visitDate,
+								time: '12:00',
+								amount: parseFloat(amount) || 0,
+								payment_method: 'cash',
+								source_type: 'import_from_helper',
+								client_id: existingCustomer.ID,
+								client_name: existingCustomer.name,  // ← שם הלקוח!
+								notes: `תשלום עבור ייבוא מטבלת עזר - ${workDone}`,
+								status: 'completed',
+								created_at: new Date().toISOString()
+							};
+							
+							payments.push(payment);
+							
+							const link = {
+								ID: generateID(),
+								payment_id: payment.ID,
+								visit_id: visitData.ID,
+								amount_allocated: parseFloat(amount) || 0,
+								link_type: 'full_payment',
+								created_at: new Date().toISOString()
+							};
+							
+							paymentVisitLinks.push(link);
+						}
+						
 						newVisits.push(visitData); // הוסף למערך החדש
 						// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
 						// await updateSingleLocationTreatmentDates(visitData.location_id);
@@ -8006,6 +8036,7 @@
 									payment_method: 'cash',
 									source_type: 'import_from_helper_fast',
 									client_id: existingCustomer.ID,
+									client_name: existingCustomer.name,
 									notes: `תשלום עבור ייבוא מהיר - ${workDone}`,
 									status: 'completed',
 									created_at: new Date().toISOString()
@@ -9614,7 +9645,7 @@
 				case 'Payments':
 					headers = [
 						'ID', 'date', 'time', 'amount', 'payment_method', 'source_type',
-						'client_id', 'notes', 'status', 'created_at'
+						'client_id', 'client_name', 'notes', 'status', 'created_at'  
 					];
 					break;
 					
@@ -9826,9 +9857,10 @@
 						payment_method: row[4] || '',
 						source_type: row[5] || '',
 						client_id: row[6] || '',
-						notes: row[7] || '',
-						status: row[8] || 'completed',
-						created_at: row[9] || ''
+						client_name: row[7] || '',      // ← הוסף שורה זו
+						notes: row[8] || '',            // ← שינוי אינדקס מ-7 ל-8
+						status: row[9] || 'completed',  // ← שינוי אינדקס מ-8 ל-9
+						created_at: row[10] || ''       // ← שינוי אינדקס מ-9 ל-10
 					}));
 				}
 				
@@ -9976,6 +10008,7 @@
 					payment.payment_method,
 					payment.source_type,
 					payment.client_id,
+					payment.client_name || '',  // ← הוסף שורה זו
 					payment.notes,
 					payment.status,
 					payment.created_at
@@ -9983,7 +10016,7 @@
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Payments!A:J',
+					range: 'Payments!A:K',  // במקום A:J
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: [row] }
 				});
@@ -10044,6 +10077,7 @@
 					payment.payment_method,
 					payment.source_type,
 					payment.client_id,
+					payment.client_name || '',  // ← הוסף שורה זו
 					payment.notes,
 					payment.status,
 					payment.created_at
@@ -10051,7 +10085,7 @@
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Payments!A:J',
+					range: 'Payments!A:K',  // במקום A:J
 					valueInputOption: 'USER_ENTERED',
 					resource: { values }
 				});
