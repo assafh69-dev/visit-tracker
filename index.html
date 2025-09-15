@@ -1435,7 +1435,9 @@
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5
+				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+			</nav>
         </header>
 
         <main class="main-content">
@@ -1648,16 +1650,18 @@
                 <div class="table-container">
                     <table id="locationsTable" class="data-table">
                         <thead>
-                            <tr>
-                                <th>שם</th>
-                                <th>כתובת</th>
-                                <th>איש קשר</th>
-                                <th>יום מותר</th>
-                                <th>מרווח</th>
-                                <th>פעילה</th>
-                                <th>פעולות</th>
-                            </tr>
-                        </thead>
+							<tr>
+								<th>שם</th>
+								<th>כתובת</th>
+								<th>איש קשר</th>
+								<th>יום מותר</th>
+								<th>מרווח</th>
+								<th>פעילות</th>
+								<th>תשלום אחרון</th>  <!-- עמודה חדשה -->
+								<th>הערות חוב</th>      <!-- debt_notes קיימת -->
+								<th>פעולות</th>
+							</tr>
+						</thead>
                         <tbody id="locationsTableBody">
                         </tbody>
                     </table>
@@ -1803,6 +1807,64 @@
 							</tr>
 						</thead>
 						<tbody id="debtsTableBody">
+						</tbody>
+					</table>
+				</div>
+			</section>
+
+			<section id="payments" class="section">
+				<h2>💳 ניהול תשלומים</h2>
+				
+				<!-- פאנל סינון -->
+				<div class="filter-panel-unified">
+					<div class="filter-panel-header">
+						<h4 class="filter-panel-title">🔍 סינון תשלומים</h4>
+						<button onclick="clearPaymentFilters()" class="filter-clear-btn">נקה סינון</button>
+					</div>
+					
+					<div class="filter-row-unified">
+						<div class="filter-group-unified">
+							<label>לקוח:</label>
+							<select id="filterPaymentClient">
+								<option value="">כל הלקוחות</option>
+							</select>
+						</div>
+						<div class="filter-group-unified compact">
+							<label>מתאריך:</label>
+							<input type="date" id="filterPaymentDateFrom" onchange="applyPaymentFilters()">
+						</div>
+						<div class="filter-group-unified compact">
+							<label>עד תאריך:</label>
+							<input type="date" id="filterPaymentDateTo" onchange="applyPaymentFilters()">
+						</div>
+					</div>
+				</div>
+				
+				<!-- סטטיסטיקות -->
+				<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+					<div id="paymentsStatsBox" style="background: #e8f5e8; border: 1px solid #27ae60; border-radius: 6px; padding: 8px 12px; font-size: 13px; color: #2c3e50;">
+						<span id="paymentsCount">0</span> תשלומים מוצגים
+						<span style="margin: 0 10px; color: #666;">|</span>
+						<span style="color: #27ae60; font-weight: bold;" id="paymentsTotal">₪0</span> סה"כ
+						<span style="margin: 0 10px; color: #666;">|</span>
+						<span style="color: #3498db; font-weight: bold;" id="paymentsAverage">₪0</span> ממוצע
+					</div>
+				</div>
+				
+				<!-- טבלת תשלומים -->
+				<div class="table-container">
+					<table id="paymentsTable" class="data-table">
+						<thead>
+							<tr>
+								<th>תאריך</th>
+								<th>לקוח</th>
+								<th>סכום</th>
+								<th>אמצעי תשלום</th>
+								<th>הערות</th>
+								<th>פעולות</th>
+							</tr>
+						</thead>
+						<tbody id="paymentsTableBody">
 						</tbody>
 					</table>
 				</div>
@@ -2349,6 +2411,7 @@
 			try {
 				showLoading('טוען נתונים מהענן...');
 				
+				await ensureClientNameInPayments();		
 				await loadLocationsFromSheets();
 				await loadVisitsFromSheets(); 
 				await loadReceiptsFromSheets();
@@ -2483,6 +2546,9 @@
 				case 'debts':
                     displayDebts();
                     break;
+				case 'payments':
+					loadPayments();
+					break;
             }
         }
 
@@ -3044,7 +3110,7 @@
 			}
 			
 			const historyText = clientVisits.map(visit => 
-				`${formatDate(visit.date)} - ${visit.work_done || 'טיפול'} - ₪${visit.amount} (${getPaymentStatusText(visit.paid)})`
+				`${formatDate(visit.date)} - ${visit.work_done || 'טיפול'} - ₪${visit.amount} (${getPaymentStatusText(getVisitPaymentStatus(visit.ID))})`
 			).join('\n');
 			
 			alert(`היסטוריית טיפולים - ${client.name}:\n\n${historyText}`);
@@ -3337,6 +3403,14 @@
 					<td>${location.allowed_day}</td>
 					<td>${location.interval_weeks}</td>
 					<td>${activeStatus}</td>
+					<td>${formatLastPayment(location.ID)}</td>
+					<td>
+						<input type="text" 
+							   value="${location.debt_notes || ''}" 
+							   placeholder="הערות חוב..."
+							   style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"
+							   onchange="updateDebtNotes('${location.ID}', this.value)">
+					</td>
 					<td>
 						<button class="action-btn edit-btn" onclick="editLocation('${location.ID}')">ערוך</button>
 						<button class="action-btn delete-btn" onclick="deleteLocation('${location.ID}')">מחק</button>
@@ -3507,7 +3581,6 @@
 					end_time: visitData.end_time || '',
 					amount: parseFloat(visitData.amount) || 0,
 					expense: parseFloat(visitData.expense) || 0,
-					paid: visitData.paid || '0',
 					notes: visitData.notes || ''
 				};
 				
@@ -3520,6 +3593,46 @@
 				// הוספה למערך המקומי
 				visits.push(newVisit);
 				
+				// יצירת תשלום אוטומטי אם נדרש
+				if (visitData.paid && (visitData.paid === '1' || visitData.paid === 'כן' || visitData.paid === 'שולם')) {
+					const payment = {
+						ID: generateID(),
+						date: newVisit.date,
+						time: newVisit.start_time || new Date().toTimeString().substr(0, 5),
+						amount: newVisit.amount || 0,
+						payment_method: 'cash',
+						source_type: 'manual_visit_payment',
+						client_id: newVisit.location_id,
+						client_name: location ? location.name : 'לקוח לא ידוע',
+						notes: `תשלום עבור טיפול - ${newVisit.work_done}`,
+						status: 'completed',
+						created_at: new Date().toISOString()
+					};
+					
+					payments.push(payment);
+					
+					const link = {
+						ID: generateID(),
+						payment_id: payment.ID,
+						visit_id: newVisit.ID,
+						amount_allocated: newVisit.amount || 0,
+						link_type: 'full_payment',
+						created_at: new Date().toISOString()
+					};
+					
+					paymentVisitLinks.push(link);
+					
+					// שמירה בענן
+					if (access_token) {
+						try {
+							await savePaymentToCloud(payment);
+							await savePaymentVisitLinkToCloud(link);
+						} catch (error) {
+							console.log('Payment saved locally only');
+						}
+					}
+				}
+				
 				// שמירה מקומית
 				saveToLocalStorage();
 				
@@ -3529,7 +3642,6 @@
 						await saveVisitToSheets(newVisit);
 						showToast('טיפול נשמר בהצלחה במערכת ובענן!', 'success');
 					} catch (error) {
-						console.error('Error saving to cloud:', error);
 						showToast('טיפול נשמר מקומית, אך נכשל בשמירה לענן', 'warning');
 					}
 				} else {
@@ -4858,10 +4970,10 @@
 				
 				// סינון תשלום
 				if (paymentFilter) {
-					const paidStatus = visit.paid;
-					if (paymentFilter === 'כן' && paidStatus !== '1') return false;
-					if (paymentFilter === 'לא' && paidStatus !== '0') return false;
-					if (paymentFilter === 'ללא' && paidStatus !== '2') return false;
+					const paidStatus = getVisitPaymentStatus(visit.ID);
+					if (paymentFilter === 'כן' && paidStatus !== 'paid') return false;
+					if (paymentFilter === 'לא' && paidStatus !== 'unpaid') return false;
+					if (paymentFilter === 'ללא' && paidStatus !== 'no_payment') return false;
 				}
 				
 				return true;
@@ -4918,7 +5030,8 @@
 				
 				const row = document.createElement('tr');
 				const hours = visit.duration_minutes ? (visit.duration_minutes / 60).toFixed(1) : '0';
-				const paymentText = getPaymentStatusText(visit.paid);
+				const paymentStatus = getVisitPaymentStatus(visit.ID); 
+				const paymentText = getPaymentStatusText(paymentStatus);
 				
 				row.innerHTML = `
 					<td>${formatDate(visit.date)}</td>
@@ -4927,7 +5040,7 @@
 					<td>${visit.work_done || '-'}</td>
 					<td>${hours}</td>
 					<td>${visit.amount || 0} ₪</td>
-					<td><span class="payment-status-${visit.paid}">${paymentText}</span></td>
+					<td><span class="payment-status-${paymentStatus}">${paymentText}</span></td>
 					<td>
 						<button class="action-btn edit-btn" onclick="editVisit('${visit.ID}')">ערוך</button>
 						<button class="action-btn delete-btn" onclick="deleteVisit('${visit.ID}')">מחק</button>
@@ -5049,9 +5162,9 @@
 						<div class="form-group">
 							<label>סטטוס תשלום:</label>
 							<select id="editPaid">
-								<option value="0" ${visit.paid === '0' ? 'selected' : ''}>לא שולם</option>
-								<option value="1" ${visit.paid === '1' ? 'selected' : ''}>שולם</option>
-								<option value="2" ${visit.paid === '2' ? 'selected' : ''}>ללא תשלום</option>
+								<option value="0" ${getVisitPaymentStatus(visit.ID) === 'unpaid' ? 'selected' : ''}>לא שולם</option>
+								<option value="1" ${getVisitPaymentStatus(visit.ID) === 'paid' ? 'selected' : ''}>שולם</option>
+								<option value="2" ${getVisitPaymentStatus(visit.ID) === 'no_payment' ? 'selected' : ''}>ללא תשלום</option>
 							</select>
 						</div>
 						
@@ -5161,7 +5274,6 @@
 						updatedVisit.end_time || '',
 						updatedVisit.amount,
 						updatedVisit.expense,
-						updatedVisit.paid,
 						updatedVisit.notes
 					];
 					
@@ -8342,11 +8454,19 @@
 					start_time: document.getElementById('editStartTime').value,
 					amount: parseFloat(document.getElementById('editAmount').value) || 0,
 					expense: parseFloat(document.getElementById('editExpense').value) || 0,
-					paid: document.getElementById('editPaid').value,
 					notes: document.getElementById('editNotes').value
 				};
 				
+				const oldPaymentStatus = visits[visitIndex].paid;
+				const newPaymentStatus = document.getElementById('editPaid').value;
+
+				// עדכן את הביקור
 				visits[visitIndex] = updatedVisit;
+
+				// טפל בשינוי סטטוס תשלום
+				if (oldPaymentStatus !== newPaymentStatus) {
+					await handlePaymentStatusChange(visitId, newPaymentStatus, oldPaymentStatus);
+				}
 				
 				// שמור מקומית תמיד
 				saveToLocalStorage();
@@ -10399,15 +10519,16 @@
 				const amount = parseFloat(treatment.amount) || 0;
 				return sum + amount;
 			}, 0);
-			const paidCount = filteredTreatments.filter(t => t.paid === '1').length;
-			const unpaidCount = filteredTreatments.filter(t => t.paid === '0').length;
+			const paidCount = filteredTreatments.filter(t => getVisitPaymentStatus(t.ID) === 'paid').length;
+			const unpaidCount = filteredTreatments.filter(t => getVisitPaymentStatus(t.ID) === 'unpaid').length;
 			
 			// חישוב חובות פתוחים
 			const openDebts = filteredTreatments
-				.filter(t => t.paid === '0')
+				.filter(t => getVisitPaymentStatus(t.ID) === 'unpaid')
 				.reduce((sum, treatment) => {
 					const amount = parseFloat(treatment.amount) || 0;
-					return sum + amount;
+					const paidAmount = getVisitPaidAmount(treatment.ID);
+					return sum + (amount - paidAmount);
 				}, 0);
 			
 			document.getElementById('treatmentsCount').textContent = count;
@@ -10694,6 +10815,307 @@
 			closeEditModal();
 		}
 
+
+		// הוסף פונקציה חדשה:
+		async function handlePaymentStatusChange(visitId, newStatus, oldStatus) {
+			const visit = visits.find(v => v.ID === visitId);
+			if (!visit) return;
+			
+			console.log(`Payment status change: ${oldStatus} → ${newStatus} for visit ${visitId}`);
+			
+			// אם משנים ל"שולם" ולא היה שולם לפני
+			if (newStatus === '1' && oldStatus !== '1') {
+				// יצור תשלום חדש
+				const payment = {
+					ID: generateID(),
+					date: new Date().toISOString().split('T')[0],
+					time: new Date().toTimeString().substr(0, 5),
+					amount: visit.amount || 0,
+					payment_method: 'cash',
+					source_type: 'status_change_payment',
+					client_id: visit.location_id,
+					client_name: location ? location.name : 'לקוח לא ידוע',
+					notes: `תשלום עבור טיפול מ-${formatDate(visit.date)}`,
+					status: 'completed',
+					created_at: new Date().toISOString()
+				};
+				
+				payments.push(payment);
+				
+				const link = {
+					ID: generateID(),
+					payment_id: payment.ID,
+					visit_id: visitId,
+					amount_allocated: visit.amount || 0,
+					link_type: 'full_payment',
+					created_at: new Date().toISOString()
+				};
+				
+				paymentVisitLinks.push(link);
+				
+				// שמירה בענן
+				if (access_token) {
+					await savePaymentToCloud(payment);
+					await savePaymentVisitLinkToCloud(link);
+				}
+				
+				showToast('נוצר תשלום עבור הטיפול', 'success');
+			}
+			
+			// אם משנים מ"שולם" למשהו אחר
+			if (oldStatus === '1' && newStatus !== '1') {
+				// מצא ומחק קישורי תשלום לטיפול הזה
+				const linksToRemove = paymentVisitLinks.filter(link => link.visit_id === visitId);
+				
+				linksToRemove.forEach(link => {
+					// הסר את הקישור
+					const linkIndex = paymentVisitLinks.findIndex(l => l.ID === link.ID);
+					if (linkIndex > -1) {
+						paymentVisitLinks.splice(linkIndex, 1);
+					}
+					
+					// בדוק אם התשלום קשור לטיפולים נוספים
+					const otherLinks = paymentVisitLinks.filter(l => l.payment_id === link.payment_id);
+					
+					// אם אין קישורים נוספים לתשלום, הסר גם את התשלום
+					if (otherLinks.length === 0) {
+						const paymentIndex = payments.findIndex(p => p.ID === link.payment_id);
+						if (paymentIndex > -1) {
+							payments.splice(paymentIndex, 1);
+						}
+					}
+				});
+				
+				showToast('הוסרו תשלומים קשורים לטיפול', 'info');
+			}
+			
+			// שמור שינויים
+			saveToLocalStorage();
+		}
+
+	///   פונקציות תשלומים   //////////
+	
+		// טעינת אפשרויות סינון תשלומים
+		function loadPaymentFilterOptions() {
+			const clientSelect = document.getElementById('filterPaymentClient');
+			clientSelect.innerHTML = '<option value="">כל הלקוחות</option>';
+			
+			// יצירת רשימת לקוחות ייחודיים מהתשלומים
+			const uniqueClients = [...new Set(payments.map(p => p.client_name).filter(name => name))];
+			uniqueClients.sort().forEach(clientName => {
+				clientSelect.innerHTML += `<option value="${clientName}">${clientName}</option>`;
+			});
+		}
+
+		// סינון תשלומים
+		function applyPaymentFilters() {
+			const clientFilter = document.getElementById('filterPaymentClient').value;
+			const dateFromFilter = document.getElementById('filterPaymentDateFrom').value;
+			const dateToFilter = document.getElementById('filterPaymentDateTo').value;
+			
+			let filteredPayments = [...payments];
+			
+			// סינון לפי לקוח
+			if (clientFilter) {
+				filteredPayments = filteredPayments.filter(p => p.client_name === clientFilter);
+			}
+			
+			// סינון לפי תאריך
+			if (dateFromFilter) {
+				filteredPayments = filteredPayments.filter(p => p.date >= dateFromFilter);
+			}
+			if (dateToFilter) {
+				filteredPayments = filteredPayments.filter(p => p.date <= dateToFilter);
+			}
+			
+			displayPayments(filteredPayments);
+			updatePaymentsStats(filteredPayments);
+		}
+
+		// הצגת תשלומים בטבלה
+		function displayPayments(paymentsToShow = payments) {
+			const tbody = document.getElementById('paymentsTableBody');
+			tbody.innerHTML = '';
+			
+			if (paymentsToShow.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">אין תשלומים להצגה</td></tr>';
+				return;
+			}
+			
+			// מיון לפי תאריך - החדשים ראשונים
+			paymentsToShow.sort((a, b) => new Date(b.date) - new Date(a.date));
+			
+			paymentsToShow.forEach(payment => {
+				const row = document.createElement('tr');
+				row.innerHTML = `
+					<td>${formatDate(payment.date)}</td>
+					<td>${payment.client_name || payment.client_id || 'לא ידוע'}</td>
+					<td style="text-align: center;">
+						<strong style="color: #27ae60;">₪${Math.round(payment.amount).toLocaleString()}</strong>
+					</td>
+					<td>${payment.payment_method || 'לא צוין'}</td>
+					<td><small>${payment.notes || ''}</small></td>
+					<td style="text-align: center;">
+						<button class="action-btn" onclick="showPaymentDetails('${payment.ID}')" style="background: #007bff; padding: 4px 8px; font-size: 11px;">
+							🔍 פירוט
+						</button>
+					</td>
+				`;
+				tbody.appendChild(row);
+			});
+		}
+
+		// עדכון סטטיסטיקות תשלומים
+		function updatePaymentsStats(filteredPayments) {
+			const count = filteredPayments.length;
+			const total = filteredPayments.reduce((sum, payment) => sum + (parseFloat(payment.amount) || 0), 0);
+			const average = count > 0 ? Math.round(total / count) : 0;
+			
+			document.getElementById('paymentsCount').textContent = count;
+			document.getElementById('paymentsTotal').textContent = `₪${Math.round(total).toLocaleString()}`;
+			document.getElementById('paymentsAverage').textContent = `₪${average.toLocaleString()}`;
+		}
+
+		// ניקוי סינונים
+		function clearPaymentFilters() {
+			document.getElementById('filterPaymentClient').value = '';
+			document.getElementById('filterPaymentDateFrom').value = '';
+			document.getElementById('filterPaymentDateTo').value = '';
+			applyPaymentFilters();
+		}
+
+
+		// הצגת פירוט תשלום
+		function showPaymentDetails(paymentId) {
+			const payment = payments.find(p => p.ID === paymentId);
+			if (!payment) {
+				showToast('תשלום לא נמצא', 'error');
+				return;
+			}
+			
+			// מצא טיפולים קשורים לתשלום
+			const relatedLinks = paymentVisitLinks.filter(link => link.payment_id === paymentId);
+			const relatedVisits = relatedLinks.map(link => 
+				visits.find(visit => visit.ID === link.visit_id)
+			).filter(visit => visit);
+			
+			let visitsHTML = '';
+			if (relatedVisits.length > 0) {
+				visitsHTML = relatedVisits.map(visit => `
+					<div style="border: 1px solid #e9ecef; border-radius: 6px; padding: 8px; margin-bottom: 8px;">
+						<strong>📅 ${formatDate(visit.date)}</strong> - ${visit.work_done || 'טיפול'}<br>
+						<small>סכום: ₪${visit.amount || 0}</small>
+					</div>
+				`).join('');
+			} else {
+				visitsHTML = '<div style="color: #666; font-style: italic;">אין טיפולים קשורים</div>';
+			}
+			
+			const modalContent = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 90vw; max-height: 70vh; overflow-y: auto;">
+					<h3 style="margin-bottom: 20px; color: #2c3e50;">💳 פירוט תשלום</h3>
+					
+					<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+						<strong>📅 תאריך:</strong> ${formatDate(payment.date)}<br>
+						<strong>👤 לקוח:</strong> ${payment.client_name || payment.client_id || 'לא ידוע'}<br>
+						<strong>💰 סכום:</strong> ₪${Math.round(payment.amount).toLocaleString()}<br>
+						<strong>💳 אמצעי תשלום:</strong> ${payment.payment_method || 'לא צוין'}<br>
+						${payment.notes ? `<strong>📝 הערות:</strong> ${payment.notes}<br>` : ''}
+					</div>
+					
+					<h4 style="color: #2c3e50; margin-bottom: 10px;">טיפולים קשורים:</h4>
+					<div style="max-height: 200px; overflow-y: auto;">
+						${visitsHTML}
+					</div>
+					
+					<div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+						<button type="button" onclick="closeEditModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+							❌ סגור
+						</button>
+					</div>
+				</div>
+			`;
+			
+			showEditModal(modalContent);
+		}
+
+		// טעינת טאב תשלומים
+		function loadPayments() {
+			loadPaymentFilterOptions();
+			applyPaymentFilters();
+		}
+
+		// פונקציה לחישוב תשלום אחרון של לקוח
+		function getLastPaymentDate(locationId) {
+			const clientPayments = payments.filter(p => p.client_id === locationId);
+			
+			if (clientPayments.length === 0) {
+				return null;
+			}
+			
+			// מיון לפי תאריך - האחרון ראשון
+			clientPayments.sort((a, b) => new Date(b.date) - new Date(a.date));
+			
+			return clientPayments[0].date;
+		}
+
+		// פונקציה לפורמט תצוגת תשלום אחרון
+		function formatLastPayment(locationId) {
+			const lastPaymentDate = getLastPaymentDate(locationId);
+			
+			if (!lastPaymentDate) {
+				return '<span style="color: #999; font-size: 12px;">אין תשלומים</span>';
+			}
+			
+			const daysSince = Math.floor((new Date() - new Date(lastPaymentDate)) / (1000 * 60 * 60 * 24));
+			const color = daysSince > 90 ? '#e74c3c' : daysSince > 30 ? '#f39c12' : '#27ae60';
+			
+			return `
+				<div style="text-align: center;">
+					<div style="font-size: 12px;">${formatDate(lastPaymentDate)}</div>
+					<div style="color: ${color}; font-size: 11px; font-weight: bold;">
+						${daysSince === 0 ? 'היום' : daysSince === 1 ? 'אתמול' : `לפני ${daysSince} ימים`}
+					</div>
+				</div>
+			`;
+		}
+
+
+		// פונקציה לוידוא שיש עמודת client_name בטבלת Payments
+		async function ensureClientNameInPayments() {
+			if (!access_token || !SPREADSHEET_ID) return;
+			
+			try {
+				// קריאת הכותרות הנוכחיות
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Payments!1:1'
+				});
+				
+				const headers = response.result.values ? response.result.values[0] : [];
+				
+				// בדיקה אם client_name קיים
+				if (!headers.includes('client_name')) {
+					console.log('Adding client_name column to Payments sheet...');
+					
+					// הוספת העמודה החדשה
+					const newHeaders = [...headers, 'client_name'];
+					
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: `Payments!A1:${String.fromCharCode(64 + newHeaders.length)}1`,
+						valueInputOption: 'USER_ENTERED',
+						resource: {
+							values: [newHeaders]
+						}
+					});
+					
+					console.log('✅ client_name column added to Payments sheet');
+				}
+			} catch (error) {
+				console.error('Error ensuring client_name column:', error);
+			}
+		}
 
    </script>
 </body>
