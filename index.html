@@ -1436,7 +1436,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -10949,7 +10949,7 @@
 				const row = document.createElement('tr');
 				row.innerHTML = `
 					<td>${formatDate(payment.date)}</td>
-					<td>${payment.client_name || payment.client_id || 'לא ידוע'}</td>
+					<td>${payment.client_name || getClientNameById(payment.client_id) || 'לא ידוע'}</td>
 					<td style="text-align: center;">
 						<strong style="color: #27ae60;">₪${Math.round(payment.amount).toLocaleString()}</strong>
 					</td>
@@ -11115,6 +11115,12 @@
 			} catch (error) {
 				console.error('Error ensuring client_name column:', error);
 			}
+		}
+
+		// פונקציה לקבלת שם לקוח לפי ID
+		function getClientNameById(clientId) {
+			const location = locations.find(loc => loc.ID === clientId);
+			return location ? location.name : null;
 		}
 
    </script>
