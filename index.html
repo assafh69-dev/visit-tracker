@@ -1436,7 +1436,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
 			</nav>
         </header>
 
@@ -5695,7 +5695,7 @@
 				
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${sheetName}!A1:${String.fromCharCode(64 + headers.length)}1`,
+					range: `${sheetName}!A1:Z1`,
 					valueInputOption: 'RAW',
 					values: [headers]
 				});
