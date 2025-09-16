@@ -1436,7 +1436,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -2498,15 +2498,9 @@
 			console.log('App starting...');
 			initializeGoogleAPIs();
 			loadAllData(); // זה יטען נתונים מקומיים
-			setupEventListeners();
 		});
 
-        // Setup event listeners
-        function setupEventListeners() {
-            // Visitform submission
-            document.getElementById('visitForm').addEventListener('submit', handleVisitSubmit);
-        }
-
+       
         // Navigation
         function showSection(sectionName) {
             // Hide all sections
@@ -5462,17 +5456,6 @@
 			return existingVisit;
 		}
 	   
-	   // תוספה - אתחול תאריך ושעה נוכחיים
-		function initializeVisitForm() {
-			const now = new Date();
-			document.getElementById('visitDate').value = now.toISOString().split('T')[0];
-			document.getElementById('visitTime').value = now.toTimeString().split(':').slice(0,2).join(':');
-		}
-
-		// קריאה לאתחול כשהדף נטען
-		document.addEventListener('DOMContentLoaded', function() {
-			initializeVisitForm();
-		});
 	   
 	   // פונקציה לשמירת הגדרות לענן
 		async function saveSettingsToCloud() {
