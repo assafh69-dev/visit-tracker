@@ -1562,7 +1562,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 			</nav>
         </header>
 
@@ -1630,11 +1630,15 @@
 					</div>
 					
 					<div class="filter-row-unified">
-						<div class="filter-group-unified">
-							<label>לקוח:</label>
-							<select id="filterLocation">
-								<option value="">כל הלקוחות</option>
-							</select>
+						<div class="filter-row-unified">
+							<div class="filter-group-unified">
+								<label>חיפוש חכם:</label>
+								<input type="text" id="visitSmartSearch" placeholder="חפש לקוח לפי שם, כתובת, עיר..." 
+									   oninput="handleVisitSmartSearch(this.value)">
+							</div>
+							<div class="filter-group-unified small">
+								<button type="button" onclick="clearVisitSmartSearch()" class="filter-clear-btn">נקה חיפוש</button>
+							</div>
 						</div>
 						<div class="filter-group-unified medium">
 							<label>סטטוס תשלום:</label>
@@ -1823,11 +1827,15 @@
 								<option value="כרטיס אשראי">כרטיס אשראי</option>
 							</select>
 						</div>
-						<div class="filter-group-unified">
-							<label>לקוח:</label>
-							<select id="filterReceiptClient" onchange="applyReceiptFilters()">
-								<option value="">כל הלקוחות</option>
-							</select>
+						<div class="filter-row-unified">
+							<div class="filter-group-unified">
+								<label>חיפוש חכם:</label>
+								<input type="text" id="receiptSmartSearch" placeholder="חפש לקוח לפי שם, כתובת, עיר..." 
+									   oninput="handleReceiptSmartSearch(this.value)">
+							</div>
+							<div class="filter-group-unified small">
+								<button type="button" onclick="clearReceiptSmartSearch()" class="filter-clear-btn">נקה חיפוש</button>
+							</div>
 						</div>
 					</div>
 					
@@ -1953,14 +1961,16 @@
 						<h4 class="filter-panel-title">🔍 סינון תשלומים</h4>
 						<button onclick="clearPaymentFilters()" class="filter-clear-btn">נקה סינון</button>
 					</div>
-					
 					<div class="filter-row-unified">
 						<div class="filter-group-unified">
-							<label>לקוח:</label>
-							<select id="filterPaymentClient">
-								<option value="">כל הלקוחות</option>
-							</select>
+							<label>חיפוש חכם:</label>
+							<input type="text" id="paymentSmartSearch" placeholder="חפש לקוח לפי שם, כתובת, עיר..." 
+								   oninput="handlePaymentSmartSearch(this.value)">
 						</div>
+						<div class="filter-group-unified small">
+							<button type="button" onclick="clearPaymentSmartSearch()" class="filter-clear-btn">נקה חיפוש</button>
+						</div>
+					</div>
 						<div class="filter-group-unified compact">
 							<label>מתאריך:</label>
 							<input type="date" id="filterPaymentDateFrom" onchange="applyPaymentFilters()">
@@ -5201,45 +5211,61 @@
 	   
 		// תוספה - סינון וטעינת טיפולים
 		function applyVisitFilters() {
+			console.log('🔍 מסנן טיפולים...');
+			
+			// בדיקה אם יש חיפוש חכם פעיל
+			const smartSearch = document.getElementById('visitSmartSearch')?.value;
+			if (smartSearch && smartSearch.trim()) {
+				// אם יש חיפוש חכם, השתמש בו במקום בסינון הרגיל
+				handleVisitSmartSearch(smartSearch);
+				return;
+			}
+			
+			let filteredVisits = [...visits];
+			
+			// סינון לפי לקוח (רשימה נפתחת)
 			const locationFilter = document.getElementById('filterLocation').value;
+			if (locationFilter) {
+				filteredVisits = filteredVisits.filter(visit => visit.location_id === locationFilter);
+			}
+			
+			// סינון לפי תשלום
 			const paymentFilter = document.getElementById('filterPayment').value;
-			const dateFromFilter = document.getElementById('filterDateFrom').value;
-			const dateToFilter = document.getElementById('filterDateTo').value;
+			if (paymentFilter) {
+				filteredVisits = filteredVisits.filter(visit => {
+					const paymentStatus = getVisitPaymentStatus(visit.ID);
+					switch(paymentFilter) {
+						case 'כן': return paymentStatus === 'paid';
+						case 'לא': return paymentStatus === 'unpaid';
+						case 'ללא': return paymentStatus === 'no_payment';
+						default: return true;
+					}
+				});
+			}
+			
+			// סינון לפי תאריך
+			const dateFrom = document.getElementById('filterDateFrom').value;
+			const dateTo = document.getElementById('filterDateTo').value;
+			
+			if (dateFrom) {
+				filteredVisits = filteredVisits.filter(visit => visit.date >= dateFrom);
+			}
+			if (dateTo) {
+				filteredVisits = filteredVisits.filter(visit => visit.date <= dateTo);
+			}
+			
+			// הגבלת תוצאות
 			const maxResults = parseInt(document.getElementById('maxResults').value) || 200;
 			
-			console.log('🔍 מסנן טיפולים...', {locationFilter, paymentFilter, dateFromFilter, dateToFilter, maxResults});
+			// מיון לפי תאריך (החדשים ראשונים)
+			filteredVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
 			
-			const tbody = document.getElementById('visitsHistoryTableBody');
-			tbody.innerHTML = '<tr><td colspan="8" class="loading-indicator">טוען טיפולים...</td></tr>';
-			
-			// סינון מהיר עם early return
-			let filteredVisits = visits.filter(visit => {
-				// סינון תאריך קודם כל (הכי חשוב לביצועים)
-				if (dateFromFilter && visit.date < dateFromFilter) return false;
-				if (dateToFilter && visit.date > dateToFilter) return false;
-				
-				// סינון לקוח
-				if (locationFilter && visit.location_id != locationFilter) return false;
-				
-				// סינון תשלום
-				if (paymentFilter) {
-					const paidStatus = getVisitPaymentStatus(visit.ID);
-					if (paymentFilter === 'כן' && paidStatus !== 'paid') return false;
-					if (paymentFilter === 'לא' && paidStatus !== 'unpaid') return false;
-					if (paymentFilter === 'ללא' && paidStatus !== 'no_payment') return false;
-				}
-				
-				return true;
-			});
-			
-			const totalFound = filteredVisits.length;
-			console.log(`✅ נמצאו ${totalFound} טיפולים מתוך ${visits.length}`);
-			
-			// הגבלת תוצאות להצגה
+			// הגבלת מספר התוצאות
 			if (filteredVisits.length > maxResults) {
-				showToast(`מציג ${maxResults} טיפולים מתוך ${totalFound} (שנה במקסימום תוצאות)`, 'info', 3000);
 				filteredVisits = filteredVisits.slice(0, maxResults);
 			}
+			
+			console.log(`✅ נמצאו ${filteredVisits.length} טיפולים מתוך ${visits.length}`);
 			
 			displayFilteredVisits(filteredVisits);
 			updateTreatmentsStats(filteredVisits);
@@ -5250,9 +5276,18 @@
 			document.getElementById('filterPayment').value = '';
 			document.getElementById('filterDateFrom').value = '';
 			document.getElementById('filterDateTo').value = '';
+			document.getElementById('maxResults').value = '200';
+			
+			// ניקוי החיפוש החכם
+			if (document.getElementById('visitSmartSearch')) {
+				document.getElementById('visitSmartSearch').value = '';
+			}
+			
+			// הסרת active מכפתורים מהירים
+			document.querySelectorAll('.filter-quick-btn').forEach(btn => btn.classList.remove('active'));
 			
 			displayFilteredVisits(visits);
-			updateTreatmentsStats(filteredVisits);
+			updateTreatmentsStats(visits);
 		}
 
 		// תוספה - הצגת טיפולים מסוננים
@@ -10222,6 +10257,14 @@
 		}
 
 		function applyReceiptFilters() {
+			// בדיקה אם יש חיפוש חכם פעיל
+			const smartSearch = document.getElementById('receiptSmartSearch')?.value;
+			if (smartSearch && smartSearch.trim()) {
+				// אם יש חיפוש חכם, השתמש בו במקום בסינון הרגיל
+				handleReceiptSmartSearch(smartSearch);
+				return;
+			}
+			
 			let filteredReceipts = [...receipts];
 			
 			// Filter by book
@@ -10288,6 +10331,11 @@
 			document.getElementById('filterReceiptDateFrom').value = '';
 			document.getElementById('filterReceiptDateTo').value = '';
 			document.getElementById('receiptSortBy').value = 'date_desc';
+			
+			// ניקוי החיפוש החכם
+			if (document.getElementById('receiptSmartSearch')) {
+				document.getElementById('receiptSmartSearch').value = '';
+			}
 			
 			displayFilteredReceipts(receipts);
 		}
@@ -10756,6 +10804,14 @@
 
 		// סינון תשלומים
 		function applyPaymentFilters() {
+			// בדיקה אם יש חיפוש חכם פעיל
+			const smartSearch = document.getElementById('paymentSmartSearch')?.value;
+			if (smartSearch && smartSearch.trim()) {
+				// אם יש חיפוש חכם, השתמש בו במקום בסינון הרגיל
+				handlePaymentSmartSearch(smartSearch);
+				return;
+			}
+			
 			const clientFilter = document.getElementById('filterPaymentClient').value;
 			const dateFromFilter = document.getElementById('filterPaymentDateFrom').value;
 			const dateToFilter = document.getElementById('filterPaymentDateTo').value;
@@ -10833,6 +10889,12 @@
 			document.getElementById('filterPaymentClient').value = '';
 			document.getElementById('filterPaymentDateFrom').value = '';
 			document.getElementById('filterPaymentDateTo').value = '';
+			
+			// ניקוי החיפוש החכם
+			if (document.getElementById('paymentSmartSearch')) {
+				document.getElementById('paymentSmartSearch').value = '';
+			}
+			
 			applyPaymentFilters();
 		}
 
@@ -11751,6 +11813,192 @@
 				</div>
 			`;
 			document.body.appendChild(modal);
+		}
+
+		// חיפוש חכם בטיפולים
+		function handleVisitSmartSearch(searchTerm) {
+			if (!searchTerm.trim()) {
+				// אם אין מונח חיפוש, הצג הכל
+				applyVisitFilters();
+				return;
+			}
+			
+			// מציאת לקוחות מתאימים
+			const matchingClients = searchClientsAdvanced(searchTerm);
+			const clientIds = matchingClients.map(client => client.ID);
+			
+			if (clientIds.length === 0) {
+				displayFilteredVisits([]);
+				updateTreatmentsStats([]);
+				return;
+			}
+			
+			// סינון הטיפולים לפי הלקוחות שנמצאו
+			let filteredVisits = visits.filter(visit => clientIds.includes(visit.location_id));
+			
+			// החלת הסינונים הרגילים (תאריכים, תשלומים) על התוצאות
+			filteredVisits = applyAdditionalFiltersToVisits(filteredVisits);
+			
+			displayFilteredVisits(filteredVisits);
+			updateTreatmentsStats(filteredVisits);
+		}
+
+		// ניקוי חיפוש חכם
+		function clearVisitSmartSearch() {
+			document.getElementById('visitSmartSearch').value = '';
+			applyVisitFilters();
+		}
+
+		// פונקציה לhחלת הסינונים הרגילים על קבוצה מסוימת של ביקורים
+		function applyAdditionalFiltersToVisits(visitsArray) {
+			let filtered = [...visitsArray];
+			
+			// סינון לפי תשלום
+			const paymentFilter = document.getElementById('filterPayment')?.value;
+			if (paymentFilter) {
+				filtered = filtered.filter(visit => {
+					const paymentStatus = getVisitPaymentStatus(visit.ID);
+					switch(paymentFilter) {
+						case 'כן': return paymentStatus === 'paid';
+						case 'לא': return paymentStatus === 'unpaid';
+						case 'ללא': return paymentStatus === 'no_payment';
+						default: return true;
+					}
+				});
+			}
+			
+			// סינון לפי תאריך
+			const dateFrom = document.getElementById('filterDateFrom')?.value;
+			const dateTo = document.getElementById('filterDateTo')?.value;
+			
+			if (dateFrom) {
+				filtered = filtered.filter(visit => visit.date >= dateFrom);
+			}
+			if (dateTo) {
+				filtered = filtered.filter(visit => visit.date <= dateTo);
+			}
+			
+			return filtered;
+		}
+
+		// חיפוש חכם בקבלות
+		function handleReceiptSmartSearch(searchTerm) {
+			if (!searchTerm.trim()) {
+				applyReceiptFilters();
+				return;
+			}
+			
+			// מציאת לקוחות מתאימים
+			const matchingClients = searchClientsAdvanced(searchTerm);
+			const clientNames = matchingClients.map(client => client.name);
+			
+			if (clientNames.length === 0) {
+				displayFilteredReceipts([]);
+				return;
+			}
+			
+			// סינון הקבלות לפי הלקוחות שנמצאו
+			let filteredReceipts = receipts.filter(receipt => 
+				clientNames.some(name => 
+					receipt.location_name && receipt.location_name.includes(name)
+				)
+			);
+			
+			// החלת הסינונים הרגילים
+			filteredReceipts = applyAdditionalReceiptFilters(filteredReceipts);
+			
+			displayFilteredReceipts(filteredReceipts);
+		}
+
+		// ניקוי חיפוש חכם בקבלות
+		function clearReceiptSmartSearch() {
+			document.getElementById('receiptSmartSearch').value = '';
+			applyReceiptFilters();
+		}
+
+		// פונקציה להחלת סינונים נוספים על קבלות
+		function applyAdditionalReceiptFilters(receiptsArray) {
+			let filtered = [...receiptsArray];
+			
+			// סינון לפי פנקס
+			const bookFilter = document.getElementById('filterReceiptBook')?.value;
+			if (bookFilter) {
+				filtered = filtered.filter(r => r.book_number === bookFilter);
+			}
+			
+			// סינון לפי סוג תשלום
+			const paymentFilter = document.getElementById('filterPaymentType')?.value;
+			if (paymentFilter) {
+				filtered = filtered.filter(r => r.payment_type === paymentFilter);
+			}
+			
+			// סינון לפי תאריך
+			const dateFrom = document.getElementById('filterReceiptDateFrom')?.value;
+			const dateTo = document.getElementById('filterReceiptDateTo')?.value;
+			
+			if (dateFrom) {
+				filtered = filtered.filter(r => r.date >= dateFrom);
+			}
+			if (dateTo) {
+				filtered = filtered.filter(r => r.date <= dateTo);
+			}
+			
+			return filtered;
+		}
+
+		// חיפוש חכם בתשלומים
+		function handlePaymentSmartSearch(searchTerm) {
+			if (!searchTerm.trim()) {
+				applyPaymentFilters();
+				return;
+			}
+			
+			// מציאת לקוחות מתאימים
+			const matchingClients = searchClientsAdvanced(searchTerm);
+			const clientNames = matchingClients.map(client => client.name);
+			
+			if (clientNames.length === 0) {
+				displayPayments([]);
+				updatePaymentsStats([]);
+				return;
+			}
+			
+			// סינון התשלומים לפי הלקוחות שנמצאו
+			let filteredPayments = payments.filter(payment => 
+				clientNames.some(name => 
+					payment.client_name && payment.client_name.includes(name)
+				)
+			);
+			
+			// החלת הסינונים הרגילים
+			filteredPayments = applyAdditionalPaymentFilters(filteredPayments);
+			
+			displayPayments(filteredPayments);
+			updatePaymentsStats(filteredPayments);
+		}
+
+		// ניקוי חיפוש חכם בתשלומים
+		function clearPaymentSmartSearch() {
+			document.getElementById('paymentSmartSearch').value = '';
+			applyPaymentFilters();
+		}
+
+		// פונקציה להחלת סינונים נוספים על תשלומים
+		function applyAdditionalPaymentFilters(paymentsArray) {
+			let filtered = [...paymentsArray];
+			
+			// סינון לפי תאריך
+			const dateFrom = document.getElementById('filterPaymentDateFrom')?.value;
+			const dateTo = document.getElementById('filterPaymentDateTo')?.value;
+			
+			if (dateFrom) {
+				filtered = filtered.filter(p => p.date >= dateFrom);
+			}
+			if (dateTo) {
+				filtered = filtered.filter(p => p.date <= dateTo);
+			}
+			
+			return filtered;
 		}
 
 
