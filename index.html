@@ -1562,7 +1562,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 			</nav>
         </header>
 
@@ -2312,6 +2312,63 @@
 		};
 
 
+		// Initialize Google APIs
+		function initializeGoogleAPIs() {
+			gapi.load('client', initializeGapiClient);
+			google.accounts.id.initialize({
+				client_id: CLIENT_ID,
+				callback: handleCredentialResponse,
+			});
+		}
+		
+		async function initializeGapiClient() {
+			try {
+				await gapi.client.init({
+					apiKey: API_KEY,
+					discoveryDocs: [DISCOVERY_DOC],
+				});
+				gapi_loaded = true;
+				console.log('GAPI client initialized successfully');
+			} catch (error) {
+				console.error('Error initializing GAPI client:', error);
+				showToast('שגיאה באתחול Google API', 'error');
+			}
+		}
+
+		function handleCredentialResponse(response) {
+			access_token = response.credential;
+			showSuccess('התחברת בהצלחה ל-Google!');
+		}
+		
+		
+		async function validateToken() {
+			if (!access_token || !gapi.client) {
+				updateCloudStatus('🔐 לא מחובר לענן', 'נותק');
+				return false;
+			}
+			
+			try {
+				// בדיקה פשוטה - נסה לקרוא מהטבלה
+				await gapi.client.sheets.spreadsheets.get({
+					spreadsheetId: SPREADSHEET_ID || 'test'
+				});
+				return true;
+			} catch (error) {
+				if (error.status === 401) {
+					console.log('Google token expired');
+					access_token = null;
+					updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
+					document.getElementById('statusText').classList.remove('connected');
+					document.getElementById('saveBtn').disabled = true;
+					document.getElementById('loadBtn').disabled = true;
+					showToast('⚠️ החיבור לגוגל פג - התחבר מחדש', 'warning');
+					return false;
+				}
+				updateCloudStatus('⚠️ בעיית חיבור לענן', 'שגיאה');
+				return false;
+			}
+		}
+
 		// Add this function if it's missing or not accessible:
 		async function connectToGoogleSheets() {
 			try {
@@ -2347,73 +2404,104 @@
 			}
 		}
 
-
-		// Initialize Google APIs
-		function initializeGoogleAPIs() {
-			gapi.load('client', initializeGapiClient);
-			google.accounts.id.initialize({
-				client_id: CLIENT_ID,
-				callback: handleCredentialResponse,
-			});
-		}
-		
-		async function initializeGapiClient() {
-			try {
-				await gapi.client.init({
-					apiKey: API_KEY,
-					discoveryDocs: [DISCOVERY_DOC],
-				});
-				gapi_loaded = true;
-				console.log('GAPI client initialized successfully');
-			} catch (error) {
-				console.error('Error initializing GAPI client:', error);
-				showToast('שגיאה באתחול Google API', 'error');
+		function updateCloudStatus(status, lastAction) {
+			const statusElement = document.getElementById('statusText');
+			const lastSavedElement = document.getElementById('lastSaved');
+			
+			if (statusElement) {
+				statusElement.textContent = status;
+				
+				// עדכון צבעים לפי סטטוס
+				if (status.includes('מחובר') || status.includes('מסונכרן')) {
+					statusElement.style.color = '#28a745'; // ירוק
+					statusElement.style.fontWeight = 'bold';
+					statusElement.style.background = 'transparent'; // הסר רקע
+					statusElement.classList.add('connected');
+				} else if (status.includes('שומר') || status.includes('מעדכן')) {
+					statusElement.style.color = '#ffc107'; // צהוב
+					statusElement.style.fontWeight = 'bold';
+				} else if (status.includes('שגיאה')) {
+					statusElement.style.color = '#dc3545'; // אדום
+					statusElement.style.fontWeight = 'bold';
+					statusElement.classList.remove('connected');
+				} else if (status.includes('נדרש חיבור')) {
+					statusElement.style.color = '#fd7e14'; // כתום
+					statusElement.style.fontWeight = 'bold';
+					statusElement.classList.remove('connected');
+				}
+			}
+			
+			// עדכון זמן פעולה אחרונה
+			if (lastSavedElement && lastAction) {
+				lastSavedElement.textContent = `${lastAction}: ${new Date().toLocaleTimeString('he-IL')}`;
+				//lastSavedElement.style.color = //'#333'; // צבע כהה יותר
 			}
 		}
 
-		function handleCredentialResponse(response) {
-			access_token = response.credential;
-			showSuccess('התחברת בהצלחה ל-Google!');
-		}
 
-		// תוספה - פונקציה שנקראת אחרי ההתחברות
-		async function loadAllDataFromSheets() {
+		// Single comprehensive loading function
+		async function loadAllFromSheets() {
+			// Early validation
 			if (!await validateToken()) {
 				showToast('אין חיבור לגוגל - טוען נתונים מקומיים', 'warning');
-				return;
+				return false;
 			}
 			
 			try {
 				showLoading('טוען נתונים מ-Google Sheets...');
 				
+				// Load data in sequence with error handling for each
+				try {
+					await ensureClientNameInPayments();
+				} catch (error) {
+					console.warn('Could not ensure client name column:', error.message);
+				}
+				
 				await loadLocationsFromSheets();
 				await loadVisitsFromSheets(); 
 				await loadReceiptsFromSheets();
 				
-				// Update UI
+				try {
+					await loadPaymentsFromCloud();
+				} catch (error) {
+					console.warn('Could not load payments:', error.message);
+				}
+				
+				// Update UI components
 				loadLocationsForSelect();
 				loadLocationsTable();
 				loadReceiptsTable();
 				loadReceiptFilterOptions();
+				loadFilterOptions();
+				loadPaymentFilterOptions();
 				loadPlanningData();
 				
 				hideLoading();
-				showSuccess('נתונים נטענו בהצלחה מ-Google Sheets!');
-				setTimeout(checkCriticalDebts, 2000); // התראה אחרי 2 שניות
+				showSuccess('נתונים נטענו בהצלחה מהענן!');
+				
+				// Optional post-load actions
+				setTimeout(() => {
+					if (typeof checkCriticalDebts === 'function') {
+						checkCriticalDebts();
+					}
+				}, 2000);
+				
+				return true;
 				
 			} catch (error) {
 				console.error('Error loading data from sheets:', error);
+				hideLoading();
 				
 				if (error.status === 401) {
 					access_token = null;
 					showToast('⚠️ החיבור פג במהלך טעינה', 'warning');
 				} else {
-					showError('שגיאה בטעינת נתונים מ-Google Sheets');
+					showError('שגיאה בטעינת נתונים מהענן');
 				}
-				throw error;
+				
+				return false;
 			}
 		}
-
 		
 
 		// תוספה - טעינת מיקומים (גינות)
@@ -2524,69 +2612,140 @@
 				console.error('Error loading receipts:', error);
 			}
 		}
-		
-		// תוספה - שמירת מיקום חדש לשיטס
-		/* async function saveLocationToSheets(locationData) {
-		
-			console.log('📝 saveLocationToSheets started with client_requests:', locationData.client_requests);
-			
-			if (!await validateToken()) {
-				console.log('❌ Token validation failed');
-				showToast('החיבור לגוגל פג - שמירה מקומית בלבד', 'warning');
+	
+		// טעינת תשלומים וקישורים מהענן
+		async function loadPaymentsFromCloud() {
+			if (!access_token || !SPREADSHEET_ID) {
 				return;
 			}
-    
-			console.log('✅ Token validated, proceeding to save...');
-	
+			
 			try {
-				const values = [[
-					locationData.ID,
-					locationData.name,
-					locationData.full_address,
-					locationData.neighborhood,
-					locationData.city,
-					locationData.contact_person,
-					locationData.phone,
-					locationData.allowed_day,
-					locationData.interval_weeks,
-					locationData.temp_addition,
-					locationData.base_amount,
-					locationData.active,
-					locationData.notes || '',
-					locationData.last_visit,
-					locationData.next_visit,
-					locationData.client_requests|| ''
-				]];
-				
-				console.log('📤 About to send to Google Sheets:', values[0][15]); 
-				
-				await gapi.client.sheets.spreadsheets.values.append({
+				// טען תשלומים
+				const paymentsResponse = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.LOCATIONS}!A:P`,
-					valueInputOption: 'USER_ENTERED',
-					resource: { values: values }
+					range: 'Payments!A2:J1000'
 				});
 				
-				console.log('✅ Successfully saved to Google Sheets');
+				if (paymentsResponse.result.values) {
+					payments = paymentsResponse.result.values.map(row => ({
+						ID: row[0] || '',
+						date: row[1] || '',
+						time: row[2] || '',
+						amount: parseFloat(row[3]) || 0,
+						payment_method: row[4] || '',
+						source_type: row[5] || '',
+						client_id: row[6] || '',
+						client_name: row[7] || '',
+						notes: row[8] || '',
+						status: row[9] || 'completed',
+						created_at: row[10] || '',
+						reference: row[11] || '',        // שדה חדש
+						check_date: row[12] || '',       // שדה חדש
+						bank_account: row[13] || '',     // שדה חדש
+						payment_details: row[14] || ''   // שדה חדש
+					}));
+				}
+				
+				// טען קישורים
+				const linksResponse = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'PaymentVisitLink!A2:F1000'
+				});
+				
+				if (linksResponse.result.values) {
+					paymentVisitLinks = linksResponse.result.values.map(row => ({
+						ID: row[0] || '',
+						payment_id: row[1] || '',
+						visit_id: row[2] || '',
+						amount_allocated: parseFloat(row[3]) || 0,
+						link_type: row[4] || '',
+						created_at: row[5] || ''
+					}));
+				}
+				
+				console.log(`✅ נטענו ${payments.length} תשלומים ו-${paymentVisitLinks.length} קישורים`);
 				
 			} catch (error) {
-			
-				console.error('❌ Error in saveLocationToSheets:', error);
-			
-				console.error('Error saving location to sheets:', error);
-				
-				if (error.status === 401) {
-					access_token = null;
-					showToast('⚠️ החיבור פג - התחבר מחדש', 'warning');
-					document.getElementById('statusText').textContent = '🔓 נותק';
-				} else {
-					// שגיאות אחרות (לא קשורות לאסימון)
-					showToast('⚠️ שגיאה בשמירה לענן', 'error');
-				}
-				throw error;
-
+				console.error('שגיאה בטעינת תשלומים:', error);
 			}
-		}  */
+		}
+	
+		// פונקציה לוידוא שיש עמודת client_name בטבלת Payments
+		async function ensureClientNameInPayments() {
+			if (!access_token || !SPREADSHEET_ID) return;
+			
+			try {
+				// קריאת הכותרות הנוכחיות
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Payments!1:1'
+				});
+				
+				const headers = response.result.values ? response.result.values[0] : [];
+				
+				// בדיקה אם client_name קיים
+				if (!headers.includes('client_name')) {
+					console.log('Adding client_name column to Payments sheet...');
+					
+					// הוספת העמודה החדשה
+					const newHeaders = [...headers, 'client_name'];
+					
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: `Payments!A1:${String.fromCharCode(64 + newHeaders.length)}1`,
+						valueInputOption: 'USER_ENTERED',
+						resource: {
+							values: [newHeaders]
+						}
+					});
+					
+					console.log('✅ client_name column added to Payments sheet');
+				}
+			} catch (error) {
+				console.error('Error ensuring client_name column:', error);
+			}
+		}
+
+
+		async function saveAllToSheets() {
+			if (!await validateToken()) {
+				showToast('אין חיבור לגוגל - שמירה מקומית בלבד', 'warning');
+				return;
+			}
+			
+			try {
+				updateCloudStatus('שומר נתונים לענן...', 'מעדכן');
+				
+				// שמירה בבאצ'ים (לא לולאות!)
+				const savePromises = [];
+				
+				if (locations.length > 0) {
+					showToast(`שומר ${locations.length} לקוחות בבת אחת...`, 'info', 2000);
+					savePromises.push(saveLocationsBatch(locations));
+				}
+				
+				if (visits.length > 0) {
+					showToast(`שומר ${visits.length} ביקורים בבת אחת...`, 'info', 2000);
+					savePromises.push(saveVisitsBatch(visits));
+				}
+				
+				if (receipts.length > 0) {
+					showToast(`שומר ${receipts.length} קבלות בבת אחת...`, 'info', 2000);
+					savePromises.push(saveReceiptsBatch(receipts));
+				}
+				
+				// המתן לכל השמירות במקביל
+				await Promise.all(savePromises);
+				
+				updateCloudStatus('מחובר ומסונכרן', 'נשמר');
+				showToast(`כל הנתונים נשמרו בענן בהצלחה!`, 'success', 3000);
+				
+			} catch (error) {
+				console.error('Error saving all data to cloud:', error);
+				updateCloudStatus('שגיאה בשמירה לענן', 'שגיאה');
+				showToast('שגיאה בשמירה לענן - הנתונים נשמרו מקומית', 'error');
+			}
+		}
 
 
 		async function saveLocationToSheets(locationData) {
@@ -2709,36 +2868,9 @@
 			}
 		}
 
+
+
 		
-		// תוספה - טעינת כל הנתונים מהענן
-		async function loadAllFromSheets() {
-			try {
-				showLoading('טוען נתונים מהענן...');
-				
-				await ensureClientNameInPayments();		
-				await loadLocationsFromSheets();
-				await loadVisitsFromSheets(); 
-				await loadReceiptsFromSheets();
-				await loadPaymentsFromCloud(); 
-				
-				// עדכון התצוגה
-				loadLocationsForSelect();
-				loadLocationsTable();
-				loadReceiptsTable();
-				loadReceiptFilterOptions();
-				loadPlanningData();
-				
-				hideLoading();
-				showSuccess('נתונים נטענו בהצלחה מהענן!');
-				
-			} catch (error) {
-				console.error('Error loading all data:', error);
-				hideLoading();
-				showError('שגיאה בטעינת הנתונים מהענן');
-			}
-		}
-
-
 		// Local Storage functions
 		function saveToLocalStorage() {
 			try {
@@ -8689,35 +8821,6 @@
 
 	   
 	   ////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-	   
-	   // החלף את validateToken בפונקציה זו:
-		async function validateToken() {
-			if (!access_token || !gapi.client) {
-				updateCloudStatus('🔐 לא מחובר לענן', 'נותק');
-				return false;
-			}
-			
-			try {
-				// בדיקה פשוטה - נסה לקרוא מהטבלה
-				await gapi.client.sheets.spreadsheets.get({
-					spreadsheetId: SPREADSHEET_ID || 'test'
-				});
-				return true;
-			} catch (error) {
-				if (error.status === 401) {
-					console.log('Google token expired');
-					access_token = null;
-					updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
-					document.getElementById('statusText').classList.remove('connected');
-					document.getElementById('saveBtn').disabled = true;
-					document.getElementById('loadBtn').disabled = true;
-					showToast('⚠️ החיבור לגוגל פג - התחבר מחדש', 'warning');
-					return false;
-				}
-				updateCloudStatus('⚠️ בעיית חיבור לענן', 'שגיאה');
-				return false;
-			}
-		}
 
 		// החלף את saveEditedLocation בפונקציה זו:
 		function saveEditedLocation(locationId) {
@@ -8927,83 +9030,6 @@
 
 	
 
-		// החלף את saveAllToSheets בפונקציה זו:
-		async function saveAllToSheets() {
-			if (!await validateToken()) {
-				showToast('אין חיבור לגוגל - שמירה מקומית בלבד', 'warning');
-				return;
-			}
-			
-			try {
-				updateCloudStatus('שומר נתונים לענן...', 'מעדכן');
-				
-				// שמירה בבאצ'ים (לא לולאות!)
-				const savePromises = [];
-				
-				if (locations.length > 0) {
-					showToast(`שומר ${locations.length} לקוחות בבת אחת...`, 'info', 2000);
-					savePromises.push(saveLocationsBatch(locations));
-				}
-				
-				if (visits.length > 0) {
-					showToast(`שומר ${visits.length} ביקורים בבת אחת...`, 'info', 2000);
-					savePromises.push(saveVisitsBatch(visits));
-				}
-				
-				if (receipts.length > 0) {
-					showToast(`שומר ${receipts.length} קבלות בבת אחת...`, 'info', 2000);
-					savePromises.push(saveReceiptsBatch(receipts));
-				}
-				
-				// המתן לכל השמירות במקביל
-				await Promise.all(savePromises);
-				
-				updateCloudStatus('מחובר ומסונכרן', 'נשמר');
-				showToast(`כל הנתונים נשמרו בענן בהצלחה!`, 'success', 3000);
-				
-			} catch (error) {
-				console.error('Error saving all data to cloud:', error);
-				updateCloudStatus('שגיאה בשמירה לענן', 'שגיאה');
-				showToast('שגיאה בשמירה לענן - הנתונים נשמרו מקומית', 'error');
-			}
-		}
-
-		// הוסף את פונקציית updateCloudStatus החדשה:
-		function updateCloudStatus(status, lastAction) {
-			const statusElement = document.getElementById('statusText');
-			const lastSavedElement = document.getElementById('lastSaved');
-			
-			if (statusElement) {
-				statusElement.textContent = status;
-				
-				// עדכון צבעים לפי סטטוס
-				if (status.includes('מחובר') || status.includes('מסונכרן')) {
-					statusElement.style.color = '#28a745'; // ירוק
-					statusElement.style.fontWeight = 'bold';
-					statusElement.style.background = 'transparent'; // הסר רקע
-					statusElement.classList.add('connected');
-				} else if (status.includes('שומר') || status.includes('מעדכן')) {
-					statusElement.style.color = '#ffc107'; // צהוב
-					statusElement.style.fontWeight = 'bold';
-				} else if (status.includes('שגיאה')) {
-					statusElement.style.color = '#dc3545'; // אדום
-					statusElement.style.fontWeight = 'bold';
-					statusElement.classList.remove('connected');
-				} else if (status.includes('נדרש חיבור')) {
-					statusElement.style.color = '#fd7e14'; // כתום
-					statusElement.style.fontWeight = 'bold';
-					statusElement.classList.remove('connected');
-				}
-			}
-			
-			// עדכון זמן פעולה אחרונה
-			if (lastSavedElement && lastAction) {
-				lastSavedElement.textContent = `${lastAction}: ${new Date().toLocaleTimeString('he-IL')}`;
-				//lastSavedElement.style.color = //'#333'; // צבע כהה יותר
-			}
-		}
-	   
-	   
 	   
 	   //////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	   
@@ -9883,64 +9909,6 @@
 			});
 			
 			return totalPaid;
-		}
-
-
-		// טעינת תשלומים וקישורים מהענן
-		async function loadPaymentsFromCloud() {
-			if (!access_token || !SPREADSHEET_ID) {
-				return;
-			}
-			
-			try {
-				// טען תשלומים
-				const paymentsResponse = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Payments!A2:J1000'
-				});
-				
-				if (paymentsResponse.result.values) {
-					payments = paymentsResponse.result.values.map(row => ({
-						ID: row[0] || '',
-						date: row[1] || '',
-						time: row[2] || '',
-						amount: parseFloat(row[3]) || 0,
-						payment_method: row[4] || '',
-						source_type: row[5] || '',
-						client_id: row[6] || '',
-						client_name: row[7] || '',
-						notes: row[8] || '',
-						status: row[9] || 'completed',
-						created_at: row[10] || '',
-						reference: row[11] || '',        // שדה חדש
-						check_date: row[12] || '',       // שדה חדש
-						bank_account: row[13] || '',     // שדה חדש
-						payment_details: row[14] || ''   // שדה חדש
-					}));
-				}
-				
-				// טען קישורים
-				const linksResponse = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'PaymentVisitLink!A2:F1000'
-				});
-				
-				if (linksResponse.result.values) {
-					paymentVisitLinks = linksResponse.result.values.map(row => ({
-						ID: row[0] || '',
-						payment_id: row[1] || '',
-						visit_id: row[2] || '',
-						amount_allocated: parseFloat(row[3]) || 0,
-						link_type: row[4] || '',
-						created_at: row[5] || ''
-					}));
-				}
-				
-				console.log(`✅ נטענו ${payments.length} תשלומים ו-${paymentVisitLinks.length} קישורים`);
-				
-			} catch (error) {
-				console.error('שגיאה בטעינת תשלומים:', error);
-			}
 		}
 
 
@@ -11138,42 +11106,7 @@
 		}
 
 
-		// פונקציה לוידוא שיש עמודת client_name בטבלת Payments
-		async function ensureClientNameInPayments() {
-			if (!access_token || !SPREADSHEET_ID) return;
-			
-			try {
-				// קריאת הכותרות הנוכחיות
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Payments!1:1'
-				});
-				
-				const headers = response.result.values ? response.result.values[0] : [];
-				
-				// בדיקה אם client_name קיים
-				if (!headers.includes('client_name')) {
-					console.log('Adding client_name column to Payments sheet...');
-					
-					// הוספת העמודה החדשה
-					const newHeaders = [...headers, 'client_name'];
-					
-					await gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: SPREADSHEET_ID,
-						range: `Payments!A1:${String.fromCharCode(64 + newHeaders.length)}1`,
-						valueInputOption: 'USER_ENTERED',
-						resource: {
-							values: [newHeaders]
-						}
-					});
-					
-					console.log('✅ client_name column added to Payments sheet');
-				}
-			} catch (error) {
-				console.error('Error ensuring client_name column:', error);
-			}
-		}
-
+		
 		// פונקציה לקבלת שם לקוח לפי ID
 		function getClientNameById(clientId) {
 			const location = locations.find(loc => loc.ID === clientId);
