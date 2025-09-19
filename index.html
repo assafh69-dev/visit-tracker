@@ -1562,7 +1562,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 			</nav>
         </header>
 
@@ -3225,17 +3225,15 @@
 					statusText = 'מתוכנן להיום';
 					break;
 				case 'weekly':
-					const daysDiffText = client.daysDiff === 0 ? 'היום' : 
-									   client.daysDiff === 1 ? 'מחר' : 
-									   `בעוד ${client.daysDiff} ימים`;
-					statusText = daysDiffText;
+					statusText = client.daysDiff === 0 ? 'היום' : 
+								client.daysDiff === 1 ? 'מחר' : 
+								`בעוד ${client.daysDiff} ימים`;
 					break;
 				case 'overdue':
 					statusText = client.daysOverdue === 1 ? 'איחור יום אחד' : `איחור ${client.daysOverdue} ימים`;
 					break;
 				case 'future':
-					const daysDiffText = `בעוד ${client.daysDiff} ימים`;
-					statusText = daysDiffText;
+					statusText = `בעוד ${client.daysDiff} ימים`;
 					break;	
 			}
 			
