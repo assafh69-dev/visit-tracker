@@ -1562,7 +1562,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 			</nav>
         </header>
 
@@ -1668,6 +1668,17 @@
 						<div class="filter-group-unified compact">
 							<label>עד תאריך:</label>
 							<input type="date" id="filterDateTo" onchange="applyVisitFilters()">
+						</div>
+					</div>
+					
+					<div class="filter-row-unified">
+						<div class="filter-group-unified small">
+							<label>Show clients:</label>
+							<select id="filterActiveClients" onchange="applyVisitFilters()">
+								<option value="1" selected>Active only</option>
+								<option value="">All clients</option>
+								<option value="0">Inactive only</option>
+							</select>
 						</div>
 					</div>
 				</div>
@@ -1811,6 +1822,17 @@
 					</div>
 					
 					<div class="filter-row-unified">
+						<div class="filter-group-unified">
+							<label>חיפוש חכם:</label>
+							<input type="text" id="receiptSmartSearch" placeholder="חפש לקוח לפי שם, כתובת, עיר..." 
+								   oninput="handleReceiptSmartSearch(this.value)">
+						</div>
+						<div class="filter-group-unified small">
+							<button type="button" onclick="clearReceiptSmartSearch()" class="filter-clear-btn">נקה חיפוש</button>
+						</div>
+					</div>
+
+					<div class="filter-row-unified">
 						<div class="filter-group-unified medium">
 							<label>פנקס קבלות:</label>
 							<select id="filterReceiptBook" onchange="applyReceiptFilters()">
@@ -1827,16 +1849,7 @@
 								<option value="כרטיס אשראי">כרטיס אשראי</option>
 							</select>
 						</div>
-						<div class="filter-row-unified">
-							<div class="filter-group-unified">
-								<label>חיפוש חכם:</label>
-								<input type="text" id="receiptSmartSearch" placeholder="חפש לקוח לפי שם, כתובת, עיר..." 
-									   oninput="handleReceiptSmartSearch(this.value)">
-							</div>
-							<div class="filter-group-unified small">
-								<button type="button" onclick="clearReceiptSmartSearch()" class="filter-clear-btn">נקה חיפוש</button>
-							</div>
-						</div>
+						
 					</div>
 					
 					<div class="filter-row-unified">
@@ -1897,6 +1910,7 @@
 				<div class="filter-panel-unified">
 					<div class="filter-panel-header">
 						<h4 class="filter-panel-title">🔍 חובות פתוחים</h4>
+						<button onclick="clearDebtFilters()" class="filter-clear-btn">נקה סינון</button>
 					</div>
 					
 					<div class="filter-row-unified">
@@ -1913,6 +1927,27 @@
 						<div class="filter-group-unified compact">
 							<label>סכום מינימלי:</label>
 							<input type="number" id="minDebtAmount" placeholder="0" onchange="displayDebts()">
+						</div>
+					</div>
+					<div class="filter-row-unified">
+						<div class="filter-group-unified">
+							<label>Filter by client:</label>
+							<select id="debtClientFilter" onchange="displayDebts()">
+								<option value="">All clients</option>
+							</select>
+						</div>
+						<div class="filter-group-unified compact">
+							<label>Preferred day:</label>
+							<select id="debtDayFilter" onchange="displayDebts()">
+								<option value="">All days</option>
+								<option value="כל יום">Any day</option>
+								<option value="יום ראשון">Sunday</option>
+								<option value="יום שני">Monday</option>
+								<option value="יום שלישי">Tuesday</option>
+								<option value="יום רביעי">Wednesday</option>
+								<option value="יום חמישי">Thursday</option>
+								<option value="יום שישי">Friday</option>
+							</select>
 						</div>
 					</div>
 				</div>
@@ -2734,48 +2769,76 @@
        
         // Navigation
         function showSection(sectionName) {
-            // Hide all sections
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
-            
-            // Remove active class from all nav buttons
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Show selected section
-            document.getElementById(sectionName).classList.add('active');
-            
-            // Add active class to clicked button
-            if (event && event.target) {
-				event.target.classList.add('active');
+			// Hide all sections
+			document.querySelectorAll('.section').forEach(section => {
+				section.classList.remove('active');
+			});
+			
+			// Show selected section
+			const targetSection = document.getElementById(sectionName);
+			if (!targetSection) {
+				console.warn(`Section ${sectionName} not found`);
+				return;
 			}
-            
-            // Load section-specific data
-            switch(sectionName) {
-                case 'planning':
-                    loadPlanningData();
-                    break;
+			
+			targetSection.classList.add('active');
+			
+			// Update navigation buttons
+			document.querySelectorAll('.nav-btn').forEach(btn => {
+				btn.classList.remove('active');
+			});
+			
+			// Set active nav button
+			const navButtons = document.querySelectorAll('.nav-btn');
+			const buttonTexts = {
+				'planning': 'תכנון',
+				'history': 'טיפולים',
+				'locations': 'לקוחות',
+				'receipts': 'קבלות',
+				'debts': '💰 חובות',
+				'payments': '💳 תשלומים',
+				'system': 'מערכת v3.0'
+			};
+			
+			navButtons.forEach(btn => {
+				if (btn.textContent.includes(buttonTexts[sectionName])) {
+					btn.classList.add('active');
+				}
+			});
+			
+			// Load section-specific data
+			switch(sectionName) {
+				case 'planning':
+					loadPlanningData();
+					break;
 				case 'history':
-					loadVisitsHistory();
+					loadFilterOptions();
+					applyVisitFilters();
 					break;
-                case 'locations':
+				case 'locations':
 					loadLocationsTable();
-					document.getElementById('filterActive').value = '1'; // ברירת מחדל לפעילים
 					break;
-                case 'receipts':
-                    loadReceiptsTable();
-					loadReceiptFilterOptions();
-                    break;
+				case 'receipts':
+					loadReceiptsTable();
+					break;
 				case 'debts':
-                    displayDebts();
-                    break;
-				case 'payments':
-					loadPayments();
+					if (typeof loadDebtFilterOptions === 'function') {
+						loadDebtFilterOptions();
+					}
+					if (typeof displayDebts === 'function') {
+						displayDebts();
+					}
 					break;
-            }
-        }
+				case 'payments':
+					if (typeof loadPaymentFilterOptions === 'function') {
+						loadPaymentFilterOptions();
+					}
+					if (typeof applyPaymentFilters === 'function') {
+						applyPaymentFilters();
+					}
+					break;
+			}
+		}
 
         // Data loading functions
 		async function loadAllData() {
@@ -3627,7 +3690,13 @@
 					<td>${location.contact_person}</td>
 					<td>${location.allowed_day}</td>
 					<td>${location.interval_weeks}</td>
-					<td>${activeStatus}</td>
+					<td>
+						<select onchange="updateLocationActive('${location.ID}', this.value)" 
+								style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+							<option value="1" ${location.active === '1' ? 'selected' : ''}>פעיל</option>
+							<option value="0" ${location.active === '0' ? 'selected' : ''}>לא פעיל</option>
+						</select>
+					</td>
 					<td>${formatLastPayment(location.ID)}</td>
 					<td>
 						<input type="text" 
@@ -5199,14 +5268,17 @@
 		// תוספה - טעינת אפשרויות סינון
 		function loadFilterOptions() {
 			const locationSelect = document.getElementById('filterLocation');
-			locationSelect.innerHTML = '<option value="">כל הלקוחות</option>';
 			
-			locations.forEach(location => {
-				const option = document.createElement('option');
-				option.value = location.ID;
-				option.textContent = location.name;
-				locationSelect.appendChild(option);
-			});
+			if (locationSelect) {
+				locationSelect.innerHTML = '<option value="">כל הלקוחות</option>';
+				
+				locations.forEach(location => {
+					const option = document.createElement('option');
+					option.value = location.ID;
+					option.textContent = location.name;
+					locationSelect.appendChild(option);
+				});
+			}
 		}
 	   
 		// תוספה - סינון וטעינת טיפולים
@@ -5227,6 +5299,15 @@
 			const locationFilter = document.getElementById('filterLocation').value;
 			if (locationFilter) {
 				filteredVisits = filteredVisits.filter(visit => visit.location_id === locationFilter);
+			}
+			
+			// Filter by client active status
+			const activeFilter = document.getElementById('filterActiveClients')?.value;
+			if (activeFilter !== "") {
+				filteredVisits = filteredVisits.filter(visit => {
+					const location = locations.find(loc => loc.ID === visit.location_id);
+					return location && location.active === activeFilter;
+				});
 			}
 			
 			// סינון לפי תשלום
@@ -5277,6 +5358,7 @@
 			document.getElementById('filterDateFrom').value = '';
 			document.getElementById('filterDateTo').value = '';
 			document.getElementById('maxResults').value = '200';
+			document.getElementById('filterActiveClients').value = '1'; // Reset to active only
 			
 			// ניקוי החיפוש החכם
 			if (document.getElementById('visitSmartSearch')) {
@@ -7283,6 +7365,18 @@
 		function displayDebts() {
 			const sortBy = document.getElementById('debtSortBy').value;
 			const minAmount = parseFloat(document.getElementById('minDebtAmount').value) || 0;
+			const clientFilter = document.getElementById('debtClientFilter')?.value;
+			const dayFilter = document.getElementById('debtDayFilter')?.value;
+
+			// Apply client filter
+			if (clientFilter) {
+				debtsArray = debtsArray.filter(debt => debt.location.ID === clientFilter);
+			}
+
+			// Apply day filter  
+			if (dayFilter) {
+				debtsArray = debtsArray.filter(debt => debt.location.allowed_day === dayFilter);
+			}
 			
 			// חישוב חובות לכל לקוח
 			const debtsByLocation = {};
@@ -7382,6 +7476,43 @@
 			// עדכון סטטיסטיקות
 			updateDebtsStats(debtsArray);
 		}
+
+		// Function to populate debt filter dropdowns
+		// Update loadDebtFilterOptions function with safety checks:
+		function loadDebtFilterOptions() {
+			const clientSelect = document.getElementById('debtClientFilter');
+			
+			if (clientSelect) {
+				clientSelect.innerHTML = '<option value="">All clients</option>';
+				
+				// Get unique clients with debts
+				const clientsWithDebts = new Set();
+				
+				visits.forEach(visit => {
+					if (visit.amount > 0) {
+						const visitAmount = parseFloat(visit.amount) || 0;
+						const paidAmount = getVisitPaidAmount(visit.ID);
+						const debt = visitAmount - paidAmount;
+						
+						if (debt > 0) {
+							clientsWithDebts.add(visit.location_id);
+						}
+					}
+				});
+				
+				// Add clients to dropdown
+				locations
+					.filter(loc => clientsWithDebts.has(loc.ID))
+					.sort((a, b) => a.name.localeCompare(b.name))
+					.forEach(location => {
+						const option = document.createElement('option');
+						option.value = location.ID;
+						option.textContent = location.name;
+						clientSelect.appendChild(option);
+					});
+			}
+		}
+
 
 		// עדכון כרטיסי סיכום
 		function updateDebtsSummary(debtsArray) {
@@ -10246,25 +10377,19 @@
 			uniqueBooks.sort().forEach(book => {
 				bookSelect.innerHTML += `<option value="${book}">${book}</option>`;
 			});
-			
-			// Load clients
-			const clientSelect = document.getElementById('filterReceiptClient');
-			const uniqueClients = [...new Set(receipts.map(r => r.location_name).filter(c => c))];
-			clientSelect.innerHTML = '<option value="">כל הלקוחות</option>';
-			uniqueClients.sort().forEach(client => {
-				clientSelect.innerHTML += `<option value="${client}">${client}</option>`;
-			});
 		}
 
+		// Update applyReceiptFilters function - add this at the beginning:
 		function applyReceiptFilters() {
-			// בדיקה אם יש חיפוש חכם פעיל
+			// Check if smart search is active
 			const smartSearch = document.getElementById('receiptSmartSearch')?.value;
 			if (smartSearch && smartSearch.trim()) {
-				// אם יש חיפוש חכם, השתמש בו במקום בסינון הרגיל
+				// If smart search is active, use it instead of regular filtering
 				handleReceiptSmartSearch(smartSearch);
 				return;
 			}
 			
+			// Regular filtering logic continues here...
 			let filteredReceipts = [...receipts];
 			
 			// Filter by book
@@ -10279,12 +10404,6 @@
 				filteredReceipts = filteredReceipts.filter(r => r.payment_type === paymentFilter);
 			}
 			
-			// Filter by client
-			const clientFilter = document.getElementById('filterReceiptClient').value;
-			if (clientFilter) {
-				filteredReceipts = filteredReceipts.filter(r => r.location_name === clientFilter);
-			}
-			
 			// Filter by date range
 			const dateFrom = document.getElementById('filterReceiptDateFrom').value;
 			const dateTo = document.getElementById('filterReceiptDateTo').value;
@@ -10296,12 +10415,11 @@
 				filteredReceipts = filteredReceipts.filter(r => r.date <= dateTo);
 			}
 			
-			// Sort results
+			// Sort and display results
 			const sortBy = document.getElementById('receiptSortBy').value;
 			sortReceiptResults(filteredReceipts, sortBy);
-			
-			// Display filtered results
 			displayFilteredReceipts(filteredReceipts);
+			updateReceiptsStats(filteredReceipts);
 		}
 
 		function sortReceiptResults(receipts, sortBy) {
@@ -10327,10 +10445,10 @@
 		function clearReceiptFilters() {
 			document.getElementById('filterReceiptBook').value = '';
 			document.getElementById('filterPaymentType').value = '';
-			document.getElementById('filterReceiptClient').value = '';
 			document.getElementById('filterReceiptDateFrom').value = '';
 			document.getElementById('filterReceiptDateTo').value = '';
 			document.getElementById('receiptSortBy').value = 'date_desc';
+			
 			
 			// ניקוי החיפוש החכם
 			if (document.getElementById('receiptSmartSearch')) {
@@ -10600,6 +10718,33 @@
 			}
 		}
 
+		// פונקציה לעדכון סטטוס פעילות לקוח
+		async function updateLocationActive(locationId, activeStatus) {
+			const location = locations.find(loc => loc.ID === locationId);
+			if (!location) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			// עדכון מקומי
+			location.active = activeStatus;
+			saveToLocalStorage();
+			
+			// עדכון בענן (אם מחובר)
+			if (access_token && SPREADSHEET_ID) {
+				try {
+					await updateLocationInCloud(location);
+					console.log('סטטוס פעילות עודכן בענן');
+				} catch (error) {
+					console.log('סטטוס עודכן מקומית בלבד');
+				}
+			}
+			
+			// רענון טבלאות רלוונטיות
+			loadLocationsForSelect(); // עדכון רשימות נפתחות
+			updateLocationsStats(getFilteredLocations()); // עדכון סטטיסטיקות
+		}
+
 		// מעבר לטאב טיפולים מסונן לפי לקוח
 		function showClientTreatments(locationId) {
 			const location = locations.find(loc => loc.ID === locationId);
@@ -10632,7 +10777,6 @@
 			}, 100);
 		}
 
-		// תיקון showClientReceipts
 		function showClientReceipts(locationId) {
 			const location = locations.find(loc => loc.ID === locationId);
 			if (!location) {
@@ -10640,19 +10784,17 @@
 				return;
 			}
 			
-			// מעבר לטאב קבלות
+			// Move to receipts tab
 			showSection('receipts');
 			
-			// המתן רגע שהטאב יטען
+			// Wait for tab to load
 			setTimeout(() => {
-				// הגדר סינון ללקוח הספציפי - תיקון השם!
-				const receiptClientFilter = document.getElementById('filterReceiptClient'); // ← תיקון כאן!
-				if (receiptClientFilter) {
-					receiptClientFilter.value = location.name; // ← בקבלות לפי שם
+				// Use smart search instead of client filter
+				const smartSearchInput = document.getElementById('receiptSmartSearch');
+				if (smartSearchInput) {
+					smartSearchInput.value = location.name;
+					handleReceiptSmartSearch(location.name);
 				}
-				
-				// הפעל את הסינון
-				applyReceiptFilters();
 				
 				showToast(`מציג קבלות של ${location.name}`, 'info');
 			}, 100);
@@ -10793,13 +10935,16 @@
 		// טעינת אפשרויות סינון תשלומים
 		function loadPaymentFilterOptions() {
 			const clientSelect = document.getElementById('filterPaymentClient');
-			clientSelect.innerHTML = '<option value="">כל הלקוחות</option>';
 			
-			// יצירת רשימת לקוחות ייחודיים מהתשלומים
-			const uniqueClients = [...new Set(payments.map(p => p.client_name).filter(name => name))];
-			uniqueClients.sort().forEach(clientName => {
-				clientSelect.innerHTML += `<option value="${clientName}">${clientName}</option>`;
-			});
+			if (clientSelect) {
+				clientSelect.innerHTML = '<option value="">כל הלקוחות</option>';
+				
+				// Create unique client list from payments
+				const uniqueClients = [...new Set(payments.map(p => p.client_name).filter(name => name))];
+				uniqueClients.sort().forEach(clientName => {
+					clientSelect.innerHTML += `<option value="${clientName}">${clientName}</option>`;
+				});
+			}
 		}
 
 		// סינון תשלומים
@@ -12000,6 +12145,130 @@
 			
 			return filtered;
 		}
+
+		// Add new function for clearing debt filters:
+		function clearDebtFilters() {
+			document.getElementById('debtSortBy').value = 'amount_desc';
+			document.getElementById('minDebtAmount').value = '';
+			document.getElementById('debtClientFilter').value = '';
+			document.getElementById('debtDayFilter').value = '';
+			displayDebts();
+		}
+
+		// Smart search for receipts
+		function handleReceiptSmartSearch(searchTerm) {
+			if (!searchTerm.trim()) {
+				applyReceiptFilters();
+				return;
+			}
+			
+			// Find matching clients
+			const matchingClients = searchClientsAdvanced(searchTerm);
+			const clientNames = matchingClients.map(client => client.name);
+			
+			if (clientNames.length === 0) {
+				displayFilteredReceipts([]);
+				updateReceiptsStats([]);
+				return;
+			}
+			
+			// Filter receipts by found clients
+			let filteredReceipts = receipts.filter(receipt => 
+				clientNames.some(name => 
+					receipt.location_name && receipt.location_name.includes(name)
+				)
+			);
+			
+			// Apply additional filters
+			filteredReceipts = applyAdditionalReceiptFilters(filteredReceipts);
+			
+			displayFilteredReceipts(filteredReceipts);
+			updateReceiptsStats(filteredReceipts);
+		}
+
+		// Clear smart search for receipts
+		function clearReceiptSmartSearch() {
+			document.getElementById('receiptSmartSearch').value = '';
+			applyReceiptFilters();
+		}
+
+		// Apply additional receipt filters
+		function applyAdditionalReceiptFilters(receiptsArray) {
+			let filtered = [...receiptsArray];
+			
+			// Filter by book
+			const bookFilter = document.getElementById('filterReceiptBook')?.value;
+			if (bookFilter) {
+				filtered = filtered.filter(r => r.book_number === bookFilter);
+			}
+			
+			// Filter by payment type
+			const paymentFilter = document.getElementById('filterPaymentType')?.value;
+			if (paymentFilter) {
+				filtered = filtered.filter(r => r.payment_type === paymentFilter);
+			}
+			
+			// Filter by date range
+			const dateFrom = document.getElementById('filterReceiptDateFrom')?.value;
+			const dateTo = document.getElementById('filterReceiptDateTo')?.value;
+			
+			if (dateFrom) {
+				filtered = filtered.filter(r => r.date >= dateFrom);
+			}
+			if (dateTo) {
+				filtered = filtered.filter(r => r.date <= dateTo);
+			}
+			
+			return filtered;
+		}
+
+
+		// Add this helper function at the top of your script:
+		function safeSetHTML(elementId, html) {
+			const element = document.getElementById(elementId);
+			if (element) {
+				element.innerHTML = html;
+				return true;
+			}
+			return false;
+		}
+
+		function safeSetValue(elementId, value) {
+			const element = document.getElementById(elementId);
+			if (element) {
+				element.value = value;
+				return true;
+			}
+			return false;
+		} 
+
+		// Add this at the bottom of your script, before </script>
+		document.addEventListener('DOMContentLoaded', function() {
+			console.log('App starting...');
+			
+			// Initialize data from local storage
+			loadFromLocalStorage();
+			
+			// Set default section
+			showSection('planning');
+			
+			// Initialize cost settings if they exist
+			if (costSettings.hourlyRate) {
+				const hourlyRateEl = document.getElementById('hourlyRate');
+				if (hourlyRateEl) hourlyRateEl.value = costSettings.hourlyRate;
+			}
+			
+			// Auto-connect to Google Sheets if credentials exist
+			if (localStorage.getItem('google_access_token')) {
+				setTimeout(() => {
+					if (typeof connectToGoogleSheets === 'function') {
+						connectToGoogleSheets();
+					}
+				}, 1000);
+			}
+			
+			console.log('App initialization complete');
+		});
 
 
    </script>
