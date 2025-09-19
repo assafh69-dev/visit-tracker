@@ -1562,7 +1562,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
 			</nav>
         </header>
 
@@ -2311,6 +2311,43 @@
 			workerCost: 50
 		};
 
+
+		// Add this function if it's missing or not accessible:
+		async function connectToGoogleSheets() {
+			try {
+				console.log('Connecting to Google Sheets...');
+				updateCloudStatus('🔗 מתחבר...', 'מתחבר');
+				showToast('מתחבר ל-Google Sheets...', 'info');
+				
+				const tokenClient = google.accounts.oauth2.initTokenClient({
+					client_id: CLIENT_ID,
+					scope: SCOPES,
+					callback: async (response) => {
+						access_token = response.access_token;
+						
+						// עדכון סטטוס
+						updateCloudStatus('✅ מחובר ומסונכרן', 'התחבר');
+						document.getElementById('statusText').classList.add('connected');
+						document.getElementById('saveBtn').disabled = false;
+						document.getElementById('loadBtn').disabled = false;
+						
+						showToast('התחברת בהצלחה ל-Google Sheets!', 'success');
+						
+						// טעינה אוטומטית
+						await loadAllFromSheets();
+					}
+				});
+				
+				tokenClient.requestAccessToken();
+				
+			} catch (error) {
+				console.error('Error connecting to Google Sheets:', error);
+				updateCloudStatus('❌ שגיאה בהתחברות', 'שגיאה');
+				showToast('שגיאה בהתחברות ל-Google Sheets', 'error');
+			}
+		}
+
+
 		// Initialize Google APIs
 		function initializeGoogleAPIs() {
 			gapi.load('client', initializeGapiClient);
@@ -2760,14 +2797,7 @@
 		}
 
 
-
-        document.addEventListener('DOMContentLoaded', function() {
-			console.log('App starting...');
-			initializeGoogleAPIs();
-			loadAllData(); // זה יטען נתונים מקומיים
-		});
-
-       
+      
         // Navigation
         function showSection(sectionName) {
 			// Hide all sections
@@ -3016,6 +3046,9 @@
 		// מיון לקוחות לפי התצוגה הנוכחית
 		function sortPlanningClients() {
 			planningClients.sort((a, b) => {
+				// הגדרת dayOrder פעם אחת בתחילת הפונקציה
+				const dayOrder = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
+				
 				switch (currentPlanningView) {
 					case 'daily':
 						// מיון לפי שעה מועדפת אם קיימת, אחרת לפי שם
@@ -3023,7 +3056,6 @@
 						
 					case 'weekly':
 						// מיון לפי יום בשבוע, ואז לפי תאריך
-						const dayOrder = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
 						const aDay = dayOrder.indexOf(a.allowed_day || 'יום ראשון');
 						const bDay = dayOrder.indexOf(b.allowed_day || 'יום ראשון');
 						if (aDay !== bDay) return aDay - bDay;
@@ -3035,13 +3067,12 @@
 						
 					case 'future':
 						// מיון לפי יום בשבוע, ואז לפי תאריך (כמו שבועי)
-						const dayOrder = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
-						const aDay = dayOrder.indexOf(a.allowed_day || 'יום ראשון');
-						const bDay = dayOrder.indexOf(b.allowed_day || 'יום ראשון');
-						if (aDay !== bDay) return aDay - bDay;
+						const aDayFuture = dayOrder.indexOf(a.allowed_day || 'יום ראשון');
+						const bDayFuture = dayOrder.indexOf(b.allowed_day || 'יום ראשון');
+						if (aDayFuture !== bDayFuture) return aDayFuture - bDayFuture;
 						// בתוך אותו יום - לפי תאריך ואז לפי שם
 						if (a.daysDiff !== b.daysDiff) return a.daysDiff - b.daysDiff;
-						return (a.name || '').localeCompare(b.name || '');	
+						return (a.name || '').localeCompare(b.name || '');   
 						
 					default:
 						return 0;
@@ -8896,52 +8927,7 @@
 			}
 		}
 
-
-		async function connectToGoogleSheets() {
-			try {
-				console.log('Connecting to Google Sheets...');
-				updateCloudStatus('🔗 מתחבר...', 'מתחבר');
-				showToast('מתחבר ל-Google Sheets...', 'info');
-				
-				const tokenClient = google.accounts.oauth2.initTokenClient({
-					client_id: CLIENT_ID,
-					scope: SCOPES,
-					callback: async (response) => {
-						access_token = response.access_token;
-						
-						// עדכון סטטוס
-						updateCloudStatus('✅ מחובר ומסונכרן', 'התחבר');
-						document.getElementById('statusText').classList.add('connected');
-						document.getElementById('saveBtn').disabled = false;
-						document.getElementById('loadBtn').disabled = false;
-						
-						showToast('התחברת בהצלחה ל-Google Sheets!', 'success');
-						
-						// מציאה או יצירת הטבלה הראשית
-						await findOrCreateMainSpreadsheet();
-
-						// ודא שכל הטבלאות החדשות קיימות
-						await checkAndFixTableStructure();
-
-						// טעינה אוטומטית של נתונים אם קיימים
-						if (SPREADSHEET_ID) {
-							try {
-								await loadAllDataFromSheets();
-							} catch (error) {
-								console.log('Could not auto-load data:', error);
-							}
-						}
-					},
-				});
-				
-				tokenClient.requestAccessToken();
-				
-			} catch (error) {
-				console.error('Error connecting to Google Sheets:', error);
-				updateCloudStatus('❌ שגיאה בחיבור', 'שגיאה');
-				showToast('שגיאה בחיבור ל-Google Sheets', 'error');
-			}
-		}
+	
 
 		// החלף את saveAllToSheets בפונקציה זו:
 		async function saveAllToSheets() {
@@ -12259,6 +12245,9 @@
 		// Add this at the bottom of your script, before </script>
 		document.addEventListener('DOMContentLoaded', function() {
 			console.log('App starting...');
+			
+			// Initialize Google APIs first
+			initializeGoogleAPIs();
 			
 			// Initialize data from local storage
 			loadFromLocalStorage();
