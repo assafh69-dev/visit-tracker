@@ -1562,7 +1562,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 			</nav>
         </header>
 
@@ -1573,10 +1573,11 @@
            
             <!-- טאבים -->
             <div class="planning-view-tabs">
-                <button class="planning-tab-btn active" onclick="switchPlanningView('daily')">יומי</button>
-                <button class="planning-tab-btn" onclick="switchPlanningView('weekly')">שבועי</button>
-                <button class="planning-tab-btn" onclick="switchPlanningView('overdue')">מאחרות</button>
-            </div>
+				<button class="planning-tab-btn active" onclick="switchPlanningView('daily')">יומי</button>
+				<button class="planning-tab-btn" onclick="switchPlanningView('weekly')">שבועי</button>
+				<button class="planning-tab-btn" onclick="switchPlanningView('overdue')">מאחרות</button>
+				<button class="planning-tab-btn" onclick="switchPlanningView('future')">עתידיים</button>
+			</div>
 
             <!-- כרטיסי לקוחות -->
             <div class="planning-cards-container" id="planningCardsContainer">
@@ -2387,8 +2388,8 @@
 				});
 				
 				const rows = response.result.values;
-				console.log('🔍 Raw locations data (first row):', rows ? rows[0] : 'No data');
-				console.log('🔍 Raw locations data (second row):', rows ? rows[1] : 'No data');
+				// console.log('🔍 Raw locations data (first row):', rows ? rows[0] : 'No data');
+				// console.log('🔍 Raw locations data (second row):', rows ? rows[1] : 'No data');
 				
 				if (rows && rows.length > 1) {
 					locations = rows.slice(1).map((row, index) => {
@@ -3003,6 +3004,10 @@
 					// רק מאחרים
 					return clients.filter(client => client.daysOverdue > 0);
 					
+				case 'future':
+					// רק לקוחות עם טיפול בעוד יותר משבוע
+					return clients.filter(client => client.daysDiff > 7);
+					
 				default:
 					return clients;
 			}
@@ -3028,6 +3033,16 @@
 						// מיון לפי חומרת האיחור (הכי מאחר ראשון)
 						return b.daysOverdue - a.daysOverdue;
 						
+					case 'future':
+						// מיון לפי יום בשבוע, ואז לפי תאריך (כמו שבועי)
+						const dayOrder = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
+						const aDay = dayOrder.indexOf(a.allowed_day || 'יום ראשון');
+						const bDay = dayOrder.indexOf(b.allowed_day || 'יום ראשון');
+						if (aDay !== bDay) return aDay - bDay;
+						// בתוך אותו יום - לפי תאריך ואז לפי שם
+						if (a.daysDiff !== b.daysDiff) return a.daysDiff - b.daysDiff;
+						return (a.name || '').localeCompare(b.name || '');	
+						
 					default:
 						return 0;
 				}
@@ -3036,35 +3051,27 @@
 	
 		// החלפת תצוגת תכנון עם לוגיקה מעודכנת
 		function switchPlanningView(view) {
-			console.log('🔄 מחליף תצוגת תכנון ל:', view);
+			// Update tab buttons
+			document.querySelectorAll('.planning-tab-btn').forEach(btn => {
+				btn.classList.remove('active');
+			});
 			
-			// עדכון משתנה גלובלי
+			// Set active button
+			const buttonTexts = {
+				'daily': 'יומי',
+				'weekly': 'שבועי', 
+				'overdue': 'מאחרות',
+				'future': 'עתידיים'
+			};
+			
+			document.querySelectorAll('.planning-tab-btn').forEach(btn => {
+				if (btn.textContent === buttonTexts[view]) {
+					btn.classList.add('active');
+				}
+			});
+			
 			currentPlanningView = view;
-			
-			// עדכון מצב כפתורי טאב
-			document.querySelectorAll('.planning-tab-btn').forEach(btn => btn.classList.remove('active'));
-			const activeBtn = document.querySelector(`[onclick="switchPlanningView('${view}')"]`);
-			if (activeBtn) activeBtn.classList.add('active');
-			
-			// עדכון כותרת לפי תצוגה
-			// updatePlanningDateHeader();
-			
-			// טעינה מחדש עם הסינון החדש
-			loadPlanningDataAdvanced();
-			
-			// הצגת מספר תוצאות
-			setTimeout(() => {
-				let viewName = '';
-				switch(view) {
-					case 'daily': viewName = 'יומי'; break;
-					case 'weekly': viewName = 'שבועי'; break;  
-					case 'overdue': viewName = 'מאחרים'; break;
-				}
-				
-				if (planningClients.length > 0) {
-					showToast(`מצב ${viewName}: ${planningClients.length} לקוחות`, 'info');
-				}
-			}, 200);
+			loadPlanningClients(view);
 		}
 
 		
@@ -3089,6 +3096,9 @@
 					case 'overdue':
 						emptyMessage = '<h3>✅ אין לקוחות מאחרים</h3><p>כל הטיפולים במועדם!</p>';
 						break;
+					case 'future':
+						emptyMessage = '<h3>🔮 אין טיפולים עתידיים</h3><p>כל הטיפולים מתוכננים לשבוע הקרוב!</p>';
+						break;	
 				}
 				
 				container.innerHTML = `
@@ -3100,7 +3110,7 @@
 			}
 
 			// במצב שבועי - חלוקה לפי ימים
-			if (currentPlanningView === 'weekly' || currentPlanningView === 'overdue') {
+			if (currentPlanningView === 'weekly' || currentPlanningView === 'overdue' || currentPlanningView === 'future') {
 				renderWeeklyPlanningByDays();
 			} else {
 				// במצב יומי או מאחרות - רשימה רגילה
@@ -3192,6 +3202,10 @@
 				case 'overdue':
 					statusText = client.daysOverdue === 1 ? 'איחור יום אחד' : `איחור ${client.daysOverdue} ימים`;
 					break;
+				case 'future':
+					const daysDiffText = `בעוד ${client.daysDiff} ימים`;
+					statusText = daysDiffText;
+					break;	
 			}
 			
 			return `
@@ -12269,6 +12283,31 @@
 			
 			console.log('App initialization complete');
 		});
+
+		// Add this function - it's missing from the code:
+		function showClientHistory(clientId) {
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			// Move to treatments tab and filter by this client
+			showSection('history');
+			
+			setTimeout(() => {
+				// Set filter to specific client
+				const clientFilter = document.getElementById('filterLocation');
+				if (clientFilter) {
+					clientFilter.value = clientId;
+				}
+				
+				// Apply filters to show only this client's treatments
+				applyVisitFilters();
+				
+				showToast(`מציג היסטוריית טיפולים של ${client.name}`, 'info');
+			}, 100);
+		}
 
 
    </script>
