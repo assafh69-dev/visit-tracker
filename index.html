@@ -1562,7 +1562,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.8</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.9</button>
 			</nav>
         </header>
 
@@ -2265,17 +2265,15 @@
 		 // Google Sheets API Configuration
 		const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
 		const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
-		let SPREADSHEET_ID = '1fSD5dh0bXRzFSeOZUwJ2bPjGRLqs2crGXPkebz6MpWc';
-		const CLIENT_ID = '1040357646874-4sbkrokgjn4dd7a0e9rkrtjt8d9l3vie.apps.googleusercontent.com';
-		const API_KEY = 'AIzaSyB25ms_UzbgfY9FnduMwMhGhlvwfVPaTg8';
+		const SPREADSHEET_ID = prompt('Enter Spreadsheet ID:') || localStorage.getItem('SPREADSHEET_ID') || '';
+		const CLIENT_ID = prompt('Enter Client ID:') || localStorage.getItem('CLIENT_ID') || '';
+		const API_KEY = prompt('Enter API Key:') || localStorage.getItem('API_KEY') || '';
 		const SPREADSHEET_NAME = 'service_visits_data';
 
-//////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   למחיקה
-		// בדיקה זמנית - תמחק אחרי הבדיקה
-		console.log('Spreadsheet ID:', SPREADSHEET_ID);
-		console.log('API Key:', API_KEY);
-		console.log('Client ID:', CLIENT_ID);
-//////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+		// Save for next time
+		if (SPREADSHEET_ID) localStorage.setItem('SPREADSHEET_ID', SPREADSHEET_ID);
+		if (CLIENT_ID) localStorage.setItem('CLIENT_ID', CLIENT_ID);
+		if (API_KEY) localStorage.setItem('API_KEY', API_KEY);
 
 
 		let gapi_loaded = false;
@@ -5428,33 +5426,29 @@
 		function applyVisitFilters() {
 			console.log('🔍 מסנן טיפולים...');
 			
-			// בדיקה אם יש חיפוש חכם פעיל
+			// Check for smart search first
 			const smartSearch = document.getElementById('visitSmartSearch')?.value;
 			if (smartSearch && smartSearch.trim()) {
-				// אם יש חיפוש חכם, השתמש בו במקום בסינון הרגיל
 				handleVisitSmartSearch(smartSearch);
 				return;
 			}
 			
 			let filteredVisits = [...visits];
 			
-			// סינון לפי לקוח (רשימה נפתחת)
-			const locationFilter = document.getElementById('filterLocation').value;
-			if (locationFilter) {
-				filteredVisits = filteredVisits.filter(visit => visit.location_id === locationFilter);
+			// Filter by active status with null safety
+			const activeFilter = document.getElementById('filterActiveClients')?.value || '1';
+			if (activeFilter !== '') {
+				const activeStatus = activeFilter === '1';
+				const activeLocationIds = locations
+					.filter(loc => (activeStatus ? loc.active === "1" : loc.active !== "1"))
+					.map(loc => loc.ID);
+				filteredVisits = filteredVisits.filter(visit => 
+					activeLocationIds.includes(visit.location_id)
+				);
 			}
 			
-			// Filter by client active status
-			const activeFilter = document.getElementById('filterActiveClients')?.value;
-			if (activeFilter !== "") {
-				filteredVisits = filteredVisits.filter(visit => {
-					const location = locations.find(loc => loc.ID === visit.location_id);
-					return location && location.active === activeFilter;
-				});
-			}
-			
-			// סינון לפי תשלום
-			const paymentFilter = document.getElementById('filterPayment').value;
+			// Filter by payment status with null safety
+			const paymentFilter = document.getElementById('filterPayment')?.value || '';
 			if (paymentFilter) {
 				filteredVisits = filteredVisits.filter(visit => {
 					const paymentStatus = getVisitPaymentStatus(visit.ID);
@@ -5467,9 +5461,9 @@
 				});
 			}
 			
-			// סינון לפי תאריך
-			const dateFrom = document.getElementById('filterDateFrom').value;
-			const dateTo = document.getElementById('filterDateTo').value;
+			// Filter by date range with null safety
+			const dateFrom = document.getElementById('filterDateFrom')?.value || '';
+			const dateTo = document.getElementById('filterDateTo')?.value || '';
 			
 			if (dateFrom) {
 				filteredVisits = filteredVisits.filter(visit => visit.date >= dateFrom);
@@ -5478,13 +5472,13 @@
 				filteredVisits = filteredVisits.filter(visit => visit.date <= dateTo);
 			}
 			
-			// הגבלת תוצאות
-			const maxResults = parseInt(document.getElementById('maxResults').value) || 200;
+			// Limit results with null safety
+			const maxResults = parseInt(document.getElementById('maxResults')?.value) || 200;
 			
-			// מיון לפי תאריך (החדשים ראשונים)
+			// Sort by date (newest first)
 			filteredVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
 			
-			// הגבלת מספר התוצאות
+			// Limit number of results
 			if (filteredVisits.length > maxResults) {
 				filteredVisits = filteredVisits.slice(0, maxResults);
 			}
@@ -10260,10 +10254,16 @@
 
 		// ניקוי סינונים
 		function clearLocationFilters() {
-			document.getElementById('filterClientName').value = '';
-			document.getElementById('filterDay').value = '';
-			document.getElementById('filterInterval').value = '';
-			document.getElementById('filterActive').value = '';
+			const nameFilter = document.getElementById('filterClientName');
+			const dayFilter = document.getElementById('filterDay');
+			const intervalFilter = document.getElementById('filterInterval');
+			const activeFilter = document.getElementById('filterActive');
+			
+			if (nameFilter) nameFilter.value = '';
+			if (dayFilter) dayFilter.value = '';
+			if (intervalFilter) intervalFilter.value = '';
+			if (activeFilter) activeFilter.value = '';
+			
 			loadLocationsTable();
 		}
 
@@ -10320,40 +10320,47 @@
 			// Check if smart search is active
 			const smartSearch = document.getElementById('receiptSmartSearch')?.value;
 			if (smartSearch && smartSearch.trim()) {
-				// If smart search is active, use it instead of regular filtering
 				handleReceiptSmartSearch(smartSearch);
 				return;
 			}
 			
-			// Regular filtering logic continues here...
 			let filteredReceipts = [...receipts];
 			
-			// Filter by book
-			const bookFilter = document.getElementById('filterReceiptBook').value;
+			// Apply filters with null safety
+			const bookFilter = document.getElementById('filterReceiptBook')?.value || '';
+			const paymentFilter = document.getElementById('filterPaymentType')?.value || '';
+			const dateFrom = document.getElementById('filterReceiptDateFrom')?.value || '';
+			const dateTo = document.getElementById('filterReceiptDateTo')?.value || '';
+			const sortBy = document.getElementById('receiptSortBy')?.value || 'date_desc';
+			
 			if (bookFilter) {
 				filteredReceipts = filteredReceipts.filter(r => r.book_number === bookFilter);
 			}
 			
-			// Filter by payment type
-			const paymentFilter = document.getElementById('filterPaymentType').value;
 			if (paymentFilter) {
 				filteredReceipts = filteredReceipts.filter(r => r.payment_type === paymentFilter);
 			}
 			
-			// Filter by date range
-			const dateFrom = document.getElementById('filterReceiptDateFrom').value;
-			const dateTo = document.getElementById('filterReceiptDateTo').value;
-			
 			if (dateFrom) {
 				filteredReceipts = filteredReceipts.filter(r => r.date >= dateFrom);
 			}
+			
 			if (dateTo) {
 				filteredReceipts = filteredReceipts.filter(r => r.date <= dateTo);
 			}
 			
-			// Sort and display results
-			const sortBy = document.getElementById('receiptSortBy').value;
-			sortReceiptResults(filteredReceipts, sortBy);
+			// Sort results
+			filteredReceipts.sort((a, b) => {
+				switch(sortBy) {
+					case 'date_asc': return a.date.localeCompare(b.date);
+					case 'date_desc': return b.date.localeCompare(a.date);
+					case 'amount_asc': return (a.amount || 0) - (b.amount || 0);
+					case 'amount_desc': return (b.amount || 0) - (a.amount || 0);
+					case 'book_asc': return (a.book_number || '').localeCompare(b.book_number || '');
+					default: return b.date.localeCompare(a.date);
+				}
+			});
+			
 			displayFilteredReceipts(filteredReceipts);
 			updateReceiptsStats(filteredReceipts);
 		}
@@ -10379,17 +10386,19 @@
 		}
 
 		function clearReceiptFilters() {
-			document.getElementById('filterReceiptBook').value = '';
-			document.getElementById('filterPaymentType').value = '';
-			document.getElementById('filterReceiptDateFrom').value = '';
-			document.getElementById('filterReceiptDateTo').value = '';
-			document.getElementById('receiptSortBy').value = 'date_desc';
+			const bookFilter = document.getElementById('filterReceiptBook');
+			const paymentType = document.getElementById('filterPaymentType');
+			const dateFrom = document.getElementById('filterReceiptDateFrom');
+			const dateTo = document.getElementById('filterReceiptDateTo');
+			const sortBy = document.getElementById('receiptSortBy');
+			const smartSearch = document.getElementById('receiptSmartSearch');
 			
-			
-			// ניקוי החיפוש החכם
-			if (document.getElementById('receiptSmartSearch')) {
-				document.getElementById('receiptSmartSearch').value = '';
-			}
+			if (bookFilter) bookFilter.value = '';
+			if (paymentType) paymentType.value = '';
+			if (dateFrom) dateFrom.value = '';
+			if (dateTo) dateTo.value = '';
+			if (sortBy) sortBy.value = 'date_desc';
+			if (smartSearch) smartSearch.value = '';
 			
 			displayFilteredReceipts(receipts);
 		}
@@ -10529,16 +10538,28 @@
 			applyVisitFilters();
 		}
 
-		// עדכון פונקציית clearVisitFilters
+
 		function clearVisitFilters() {
-			document.getElementById('filterLocation').value = '';
-			document.getElementById('filterPayment').value = '';
-			document.getElementById('filterDateFrom').value = '';
-			document.getElementById('filterDateTo').value = '';
-			document.getElementById('maxResults').value = '200';
+			const locationFilter = document.getElementById('filterLocation');
+			const paymentFilter = document.getElementById('filterPayment');
+			const dateFrom = document.getElementById('filterDateFrom');
+			const dateTo = document.getElementById('filterDateTo');
+			const maxResults = document.getElementById('maxResults');
+			const activeFilter = document.getElementById('filterActiveClients');
+			const smartSearch = document.getElementById('visitSmartSearch');
 			
-			// הסרת active מכפתורים מהירים
-			document.querySelectorAll('.filter-quick-btn').forEach(btn => btn.classList.remove('active'));
+			if (locationFilter) locationFilter.value = '';
+			if (paymentFilter) paymentFilter.value = '';
+			if (dateFrom) dateFrom.value = '';
+			if (dateTo) dateTo.value = '';
+			if (maxResults) maxResults.value = '200';
+			if (activeFilter) activeFilter.value = '1';
+			if (smartSearch) smartSearch.value = '';
+			
+			// Clear quick filter buttons
+			document.querySelectorAll('.filter-quick-btn').forEach(btn => 
+				btn.classList.remove('active')
+			);
 			
 			displayFilteredVisits(visits);
 			updateTreatmentsStats(visits);
@@ -11891,7 +11912,10 @@
 
 		// ניקוי חיפוש חכם
 		function clearVisitSmartSearch() {
-			document.getElementById('visitSmartSearch').value = '';
+			const searchInput = document.getElementById('visitSmartSearch');
+			if (searchInput) {
+				searchInput.value = '';
+			}
 			applyVisitFilters();
 		}
 
@@ -11958,7 +11982,10 @@
 
 		// ניקוי חיפוש חכם בקבלות
 		function clearReceiptSmartSearch() {
-			document.getElementById('receiptSmartSearch').value = '';
+			const searchInput = document.getElementById('receiptSmartSearch');
+			if (searchInput) {
+				searchInput.value = '';
+			}
 			applyReceiptFilters();
 		}
 
@@ -12025,7 +12052,10 @@
 
 		// ניקוי חיפוש חכם בתשלומים
 		function clearPaymentSmartSearch() {
-			document.getElementById('paymentSmartSearch').value = '';
+			const searchInput = document.getElementById('paymentSmartSearch');
+			if (searchInput) {
+				searchInput.value = '';
+			}
 			applyPaymentFilters();
 		}
 
@@ -12049,10 +12079,16 @@
 
 		// Add new function for clearing debt filters:
 		function clearDebtFilters() {
-			document.getElementById('debtSortBy').value = 'amount_desc';
-			document.getElementById('minDebtAmount').value = '';
-			document.getElementById('debtClientFilter').value = '';
-			document.getElementById('debtDayFilter').value = '';
+			const sortBy = document.getElementById('debtSortBy');
+			const minAmount = document.getElementById('minDebtAmount');
+			const clientFilter = document.getElementById('debtClientFilter');
+			const dayFilter = document.getElementById('debtDayFilter');
+			
+			if (sortBy) sortBy.value = 'amount_desc';
+			if (minAmount) minAmount.value = '';
+			if (clientFilter) clientFilter.value = '';
+			if (dayFilter) dayFilter.value = '';
+			
 			displayDebts();
 		}
 
