@@ -1590,7 +1590,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.7</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.8</button>
 			</nav>
         </header>
 
@@ -10713,6 +10713,10 @@
 		}
 
 		function showAddTreatmentForm() {
+		
+			console.log('showAddTreatmentForm called!');
+			alert('הפונקציה נקראה');
+		
 			const modalContent = `
 				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 800px; width: 90vw; max-height: 85vh; overflow-y: auto;">
 					<h3 style="margin-bottom: 20px; color: #2c3e50;">🔧 הוספת טיפול חדש</h3>
