@@ -1562,7 +1562,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.11</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 			</nav>
         </header>
 
@@ -10243,19 +10243,13 @@
 		function loadReceiptFilterOptions() {
 			// Load book numbers
 			const bookSelect = document.getElementById('filterReceiptBook');
-			const uniqueBooks = [...new Set(receipts.map(r => r.book_number).filter(b => b))];
-			bookSelect.innerHTML = '<option value="">כל הפנקסים</option>';
-			uniqueBooks.sort().forEach(book => {
-				bookSelect.innerHTML += `<option value="${book}">${book}</option>`;
-			});
-			
-			// Load clients
-			const clientSelect = document.getElementById('filterReceiptClient');
-			const uniqueClients = [...new Set(receipts.map(r => r.location_name).filter(c => c))];
-			clientSelect.innerHTML = '<option value="">כל הלקוחות</option>';
-			uniqueClients.sort().forEach(client => {
-				clientSelect.innerHTML += `<option value="${client}">${client}</option>`;
-			});
+			if (bookSelect) {
+				const uniqueBooks = [...new Set(receipts.map(r => r.book_number).filter(b => b))];
+				bookSelect.innerHTML = '<option value="">כל הפנקסים</option>';
+				uniqueBooks.sort().forEach(book => {
+					bookSelect.innerHTML += `<option value="${book}">${book}</option>`;
+				});
+			}
 		}
 
 		function applyReceiptFilters() {
