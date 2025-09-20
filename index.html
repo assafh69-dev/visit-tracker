@@ -1562,7 +1562,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.6</button>
 			</nav>
         </header>
 
@@ -2332,10 +2332,6 @@
 		}
 
 
-////////////////////////////////////////////////////////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-		
-
 		// Add this function if it's missing or not accessible:
 		async function connectToGoogleSheets() {
 			try {
@@ -2383,10 +2379,6 @@
 			}
 		}
 
-		
-
-
-////////////////////////////////////////////////////////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 		// Single comprehensive loading function
 		async function loadAllFromSheets() {
@@ -12206,6 +12198,8 @@
 			}, 100);
 		}
 
+		
+		
 		async function validateToken() {
 			if (!access_token || !gapi.client) {
 				updateCloudStatus('🔐 לא מחובר לענן', 'נותק');
@@ -12233,6 +12227,7 @@
 				return false;
 			}
 		}
+		
 		
 		function updateCloudStatus(status, lastAction) {
 			const statusElement = document.getElementById('statusText');
@@ -12267,8 +12262,6 @@
 				//lastSavedElement.style.color = //'#333'; // צבע כהה יותר
 			}
 		}
-		
-		
 		
    </script>
 </body>
