@@ -1562,7 +1562,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.6</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.7</button>
 			</nav>
         </header>
 
@@ -12142,7 +12142,7 @@
 			return false;
 		} 
 
-		// Add this at the bottom of your script, before </script>
+
 		document.addEventListener('DOMContentLoaded', function() {
 			console.log('App starting...');
 			
@@ -12205,7 +12205,7 @@
 				updateCloudStatus('🔐 לא מחובר לענן', 'נותק');
 				return false;
 			}
-			
+
 			try {
 				// בדיקה פשוטה - נסה לקרוא מהטבלה
 				await gapi.client.sheets.spreadsheets.get({
