@@ -1562,7 +1562,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
 			</nav>
         </header>
 
@@ -7004,14 +7004,14 @@
 			const textLower = text.toLowerCase().trim();
 			
 			// שלב 1: התאמה ישירה מלאה
-			for (const location of locations) {
-				if (location.name && textLower.includes(location.name.toLowerCase())) {
-					return location;
-				}
-				if (location.full_address && textLower.includes(location.full_address.toLowerCase())) {
-					return location;
-				}
-			}
+			//for (const location of locations) {
+			//	if (location.name && textLower.includes(location.name.toLowerCase())) {
+			//		return location;
+			//	}
+			//	if (location.full_address && textLower.includes(location.full_address.toLowerCase())) {
+			//		return location;
+			//	}
+			//}
 			
 			// שלב 2: זיהוי לפי רחוב + מספר (עם או בלי עיר)
 			const addressMatch = textLower.match(/([א-ת\s']+)\s+(\d+)/);
