@@ -1590,7 +1590,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.6</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.7</button>
 			</nav>
         </header>
 
@@ -10160,13 +10160,22 @@
 		}
 
 		// הגדרת השעה הנוכחית
-		function setCurrentTime(elementId) {
+		function setCurrentTime(timeInputId) {
 			const now = new Date();
-			const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-			document.getElementById(elementId).value = currentTime;
+			const hours = String(now.getHours()).padStart(2, '0');
+			const minutes = String(now.getMinutes()).padStart(2, '0');
+			const currentTime = `${hours}:${minutes}`;
 			
-			// חישוב אוטומטי של משך זמן אם שני השדות מלאים
-			calculateModalDuration();
+			document.getElementById(timeInputId).value = currentTime;
+			
+			// חישוב משך טיפול אם שני השדות מלאים
+			if (timeInputId.includes('modal')) {
+				calculateModalDuration();
+			} else {
+				calculateDurationFromTimes();
+			}
+			
+			showToast(`שעה נוכחית: ${currentTime}`, 'info');
 		}
 
 		function calculateModalDuration() {
