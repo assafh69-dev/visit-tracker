@@ -1562,7 +1562,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.11</button>
 			</nav>
         </header>
 
@@ -1576,6 +1576,7 @@
                 <button class="planning-tab-btn active" onclick="switchPlanningView('daily')">יומי</button>
                 <button class="planning-tab-btn" onclick="switchPlanningView('weekly')">שבועי</button>
                 <button class="planning-tab-btn" onclick="switchPlanningView('overdue')">מאחרות</button>
+				<button class="planning-tab-btn" onclick="switchPlanningView('future')">עתידיים</button>																			   
             </div>
 
             <!-- כרטיסי לקוחות -->
@@ -1631,10 +1632,12 @@
 					
 					<div class="filter-row-unified">
 						<div class="filter-group-unified">
-							<label>לקוח:</label>
-							<select id="filterLocation">
-								<option value="">כל הלקוחות</option>
-							</select>
+							<label>חיפוש חכם:</label>
+							<input type="text" id="visitSmartSearch" placeholder="חפש לקוח לפי שם, כתובת, עיר..." 
+								   oninput="handleVisitSmartSearch(this.value)">
+						</div>
+						<div class="filter-group-unified small">
+							<button type="button" onclick="clearVisitSmartSearch()" class="filter-clear-btn">נקה חיפוש</button>
 						</div>
 						<div class="filter-group-unified medium">
 							<label>סטטוס תשלום:</label>
@@ -1665,9 +1668,17 @@
 							<label>עד תאריך:</label>
 							<input type="date" id="filterDateTo" onchange="applyVisitFilters()">
 						</div>
+						<div class="filter-group-unified small">
+							<label>הצג לקוחות:</label>
+							<select id="filterActiveClients" onchange="applyVisitFilters()">
+								<option value="1" selected>פעילים בלבד</option>
+								<option value="">כל הלקוחות</option>
+								<option value="0">לא פעילים</option>
+							</select>
+						</div>
 					</div>
 				</div>
-
+				
 				<!-- Treatments Stats Box -->
 				<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
 					<div id="treatmentsStatsBox" style="background: #e8f5e8; border: 1px solid #27ae60; border-radius: 6px; padding: 8px 12px; font-size: 13px; color: #2c3e50;">
@@ -1807,6 +1818,17 @@
 					</div>
 					
 					<div class="filter-row-unified">
+						<div class="filter-group-unified">
+							<label>חיפוש חכם:</label>
+							<input type="text" id="receiptSmartSearch" placeholder="חפש לקוח לפי שם, כתובת, עיר..." 
+								   oninput="handleReceiptSmartSearch(this.value)">
+						</div>
+						<div class="filter-group-unified small">
+							<button type="button" onclick="clearReceiptSmartSearch()" class="filter-clear-btn">נקה חיפוש</button>
+						</div>
+					</div>
+
+					<div class="filter-row-unified">
 						<div class="filter-group-unified medium">
 							<label>פנקס קבלות:</label>
 							<select id="filterReceiptBook" onchange="applyReceiptFilters()">
@@ -1821,12 +1843,6 @@
 								<option value="העברה">העברה</option>
 								<option value="צ'ק">צ'ק</option>
 								<option value="כרטיס אשראי">כרטיס אשראי</option>
-							</select>
-						</div>
-						<div class="filter-group-unified">
-							<label>לקוח:</label>
-							<select id="filterReceiptClient" onchange="applyReceiptFilters()">
-								<option value="">כל הלקוחות</option>
 							</select>
 						</div>
 					</div>
@@ -1889,6 +1905,7 @@
 				<div class="filter-panel-unified">
 					<div class="filter-panel-header">
 						<h4 class="filter-panel-title">🔍 חובות פתוחים</h4>
+						<button onclick="clearDebtFilters()" class="filter-clear-btn">נקה סינון</button>
 					</div>
 					
 					<div class="filter-row-unified">
@@ -1907,8 +1924,29 @@
 							<input type="number" id="minDebtAmount" placeholder="0" onchange="displayDebts()">
 						</div>
 					</div>
+					<div class="filter-row-unified">
+						<div class="filter-group-unified">
+							<label>Filter by client:</label>
+							<select id="debtClientFilter" onchange="displayDebts()">
+								<option value="">All clients</option>
+							</select>
+						</div>
+						<div class="filter-group-unified compact">
+							<label>Preferred day:</label>
+							<select id="debtDayFilter" onchange="displayDebts()">
+								<option value="">All days</option>
+								<option value="כל יום">Any day</option>
+								<option value="יום ראשון">Sunday</option>
+								<option value="יום שני">Monday</option>
+								<option value="יום שלישי">Tuesday</option>
+								<option value="יום רביעי">Wednesday</option>
+								<option value="יום חמישי">Thursday</option>
+								<option value="יום שישי">Friday</option>
+							</select>
+						</div>
+					</div>
 				</div>
-				
+						
 				<!-- Debts Stats Box -->
 				<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
 					<div id="debtsStatsBox" style="background: #fdf2e8; border: 1px solid #f39c12; border-radius: 6px; padding: 8px 12px; font-size: 13px; color: #2c3e50;">
@@ -1948,27 +1986,26 @@
 				</div>
 				
 				<!-- פאנל סינון -->
-				<div class="filter-panel-unified">
-					<div class="filter-panel-header">
-						<h4 class="filter-panel-title">🔍 סינון תשלומים</h4>
-						<button onclick="clearPaymentFilters()" class="filter-clear-btn">נקה סינון</button>
+				<!-- שורה 1: חיפוש -->
+				<div class="filter-row-unified">
+					<div class="filter-group-unified">
+						<label>חיפוש חכם:</label>
+						<input type="text" id="paymentSmartSearch"...>
 					</div>
-					
-					<div class="filter-row-unified">
-						<div class="filter-group-unified">
-							<label>לקוח:</label>
-							<select id="filterPaymentClient">
-								<option value="">כל הלקוחות</option>
-							</select>
-						</div>
-						<div class="filter-group-unified compact">
-							<label>מתאריך:</label>
-							<input type="date" id="filterPaymentDateFrom" onchange="applyPaymentFilters()">
-						</div>
-						<div class="filter-group-unified compact">
-							<label>עד תאריך:</label>
-							<input type="date" id="filterPaymentDateTo" onchange="applyPaymentFilters()">
-						</div>
+					<div class="filter-group-unified small">
+						<button type="button" onclick="clearPaymentSmartSearch()"...>נקה חיפוש</button>
+					</div>
+				</div>
+
+				<!-- שורה 2: תאריכים -->
+				<div class="filter-row-unified">
+					<div class="filter-group-unified compact">
+						<label>מתאריך:</label>
+						<input type="date" id="filterPaymentDateFrom"...>
+					</div>
+					<div class="filter-group-unified compact">
+						<label>עד תאריך:</label>
+						<input type="date" id="filterPaymentDateTo"...>
 					</div>
 				</div>
 				
