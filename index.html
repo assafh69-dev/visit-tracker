@@ -1562,7 +1562,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.7</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.8</button>
 			</nav>
         </header>
 
@@ -3201,7 +3201,8 @@
 			});
 			
 			currentPlanningView = view;
-			loadPlanningClients(view);
+			loadPlanningClientsAdvanced();  // Changed from loadPlanningClients(view)
+			renderPlanningCards();  // Also need to render the cards after loading
 		}
 
 		
@@ -10884,26 +10885,26 @@
 
 		// סינון תשלומים
 		function applyPaymentFilters() {
-			// בדיקה אם יש חיפוש חכם פעיל
+			// Check if smart search is active
 			const smartSearch = document.getElementById('paymentSmartSearch')?.value;
 			if (smartSearch && smartSearch.trim()) {
-				// אם יש חיפוש חכם, השתמש בו במקום בסינון הרגיל
 				handlePaymentSmartSearch(smartSearch);
 				return;
 			}
 			
-			const clientFilter = document.getElementById('filterPaymentClient').value;
-			const dateFromFilter = document.getElementById('filterPaymentDateFrom').value;
-			const dateToFilter = document.getElementById('filterPaymentDateTo').value;
+			// Get filter values with null safety
+			const clientFilter = document.getElementById('filterPaymentClient')?.value || '';
+			const dateFromFilter = document.getElementById('filterPaymentDateFrom')?.value || '';
+			const dateToFilter = document.getElementById('filterPaymentDateTo')?.value || '';
 			
 			let filteredPayments = [...payments];
 			
-			// סינון לפי לקוח
+			// Filter by client
 			if (clientFilter) {
 				filteredPayments = filteredPayments.filter(p => p.client_name === clientFilter);
 			}
 			
-			// סינון לפי תאריך
+			// Filter by date range
 			if (dateFromFilter) {
 				filteredPayments = filteredPayments.filter(p => p.date >= dateFromFilter);
 			}
