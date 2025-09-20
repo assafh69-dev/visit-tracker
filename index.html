@@ -1590,7 +1590,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.8</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.9</button>
 			</nav>
         </header>
 
@@ -10837,7 +10837,10 @@
 				</div>
 			`;
 			
+			console.log('About to call showModal');
+			console.log('Modal content length:', modalContent.length);
 			showModal(modalContent);
+			console.log('showModal called');
 			
 			// הגדרת תאריך היום
 			document.getElementById('modalVisitDate').value = new Date().toISOString().split('T')[0];
@@ -12143,6 +12146,7 @@
 
 		// פונקציית עזר להצגת מודאל כללי
 		function showModal(title, content) {
+		    console.log('in showModal!');
 			const modal = document.createElement('div');
 			modal.className = 'modal';
 			modal.style.display = 'block';
@@ -12161,6 +12165,7 @@
 				</div>
 			`;
 			document.body.appendChild(modal);
+			console.log('end of showModal!');
 		}
 
 		// חיפוש חכם בטיפולים
