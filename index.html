@@ -1590,7 +1590,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -5660,7 +5660,7 @@
 			
 			// צור חלון עריכה
 			const editModalHTML = `
-				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90vw; max-height: 80vh; overflow-y: auto;">
+				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90vw; max-height: 80vh; overflow-y: auto;">
 					<h3 style="margin-bottom: 20px; color: #2c3e50;">✏️ עריכת ביקור - ${locationName}</h3>
 					
 					<form id="editVisitForm">
@@ -5683,32 +5683,73 @@
 							<textarea id="editWorkDone" rows="3">${visit.work_done || ''}</textarea>
 						</div>
 						
-						<div class="form-group">
-							<label>שעת התחלה:</label>
-							<input type="time" id="editStartTime" value="${visit.start_time || ''}">
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+							<div class="form-group">
+								<label>שעת התחלה:</label>
+								<div style="display: flex; gap: 5px; align-items: center;">
+									<input type="time" id="editStartTime" value="${visit.start_time || ''}" style="flex: 1;" onchange="calculateEditDuration()">
+									<button type="button" onclick="setCurrentTime('editStartTime')" title="קבע שעה נוכחית"
+											style="background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 36px; height: 36px;">🕐</button>
+								</div>
+							</div>
+							
+							<div class="form-group">
+								<label>שעת סיום:</label>
+								<div style="display: flex; gap: 5px; align-items: center;">
+									<input type="time" id="editEndTime" value="${visit.end_time || ''}" style="flex: 1;" onchange="calculateEditDuration()">
+									<button type="button" onclick="setCurrentTime('editEndTime')" title="קבע שעה נוכחית"
+											style="background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 36px; height: 36px;">🕐</button>
+								</div>
+							</div>
 						</div>
 						
-						<div class="form-group">
-							<label>משך זמן (דקות):</label>
-							<input type="number" id="editDuration" value="${visit.duration_minutes || 0}">
+						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+							<div class="form-group">
+								<label>שעות:</label>
+								<input type="number" id="editDurationHours" min="0" max="24" value="${Math.floor((visit.duration_minutes || 0) / 60)}" onchange="updateEditManualDuration()">
+							</div>
+							
+							<div class="form-group">
+								<label>דקות:</label>
+								<input type="number" id="editDurationMinutes" min="0" max="59" value="${(visit.duration_minutes || 0) % 60}" onchange="updateEditManualDuration()">
+							</div>
+							
+							<div class="form-group">
+								<label>סה"כ דקות:</label>
+								<input type="number" id="editDuration" min="0" value="${visit.duration_minutes || 0}" onchange="updateEditFromTotalMinutes()">
+							</div>
 						</div>
 						
-						<div class="form-group">
-							<label>סכום (₪):</label>
-							<input type="number" step="0.01" id="editAmount" value="${visit.amount || 0}">
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+							<div class="form-group">
+								<label>שעות עשרוניות:</label>
+								<input type="number" id="editCalculatedHours" step="0.1" value="${((visit.duration_minutes || 0) / 60).toFixed(1)}" readonly style="background: #f8f9fa;">
+							</div>
+							
+							<div class="form-group">
+								<label>מספר עובדים:</label>
+								<input type="number" id="editNumWorkers" min="1" value="${visit.num_workers || 1}" onchange="calculateEditTreatmentCost()">
+							</div>
 						</div>
 						
-						<div class="form-group">
-							<label>הוצאות (₪):</label>
-							<input type="number" step="0.01" id="editExpense" value="${visit.expense || 0}">
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+							<div class="form-group">
+								<label>סכום (₪):</label>
+								<input type="number" step="0.01" id="editAmount" value="${visit.amount || 0}">
+							</div>
+
+							<div class="form-group">
+								<label>הוצאות (₪):</label>
+								<input type="number" step="0.01" id="editExpense" value="${visit.expense || 0}" onchange="calculateEditTreatmentCost()">
+							</div>
 						</div>
 						
 						<div class="form-group">
 							<label>סטטוס תשלום:</label>
 							<select id="editPaid">
-								<option value="0" ${getVisitPaymentStatus(visit.ID) === 'unpaid' ? 'selected' : ''}>לא שולם</option>
-								<option value="1" ${getVisitPaymentStatus(visit.ID) === 'paid' ? 'selected' : ''}>שולם</option>
-								<option value="2" ${getVisitPaymentStatus(visit.ID) === 'no_payment' ? 'selected' : ''}>ללא תשלום</option>
+								<option value="לא שולם" ${(visit.paid === 'לא שולם' || visit.paid === '0') ? 'selected' : ''}>לא שולם</option>
+								<option value="שולם" ${(visit.paid === 'שולם' || visit.paid === '1') ? 'selected' : ''}>שולם</option>
+								<option value="שולם חלקית" ${(visit.paid === 'שולם חלקית' || visit.paid === '2') ? 'selected' : ''}>שולם חלקית</option>
 							</select>
 						</div>
 						
@@ -5731,6 +5772,21 @@
 			
 			// הצג את המודל
 			showEditModal(editModalHTML);
+			
+			// ✅ אתחול ערכים מחושבים אחרי יצירת הטופס
+
+			setTimeout(() => {
+				// חישוב ערכים ראשוניים
+				updateEditFromTotalMinutes();
+				calculateEditTreatmentCost();
+				
+				// אם יש שעות התחלה וסיום, חשב את הזמן
+				const startTime = document.getElementById('editStartTime').value;
+				const endTime = document.getElementById('editEndTime').value;
+				if (startTime && endTime) {
+					calculateEditDuration();
+				}
+			}, 100);
 		}
 
 		// הצגת מודל עריכה (אם לא קיימת)
@@ -5779,7 +5835,78 @@
 			}
 		}
 
+		// Add these functions after the editVisit function
 
+		function calculateEditDuration() {
+			const startTime = document.getElementById('editStartTime').value;
+			const endTime = document.getElementById('editEndTime').value;
+			
+			if (!startTime || !endTime) return;
+			
+			const start = new Date(`2000-01-01T${startTime}`);
+			const end = new Date(`2000-01-01T${endTime}`);
+			
+			if (end <= start) {
+				showToast('שעת סיום חייבת להיות אחרי שעת התחלה', 'warning');
+				return;
+			}
+			
+			const diffMs = end - start;
+			const totalMinutes = Math.round(diffMs / (1000 * 60));
+			const hours = Math.floor(totalMinutes / 60);
+			const minutes = totalMinutes % 60;
+			const decimalHours = (totalMinutes / 60).toFixed(1);
+			
+			// עדכון השדות
+			document.getElementById('editDurationHours').value = hours;
+			document.getElementById('editDurationMinutes').value = minutes;
+			document.getElementById('editDuration').value = totalMinutes;
+			document.getElementById('editCalculatedHours').value = decimalHours;
+			
+			// חישוב עלות אוטומטי
+			calculateEditTreatmentCost();
+		}
+
+		function updateEditManualDuration() {
+			const hours = parseInt(document.getElementById('editDurationHours').value) || 0;
+			const minutes = parseInt(document.getElementById('editDurationMinutes').value) || 0;
+			const totalMinutes = hours * 60 + minutes;
+			const decimalHours = (totalMinutes / 60).toFixed(1);
+			
+			document.getElementById('editDuration').value = totalMinutes;
+			document.getElementById('editCalculatedHours').value = decimalHours;
+			
+			calculateEditTreatmentCost();
+		}
+
+		function updateEditFromTotalMinutes() {
+			const totalMinutes = parseInt(document.getElementById('editDuration').value) || 0;
+			const hours = Math.floor(totalMinutes / 60);
+			const minutes = totalMinutes % 60;
+			const decimalHours = (totalMinutes / 60).toFixed(1);
+			
+			document.getElementById('editDurationHours').value = hours;
+			document.getElementById('editDurationMinutes').value = minutes;
+			document.getElementById('editCalculatedHours').value = decimalHours;
+			
+			calculateEditTreatmentCost();
+		}
+
+		function calculateEditTreatmentCost() {
+			const totalMinutes = parseInt(document.getElementById('editDuration').value) || 0;
+			const numWorkers = parseInt(document.getElementById('editNumWorkers').value) || 1;
+			const expense = parseFloat(document.getElementById('editExpense').value) || 0;
+			
+			if (totalMinutes > 0 && costSettings && costSettings.hourlyRate) {
+				const hours = totalMinutes / 60;
+				const baseCost = costSettings.hourlyRate * hours;
+				const workersCost = (numWorkers - 1) * costSettings.workerCost * hours;
+				const laborCost = baseCost + workersCost;
+				const totalCost = laborCost + expense; // ✅ עכשיו כולל גם הוצאות!
+				
+				document.getElementById('editAmount').value = Math.round(totalCost);
+			}
+		}
 		
 		// פונקציה לעדכון הביקור בענן
 		async function updateVisitInCloud(updatedVisit) {
@@ -7991,56 +8118,36 @@
 			if (!await validateToken() || locationsArray.length === 0) return false;
 			
 			try {
-			
-			    // קרא את הנתונים הקיימים קודם
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:A'
-				});
-				
-				const existingIDs = new Set(response.result.values?.slice(1).map(row => row[0]) || []);
-				
-				// סנן רק רשומות חדשות
-				const newLocations = locationsArray.filter(location => !existingIDs.has(location.ID));
-				
-				if (newLocations.length === 0) {
-					console.log('אין לקוחות חדשים לשמירה');
-					return true;
-				}
-			
-				const values = newLocations.map(location => [
-					location.ID,
-					location.name,
-					location.full_address,
-					location.neighborhood,
-					location.city,
-					location.contact_person,
-					location.phone,
-					location.allowed_day,
-					location.interval_weeks,
-					location.temp_addition,
-					location.base_amount,
-					location.active,
-					location.notes,
-					formatDateForSheets(location.last_visit),
-					formatDateForSheets(location.next_visit),
-					location.client_requests || ''
+				const locationValues = locationsArray.map(loc => [
+					loc.ID,
+					loc.name,
+					loc.full_address,
+					loc.neighborhood,
+					loc.city,
+					loc.contact_person,
+					loc.phone,
+					loc.allowed_day,
+					loc.interval_weeks,
+					loc.temp_addition || 0,
+					loc.base_amount,
+					loc.active,
+					loc.notes || '',
+					loc.last_visit || '',
+					loc.next_visit || '',
+					loc.client_requests || ''  // שדה חסר!
 				]);
 				
-				await gapi.client.sheets.spreadsheets.values.append({
+				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.LOCATIONS}!A:P`, 
+					range: `Locations!A2:P${locationValues.length + 1}`,
 					valueInputOption: 'USER_ENTERED',
-					resource: { 
-						values: values,
-						majorDimension: 'ROWS'
-					}
+					resource: { values: locationValues }
 				});
 				
-				console.log(`✅ Saved ${newLocations.length} locations in batch - from ${locationsArray.length}`);
+				console.log(`✅ Saved ${locationsArray.length} locations to cloud`);
 				return true;
 			} catch (error) {
-				console.error('Error in batch save locations:', error);
+				console.error('Error saving locations batch:', error);
 				return false;
 			}
 		}
@@ -8968,8 +9075,10 @@
 					work_done: document.getElementById('editWorkDone').value,
 					duration_minutes: parseInt(document.getElementById('editDuration').value) || 0,
 					start_time: document.getElementById('editStartTime').value,
+					end_time: document.getElementById('editEndTime').value,
 					amount: parseFloat(document.getElementById('editAmount').value) || 0,
 					expense: parseFloat(document.getElementById('editExpense').value) || 0,
+					num_workers: parseInt(document.getElementById('editNumWorkers').value) || 1, // ✅ הוספה
 					notes: document.getElementById('editNotes').value
 				};
 				
@@ -10160,6 +10269,7 @@
 		}
 
 		// הגדרת השעה הנוכחית
+		// Update the existing setCurrentTime function to handle edit form
 		function setCurrentTime(timeInputId) {
 			const now = new Date();
 			const hours = String(now.getHours()).padStart(2, '0');
@@ -10171,6 +10281,8 @@
 			// חישוב משך טיפול אם שני השדות מלאים
 			if (timeInputId.includes('modal')) {
 				calculateModalDuration();
+			} else if (timeInputId.includes('edit')) {
+				calculateEditDuration(); // ✅ הוספה לטופס העריכה
 			} else {
 				calculateDurationFromTimes();
 			}
@@ -10237,32 +10349,29 @@
 		}
 
 		function calculateModalTreatmentCost() {
-			console.log('calculateModalTreatmentCost called!');
+			// console.log('calculateModalTreatmentCost called!');
 			
 			const totalMinutes = parseInt(document.getElementById('modalManualDurationMinutes').value) || 0;
 			const numWorkers = parseInt(document.getElementById('modalNumWorkers').value) || 1;
 			const expense = parseFloat(document.getElementById('modalExpense').value) || 0;
 			
-			console.log('Calculation params:', { totalMinutes, numWorkers, expense, costSettings });
+			// console.log('Calculation params:', { totalMinutes, numWorkers, expense, costSettings });
 			
 			if (totalMinutes > 0 && costSettings && costSettings.hourlyRate) {
 				const hours = totalMinutes / 60;
 				const baseCost = costSettings.hourlyRate * hours;
-				// עלות עובדים נוספים (לא כולל אותך)
 				const workersCost = (numWorkers - 1) * costSettings.workerCost * hours;
 				const laborCost = baseCost + workersCost;
-				const totalCost = laborCost + expense;
+				const totalCost = laborCost + expense; // הוספת ההוצאות!
 				
-				// עדכן את שדה הסכום
 				document.getElementById('modalAmount').value = Math.round(totalCost);
 				
-				console.log('Calculated cost:', Math.round(totalCost));
+				// console.log('Calculated cost:', Math.round(totalCost));
 				
-				// הודעה על החישוב
 				const message = `מחושב: ${hours.toFixed(1)} שעות × ${costSettings.hourlyRate}₪ = ${Math.round(totalCost)}₪`;
-				console.log(message);
+				// console.log(message);
 			} else {
-				console.log('Missing data for calculation:', { totalMinutes, costSettings });
+				// console.log('Missing data for calculation:', { totalMinutes, costSettings });
 			}
 		}
 
@@ -10718,9 +10827,6 @@
 
 		function showAddTreatmentForm() {
 		
-			console.log('showAddTreatmentForm called!');
-			alert('הפונקציה נקראה');
-		
 			const modalContent = `
 				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 800px; width: 90vw; max-height: 85vh; overflow-y: auto;">
 					<h3 style="margin-bottom: 20px; color: #2c3e50;">🔧 הוספת טיפול חדש</h3>
@@ -10841,10 +10947,7 @@
 				</div>
 			`;
 			
-			console.log('About to call showModal');
-			console.log('Modal content length:', modalContent.length);
 			showModal(modalContent);
-			console.log('showModal called');
 			
 			// הגדרת תאריך היום
 			document.getElementById('modalVisitDate').value = new Date().toISOString().split('T')[0];
