@@ -1774,7 +1774,25 @@
 			}
 		}
 
+		/* תיקון חיוני - החלונית צריכה להיות מוסתרת כברירת מחדל */
+		#paymentModal {
+			position: fixed !important;
+			top: 0 !important;
+			left: 0 !important;
+			width: 100% !important;
+			height: 100% !important;
+			background: rgba(0,0,0,0.7) !important;
+			display: none !important; /* ✅ שינוי קריטי - none במקום flex! */
+			justify-content: center !important;
+			align-items: center !important;
+			z-index: 99999 !important;
+			backdrop-filter: blur(3px);
+		}
 
+		/* כשהחלונית פתוחה - אז תהיה flex */
+		#paymentModal.show {
+			display: flex !important;
+		}
 
 	</style>
    
@@ -1805,7 +1823,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
 			</nav>
         </header>
 
@@ -12033,10 +12051,7 @@
 			selectedClient = client;
 			selectedVisitIds = preSelectedVisitIds;
 			
-			// הוסף class למניעת גלילה
 			document.body.classList.add('modal-open');
-			
-			// שאר הקוד הקיים...
 			resetPaymentModal();
 			
 			if (client) {
@@ -12051,7 +12066,10 @@
 			}
 			
 			document.getElementById('paymentDetailsSection').style.display = 'none';
-			document.getElementById('paymentModal').style.display = 'block';
+			
+			// ✅ שימוש ב-class במקום style ישיר
+			const modal = document.getElementById('paymentModal');
+			modal.classList.add('show');
 		}
 
 		// איפוס החלונית
@@ -12074,11 +12092,10 @@
 		// סגירת החלונית
 		// עדכון פונקציית סגירת החלונית
 		function closePaymentModal() {
-			document.getElementById('paymentModal').style.display = 'none';
+			const modal = document.getElementById('paymentModal');
+			modal.classList.remove('show'); // ✅ הסרת class
 			
-			// הסר class של מניעת גלילה
 			document.body.classList.remove('modal-open');
-			
 			selectedClient = null;
 			selectedVisitIds = [];
 		}
