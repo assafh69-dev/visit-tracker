@@ -1944,7 +1944,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 			</nav>
         </header>
 
@@ -1952,7 +1952,25 @@
             <!-- Planning Section -->
 			<section id="planning" class="section active">
 				<h2>📅 תכנון יומי ושבועי</h2>
-           
+				
+           <!-- מצב יום עבודה -->
+			<div class="work-day-section" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #28a745; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+				<h3 style="margin: 0 0 15px 0; color: #28a745; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+					🏃‍♂️ הטיפולים שלי היום
+					<span id="todayWorkStatus" style="font-size: 14px; color: #666; font-weight: normal;"></span>
+				</h3>
+				
+				<div id="todayTreatmentsContainer">
+					<!-- הטיפולים של היום יוכנסו כאן דינמית -->
+				</div>
+				
+				<div style="text-align: center; margin-top: 15px;">
+					<button onclick="refreshTodayTreatments()" class="btn" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+						🔄 רענן
+					</button>
+				</div>
+			</div>
+			
             <!-- טאבים -->
             <div class="planning-view-tabs">
 				<button class="planning-tab-btn active" onclick="switchPlanningView('daily')">יומי</button>
@@ -3432,6 +3450,7 @@
 			
 			// סינון רגיל
 			filterVisits(currentFilter);
+			loadTodayTreatments(); 
 		}
 
 	/////<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -3780,33 +3799,53 @@
 		}
 	
 		// פונקציה חדשה: התחל טיפול (מעבר לטופס עם פרטי לקוח מוכנים)
+		// תיקון פונקציית startTreatment - במקום לנסות לעבור לטאב visit
 		function startTreatment(clientId) {
 			const client = locations.find(loc => loc.ID === clientId);
 			if (!client) {
-				showToast('לא נמצא לקוח', 'error');
+				showToast('לקוח לא נמצא', 'error');
 				return;
 			}
 			
-			// מעבר לטאב טיפול חדש
-			showSection('visit');
+			// בדיקה האם יש כבר טיפול היום ללקוח
+			const today = new Date().toISOString().split('T')[0];
+			const existingTodayVisit = visits.find(visit => 
+				visit.location_id === clientId && 
+				visit.date === today
+			);
 			
-			// מילוי פרטי הלקוח בטופס
-			setTimeout(() => {
-				const locationSelect = document.getElementById('visitLocation');
-				if (locationSelect) {
-					locationSelect.value = clientId;
-					// הפעלת אירוע שינוי למילוי פרטים נוספים
-					locationSelect.dispatchEvent(new Event('change'));
-				}
+			if (existingTodayVisit) {
+				// יש כבר טיפול היום - פתח עריכה
+				showToast(`נמצא טיפול קיים היום עבור ${client.name} - פותח לעריכה`, 'info');
+				editVisit(existingTodayVisit.ID);
+			} else {
+				// אין טיפול היום - צור חדש
+				showToast(`פותח טיפול חדש עבור ${client.name}`, 'success');
 				
-				// מילוי תאריך היום
-				const dateInput = document.getElementById('visitDate');
-				if (dateInput) {
-					dateInput.value = new Date().toISOString().split('T')[0];
-				}
+				// פתח טופס טיפול חדש עם הלקוח מוכן מראש
+				showAddTreatmentForm();
 				
-				showToast(`התחיל טיפול עבור ${client.name}`, 'success');
-			}, 100);
+				// אחרי פתיחת הטופס, מלא את פרטי הלקוח
+				setTimeout(() => {
+					const clientSearchInput = document.getElementById('modalClientSearchInput');
+					const selectedClientId = document.getElementById('modalSelectedClientId');
+					const modalDate = document.getElementById('modalVisitDate');
+					
+					if (clientSearchInput && selectedClientId) {
+						clientSearchInput.value = `${client.name} - ${client.full_address}`;
+						selectedClientId.value = clientId;
+					}
+					
+					if (modalDate) {
+						modalDate.value = today;
+					}
+					
+					// חישוב עלות אוטומטי
+					if (typeof calculateModalTreatmentCost === 'function') {
+						calculateModalTreatmentCost();
+					}
+				}, 100);
+			}
 		}
 
 		// עדכון פונקציית החלפת סטטוס פעיל/לא פעיל
@@ -3921,21 +3960,8 @@
 
 		// צפייה בהיסטוריית טיפולים
 		function showClientTreatmentHistory(clientId) {
-			const client = locations.find(loc => loc.ID === clientId);
-			const clientVisits = visits.filter(visit => visit.location_id === clientId)
-				.sort((a, b) => new Date(b.date) - new Date(a.date))
-				.slice(0, 10);
-			
-			if (clientVisits.length === 0) {
-				alert(`${client.name} - אין עדיין היסטוריית טיפולים`);
-				return;
-			}
-			
-			const historyText = clientVisits.map(visit => 
-				`${formatDate(visit.date)} - ${visit.work_done || 'טיפול'} - ₪${visit.amount} (${getPaymentStatusText(getVisitPaymentStatus(visit.ID))})`
-			).join('\n');
-			
-			alert(`היסטוריית טיפולים - ${client.name}:\n\n${historyText}`);
+			// Use the existing working showClientHistory function instead of alert
+			showClientHistory(clientId);
 		}
 
 		// התחלת טיפול מיידי
@@ -4058,6 +4084,9 @@
 			if (historySection && historySection.classList.contains('active')) {
 				applyVisitFilters();
 			}
+			
+			// רענן את הטיפולים של היום
+			loadTodayTreatments();
 		}
 	
 	/////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -13183,6 +13212,117 @@
 		}
 
 		// Call this function in browser console to test: testTreatmentDatesUpdate()
+
+
+		// Add these functions after the existing planning functions
+
+		// Load and display today's treatments in the work day section
+		
+		function loadTodayTreatments() {
+			const today = new Date().toISOString().split('T')[0];
+			const todayVisits = visits.filter(visit => visit.date === today)
+				.sort((a, b) => {
+					// Sort by start time if available, otherwise by creation order
+					const timeA = visit.start_time || '00:00';
+					const timeB = visit.start_time || '00:00';
+					return timeA.localeCompare(timeB);
+				});
+			
+			const container = document.getElementById('todayTreatmentsContainer');
+			const statusElement = document.getElementById('todayWorkStatus');
+			
+			if (todayVisits.length === 0) {
+				container.innerHTML = `
+					<div style="text-align: center; padding: 15px; color: #666; font-style: italic;">
+						עדיין לא התחלת טיפולים היום 🌅
+					</div>
+				`;
+				statusElement.textContent = '';
+				return;
+			}
+			
+			// Update status summary
+			const completedCount = todayVisits.filter(v => v.end_time).length;
+			const totalIncome = todayVisits.reduce((sum, v) => sum + parseFloat(v.amount || 0), 0);
+			statusElement.textContent = `(${completedCount}/${todayVisits.length} הסתיימו • ₪${totalIncome} סה"כ)`;
+			
+			// Generate treatments HTML
+			const treatmentsHtml = todayVisits.map(visit => {
+				const client = locations.find(loc => loc.ID === visit.location_id);
+				const clientName = visit.location_name || client?.name || 'לקוח לא מזוהה';
+				
+				const startTime = visit.start_time || '--:--';
+				const endTime = visit.end_time || '';
+				const amount = visit.amount || 0;
+				const workDone = visit.work_done || 'ללא תיאור';
+				
+				// Determine status and icon
+				let statusIcon, statusText, statusColor;
+				if (visit.end_time) {
+					statusIcon = '✅';
+					statusText = 'הסתיים';
+					statusColor = '#28a745';
+				} else if (visit.start_time) {
+					statusIcon = '🟡';
+					statusText = 'בטיפול';
+					statusColor = '#ffc107';
+				} else {
+					statusIcon = '🟢';
+					statusText = 'רק התחלתי';
+					statusColor = '#17a2b8';
+				}
+				
+				return `
+					<div class="today-treatment-item" style="
+						display: flex; 
+						align-items: center; 
+						justify-content: space-between; 
+						padding: 10px 15px; 
+						margin-bottom: 8px; 
+						background: white; 
+						border-radius: 8px; 
+						border-left: 4px solid ${statusColor};
+						box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+					">
+						<div style="flex: 1;">
+							<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+								<span style="font-size: 16px;">${statusIcon}</span>
+								<strong style="color: #2c3e50;">${startTime}</strong>
+								<span style="color: #666;">-</span>
+								<strong style="color: #2c3e50;">${clientName}</strong>
+							</div>
+							<div style="font-size: 12px; color: #666; margin-left: 24px;">
+								${workDone}
+							</div>
+						</div>
+						
+						<div style="display: flex; align-items: center; gap: 10px;">
+							<div style="text-align: right;">
+								<div style="font-weight: bold; color: ${statusColor};">₪${amount}</div>
+								<div style="font-size: 11px; color: #666;">${statusText}</div>
+							</div>
+							<button onclick="editVisit('${visit.ID}')" 
+									style="background: #007bff; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;"
+									title="ערוך טיפול">
+								✏️
+							</button>
+						</div>
+					</div>
+				`;
+			}).join('');
+			
+			container.innerHTML = treatmentsHtml;
+		}
+
+		// Refresh today's treatments - called by refresh button
+		function refreshTodayTreatments() {
+			loadTodayTreatments();
+			showToast('הטיפולים של היום עודכנו', 'success', 1500);
+		}
+
+		// Add to the existing loadPlanningData function - call loadTodayTreatments() at the end
+		// You need to add this line: loadTodayTreatments(); 
+		// to the end of the loadPlanningData() function
 
    </script>
 </body>
