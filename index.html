@@ -1944,7 +1944,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -4041,13 +4041,23 @@
 		};
 
 		// עדכון הפונקציה refreshPlanningAfterTreatmentUpdate לעבוד עם שתי המערכות
+		// Make sure this function exists and gets called after dates update
+		
 		function refreshPlanningAfterTreatmentUpdate() {
+			// רענן את נתוני התכנון אם הטאב פתוח
 			const currentSection = document.querySelector('.section.active');
 			if (currentSection && currentSection.id === 'planning') {
-				loadPlanningData(); // זה יקרא למערכת המתאימה
+				loadPlanningData();
 			}
 			
+			// רענן גם את רשימת הלקוחות בטופס הביקור
 			loadLocationsForSelect();
+			
+			// ✅ הוסף: רענן את טבלת הטיפולים אם פתוחה
+			const historySection = document.getElementById('history');
+			if (historySection && historySection.classList.contains('active')) {
+				applyVisitFilters();
+			}
 		}
 	
 	/////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -4390,6 +4400,8 @@
 		}
 
 		// לשנות בפונקציה הקיימת - להוסיף שמירה לשיטס
+		// Replace the existing saveVisit function with this corrected version
+		// Replace the existing saveVisit function with this clear version
 		async function saveVisit(visitData) {
 			try {
 				// מצא את הלקוח
@@ -4401,112 +4413,61 @@
 					date: visitData.date,
 					location_id: visitData.location_id,
 					location_name: location ? location.name : 'לקוח לא ידוע',
-					visit_type: visitData.visit_type || 'מלא',
-					work_done: visitData.work_done || '',
-					duration_minutes: visitData.duration_minutes || 0,
+					visit_type: visitData.visit_type,
+					work_done: visitData.work_done,
+					duration_minutes: visitData.duration_minutes,
 					num_workers: visitData.workers_count || 1,
-					start_time: visitData.start_time || '',
-					end_time: visitData.end_time || '',
-					amount: parseFloat(visitData.amount) || 0,
-					expense: parseFloat(visitData.expense) || 0,
-					notes: visitData.notes || ''
+					start_time: visitData.start_time,
+					end_time: visitData.end_time,
+					amount: visitData.amount,
+					expense: visitData.expense || 0,
+					notes: visitData.notes,
+					paid: visitData.paid || 'לא שולם'
 				};
-				
-				// בדיקת תקינות
-				if (!newVisit.location_id) {
-					showToast('חובה לבחור לקוח', 'error');
-					return;
-				}
-				
-				// הוספה למערך המקומי
+
+				// הוסף לרשימת הטיפולים
 				visits.push(newVisit);
 				
-				// יצירת תשלום אוטומטי אם נדרש
-				if (visitData.paid && (visitData.paid === '1' || visitData.paid === 'כן' || visitData.paid === 'שולם')) {
-					const payment = {
-						ID: generateID(),
-						date: newVisit.date,
-						time: newVisit.start_time || new Date().toTimeString().substr(0, 5),
-						amount: newVisit.amount || 0,
-						payment_method: 'cash',
-						source_type: 'manual_visit_payment',
-						client_id: newVisit.location_id,
-						client_name: location ? location.name : 'לקוח לא ידוע',
-						notes: `תשלום עבור טיפול - ${newVisit.work_done}`,
-						status: 'completed',
-						created_at: new Date().toISOString()
-					};
-					
-					payments.push(payment);
-					
-					const link = {
-						ID: generateID(),
-						payment_id: payment.ID,
-						visit_id: newVisit.ID,
-						amount_allocated: newVisit.amount || 0,
-						link_type: 'full_payment',
-						created_at: new Date().toISOString()
-					};
-					
-					paymentVisitLinks.push(link);
-					
-					// שמירה בענן
-					if (access_token) {
-						try {
-							await saveAllToSheetsOptimized();
-						} catch (error) {
-							console.log('Payment saved locally only');
-						}
-					}
-				}
-				
-				// שמירה מקומית
+				// שמירה מקומית תמיד מצליחה
 				saveToLocalStorage();
 				
-				// שמירה בענן
-				if (access_token) {
+				// נסה לשמור בענן
+				let cloudSaved = false;
+				if (access_token && SPREADSHEET_ID) {
 					try {
 						await saveVisitToSheets(newVisit);
-						showToast('טיפול נשמר בהצלחה במערכת ובענן!', 'success');
+						cloudSaved = true;
 					} catch (error) {
-						showToast('טיפול נשמר מקומית, אך נכשל בשמירה לענן', 'warning');
+						console.error('Cloud save failed:', error);
+						cloudSaved = false;
 					}
-				} else {
-					showToast('טיפול נשמר מקומית - התחבר לענן לשמירה מלאה', 'info');
 				}
 				
-				// עדכון תאריך הטיפול הבא
-				if (visitData.visit_type === 'מלא') {
-					updateNextVisitDate(visitData.location_id);
-				}
+				// עדכון תאריכי טיפול
+				await updateSingleLocationTreatmentDates(newVisit.location_id);
 				
 				// רענון תצוגה
-				document.getElementById('visitForm').reset();
+				document.getElementById('visitForm')?.reset();
 				loadPlanningData();
+				
+				// ✅ הודעה אחת וברורה בהתאם למה שקרה בפועל
+				if (access_token && SPREADSHEET_ID) {
+					if (cloudSaved) {
+						showToast('✅ הטיפול נשמר בהצלחה במערכת ובענן!', 'success');
+					} else {
+						showToast('⚠️ הטיפול נשמר מקומית בלבד - בעיה בחיבור לענן', 'warning');
+					}
+				} else {
+					showToast('💾 הטיפול נשמר מקומית - התחבר לענן לשמירה מלאה', 'info');
+				}
 				
 			} catch (error) {
 				console.error('Error saving visit:', error);
-				showToast('שגיאה בשמירת הטיפול', 'error');
+				showToast('❌ שגיאה בשמירת הטיפול - נסה שנית', 'error');
 			}
 		}
 		
 		
-		function updateNextVisitDate(locationId) {
-			const location = locations.find(g => g.ID == locationId);
-			if (location) {
-               const lastVisit= new Date();
-               const intervalWeeks = parseInt(location.interval_weeks) + parseInt(location.temp_addition || 0);
-               const nextVisit= new Date(lastVisit.getTime() + (intervalWeeks * 7 * 24 * 60 * 60 * 1000));
-               
-               location.last_visit= lastVisit.toISOString().split('T')[0];
-               location.next_visit= nextVisit.toISOString().split('T')[0];
-               location.temp_addition = 0; // Reset temporary addition
-               
-               // Here we would update Google Sheets
-               console.log(`Updated next visitfor ${location.name}: ${location.next_visit}`);
-			}
-		}
-
 		function postponeVisit(locationId) {
 			const location = locations.find(g => g.ID == locationId);
 			if (location) {
@@ -8749,6 +8710,9 @@
 		}
 		
 		// פונקציה לעדכון תאריכי טיפול עבור לקוח אחד לאחר הוספת ביקור
+		// Verify this function exists and works correctly - it should already be in your code
+		// If it's missing any part, here's the complete correct version:
+
 		async function updateSingleLocationTreatmentDates(locationId) {
 			const location = locations.find(loc => loc.ID === locationId);
 			if (!location) return;
@@ -8757,7 +8721,7 @@
 			const locationVisits = visits.filter(visit => visit.location_id === locationId);
 			
 			if (locationVisits.length > 0) {
-				// מיין לפי תאריך (החדש ביותר ראשון)
+				// מיון לפי תאריך (החדש ביותר ראשון)
 				locationVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
 				
 				// הטיפול האחרון
@@ -8780,7 +8744,8 @@
 				// עדכון בגוגל שיטס
 				await updateTreatmentDatesInSheets([location]);
 				
-				// console.log(`📅 עודכן לקוח ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
+				console.log(`📅 עודכן לקוח ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
+				
 				// רענן נתוני תכנון
 				refreshPlanningAfterTreatmentUpdate();
 			}
@@ -9438,11 +9403,13 @@
 		}
 
 		// החלף את saveEditedVisit בפונקציה זו:
+		// Update the existing saveEditedVisit function - add the dates update at the end
+		// Replace the existing saveEditedVisit function with this clear version
 		async function saveEditedVisit(visitId) {
 			console.log(`✅ saveEditedVisit ('${visitId}')`);
 			const visitIndex = visits.findIndex(v => v.ID == visitId);
 			if (visitIndex === -1) {
-				showToast('ביקור לא נמצא', 'error');
+				showToast('❌ ביקור לא נמצא', 'error');
 				return;
 			}
 			
@@ -9458,7 +9425,7 @@
 					end_time: document.getElementById('editEndTime').value,
 					amount: parseFloat(document.getElementById('editAmount').value) || 0,
 					expense: parseFloat(document.getElementById('editExpense').value) || 0,
-					num_workers: parseInt(document.getElementById('editNumWorkers').value) || 1, // ✅ הוספה
+					num_workers: parseInt(document.getElementById('editNumWorkers').value) || 1,
 					notes: document.getElementById('editNotes').value
 				};
 				
@@ -9473,39 +9440,42 @@
 					await handlePaymentStatusChange(visitId, newPaymentStatus, oldPaymentStatus);
 				}
 				
-				// שמור מקומית תמיד
+				// שמירה מקומית תמיד מצליחה
 				saveToLocalStorage();
-				updateCloudStatus('💾 שומר ביקור...', 'מעדכן');
 				
 				// נסה לשמור בענן
+				let cloudSaved = false;
 				if (access_token && SPREADSHEET_ID) {
 					try {
 						await updateVisitInCloud(updatedVisit);
-						updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
-						showToast('ביקור עודכן בהצלחה במערכת ובענן!', 'success');
+						cloudSaved = true;
 					} catch (error) {
-						if (error.status === 401) {
-							updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
-							showToast('⚠️ החיבור לגוגל פג - הביקור נשמר מקומית בלבד', 'warning');
-							access_token = null;
-						} else {
-							updateCloudStatus('⚠️ שגיאה בשמירה', 'שגיאה');
-							showToast('⚠️ הביקור נשמר מקומית, אבל לא הצליח לשמור בענן', 'warning');
-						}
+						console.error('Cloud update failed:', error);
+						cloudSaved = false;
 					}
-				} else {
-					updateCloudStatus('🔐 שינויים לא נשמרו בענן', 'מקומי');
-					showToast('🔐 ביקור נשמר מקומית - התחבר לענן לשמירה מלאה', 'warning');
 				}
 				
+				// עדכון תאריכי טיפול
+				await updateSingleLocationTreatmentDates(updatedVisit.location_id);
+				
 				// עדכן תצוגה
-				applyVisitFilters();
+				loadVisitsHistory();
 				closeEditModal();
+				
+				// ✅ הודעה אחת וברורה בהתאם למה שקרה בפועל
+				if (access_token && SPREADSHEET_ID) {
+					if (cloudSaved) {
+						showToast('✅ הטיפול עודכן בהצלחה במערכת ובענן!', 'success');
+					} else {
+						showToast('⚠️ הטיפול עודכן מקומית בלבד - בעיה בחיבור לענן', 'warning');
+					}
+				} else {
+					showToast('💾 הטיפול עודכן מקומית - התחבר לענן לעדכון מלא', 'info');
+				}
 				
 			} catch (error) {
 				console.error('Error updating visit:', error);
-				updateCloudStatus('❌ שגיאה במערכת', 'שגיאה');
-				showToast('שגיאה בעדכון הביקור', 'error');
+				showToast('❌ שגיאה בעדכון הטיפול - נסה שנית', 'error');
 			}
 		}
 
@@ -11460,10 +11430,11 @@
 		// הפונקציה filterClientOptions כבר קיימת ותעבוד עם ה-IDs החדשים
 
 		// טיפול בשליחת הטופס מהמודל
-		function handleModalVisitSubmit(event) {
+		// Replace handleModalVisitSubmit with this final clean version
+		async function handleModalVisitSubmit(event) {
 			event.preventDefault();
 			
-			// איסוף נתונים מהטופס המשודרג
+			// איסוף נתונים מהטופס
 			const visitDate = document.getElementById('modalVisitDate').value;
 			const selectedClientId = document.getElementById('modalSelectedClientId').value;
 			const visitType = document.getElementById('modalVisitType').value;
@@ -11479,17 +11450,17 @@
 			
 			// בדיקות בסיסיות
 			if (!selectedClientId) {
-				showToast('אנא בחר לקוח', 'error');
+				showToast('❌ אנא בחר לקוח', 'error');
 				return;
 			}
 			
 			if (!visitDate) {
-				showToast('נדרש תאריך טיפול', 'error');
+				showToast('❌ נדרש תאריך טיפול', 'error');
 				return;
 			}
 			
 			if (!visitType) {
-				showToast('נדרש סוג טיפול', 'error');
+				showToast('❌ נדרש סוג טיפול', 'error');
 				return;
 			}
 			
@@ -11502,18 +11473,18 @@
 				const confirmMessage = `כבר קיים טיפול ללקוח "${locationName}" היום (${formatDate(visitDate)}).\n\nהאם להוסיף טיפול נוסף בכל זאת?`;
 				
 				if (!confirm(confirmMessage)) {
-					return; // ביטול הוספה
+					return;
 				}
 			}
 			
-			// חישוב אוטומטי של משך הזמן אם יש שעת התחלה וסיום
+			// חישוב משך זמן
 			let calculatedDuration = durationMinutes;
 			if (startTime && endTime) {
 				const start = new Date(`2000-01-01 ${startTime}`);
 				const end = new Date(`2000-01-01 ${endTime}`);
 				const diffMs = end - start;
 				if (diffMs > 0) {
-					calculatedDuration = Math.round(diffMs / (1000 * 60)); // הפרש בדקות
+					calculatedDuration = Math.round(diffMs / (1000 * 60));
 				}
 			}
 			
@@ -11532,16 +11503,11 @@
 				notes: notes
 			};
 			
-			console.log('Visit data from modal:', visitData);
+			// ✅ שמירת הטיפול (saveVisit תטפל בהודעות)
+			await saveVisit(visitData);
 			
-			// שמירת הטיפול
-			saveVisit(visitData);
-			
-			// סגירת המודאל
+			// ✅ סגירת החלונית רק אחרי שמירה
 			closeModal();
-			
-			// רענון התצוגה
-			loadReceiptsTable();
 		}
 
 		function filterClientOptions(inputId, optionsId) {
@@ -13185,6 +13151,38 @@
 		}
 
 
+		// Add this debug function to test if the dates update system works
+		function testTreatmentDatesUpdate() {
+			console.log('🧪 Testing treatment dates update system...');
+			
+			// בדוק כמה לקוחות יש
+			console.log(`Total locations: ${locations.length}`);
+			console.log(`Total visits: ${visits.length}`);
+			
+			// מצא לקוח עם ביקורים
+			const locationsWithVisits = locations.filter(loc => {
+				const hasVisits = visits.some(visit => visit.location_id === loc.ID);
+				return hasVisits;
+			});
+			
+			console.log(`Locations with visits: ${locationsWithVisits.length}`);
+			
+			// הצג דוגמאות
+			locationsWithVisits.slice(0, 3).forEach(location => {
+				const clientVisits = visits.filter(v => v.location_id === location.ID);
+				const latestVisit = clientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+				
+				console.log(`👤 ${location.name}:`);
+				console.log(`   Last visit in system: ${location.last_visit}`);
+				console.log(`   Next visit in system: ${location.next_visit}`);
+				console.log(`   Latest actual visit: ${latestVisit ? latestVisit.date : 'none'}`);
+				console.log(`   Interval weeks: ${location.interval_weeks || 4}`);
+			});
+			
+			console.log('🧪 Test complete - check console output above');
+		}
+
+		// Call this function in browser console to test: testTreatmentDatesUpdate()
 
    </script>
 </body>
