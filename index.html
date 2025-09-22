@@ -1944,7 +1944,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 			</nav>
         </header>
 
@@ -2193,9 +2193,10 @@
 								<th>איש קשר</th>
 								<th>יום מותר</th>
 								<th>מרווח</th>
-								<th>פעילות</th>
-								<th>תשלום אחרון</th>  <!-- עמודה חדשה -->
-								<th>הערות חוב</th>      <!-- debt_notes קיימת -->
+								<th>פעיל</th>
+								<th>טיפול קודם</th>
+								<th>טיפול הבא</th>
+								<th>הערות</th>
 								<th>פעולות</th>
 							</tr>
 						</thead>
@@ -3725,8 +3726,16 @@
 		}
 
 		// רינדור שורת לקוח (משותף לשני המצבים)
+		// Update the renderClientRow function to show last treatment date
 		function renderClientRow(client) {
 			const nextVisitFormatted = formatDate(client.next_visit);
+			
+			// Find last treatment date for this client
+			const clientVisits = visits.filter(visit => visit.location_id === client.ID);
+			const lastTreatmentDate = clientVisits.length > 0 
+				? clientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
+				: '';
+			
 			let statusText = '';
 			
 			// טקסט סטטוס לפי תצוגה
@@ -3753,7 +3762,10 @@
 						<div class="planning-client-info">
 							<div class="planning-client-name">${client.name}</div>
 							<div class="planning-client-address">${client.full_address}</div>
-							<div class="planning-client-date">📅 ${nextVisitFormatted} (${statusText})</div>
+							<div class="planning-client-date">
+								📅 הבא: ${nextVisitFormatted} (${statusText})
+								${lastTreatmentDate ? `<br><small style="color: #666;">📋 אחרון: ${formatDate(lastTreatmentDate)}</small>` : '<br><small style="color: #999;">📋 ללא טיפולים קודמים</small>'}
+							</div>
 						</div>
 						<div class="planning-client-price">₪${client.base_amount || 0}</div>
 						<div class="planning-client-actions">
@@ -3776,7 +3788,7 @@
 					</div>
 					${(client.notes || client.client_requests) ? `
 						<div class="planning-row-details">
-							${client.client_requests ? `<div class="client-requests">📝 בקשות: ${client.client_requests}</div>` : ''}
+							${client.client_requests ? `<div class="client-requests">🔔 בקשות: ${client.client_requests}</div>` : ''}
 							${client.notes ? `<div class="client-notes">💭 הערות: ${client.notes}</div>` : ''}
 						</div>
 					` : ''}
@@ -4242,41 +4254,57 @@
 			}
 		}
 
-	    function loadLocationsTable() {
+
+	   function loadLocationsTable() {
+			const filteredData = getFilteredLocations();
+			
 			const tbody = document.getElementById('locationsTableBody');
 			tbody.innerHTML = '';
 			
-			// קבלת נתונים מסוננים
-			const filteredLocations = getFilteredLocations();
+			if (filteredData.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px; color: #666;">אין לקוחות תואמים לסינון</td></tr>';
+				updateLocationsStats(filteredData);
+				return;
+			}
 			
-			// עדכון סטטיסטיקות
-			updateLocationsStats(filteredLocations);
-			
-			filteredLocations.forEach(location => {
-				// המרת סטטוס פעילות למלל
-				const activeStatus = location.active === "1" ? "פעיל" : "לא פעיל";
-				
+			filteredData.forEach(location => {
 				const row = document.createElement('tr');
+				
+				// Find last treatment date for this client
+				const clientVisits = visits.filter(visit => visit.location_id === location.ID);
+				const lastTreatmentDate = clientVisits.length > 0 
+					? clientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
+					: '';
+				
 				row.innerHTML = `
-					<td>${location.name}</td>
-					<td>${location.full_address}</td>
-					<td>${location.contact_person}</td>
-					<td>${location.allowed_day}</td>
-					<td>${location.interval_weeks}</td>
 					<td>
-						<select onchange="updateLocationActive('${location.ID}', this.value)" 
-								style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
-							<option value="1" ${location.active === '1' ? 'selected' : ''}>פעיל</option>
-							<option value="0" ${location.active === '0' ? 'selected' : ''}>לא פעיל</option>
-						</select>
+						<strong>${location.name}</strong>
+						${location.contact_person ? `<br><small style="color: #666;">${location.contact_person}</small>` : ''}
 					</td>
-					<td>${formatLastPayment(location.ID)}</td>
+					<td>${location.full_address}</td>
+					<td>${location.contact_person || ''}</td>
+					<td>${location.allowed_day}</td>
+					<td style="text-align: center;">
+						<span class="interval-badge">${location.interval_weeks || 4} שבועות</span>
+					</td>
+					<td style="text-align: center;">
+						<input type="checkbox" 
+							   ${location.active === '1' ? 'checked' : ''} 
+							   onchange="toggleLocationStatus('${location.ID}', this.checked ? '1' : '0')"
+							   style="transform: scale(1.2); cursor: pointer;">
+					</td>
+					<td style="text-align: center; font-size: 12px; color: ${lastTreatmentDate ? '#2c3e50' : '#999'};">
+						${lastTreatmentDate ? formatDate(lastTreatmentDate) : '-'}
+					</td>
+					<td style="text-align: center; font-size: 12px; color: ${location.next_visit ? '#e74c3c' : '#999'};">
+						${location.next_visit ? formatDate(location.next_visit) : '-'}
+					</td>
 					<td>
 						<input type="text" 
-							   value="${location.debt_notes || ''}" 
-							   placeholder="הערות חוב..."
+							   value="${location.notes || ''}" 
+							   placeholder="הערות..."
 							   style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"
-							   onchange="updateDebtNotes('${location.ID}', this.value)">
+							   onchange="updateLocationNotes('${location.ID}', this.value)">
 					</td>
 					<td>
 						<button class="action-btn edit-btn" onclick="editLocation('${location.ID}')">ערוך</button>
@@ -4285,6 +4313,8 @@
 				`;
 				tbody.appendChild(row);
 			});
+			
+			updateLocationsStats(filteredData);
 		}
 
 		// עדכון סטטיסטיקות הלקוחות
@@ -11387,58 +11417,66 @@
 		}
 
 		// מעבר לטאב טיפולים מסונן לפי לקוח
-		function showClientTreatments(locationId) {
-			const location = locations.find(loc => loc.ID === locationId);
-			if (!location) {
+		function showClientTreatments(clientId) {
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) {
 				showToast('לקוח לא נמצא', 'error');
 				return;
 			}
 			
-			// מעבר לטאב טיפולים
+			// Jump to treatments tab
 			showSection('history');
 			
-			// המתן רגע שהטאב יטען
+			// Wait for tab to load, then apply client filter
 			setTimeout(() => {
-				// הגדר סינון ללקוח הספציפי - תיקון השם!
-				const clientFilter = document.getElementById('filterLocation'); // ← תיקון כאן!
-				if (clientFilter) {
-					clientFilter.value = locationId; // ← גם לפי ID ולא שם!
+				// Clear existing filters
+				if (typeof clearVisitFilters === 'function') {
+					clearVisitFilters();
 				}
 				
-				// הגדר סינון לטיפולים לא שולמו
-				const paymentFilter = document.getElementById('filterPayment');
-				if (paymentFilter) {
-					paymentFilter.value = 'לא';
+				// Set smart search to client name
+				const smartSearchInput = document.getElementById('visitSmartSearch');
+				if (smartSearchInput) {
+					smartSearchInput.value = client.name;
+					// Trigger the search
+					if (typeof handleVisitSmartSearch === 'function') {
+						handleVisitSmartSearch(client.name);
+					}
 				}
 				
-				// הפעל את הסינון
-				applyVisitFilters();
-				
-				showToast(`מציג טיפולים לא שולמו של ${location.name}`, 'info');
-			}, 100);
+				showToast(`מציג טיפולים עבור ${client.name}`, 'success', 2000);
+			}, 200);
 		}
 
-		function showClientReceipts(locationId) {
-			const location = locations.find(loc => loc.ID === locationId);
-			if (!location) {
+		function showClientReceipts(clientId) {
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) {
 				showToast('לקוח לא נמצא', 'error');
 				return;
 			}
 			
-			// Move to receipts tab
+			// Jump to receipts tab
 			showSection('receipts');
 			
-			// Wait for tab to load
+			// Wait for tab to load, then apply client filter
 			setTimeout(() => {
-				// Use smart search instead of client filter
-				const smartSearchInput = document.getElementById('receiptSmartSearch');
-				if (smartSearchInput) {
-					smartSearchInput.value = location.name;
-					handleReceiptSmartSearch(location.name);
+				// Clear existing filters
+				if (typeof clearReceiptFilters === 'function') {
+					clearReceiptFilters();
 				}
 				
-				showToast(`מציג קבלות של ${location.name}`, 'info');
-			}, 100);
+				// Set client filter if dropdown exists
+				const clientFilter = document.getElementById('filterReceiptClient');
+				if (clientFilter) {
+					clientFilter.value = clientId;
+					// Apply filters
+					if (typeof applyReceiptFilters === 'function') {
+						applyReceiptFilters();
+					}
+				}
+				
+				showToast(`מציג קבלות עבור ${client.name}`, 'info', 2000);
+			}, 200);
 		}
 
 
@@ -13003,21 +13041,28 @@
 				return;
 			}
 			
-			// Move to treatments tab and filter by this client
+			// Jump to treatments tab
 			showSection('history');
 			
+			// Wait for tab to load, then apply client filter
 			setTimeout(() => {
-				// Set filter to specific client
-				const clientFilter = document.getElementById('filterLocation');
-				if (clientFilter) {
-					clientFilter.value = clientId;
+				// Clear existing filters first
+				if (typeof clearVisitFilters === 'function') {
+					clearVisitFilters();
 				}
 				
-				// Apply filters to show only this client's treatments
-				applyVisitFilters();
+				// Set smart search to client name
+				const smartSearchInput = document.getElementById('visitSmartSearch');
+				if (smartSearchInput) {
+					smartSearchInput.value = client.name;
+					// Trigger the search
+					if (typeof handleVisitSmartSearch === 'function') {
+						handleVisitSmartSearch(client.name);
+					}
+				}
 				
-				showToast(`מציג היסטוריית טיפולים של ${client.name}`, 'info');
-			}, 100);
+				showToast(`מציג היסטוריית טיפולים עבור ${client.name}`, 'info', 2000);
+			}, 200);
 		}
 
 		
@@ -13323,6 +13368,19 @@
 		// Add to the existing loadPlanningData function - call loadTodayTreatments() at the end
 		// You need to add this line: loadTodayTreatments(); 
 		// to the end of the loadPlanningData() function
+		
+		
+		function updateLocationNotes(locationId, newNotes) {
+			const location = locations.find(loc => loc.ID === locationId);
+			if (location) {
+				location.notes = newNotes;
+				saveToLocalStorage();
+				
+				if (access_token && SPREADSHEET_ID) {
+					updateLocationInCloud(location);
+				}
+			}
+		}
 
    </script>
 </body>
