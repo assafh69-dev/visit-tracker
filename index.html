@@ -1423,34 +1423,28 @@
 		}
 
 		/* עיצוב חלונית תשלום */
-		.payment-summary {
-			background: #e8f5e8;
-			padding: 15px;
-			border-radius: 8px;
-			margin: 15px 0;
-			border-left: 4px solid #28a745;
-			text-align: center;
-			font-size: 16px;
-			color: #155724;
-		}
-
+			
 		.visits-list {
-			max-height: 300px;
+			max-height: 250px;
 			overflow-y: auto;
-			border: 1px solid #ddd;
-			border-radius: 5px;
-			padding: 10px;
+			border: 2px solid #ddd;
+			border-radius: 8px;
+			padding: 0; /* ✅ הסרת padding מהמכיל */
 			margin: 10px 0;
 			background: #f9f9f9;
 		}
 
 		.visit-item {
-			display: flex;
+			display: grid; /* ✅ שינוי מ-flex לגריד */
+			grid-template-columns: 40px 1fr 80px; /* ✅ רוחבים קבועים */
 			align-items: center;
-			padding: 8px;
+			padding: 12px;
 			border-bottom: 1px solid #eee;
 			cursor: pointer;
 			transition: background-color 0.2s;
+			border-radius: 0; /* ✅ ביטול border-radius פנימי */
+			margin-bottom: 0; /* ✅ ביטול margin */
+			gap: 10px; /* ✅ רווח קבוע בין העמודות */
 		}
 
 		.visit-item:hover {
@@ -1462,34 +1456,64 @@
 		}
 
 		.visit-checkbox {
-			margin-left: 10px;
-			transform: scale(1.2);
+			width: 18px; /* ✅ רוחב קבוע */
+			height: 18px; /* ✅ גובה קבוע */
+			margin: 0; /* ✅ ביטול margin */
+			cursor: pointer;
+			justify-self: center; /* ✅ מרכז בתא הגריד */
 		}
 
 		.visit-details {
-			flex: 1;
-			margin: 0 10px;
+			line-height: 1.4;
+			min-width: 0; /* ✅ מאפשר word-wrap */
+		}
+
+		.visit-details div:first-child {
+			font-weight: bold;
+			color: #2c3e50;
+			margin-bottom: 2px;
+		}
+
+		.visit-details div:last-child {
+			font-size: 12px;
+			color: #666;
+			white-space: nowrap; /* ✅ מונע שבירת שורה */
+			overflow: hidden;
+			text-overflow: ellipsis; /* ✅ נקודות אם הטקסט ארוך מדי */
 		}
 
 		.visit-amount {
 			font-weight: bold;
-			color: #28a745;
-			min-width: 80px;
+			color: #27ae60;
 			text-align: left;
+			font-size: 15px;
+			justify-self: start; /* ✅ יישור לשמאל בתא הגריד */
 		}
 
-		.client-dropdown {
-			position: absolute;
-			top: 100%;
-			left: 0;
-			right: 0;
-			background: white;
-			border: 1px solid #ddd;
-			border-top: none;
-			max-height: 200px;
-			overflow-y: auto;
-			z-index: 1000;
-			border-radius: 0 0 5px 5px;
+		/* תגובה למובייל */
+		@media (max-width: 600px) {
+			.visit-item {
+				grid-template-columns: 35px 1fr 70px; /* ✅ קצת יותר קטן במובייל */
+				padding: 10px;
+				gap: 8px;
+			}
+			
+			.visit-checkbox {
+				width: 16px;
+				height: 16px;
+			}
+			
+			.visit-amount {
+				font-size: 14px;
+			}
+			
+			.visit-details div:first-child {
+				font-size: 13px;
+			}
+			
+			.visit-details div:last-child {
+				font-size: 11px;
+			}
 		}
 
 		.form-row {
@@ -1533,17 +1557,7 @@
 			box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 		}
 
-		.client-options {
-			border: 1px solid #ddd;
-			max-height: 200px;
-			overflow-y: auto;
-			border-radius: 4px;
-			background: white;
-			position: absolute;
-			z-index: 1000;
-			width: calc(100% - 2px);
-			box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-		}
+
 
 		.client-option {
 			padding: 10px;
@@ -1930,7 +1944,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 			</nav>
         </header>
 
@@ -5889,7 +5903,6 @@
 		}
 
 		// תוספה - הצגת טיפולים מסוננים
-		// Replace the existing displayFilteredVisits function with this improved version
 		function displayFilteredVisits(filteredVisits) {
 			const tbody = document.getElementById('visitsHistoryTableBody');
 			
@@ -5897,17 +5910,15 @@
 			tbody.innerHTML = '';
 			
 			if (filteredVisits.length === 0) {
-				tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #666;">אין טיפולים תואמים לסינון</td></tr>';
+				// ✅ תיקון: 8 עמודות במקום 7
+				tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #666;">אין טיפולים תואמים לסינון</td></tr>';
 				return;
 			}
 			
-			// מיון מהיר - החדשים ראשונים
+			// שאר הקוד זהה...
 			filteredVisits.sort((a, b) => b.date.localeCompare(a.date));
 			
-			// יצירת HTML מהיר עם DocumentFragment
 			const fragment = document.createDocumentFragment();
-			
-			// יצירת lookup map ללקוחות (במקום חיפוש בלולאה)
 			const locationMap = new Map();
 			locations.forEach(loc => locationMap.set(loc.ID, loc));
 			
@@ -5925,8 +5936,9 @@
 					<td>${formatDate(visit.date)}</td>
 					<td><strong>${locationName}</strong></td>
 					<td><span class="visit-type-badge visit-type-${visit.visit_type || 'other'}">${visit.visit_type || '-'}</span></td>
-					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${visit.amount || 0} ₪</td>
+					<td style="color: #666;">-</td>
 					<td><span class="duration-badge">${hours}ש</span></td>
+					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${visit.amount || 0} ₪</td>
 					<td>
 						<select class="payment-status-select" onchange="updatePaymentStatus('${visit.ID}', this.value)">
 							<option value="unpaid" ${paymentStatus === 'unpaid' ? 'selected' : ''}>לא שולם</option>
@@ -5943,7 +5955,7 @@
 				
 				fragment.appendChild(mainRow);
 				
-				// שורת פרטים (עבודה שבוצעה + הערות)
+				// שורת פרטים עם colspan 8
 				if (visit.work_done || visit.notes) {
 					const detailsRow = document.createElement('tr');
 					detailsRow.className = 'details-row';
@@ -5957,7 +5969,7 @@
 					}
 					
 					detailsRow.innerHTML = `
-						<td colspan="7" class="details-cell">
+						<td colspan="8" class="details-cell">
 							<div class="details-content">${detailsContent}</div>
 						</td>
 					`;
@@ -5966,9 +5978,7 @@
 				}
 			});
 			
-			// הוספה אחת לטבלה
 			tbody.appendChild(fragment);
-			
 			console.log(`📊 הוצגו ${filteredVisits.length} טיפולים`);
 		}
 
