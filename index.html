@@ -1559,6 +1559,221 @@
 			border-bottom: none;
 		}
 
+		/* עיצוב שורות פרטים */
+		.details-row {
+			background-color: #f8f9fa !important;
+			border-top: none !important;
+		}
+
+		.details-row:hover {
+			background-color: #f1f3f4 !important;
+		}
+
+		.details-cell {
+			padding: 10px 15px !important;
+			border-top: 1px dashed #dee2e6 !important;
+		}
+
+		.details-content {
+			font-size: 13px;
+			color: #495057;
+			line-height: 1.4;
+		}
+
+		.work-done-section {
+			background: #e3f2fd;
+			padding: 8px 12px;
+			border-radius: 6px;
+			border-left: 4px solid #2196f3;
+			margin-bottom: 8px;
+		}
+
+		.notes-section {
+			background: #fff3e0;
+			padding: 8px 12px;
+			border-radius: 6px;
+			border-left: 4px solid #ff9800;
+			font-style: italic;
+		}
+
+		.work-done-section strong,
+		.notes-section strong {
+			color: #2c3e50;
+			font-size: 12px;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
+
+		/* שיפור לטבלה הראשית */
+		.data-table tbody tr.main-row {
+			border-bottom: 1px solid #e9ecef;
+		}
+
+		.data-table tbody tr.details-row {
+			border-bottom: 2px solid #dee2e6;
+		}
+
+		/* אופטימיזציה למובייל */
+		@media (max-width: 768px) {
+			.details-content {
+				font-size: 12px;
+			}
+			
+			.work-done-section,
+			.notes-section {
+				padding: 6px 8px;
+				margin-bottom: 6px;
+			}
+		}
+
+		/* תיקון z-index לחלונית התשלום */
+		#paymentModal {
+			position: fixed !important;
+			top: 0 !important;
+			left: 0 !important;
+			width: 100% !important;
+			height: 100% !important;
+			background: rgba(0,0,0,0.7) !important;
+			display: flex !important;
+			justify-content: center !important;
+			align-items: center !important;
+			z-index: 99999 !important; /* גבוה מאוד! */
+			backdrop-filter: blur(3px);
+		}
+
+		#paymentModal .modal-content {
+			background: white !important;
+			border-radius: 12px !important;
+			max-width: 600px !important;
+			width: 90vw !important;
+			max-height: 85vh !important;
+			overflow-y: auto !important;
+			position: relative !important;
+			z-index: 100000 !important; /* עוד יותר גבוה! */
+			box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+		}
+
+		/* וידוא שגם החלוניות האחרות יעבדו */
+		#editModal {
+			z-index: 99998 !important;
+		}
+
+		#telegramModal {
+			z-index: 99997 !important;
+		}
+
+		/* הסתרת scroll של הגוף כשחלונית פתוחה */
+		body.modal-open {
+			overflow: hidden;
+		}
+
+		/* עיצוב שורות פרטים בטבלת הטיפולים */
+		.data-table tbody tr.main-row {
+			border-bottom: 1px solid #e9ecef;
+		}
+
+		.data-table tbody tr.details-row {
+			background-color: #f8f9fa !important;
+			border-top: none !important;
+			border-bottom: 2px solid #dee2e6;
+		}
+
+		.data-table tbody tr.details-row:hover {
+			background-color: #f1f3f4 !important;
+		}
+
+		.details-cell {
+			padding: 10px 15px !important;
+			border-top: 1px dashed #dee2e6 !important;
+		}
+
+		.details-content {
+			font-size: 13px;
+			color: #495057;
+			line-height: 1.4;
+		}
+
+		.work-done-section {
+			background: #e3f2fd;
+			padding: 8px 12px;
+			border-radius: 6px;
+			border-left: 4px solid #2196f3;
+			margin-bottom: 8px;
+		}
+
+		.notes-section {
+			background: #fff3e0;
+			padding: 8px 12px;
+			border-radius: 6px;
+			border-left: 4px solid #ff9800;
+			font-style: italic;
+		}
+
+		.work-done-section strong,
+		.notes-section strong {
+			color: #2c3e50;
+			font-size: 12px;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
+
+		/* Badges לסוגי טיפול */
+		.visit-type-badge {
+			padding: 4px 8px;
+			border-radius: 12px;
+			font-size: 11px;
+			font-weight: bold;
+			text-transform: uppercase;
+		}
+
+		.visit-type-מלא {
+			background: #d4edda;
+			color: #155724;
+		}
+
+		.visit-type-חלקי {
+			background: #fff3cd;
+			color: #856404;
+		}
+
+		.visit-type-ביקורת {
+			background: #d1ecf1;
+			color: #0c5460;
+		}
+
+		.visit-type-other {
+			background: #f8d7da;
+			color: #721c24;
+		}
+
+		.duration-badge {
+			background: #e7f3ff;
+			color: #0366d6;
+			padding: 2px 6px;
+			border-radius: 8px;
+			font-size: 11px;
+			font-weight: bold;
+		}
+
+		/* אופטימיזציה למובייל */
+		@media (max-width: 768px) {
+			.details-content {
+				font-size: 12px;
+			}
+			
+			.work-done-section,
+			.notes-section {
+				padding: 6px 8px;
+				margin-bottom: 6px;
+			}
+			
+			.visit-type-badge,
+			.duration-badge {
+				font-size: 10px;
+				padding: 2px 4px;
+			}
+		}
+
 
 
 	</style>
@@ -1590,7 +1805,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -5540,6 +5755,7 @@
 		}
 
 		// תוספה - הצגת טיפולים מסוננים
+		// Replace the existing displayFilteredVisits function with this improved version
 		function displayFilteredVisits(filteredVisits) {
 			const tbody = document.getElementById('visitsHistoryTableBody');
 			
@@ -5547,7 +5763,7 @@
 			tbody.innerHTML = '';
 			
 			if (filteredVisits.length === 0) {
-				tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #666;">אין טיפולים תואמים לסינון</td></tr>';
+				tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #666;">אין טיפולים תואמים לסינון</td></tr>';
 				return;
 			}
 			
@@ -5565,18 +5781,18 @@
 				const location = locationMap.get(visit.location_id);
 				const locationName = visit.location_name || location?.name || 'לקוח לא ידוע';
 				
-				const row = document.createElement('tr');
+				// שורה ראשית
+				const mainRow = document.createElement('tr');
+				mainRow.className = 'main-row';
 				const hours = visit.duration_minutes ? (visit.duration_minutes / 60).toFixed(1) : '0';
 				const paymentStatus = getVisitPaymentStatus(visit.ID); 
-				const paymentText = getPaymentStatusText(paymentStatus);
 				
-				row.innerHTML = `
+				mainRow.innerHTML = `
 					<td>${formatDate(visit.date)}</td>
-					<td>${locationName}</td>
-					<td>${visit.visit_type || '-'}</td>
-					<td>${visit.work_done || '-'}</td>
-					<td>${hours}</td>
-					<td>${visit.amount || 0} ₪</td>
+					<td><strong>${locationName}</strong></td>
+					<td><span class="visit-type-badge visit-type-${visit.visit_type || 'other'}">${visit.visit_type || '-'}</span></td>
+					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${visit.amount || 0} ₪</td>
+					<td><span class="duration-badge">${hours}ש</span></td>
 					<td>
 						<select class="payment-status-select" onchange="updatePaymentStatus('${visit.ID}', this.value)">
 							<option value="unpaid" ${paymentStatus === 'unpaid' ? 'selected' : ''}>לא שולם</option>
@@ -5586,12 +5802,34 @@
 					</td>
 					<td>
 						${paymentStatus !== 'paid' ? `<button class="action-btn payment-btn" onclick="openPaymentFromVisit('${visit.ID}')" title="פתח תשלום">💰</button>` : ''}
-						<button class="action-btn edit-btn" onclick="editVisit('${visit.ID}')">ערוך</button>
-						<button class="action-btn delete-btn" onclick="deleteVisit('${visit.ID}')">מחק</button>
+						<button class="action-btn edit-btn" onclick="editVisit('${visit.ID}')" title="ערוך טיפול">✏️</button>
+						<button class="action-btn delete-btn" onclick="deleteVisit('${visit.ID}')" title="מחק טיפול">🗑️</button>
 					</td>
 				`;
 				
-				fragment.appendChild(row);
+				fragment.appendChild(mainRow);
+				
+				// שורת פרטים (עבודה שבוצעה + הערות)
+				if (visit.work_done || visit.notes) {
+					const detailsRow = document.createElement('tr');
+					detailsRow.className = 'details-row';
+					
+					let detailsContent = '';
+					if (visit.work_done) {
+						detailsContent += `<div class="work-done-section"><strong>עבודה שבוצעה:</strong> ${visit.work_done}</div>`;
+					}
+					if (visit.notes) {
+						detailsContent += `<div class="notes-section"><strong>הערות:</strong> ${visit.notes}</div>`;
+					}
+					
+					detailsRow.innerHTML = `
+						<td colspan="7" class="details-cell">
+							<div class="details-content">${detailsContent}</div>
+						</td>
+					`;
+					
+					fragment.appendChild(detailsRow);
+				}
 			});
 			
 			// הוספה אחת לטבלה
@@ -11790,21 +12028,23 @@
 		let selectedVisitIds = [];
 
 		// פתיחת חלונית תשלום עם לקוח ספציפי (אופציונלי)
+		// עדכון פונקציית פתיחת חלונית התשלום
 		function openPaymentModal(client = null, preSelectedVisitIds = []) {
 			selectedClient = client;
 			selectedVisitIds = preSelectedVisitIds;
 			
-			// איפוס השדות
+			// הוסף class למניעת גלילה
+			document.body.classList.add('modal-open');
+			
+			// שאר הקוד הקיים...
 			resetPaymentModal();
 			
 			if (client) {
-				// אם יש לקוח שנבחר כבר
 				document.getElementById('paymentModalTitle').textContent = `💰 תשלום עבור: ${client.name}`;
 				document.getElementById('clientSelectionSection').style.display = 'none';
 				document.getElementById('visitsSelectionSection').style.display = 'block';
 				loadClientVisitsForPayment(client.ID);
 			} else {
-				// בחירת לקוח חדש
 				document.getElementById('paymentModalTitle').textContent = '💰 תשלום חדש';
 				document.getElementById('clientSelectionSection').style.display = 'block';
 				document.getElementById('visitsSelectionSection').style.display = 'none';
@@ -11832,8 +12072,13 @@
 		}
 
 		// סגירת החלונית
+		// עדכון פונקציית סגירת החלונית
 		function closePaymentModal() {
 			document.getElementById('paymentModal').style.display = 'none';
+			
+			// הסר class של מניעת גלילה
+			document.body.classList.remove('modal-open');
+			
 			selectedClient = null;
 			selectedVisitIds = [];
 		}
