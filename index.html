@@ -1914,37 +1914,7 @@
 			box-shadow: none !important;
 		}
 
-		.lock-btn {
-			background: #f8f9fa !important;
-			border: 2px solid #6c757d !important;
-			min-width: 50px !important;
-		}
-
-		.lock-btn.locked {
-			background: #d4edda !important;
-			border-color: #28a745 !important;
-			color: #155724 !important;
-		}
-
-		.lock-btn.locked::after {
-			content: " נעול";
-			font-size: 11px;
-			display: block;
-			margin-top: 2px;
-		}
-
-		#lockClientSelector {
-			margin-right: 10px;
-			padding: 6px 8px;
-			border: 2px solid #28a745;
-			border-radius: 5px;
-			background: #d4edda;
-			color: #155724;
-			font-size: 12px;
-			max-width: 180px;
-			min-width: 120px;
-		}
-
+	
 		
 
 	</style>
@@ -1976,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3886,56 +3856,7 @@
 			if (activeContent) activeContent.classList.add('active');
 		}
 	
-		// פונקציה חדשה: התחל טיפול (מעבר לטופס עם פרטי לקוח מוכנים)
-		// תיקון פונקציית startTreatment - במקום לנסות לעבור לטאב visit
-		function startTreatment(clientId) {
-			const client = locations.find(loc => loc.ID === clientId);
-			if (!client) {
-				showToast('לקוח לא נמצא', 'error');
-				return;
-			}
-			
-			// בדיקה האם יש כבר טיפול היום ללקוח
-			const today = new Date().toISOString().split('T')[0];
-			const existingTodayVisit = visits.find(visit => 
-				visit.location_id === clientId && 
-				visit.date === today
-			);
-			
-			if (existingTodayVisit) {
-				// יש כבר טיפול היום - פתח עריכה
-				showToast(`נמצא טיפול קיים היום עבור ${client.name} - פותח לעריכה`, 'info');
-				editVisit(existingTodayVisit.ID);
-			} else {
-				// אין טיפול היום - צור חדש
-				showToast(`פותח טיפול חדש עבור ${client.name}`, 'success');
-				
-				// פתח טופס טיפול חדש עם הלקוח מוכן מראש
-				showAddTreatmentForm();
-				
-				// אחרי פתיחת הטופס, מלא את פרטי הלקוח
-				setTimeout(() => {
-					const clientSearchInput = document.getElementById('modalClientSearchInput');
-					const selectedClientId = document.getElementById('modalSelectedClientId');
-					const modalDate = document.getElementById('modalVisitDate');
-					
-					if (clientSearchInput && selectedClientId) {
-						clientSearchInput.value = `${client.name} - ${client.full_address}`;
-						selectedClientId.value = clientId;
-					}
-					
-					if (modalDate) {
-						modalDate.value = today;
-					}
-					
-					// חישוב עלות אוטומטי
-					if (typeof calculateModalTreatmentCost === 'function') {
-						calculateModalTreatmentCost();
-					}
-				}, 100);
-			}
-		}
-
+		
 		// עדכון פונקציית החלפת סטטוס פעיל/לא פעיל
 		function toggleClientActive(clientId, newStatus) {
 			const client = locations.find(loc => loc.ID === clientId);
@@ -11041,7 +10962,7 @@
 		}
 
 
-		// התחלת טיפול - מעבר למסך טיפול חדש עם נתונים מוקדמים
+
 		function startTreatment(clientId) {
 			const client = locations.find(loc => loc.ID === clientId);
 			if (!client) {
@@ -11049,31 +10970,48 @@
 				return;
 			}
 			
-			// מעבר למסך טיפול חדש
-			showSection('visit');
+			// בדיקה האם יש כבר טיפול היום ללקוח
+			const today = new Date().toISOString().split('T')[0];
+			const existingTodayVisit = visits.find(visit => 
+				visit.location_id === clientId && 
+				visit.date === today
+			);
 			
-			// מילוי נתונים אוטומטי
-			setTimeout(() => {
-				// בחירת הלקוח
-				if (document.getElementById('clientSearchInput')) {
-					document.getElementById('clientSearchInput').value = `${client.name} - ${client.full_address}`;
-					document.getElementById('selectedClientId').value = clientId;
-				}
+			if (existingTodayVisit) {
+				// יש כבר טיפול היום - פתח עריכה
+				showToast(`נמצא טיפול קיים היום עבור ${client.name} - פותח לעריכה`, 'info');
+				editVisit(existingTodayVisit.ID);
+			} else {
+				// אין טיפול היום - צור חדש
+				showToast(`פותח טיפול חדש עבור ${client.name}`, 'success');
 				
-				// תאריך היום
-				const today = new Date().toISOString().split('T')[0];
-				if (document.getElementById('visitDate')) {
-					document.getElementById('visitDate').value = today;
-				}
+				// פתח טופס טיפול חדש עם הלקוח מוכן מראש
+				showAddTreatmentForm();
 				
-				// סכום בסיסי
-				if (document.getElementById('amount') && client.base_amount) {
-					document.getElementById('amount').value = client.base_amount;
-				}
-				
-				showToast(`התחלת טיפול עבור ${client.name}`, 'success');
-			}, 100);
+				// אחרי פתיחת הטופס, מלא את פרטי הלקוח
+				setTimeout(() => {
+					const clientSearchInput = document.getElementById('modalClientSearchInput');
+					const selectedClientId = document.getElementById('modalSelectedClientId');
+					const modalDate = document.getElementById('modalVisitDate');
+					
+					if (clientSearchInput && selectedClientId) {
+						clientSearchInput.value = `${client.name} - ${client.full_address}`;
+						selectedClientId.value = clientId;
+					}
+					
+					if (modalDate) {
+						modalDate.value = today;
+					}
+					
+					// חישוב עלות אוטומטי
+					if (typeof calculateModalTreatmentCost === 'function') {
+						calculateModalTreatmentCost();
+					}
+				}, 100);
+			}
 		}
+
+
 
 		// Receipt filtering functions
 		function loadReceiptFilterOptions() {
