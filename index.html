@@ -1944,7 +1944,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 			</nav>
         </header>
 
@@ -2317,7 +2317,7 @@
 								<option value="amount_asc">סכום (נמוך לגבוה)</option>
 								<option value="date_old">תאריך (הכי ישן)</option>
 								<option value="date_new">תאריך (הכי חדש)</option>
-								<option value="location">לקוח (א-ב)</option>
+								<option value="location">לקוח (א-ת)</option>
 							</select>
 						</div>
 						<div class="filter-group-unified compact">
@@ -2325,24 +2325,39 @@
 							<input type="number" id="minDebtAmount" placeholder="0" onchange="displayDebts()">
 						</div>
 					</div>
+					
 					<div class="filter-row-unified">
 						<div class="filter-group-unified">
-							<label>Filter by client:</label>
-							<select id="debtClientFilter" onchange="displayDebts()">
-								<option value="">All clients</option>
-							</select>
+							<label>חיפוש/בחירת לקוח:</label>
+							<input type="text" 
+								   id="debtClientSearch" 
+								   list="debtClientOptions"
+								   placeholder="הקלד שם לקוח או בחר מהרשימה..."
+								   onchange="handleDebtClientSelection(this.value)"
+								   oninput="filterDebtClientOptions(this.value)"
+								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+							<datalist id="debtClientOptions">
+								<!-- Options will be populated by JavaScript -->
+							</datalist>
+							<button type="button" 
+									onclick="clearDebtClientSearch()" 
+									style="margin-top: 5px; padding: 4px 8px; background: #e74c3c; color: white; border: none; border-radius: 3px; font-size: 11px; cursor: pointer;">
+								נקה בחירה
+							</button>
 						</div>
+						
 						<div class="filter-group-unified compact">
-							<label>Preferred day:</label>
+							<label>יום מועדף:</label>
 							<select id="debtDayFilter" onchange="displayDebts()">
-								<option value="">All days</option>
-								<option value="כל יום">Any day</option>
-								<option value="יום ראשון">Sunday</option>
-								<option value="יום שני">Monday</option>
-								<option value="יום שלישי">Tuesday</option>
-								<option value="יום רביעי">Wednesday</option>
-								<option value="יום חמישי">Thursday</option>
-								<option value="יום שישי">Friday</option>
+								<option value="">כל הימים</option>
+								<option value="כל יום">כל יום</option>
+								<option value="יום ראשון">יום ראשון</option>
+								<option value="יום שני">יום שני</option>
+								<option value="יום שלישי">יום שלישי</option>
+								<option value="יום רביעי">יום רביעי</option>
+								<option value="יום חמישי">יום חמישי</option>
+								<option value="יום שישי">יום שישי</option>
+								<option value="יום שבת">יום שבת</option>
 							</select>
 						</div>
 					</div>
@@ -2391,10 +2406,18 @@
 				<div class="filter-row-unified">
 					<div class="filter-group-unified">
 						<label>חיפוש חכם:</label>
-						<input type="text" id="paymentSmartSearch"...>
+						<input type="text" 
+							   id="paymentSmartSearch" 
+							   placeholder="הקלד שם לקוח לחיפוש..."
+							   oninput="handlePaymentSmartSearch(this.value)"
+							   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
 					</div>
 					<div class="filter-group-unified small">
-						<button type="button" onclick="clearPaymentSmartSearch()"...>נקה חיפוש</button>
+						<button type="button" 
+								onclick="clearPaymentSmartSearch()" 
+								class="filter-clear-btn">
+							נקה חיפוש
+						</button>
 					</div>
 				</div>
 
@@ -3362,9 +3385,7 @@
 					loadReceiptsTable();
 					break;
 				case 'debts':
-					if (typeof loadDebtFilterOptions === 'function') {
-						loadDebtFilterOptions();
-					}
+					loadDebtClientOptions(); // Load client options first
 					if (typeof displayDebts === 'function') {
 						displayDebts();
 					}
@@ -8057,22 +8078,7 @@
 	   
 	   // פונקציה להצגת חובות
 		function displayDebts() {
-			const sortBy = document.getElementById('debtSortBy').value;
-			const minAmount = parseFloat(document.getElementById('minDebtAmount').value) || 0;
-			const clientFilter = document.getElementById('debtClientFilter')?.value;
-			const dayFilter = document.getElementById('debtDayFilter')?.value;
-
-			// Apply client filter
-			if (clientFilter) {
-				debtsArray = debtsArray.filter(debt => debt.location.ID === clientFilter);
-			}
-
-			// Apply day filter  
-			if (dayFilter) {
-				debtsArray = debtsArray.filter(debt => debt.location.allowed_day === dayFilter);
-			}
-			
-			// חישוב חובות לכל לקוח
+			// Calculate debts for all clients
 			const debtsByLocation = {};
 			
 			visits.forEach(visit => {
@@ -8081,54 +8087,88 @@
 					const paidAmount = getVisitPaidAmount(visit.ID);
 					const debt = visitAmount - paidAmount;
 					
-					if (debt > 0) { // יש חוב
+					if (debt > 0) {
 						if (!debtsByLocation[visit.location_id]) {
 							const location = locations.find(loc => loc.ID === visit.location_id);
-							debtsByLocation[visit.location_id] = {
-								location: location,
-								totalDebt: 0,
-								visits: []
-							};
+							if (location) {
+								debtsByLocation[visit.location_id] = {
+									location: location,
+									totalDebt: 0,
+									visits: []
+								};
+							}
 						}
 						
-						debtsByLocation[visit.location_id].totalDebt += debt;
-						debtsByLocation[visit.location_id].visits.push({
-							...visit,
-							debt: debt,
-							paidAmount: paidAmount
-						});
+						if (debtsByLocation[visit.location_id]) {
+							debtsByLocation[visit.location_id].totalDebt += debt;
+							debtsByLocation[visit.location_id].visits.push({
+								...visit,
+								debt: debt,
+								paidAmount: paidAmount
+							});
+						}
 					}
 				}
 			});
 			
-			// המרה למערך וסינון
-			const debtsArray = Object.values(debtsByLocation)
-				.filter(debt => debt.totalDebt >= minAmount);
+			// Convert to array
+			let debtsArray = Object.values(debtsByLocation);
 			
-			// מיון
-			debtsArray.sort((a, b) => {
-				switch (sortBy) {
-					case 'amount_desc': return b.totalDebt - a.totalDebt;
-					case 'amount_asc': return a.totalDebt - b.totalDebt;
-					case 'location': return (a.location?.name || '').localeCompare(b.location?.name || '');
-					default: return b.totalDebt - a.totalDebt;
-				}
-			});
+			// Apply filters
+			const sortBy = document.getElementById('debtSortBy')?.value || 'amount_desc';
+			const minAmount = parseFloat(document.getElementById('minDebtAmount')?.value) || 0;
+			const dayFilter = document.getElementById('debtDayFilter')?.value;
 			
-			// הצגה בטבלה
+			// NEW: Client filter using the search field
+			const clientSearchInput = document.getElementById('debtClientSearch');
+			const selectedClientId = clientSearchInput ? clientSearchInput.getAttribute('data-selected-id') : '';
+			
+			// Filter by minimum amount
+			debtsArray = debtsArray.filter(debt => debt.totalDebt >= minAmount);
+			
+			// Filter by selected client
+			if (selectedClientId) {
+				debtsArray = debtsArray.filter(debt => debt.location.ID === selectedClientId);
+			}
+			
+			// Filter by day
+			if (dayFilter) {
+				debtsArray = debtsArray.filter(debt => debt.location.allowed_day === dayFilter);
+			}
+			
+			// Sort
+			switch (sortBy) {
+				case 'amount_desc':
+					debtsArray.sort((a, b) => b.totalDebt - a.totalDebt);
+					break;
+				case 'amount_asc':
+					debtsArray.sort((a, b) => a.totalDebt - b.totalDebt);
+					break;
+				case 'location':
+					debtsArray.sort((a, b) => a.location.name.localeCompare(b.location.name, 'he'));
+					break;
+				case 'date_old':
+					debtsArray.sort((a, b) => new Date(a.visits[0].date) - new Date(b.visits[0].date));
+					break;
+				case 'date_new':
+					debtsArray.sort((a, b) => new Date(b.visits[0].date) - new Date(a.visits[0].date));
+					break;
+			}
+			
+			// Display results
 			const tbody = document.getElementById('debtsTableBody');
 			tbody.innerHTML = '';
 			
 			if (debtsArray.length === 0) {
-				tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">אין חובות פתוחים</td></tr>';
+				tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #666;">אין חובות תואמים לסינון</td></tr>';
 				updateDebtsStats([]);
 				return;
 			}
 			
 			debtsArray.forEach(debt => {
-				const location = debt.location || { name: 'לא נמצא', allowed_day: '', debt_notes: '' };
-				
+				const location = debt.location;
 				const row = document.createElement('tr');
+				
 				row.innerHTML = `
 					<td>
 						<strong>${location.name}</strong>
@@ -8167,7 +8207,6 @@
 				tbody.appendChild(row);
 			});
 			
-			// עדכון סטטיסטיקות
 			updateDebtsStats(debtsArray);
 		}
 
@@ -11132,13 +11171,18 @@
 
 
 		function updateDebtsStats(debtsArray) {
-			const count = debtsArray.length;
-			const total = debtsArray.reduce((sum, debt) => sum + debt.totalDebt, 0);
-			const average = count > 0 ? Math.round(total / count) : 0;
+			const totalDebt = debtsArray.reduce((sum, debt) => sum + debt.totalDebt, 0);
+			const debtorsCount = debtsArray.length;
+			const averageDebt = debtorsCount > 0 ? totalDebt / debtorsCount : 0;
 			
-			document.getElementById('debtsCount').textContent = count;
-			document.getElementById('debtsTotal').textContent = `₪${Math.round(total).toLocaleString()}`;
-			document.getElementById('debtsAverage').textContent = `₪${average.toLocaleString()}`;
+			// Update stats display
+			const debtsCountElement = document.getElementById('debtsCount');
+			const debtsTotalElement = document.getElementById('debtsTotal');
+			const debtsAverageElement = document.getElementById('debtsAverage');
+			
+			if (debtsCountElement) debtsCountElement.textContent = debtorsCount;
+			if (debtsTotalElement) debtsTotalElement.textContent = `₪${Math.round(totalDebt).toLocaleString()}`;
+			if (debtsAverageElement) debtsAverageElement.textContent = `₪${Math.round(averageDebt).toLocaleString()}`;
 		}
 
 		function updateTreatmentsStats(filteredTreatments) {
@@ -11815,48 +11859,54 @@
 			
 			// מצא טיפולים קשורים לתשלום
 			const relatedLinks = paymentVisitLinks.filter(link => link.payment_id === paymentId);
-			const relatedVisits = relatedLinks.map(link => 
-				visits.find(visit => visit.ID === link.visit_id)
-			).filter(visit => visit);
-			
-			let visitsHTML = '';
-			if (relatedVisits.length > 0) {
-				visitsHTML = relatedVisits.map(visit => `
-					<div style="border: 1px solid #e9ecef; border-radius: 6px; padding: 8px; margin-bottom: 8px;">
-						<strong>📅 ${formatDate(visit.date)}</strong> - ${visit.work_done || 'טיפול'}<br>
-						<small>סכום: ₪${visit.amount || 0}</small>
-					</div>
-				`).join('');
-			} else {
-				visitsHTML = '<div style="color: #666; font-style: italic;">אין טיפולים קשורים</div>';
-			}
+			const relatedVisits = relatedLinks.map(link => {
+				const visit = visits.find(visit => visit.ID === link.visit_id);
+				if (visit) {
+					return {
+						...visit,
+						allocated_amount: link.amount_allocated || 0
+					};
+				}
+				return null;
+			}).filter(visit => visit);
 			
 			const modalContent = `
 				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 90vw; max-height: 70vh; overflow-y: auto;">
 					<h3 style="margin-bottom: 20px; color: #2c3e50;">💳 פירוט תשלום</h3>
 					
 					<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-						<strong>📅 תאריך:</strong> ${formatDate(payment.date)}<br>
-						<strong>👤 לקוח:</strong> ${payment.client_name || payment.client_id || 'לא ידוע'}<br>
-						<strong>💰 סכום:</strong> ₪${Math.round(payment.amount).toLocaleString()}<br>
-						<strong>💳 אמצעי תשלום:</strong> ${payment.payment_method || 'לא צוין'}<br>
-						${payment.notes ? `<strong>📝 הערות:</strong> ${payment.notes}<br>` : ''}
+						<p><strong>📅 תאריך:</strong> ${formatDate(payment.date)}</p>
+						<p><strong>👤 לקוח:</strong> ${payment.client_name || payment.client_id || 'לא ידוע'}</p>
+						<p><strong>💰 סכום:</strong> ₪${Math.round(payment.amount).toLocaleString()}</p>
+						<p><strong>💳 אמצעי תשלום:</strong> ${getPaymentMethodText(payment.payment_method) || 'לא צוין'}</p>
+						${payment.notes ? `<p><strong>הערות:</strong> ${payment.notes}</p>` : ''}
+						${payment.reference ? `<p><strong>אסמכתא:</strong> ${payment.reference}</p>` : ''}
+						${payment.check_date ? `<p><strong>תאריך צ'ק:</strong> ${formatDate(payment.check_date)}</p>` : ''}
+						${payment.bank_account ? `<p><strong>פרטי חשבון:</strong> ${payment.bank_account}</p>` : ''}
 					</div>
 					
-					<h4 style="color: #2c3e50; margin-bottom: 10px;">טיפולים קשורים:</h4>
-					<div style="max-height: 200px; overflow-y: auto;">
-						${visitsHTML}
+					<h4>🔗 טיפולים מקושרים:</h4>
+					<div style="background: #e8f5e8; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+						${relatedVisits.length > 0 ? 
+							relatedVisits.map(visit => `
+								<div style="padding: 5px 0; border-bottom: 1px solid #ddd;">
+									<strong>${formatDate(visit.date)}</strong> - ${visit.work_done || 'ללא תיאור'}
+									<span style="float: right; color: #28a745;">₪${visit.allocated_amount}</span>
+								</div>
+							`).join('') 
+							: '<div style="color: #666; font-style: italic;">אין טיפולים קשורים</div>'
+						}
 					</div>
 					
-					<div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-						<button type="button" onclick="closeEditModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
-							❌ סגור
+					<div style="text-align: center;">
+						<button onclick="closeModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+							סגור
 						</button>
 					</div>
 				</div>
 			`;
 			
-			showEditModal(modalContent);
+			showModal(modalContent);
 		}
 
 		// טעינת טאב תשלומים
@@ -12601,63 +12651,6 @@
 			});
 		}
 
-		// הצגת פירוט מלא של תשלום
-		function showPaymentDetails(paymentId) {
-			const payment = payments.find(p => p.ID === paymentId);
-			if (!payment) {
-				showToast('תשלום לא נמצא', 'error');
-				return;
-			}
-			
-			// מציאת טיפולים קשורים
-			const relatedLinks = paymentVisitLinks.filter(link => link.payment_id === paymentId);
-			const relatedVisits = relatedLinks.map(link => {
-				const visit = visits.find(v => v.ID === link.visit_id);
-				return visit ? {
-					...visit,
-					allocated_amount: link.amount_allocated
-				} : null;
-			}).filter(v => v);
-			
-			// בניית תוכן הפירוט
-			let detailsHtml = `
-				<div style="max-width: 500px;">
-					<h3>💰 פירוט תשלום</h3>
-					<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
-						<p><strong>תאריך:</strong> ${formatDate(payment.date)} ${payment.time}</p>
-						<p><strong>לקוח:</strong> ${payment.client_name}</p>
-						<p><strong>סכום:</strong> ${payment.amount.toLocaleString()}₪</p>
-						<p><strong>אמצעי תשלום:</strong> ${getPaymentMethodText(payment.payment_method)}</p>
-						${payment.reference ? `<p><strong>אסמכתא:</strong> ${payment.reference}</p>` : ''}
-						${payment.check_date ? `<p><strong>תאריך צ'ק:</strong> ${formatDate(payment.check_date)}</p>` : ''}
-						${payment.bank_account ? `<p><strong>פרטי חשבון:</strong> ${payment.bank_account}</p>` : ''}
-						${payment.notes ? `<p><strong>הערות:</strong> ${payment.notes}</p>` : ''}
-					</div>
-			`;
-			
-			if (relatedVisits.length > 0) {
-				detailsHtml += `
-					<h4>🔗 טיפולים מקושרים:</h4>
-					<div style="background: #e8f5e8; padding: 10px; border-radius: 5px;">
-				`;
-				
-				relatedVisits.forEach(visit => {
-					detailsHtml += `
-						<div style="padding: 5px 0; border-bottom: 1px solid #ddd;">
-							<strong>${formatDate(visit.date)}</strong> - ${visit.work_done || 'ללא תיאור'}
-							<span style="float: right; color: #28a745;">${visit.allocated_amount}₪</span>
-						</div>
-					`;
-				});
-				
-				detailsHtml += `</div>`;
-			}
-			
-			detailsHtml += `</div>`;
-			
-			// הצגה בחלונית מודאלית
-			showModal('פירוט תשלום', detailsHtml);
-		}
 
 		// פונקציית עזר לתרגום אמצעי תשלום
 		function getPaymentMethodText(method) {
@@ -12904,13 +12897,16 @@
 		function clearDebtFilters() {
 			const sortBy = document.getElementById('debtSortBy');
 			const minAmount = document.getElementById('minDebtAmount');
-			const clientFilter = document.getElementById('debtClientFilter');
 			const dayFilter = document.getElementById('debtDayFilter');
+			const clientSearch = document.getElementById('debtClientSearch');
 			
 			if (sortBy) sortBy.value = 'amount_desc';
 			if (minAmount) minAmount.value = '';
-			if (clientFilter) clientFilter.value = '';
 			if (dayFilter) dayFilter.value = '';
+			if (clientSearch) {
+				clientSearch.value = '';
+				clientSearch.removeAttribute('data-selected-id');
+			}
 			
 			displayDebts();
 		}
@@ -13381,6 +13377,64 @@
 				}
 			}
 		}
+
+		// Load client options for debts filter
+		function loadDebtClientOptions() {
+			const datalist = document.getElementById('debtClientOptions');
+			if (!datalist) return;
+			
+			// Get clients with debts
+			const clientsWithDebts = new Set();
+			visits.forEach(visit => {
+				if (visit.amount > 0) {
+					const visitAmount = parseFloat(visit.amount) || 0;
+					const paidAmount = getVisitPaidAmount(visit.ID);
+					const debt = visitAmount - paidAmount;
+					if (debt > 0) {
+						clientsWithDebts.add(visit.location_id);
+					}
+				}
+			});
+			
+			// Populate datalist
+			datalist.innerHTML = '';
+			locations
+				.filter(loc => clientsWithDebts.has(loc.ID))
+				.sort((a, b) => a.name.localeCompare(b.name, 'he'))
+				.forEach(client => {
+					const option = document.createElement('option');
+					option.value = client.name;
+					option.setAttribute('data-client-id', client.ID);
+					datalist.appendChild(option);
+				});
+		}
+
+		// Handle client selection
+		function handleDebtClientSelection(clientName) {
+			const option = document.querySelector(`#debtClientOptions option[value="${clientName}"]`);
+			const clientId = option ? option.getAttribute('data-client-id') : '';
+			
+			// Store selected client ID for filtering
+			document.getElementById('debtClientSearch').setAttribute('data-selected-id', clientId);
+			
+			// Apply filter
+			displayDebts();
+		}
+
+		// Clear client search
+		function clearDebtClientSearch() {
+			const searchInput = document.getElementById('debtClientSearch');
+			searchInput.value = '';
+			searchInput.removeAttribute('data-selected-id');
+			displayDebts();
+		}
+
+		// Filter client options as user types (optional enhancement)
+		function filterDebtClientOptions(searchTerm) {
+			// This function can be enhanced later if needed
+			// For now, the datalist handles filtering automatically
+		}
+
 
    </script>
 </body>
