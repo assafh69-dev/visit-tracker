@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -7013,15 +7013,34 @@
 				ID: row[0] || generateID(),
 				date: row[1] || '',
 				location_id: row[2] || '',
-				visit_type: row[3] || '',
-				work_done: row[4] || '',
-				duration_minutes: parseInt(row[5]) || 0,
-				num_workers: parseInt(row[6]) || 1,
-				start_time: row[7] || '',
-				end_time: row[8] || '',
-				amount: parseFloat(row[9]) || 0,
-				expense: parseFloat(row[10]) || 0,
-				paid: row[11] || 'לא',
+				location_name: row[3] || '', // ✅ ADD: location_name column
+				visit_type: row[4] || '',
+				work_done: row[5] || '',
+				duration_minutes: parseInt(row[6]) || 0,
+				num_workers: parseInt(row[7]) || 1,    // ✅ FIX: moved from position 6 to 7
+				start_time: row[8] || '',              // ✅ FIX: moved from position 7 to 8  
+				end_time: row[9] || '',                // ✅ FIX: moved from position 8 to 9
+				amount: parseFloat(row[10]) || 0,      // ✅ FIX: moved from position 9 to 10
+				expense: parseFloat(row[11]) || 0,     // ✅ FIX: moved from position 10 to 11
+				notes: row[12] || ''                   // ✅ FIX: moved from position 12 to 12
+				// ✅ REMOVED: paid field - this was causing the column shift problem!
+			};
+		}
+
+		function parseTelegramVisitFromRow(row) {
+			return {
+				ID: row[0] || generateID(),
+				date: `${row[0]}-${row[1].padStart(2, '0')}-${row[2].padStart(2, '0')}`,
+				location_id: findLocationByName(row[3])?.ID || null,
+				location_name: row[3] || '',
+				visit_type: row[5] || 'כללי',
+				work_done: row[7] || '',
+				duration_minutes: parseInt(row[8]) || 60,
+				num_workers: 1,  // ✅ Always 1 for Telegram imports
+				start_time: '',
+				end_time: '',
+				amount: parseInt(row[9]) || 0,
+				expense: parseInt(row[11]) || 0,
 				notes: row[12] || ''
 			};
 		}
@@ -7503,21 +7522,7 @@
 				
 				for (const row of response.result.values) {
 					if (row[0] && row[3]) { // יש שנה ושם לקוח
-						const visitData = {
-							ID: generateID(),
-							date: `${row[0]}-${row[1].padStart(2, '0')}-${row[2].padStart(2, '0')}`,
-							location_id: findLocationByName(row[3])?.ID || null,
-							location_name: row[3] || '',
-							visit_type: row[5] || 'כללי',
-							work_done: row[7] || '',
-							duration_minutes: parseInt(row[8]) || 60,
-							num_workers: 1,
-							start_time: '',
-							end_time: '',
-							amount: parseInt(row[9]) || 0,
-							expense: parseInt(row[11]) || 0,
-							notes: row[12] || ''
-						};
+						const visitData = parseTelegramVisitFromRow(row);
 						
 						visits.push(visitData);
 						importedCount++;
