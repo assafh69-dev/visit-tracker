@@ -1915,6 +1915,34 @@
 		}
 
 
+		.lock-btn {
+			background: #f8f9fa !important;
+			border: 2px solid #6c757d !important;
+			min-width: 50px !important;
+		}
+
+		.lock-btn.locked {
+			background: #d4edda !important;
+			border-color: #28a745 !important;
+			color: #155724 !important;
+			min-width: 140px !important;
+		}
+
+		.lock-btn.locked::after {
+			content: " נעול";
+			font-size: 11px;
+			display: block;
+			margin-top: 2px;
+		}
+
+		.lock-btn select {
+			max-width: 120px;
+			font-size: 11px !important;
+			background: transparent;
+			border: none;
+			color: inherit;
+		}
+
 	</style>
    
 </head>
@@ -1944,7 +1972,10 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
+					🔓
+				</button>
 			</nav>
         </header>
 
@@ -13435,6 +13466,113 @@
 			// For now, the datalist handles filtering automatically
 		}
 
+
+		
+		// Global client lock system
+		let isClientLocked = false;
+		let lockedClientId = null;
+		let lockedClientName = '';
+
+		function toggleClientLock() {
+			const lockBtn = document.getElementById('lockBtn');
+			
+			if (isClientLocked) {
+				// Unlock - release all tabs and hide client selector
+				isClientLocked = false;
+				lockedClientId = null;
+				lockedClientName = '';
+				
+				lockBtn.innerHTML = '🔓';
+				lockBtn.classList.remove('locked');
+				lockBtn.title = 'נעילת סינכרון לקוחות';
+				
+				showToast('נעילה שוחררה - כל הטאבים עצמאיים', 'info', 2000);
+			} else {
+				// Lock - show client selector in the button
+				isClientLocked = true;
+				
+				lockBtn.classList.add('locked');
+				lockBtn.title = 'לחץ לבחירת לקוח או לשחרור נעילה';
+				
+				// Replace button content with client selector
+				lockBtn.innerHTML = `
+					🔒 <select onchange="selectClientForLock(this.value)" style="background: transparent; border: none; color: inherit; font-size: 12px;">
+						<option value="">בחר לקוח...</option>
+						${locations.filter(loc => loc.active === '1').sort((a, b) => a.name.localeCompare(b.name, 'he')).map(client => 
+							`<option value="${client.ID}">${client.name}</option>`
+						).join('')}
+					</select>
+				`;
+				
+				showToast('נעילה פעילה - בחר לקוח מהרשימה', 'info', 3000);
+			}
+		}
+
+		function selectClientForLock(clientId) {
+			if (!clientId) return;
+			
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) return;
+			
+			lockedClientId = clientId;
+			lockedClientName = client.name;
+			
+			// Update button to show selected client with option to change
+			const lockBtn = document.getElementById('lockBtn');
+			lockBtn.innerHTML = `
+				🔒 <select onchange="selectClientForLock(this.value)" style="background: transparent; border: none; color: inherit; font-size: 11px;">
+					<option value="${clientId}">${client.name}</option>
+					<option value="">-- החלף לקוח --</option>
+					${locations.filter(loc => loc.active === '1' && loc.ID !== clientId).sort((a, b) => a.name.localeCompare(b.name, 'he')).map(otherClient => 
+						`<option value="${otherClient.ID}">${otherClient.name}</option>`
+					).join('')}
+				</select>
+			`;
+			
+			// Apply client to all tabs
+			syncAllTabsToClient(clientId, client.name);
+			
+			showToast(`כל הטאבים מסונכרנים ל: ${client.name}`, 'success', 3000);
+		}
+
+		function syncAllTabsToClient(clientId, clientName) {
+			// Sync visits/history tab
+			const visitSearch = document.getElementById('visitSmartSearch');
+			if (visitSearch) {
+				visitSearch.value = clientName;
+				if (typeof handleVisitSmartSearch === 'function') {
+					handleVisitSmartSearch(clientName);
+				}
+			}
+			
+			// Sync debts tab
+			const debtSearch = document.getElementById('debtClientSearch');
+			if (debtSearch) {
+				debtSearch.value = clientName;
+				debtSearch.setAttribute('data-selected-id', clientId);
+				if (typeof displayDebts === 'function') {
+					displayDebts();
+				}
+			}
+			
+			// Sync payments tab
+			const paymentSearch = document.getElementById('paymentSmartSearch');
+			if (paymentSearch) {
+				paymentSearch.value = clientName;
+				if (typeof handlePaymentSmartSearch === 'function') {
+					handlePaymentSmartSearch(clientName);
+				}
+			}
+			
+			// Sync receipts tab
+			const receiptSearch = document.getElementById('receiptSmartSearch');
+			if (receiptSearch) {
+				receiptSearch.value = clientName;
+				if (typeof handleReceiptSmartSearch === 'function') {
+					handleReceiptSmartSearch(clientName);
+				}
+			}
+		}
 
    </script>
 </body>
