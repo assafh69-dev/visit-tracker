@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6093,7 +6093,7 @@
 							<div class="form-group">
 								<label>שעת התחלה:</label>
 								<div style="display: flex; gap: 5px; align-items: center;">
-									<input type="time" id="editStartTime" value="${visit.start_time && visit.start_time !== '00:00' ? visit.start_time : ''}" onchange="calculateEditDuration()">
+									<input type="time" id="editStartTime" value="${visit.start_time && visit.start_time !== '00:00' && visit.start_time !== '' ? visit.start_time : ''}" onchange="calculateEditDuration()">
 									<button type="button" onclick="setCurrentTime('editStartTime')" title="קבע שעה נוכחית"
 											style="background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 36px; height: 36px;">🕐</button>
 								</div>
@@ -6102,7 +6102,7 @@
 							<div class="form-group">
 								<label>שעת סיום:</label>
 								<div style="display: flex; gap: 5px; align-items: center;">
-									<input type="time" id="editEndTime" value="${visit.end_time && visit.end_time !== '00:00' ? visit.end_time : ''}" onchange="calculateEditDuration()">
+									<input type="time" id="editEndTime" value="${visit.end_time && visit.end_time !== '00:00' && visit.end_time !== '' ? visit.end_time : ''}" onchange="calculateEditDuration()">
 									<button type="button" onclick="setCurrentTime('editEndTime')" title="קבע שעה נוכחית"
 											style="background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 36px; height: 36px;">🕐</button>
 								</div>
@@ -6231,6 +6231,20 @@
 					closeEditModal();
 				}
 			});
+			
+			// ✅ תיקון הטעינה של זמנים - נוודא שלא נטען ערך לא תקין
+			setTimeout(() => {
+				const startTimeInput = document.getElementById('editStartTime');
+				const endTimeInput = document.getElementById('editEndTime');
+				
+				if (startTimeInput && startTimeInput.value === '00:00') {
+					startTimeInput.value = '';
+				}
+				
+				if (endTimeInput && endTimeInput.value === '00:00') {
+					endTimeInput.value = '';
+				}
+			}, 50);
 		}
 
 		// סגירת מודל עריכה
@@ -6247,30 +6261,49 @@
 			const startTime = document.getElementById('editStartTime').value;
 			const endTime = document.getElementById('editEndTime').value;
 			
-			if (!startTime || !endTime) return;
-			
-			const start = new Date(`2000-01-01T${startTime}`);
-			const end = new Date(`2000-01-01T${endTime}`);
-			
-			if (end <= start) {
-				showToast('שעת סיום חייבת להיות אחרי שעת התחלה', 'warning');
+			// ✅ בדיקה משופרת לערכים תקינים
+			if (!startTime || !endTime || startTime === '00:00' || endTime === '00:00') {
 				return;
 			}
 			
-			const diffMs = end - start;
-			const totalMinutes = Math.round(diffMs / (1000 * 60));
-			const hours = Math.floor(totalMinutes / 60);
-			const minutes = totalMinutes % 60;
-			const decimalHours = (totalMinutes / 60).toFixed(1);
-			
-			// עדכון השדות
-			document.getElementById('editDurationHours').value = hours;
-			document.getElementById('editDurationMinutes').value = minutes;
-			document.getElementById('editDuration').value = totalMinutes;
-			document.getElementById('editCalculatedHours').value = decimalHours;
-			
-			// חישוב עלות אוטומטי
-			calculateEditTreatmentCost();
+			try {
+				const start = new Date(`2000-01-01T${startTime}`);
+				const end = new Date(`2000-01-01T${endTime}`);
+				
+				// בדיקה שהזמנים תקינים
+				if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+					console.warn('Invalid time values detected');
+					return;
+				}
+				
+				if (end <= start) {
+					showToast('שעת סיום חייבת להיות אחרי שעת התחלה', 'warning');
+					return;
+				}
+				
+				const diffMs = end - start;
+				const totalMinutes = Math.round(diffMs / (1000 * 60));
+				const hours = Math.floor(totalMinutes / 60);
+				const minutes = totalMinutes % 60;
+				const decimalHours = (totalMinutes / 60).toFixed(1);
+				
+				// עדכון השדות
+				const durationHoursEl = document.getElementById('editDurationHours');
+				const durationMinutesEl = document.getElementById('editDurationMinutes');
+				const durationEl = document.getElementById('editDuration');
+				const calculatedHoursEl = document.getElementById('editCalculatedHours');
+				
+				if (durationHoursEl) durationHoursEl.value = hours;
+				if (durationMinutesEl) durationMinutesEl.value = minutes;
+				if (durationEl) durationEl.value = totalMinutes;
+				if (calculatedHoursEl) calculatedHoursEl.value = decimalHours;
+				
+				// חישוב עלות אוטומטי
+				calculateEditTreatmentCost();
+				
+			} catch (error) {
+				console.error('Error calculating duration:', error);
+			}
 		}
 
 		function updateEditManualDuration() {
