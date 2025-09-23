@@ -1979,13 +1979,12 @@
 				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 				
 				<!-- Client selector - only visible when locked -->
-				<select id="lockClientSelector" onchange="selectClientForLock(this.value)" style="display: none; padding: 8px; border: 2px solid #28a745; border-radius: 5px; background: #d4edda; color: #155724; font-size: 13px; min-width: 150px;">
-					<option value="">בחר לקוח...</option>
-				</select>
-				
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
 					🔓
 				</button>
+				<select id="lockClientSelector" onchange="selectClientForLock(this.value)" style="display: none; padding: 8px; border: 2px solid #28a745; border-radius: 5px; background: #d4edda; color: #155724; font-size: 13px; min-width: 150px;">
+					<option value="">בחר לקוח...</option>
+				</select>
 			</nav>
         </header>
 
