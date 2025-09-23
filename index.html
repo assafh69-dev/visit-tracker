@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6093,7 +6093,7 @@
 							<div class="form-group">
 								<label>שעת התחלה:</label>
 								<div style="display: flex; gap: 5px; align-items: center;">
-									<input type="time" id="editStartTime" value="${visit.start_time && visit.start_time !== '00:00' && visit.start_time !== '' ? visit.start_time : ''}" onchange="calculateEditDuration()">
+									<input type="time" id="editStartTime" value="${visit.start_time || ''}" style="flex: 1;" onchange="calculateEditDuration()">
 									<button type="button" onclick="setCurrentTime('editStartTime')" title="קבע שעה נוכחית"
 											style="background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 36px; height: 36px;">🕐</button>
 								</div>
@@ -6102,7 +6102,7 @@
 							<div class="form-group">
 								<label>שעת סיום:</label>
 								<div style="display: flex; gap: 5px; align-items: center;">
-									<input type="time" id="editEndTime" value="${visit.end_time && visit.end_time !== '00:00' && visit.end_time !== '' ? visit.end_time : ''}" onchange="calculateEditDuration()">
+									<input type="time" id="editEndTime" value="${visit.end_time || ''}" style="flex: 1;" onchange="calculateEditDuration()">
 									<button type="button" onclick="setCurrentTime('editEndTime')" title="קבע שעה נוכחית"
 											style="background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 36px; height: 36px;">🕐</button>
 								</div>
