@@ -1914,7 +1914,6 @@
 			box-shadow: none !important;
 		}
 
-
 		.lock-btn {
 			background: #f8f9fa !important;
 			border: 2px solid #6c757d !important;
@@ -1925,7 +1924,6 @@
 			background: #d4edda !important;
 			border-color: #28a745 !important;
 			color: #155724 !important;
-			min-width: 140px !important;
 		}
 
 		.lock-btn.locked::after {
@@ -1933,6 +1931,17 @@
 			font-size: 11px;
 			display: block;
 			margin-top: 2px;
+		}
+
+		#lockClientSelector {
+			margin-right: 10px;
+			padding: 8px;
+			border: 2px solid #28a745;
+			border-radius: 5px;
+			background: #d4edda;
+			color: #155724;
+			font-size: 13px;
+			min-width: 150px;
 		}
 
 		.lock-btn select {
@@ -1965,14 +1974,20 @@
 				<span id="statusText" style="color: white; font-weight: bold; font-size: 16px;">לא מחובר</span>
 				<div id="lastSaved" style="font-size: 12px; color: white; margin-top: 4px;"></div>
 			</div>
-            <nav class="nav-buttons">
+           <nav class="nav-buttons">
 				<button onclick="showSection('planning')" class="nav-btn active">תכנון</button>
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
 				<button onclick="showSection('locations')" class="nav-btn">לקוחות</button>
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				
+				<!-- Client selector - only visible when locked -->
+				<select id="lockClientSelector" onchange="selectClientForLock(this.value)" style="display: none; padding: 8px; border: 2px solid #28a745; border-radius: 5px; background: #d4edda; color: #155724; font-size: 13px; min-width: 150px;">
+					<option value="">בחר לקוח...</option>
+				</select>
+				
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
 					🔓
 				</button>
@@ -13475,6 +13490,7 @@
 
 		function toggleClientLock() {
 			const lockBtn = document.getElementById('lockBtn');
+			const clientSelector = document.getElementById('lockClientSelector');
 			
 			if (isClientLocked) {
 				// Unlock - release all tabs and hide client selector
@@ -13482,26 +13498,30 @@
 				lockedClientId = null;
 				lockedClientName = '';
 				
-				lockBtn.innerHTML = '🔓';
+				lockBtn.textContent = '🔓';
 				lockBtn.classList.remove('locked');
 				lockBtn.title = 'נעילת סינכרון לקוחות';
 				
+				// Hide client selector
+				clientSelector.style.display = 'none';
+				clientSelector.value = '';
+				
 				showToast('נעילה שוחררה - כל הטאבים עצמאיים', 'info', 2000);
 			} else {
-				// Lock - show client selector in the button
+				// Lock - show client selector
 				isClientLocked = true;
 				
+				lockBtn.textContent = '🔒';
 				lockBtn.classList.add('locked');
-				lockBtn.title = 'לחץ לבחירת לקוח או לשחרור נעילה';
+				lockBtn.title = 'משחרר נעילה';
 				
-				// Replace button content with client selector
-				lockBtn.innerHTML = `
-					🔒 <select onchange="selectClientForLock(this.value)" style="background: transparent; border: none; color: inherit; font-size: 12px;">
-						<option value="">בחר לקוח...</option>
-						${locations.filter(loc => loc.active === '1').sort((a, b) => a.name.localeCompare(b.name, 'he')).map(client => 
-							`<option value="${client.ID}">${client.name}</option>`
-						).join('')}
-					</select>
+				// Show and populate client selector
+				clientSelector.style.display = 'inline-block';
+				clientSelector.innerHTML = `
+					<option value="">בחר לקוח...</option>
+					${locations.filter(loc => loc.active === '1').sort((a, b) => a.name.localeCompare(b.name, 'he')).map(client => 
+						`<option value="${client.ID}">${client.name}</option>`
+					).join('')}
 				`;
 				
 				showToast('נעילה פעילה - בחר לקוח מהרשימה', 'info', 3000);
@@ -13509,25 +13529,13 @@
 		}
 
 		function selectClientForLock(clientId) {
-			if (!clientId) return;
+			if (!clientId || !isClientLocked) return;
 			
 			const client = locations.find(loc => loc.ID === clientId);
 			if (!client) return;
 			
 			lockedClientId = clientId;
 			lockedClientName = client.name;
-			
-			// Update button to show selected client with option to change
-			const lockBtn = document.getElementById('lockBtn');
-			lockBtn.innerHTML = `
-				🔒 <select onchange="selectClientForLock(this.value)" style="background: transparent; border: none; color: inherit; font-size: 11px;">
-					<option value="${clientId}">${client.name}</option>
-					<option value="">-- החלף לקוח --</option>
-					${locations.filter(loc => loc.active === '1' && loc.ID !== clientId).sort((a, b) => a.name.localeCompare(b.name, 'he')).map(otherClient => 
-						`<option value="${otherClient.ID}">${otherClient.name}</option>`
-					).join('')}
-				</select>
-			`;
 			
 			// Apply client to all tabs
 			syncAllTabsToClient(clientId, client.name);
