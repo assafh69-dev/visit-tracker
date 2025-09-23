@@ -1935,22 +1935,17 @@
 
 		#lockClientSelector {
 			margin-right: 10px;
-			padding: 8px;
+			padding: 6px 8px;
 			border: 2px solid #28a745;
 			border-radius: 5px;
 			background: #d4edda;
 			color: #155724;
-			font-size: 13px;
-			min-width: 150px;
+			font-size: 12px;
+			max-width: 180px;
+			min-width: 120px;
 		}
 
-		.lock-btn select {
-			max-width: 120px;
-			font-size: 11px !important;
-			background: transparent;
-			border: none;
-			color: inherit;
-		}
+		
 
 	</style>
    
@@ -1981,7 +1976,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<select id="lockClientSelector" onchange="selectClientForLock(this.value)" style="display: none; padding: 8px; border: 2px solid #28a745; border-radius: 5px; background: #d4edda; color: #155724; font-size: 13px; min-width: 150px;">
@@ -12814,32 +12809,35 @@
 		}
 
 		// חיפוש חכם בקבלות
+		// Check if handleReceiptSmartSearch function exists, if not, add it:
 		function handleReceiptSmartSearch(searchTerm) {
 			if (!searchTerm.trim()) {
 				applyReceiptFilters();
 				return;
 			}
 			
-			// מציאת לקוחות מתאימים
+			// Find matching clients
 			const matchingClients = searchClientsAdvanced(searchTerm);
 			const clientNames = matchingClients.map(client => client.name);
 			
 			if (clientNames.length === 0) {
 				displayFilteredReceipts([]);
+				updateReceiptsStats([]);
 				return;
 			}
 			
-			// סינון הקבלות לפי הלקוחות שנמצאו
+			// Filter receipts by found clients
 			let filteredReceipts = receipts.filter(receipt => 
 				clientNames.some(name => 
-					receipt.location_name && receipt.location_name.includes(name)
+					receipt.location_name && receipt.location_name.toLowerCase().includes(name.toLowerCase())
 				)
 			);
 			
-			// החלת הסינונים הרגילים
+			// Apply additional filters
 			filteredReceipts = applyAdditionalReceiptFilters(filteredReceipts);
 			
 			displayFilteredReceipts(filteredReceipts);
+			updateReceiptsStats(filteredReceipts);
 		}
 
 		// ניקוי חיפוש חכם בקבלות
@@ -13572,12 +13570,21 @@
 				}
 			}
 			
-			// Sync receipts tab
+			// Fix receipts tab - use the smart search
 			const receiptSearch = document.getElementById('receiptSmartSearch');
 			if (receiptSearch) {
 				receiptSearch.value = clientName;
 				if (typeof handleReceiptSmartSearch === 'function') {
 					handleReceiptSmartSearch(clientName);
+				}
+			}
+			
+			// For locations tab - filter the table directly
+			if (typeof filterLocationsTable === 'function') {
+				const nameFilter = document.getElementById('filterClientName');
+				if (nameFilter) {
+					nameFilter.value = clientName;
+					filterLocationsTable();
 				}
 			}
 		}
