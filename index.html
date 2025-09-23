@@ -1976,7 +1976,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<select id="lockClientSelector" onchange="selectClientForLock(this.value)" style="display: none; padding: 8px; border: 2px solid #28a745; border-radius: 5px; background: #d4edda; color: #155724; font-size: 13px; min-width: 150px;">
@@ -3423,7 +3423,22 @@
 					loadLocationsTable();
 					break;
 				case 'receipts':
-					loadReceiptsTable();
+					loadReceiptFilterOptions(); // Only load filter options, don't reset filters
+					// Don't call displayFilteredReceipts(receipts) - keep existing filters
+					if (isClientLocked && lockedClientId) {
+						// If locked, apply the locked client filter
+						const receiptSearch = document.getElementById('receiptSmartSearch');
+						if (receiptSearch) {
+							receiptSearch.value = lockedClientName;
+							handleReceiptSmartSearch(lockedClientName);
+						}
+					} else {
+						// Only apply filters if no smart search is active
+						const smartSearch = document.getElementById('receiptSmartSearch');
+						if (!smartSearch || !smartSearch.value.trim()) {
+							applyReceiptFilters();
+						}
+					}
 					break;
 				case 'debts':
 					loadDebtClientOptions(); // Load client options first
@@ -4390,11 +4405,21 @@
 		}
 
         function loadReceiptsTable() {
-			// טעינת אפשרויות הסינון
+			// טען אפשרויות סינון
 			loadReceiptFilterOptions();
 			
-			// הצגת כל הקבלות (ללא סינון)
-			displayFilteredReceipts(receipts);
+			// אל תציג את כל הקבלות אוטומטית - שמור על הסינון הקיים
+			// displayFilteredReceipts(receipts); // <- מחק את השורה הזו
+			
+			// במקום זה, בדוק אם יש סינון פעיל
+			const smartSearch = document.getElementById('receiptSmartSearch');
+			if (smartSearch && smartSearch.value.trim()) {
+				// יש חיפוש פעיל - השתמש בו
+				handleReceiptSmartSearch(smartSearch.value);
+			} else {
+				// אין חיפוש - הצג הכל
+				applyReceiptFilters();
+			}
 		}
 
         // Visithandling
