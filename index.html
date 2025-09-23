@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3219,24 +3219,24 @@
 			
 			try {
 				const values = [[
-					visitData.ID,
-					visitData.date,
-					visitData.location_id,
-					visitData.location_name || '', 
-					visitData.visit_type,
-					visitData.work_done,
-					visitData.duration_minutes,
-					visitData.num_workers || 1,
-					visitData.start_time,
-					visitData.end_time,
-					visitData.amount,
-					visitData.expense || 0,
-					visitData.notes
+					visitData.ID,                       // A: ID
+					visitData.date,                     // B: date  
+					visitData.location_id,              // C: location_id
+					visitData.location_name || '',      // D: location_name
+					visitData.visit_type,               // E: visit_type
+					visitData.work_done,                // F: work_done
+					visitData.duration_minutes,         // G: duration_minutes
+					visitData.num_workers || 1,         // H: num_workers (THIS WAS MISSING!)
+					visitData.start_time,               // I: start_time
+					visitData.end_time,                 // J: end_time
+					visitData.amount,                   // K: amount
+					visitData.expense || 0,             // L: expense
+					visitData.notes                     // M: notes
 				]];
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.VISITS}!A:M`, // ← חזרנו ל-M כי הסרנו paid
+					range: `${SHEETS.VISITS}!A:M`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: values }
 				});
@@ -4465,15 +4465,14 @@
 			saveVisit(visitData);
 		}
 
-		// לשנות בפונקציה הקיימת - להוסיף שמירה לשיטס
-		// Replace the existing saveVisit function with this corrected version
-		// Replace the existing saveVisit function with this clear version
+
+		// Fixed saveVisit - proper mapping for workers_count to num_workers
 		async function saveVisit(visitData) {
 			try {
-				// מצא את הלקוח
+				// Find the client
 				const location = locations.find(loc => loc.ID === visitData.location_id);
 				
-				// יצירת אובייקט הטיפול המתוקן
+				// Create the correct visit object structure
 				const newVisit = {
 					ID: generateID(),
 					date: visitData.date,
@@ -4482,22 +4481,22 @@
 					visit_type: visitData.visit_type,
 					work_done: visitData.work_done,
 					duration_minutes: visitData.duration_minutes,
-					num_workers: visitData.workers_count || 1,
+					num_workers: visitData.workers_count || 1,    // ✅ CORRECT mapping!
 					start_time: visitData.start_time,
 					end_time: visitData.end_time,
 					amount: visitData.amount,
 					expense: visitData.expense || 0,
-					notes: visitData.notes,
-					paid: visitData.paid || 'לא שולם'
+					notes: visitData.notes
+					// ✅ REMOVED: no 'paid' field - this caused the column shift problem
 				};
 
-				// הוסף לרשימת הטיפולים
+				// Add to visits array
 				visits.push(newVisit);
 				
-				// שמירה מקומית תמיד מצליחה
+				// Save locally (always succeeds)
 				saveToLocalStorage();
 				
-				// נסה לשמור בענן
+				// Try to save to cloud
 				let cloudSaved = false;
 				if (access_token && SPREADSHEET_ID) {
 					try {
@@ -4509,14 +4508,14 @@
 					}
 				}
 				
-				// עדכון תאריכי טיפול
+				// Update treatment dates
 				await updateSingleLocationTreatmentDates(newVisit.location_id);
 				
-				// רענון תצוגה
+				// Refresh display
 				document.getElementById('visitForm')?.reset();
 				loadPlanningData();
 				
-				// ✅ הודעה אחת וברורה בהתאם למה שקרה בפועל
+				// Success message based on actual result
 				if (access_token && SPREADSHEET_ID) {
 					if (cloudSaved) {
 						showToast('✅ הטיפול נשמר בהצלחה במערכת ובענן!', 'success');
@@ -8578,11 +8577,12 @@
 		}
 
 		// שמירה מקבצית של ביקורים
+		// Fixed saveVisitsBatch - matching the correct 13-column structure WITHOUT paid column
 		async function saveVisitsBatch(visitsArray) {
 			if (!await validateToken() || visitsArray.length === 0) return false;
 			
 			try {
-				// קרא את הנתונים הקיימים קודם
+				// Read existing data first
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
 					range: 'Visits!A:A'
@@ -8590,7 +8590,7 @@
 				
 				const existingIDs = new Set(response.result.values?.slice(1).map(row => row[0]) || []);
 				
-				// סנן רק רשומות חדשות
+				// Filter only new visits
 				const newVisits = visitsArray.filter(visit => !existingIDs.has(visit.ID));
 				
 				if (newVisits.length === 0) {
@@ -8598,25 +8598,26 @@
 					return true;
 				}
 				
+				// CORRECTED: 13 columns WITHOUT paid column - matching addHeadersToSheet structure
 				const values = newVisits.map(visit => [
-					visit.ID,
-					formatDateForSheets(visit.date),
-					visit.location_id,
-					visit.location_name,
-					visit.visit_type,
-					visit.work_done,
-					visit.duration_minutes,
-					visit.start_time,
-					visit.end_time,
-					visit.amount,
-					visit.expense,
-					visit.paid,
-					visit.notes
+					visit.ID,                           // A: ID
+					formatDateForSheets(visit.date),    // B: date
+					visit.location_id,                  // C: location_id
+					visit.location_name,                // D: location_name
+					visit.visit_type,                   // E: visit_type
+					visit.work_done,                    // F: work_done
+					visit.duration_minutes,             // G: duration_minutes
+					visit.num_workers || 1,             // H: num_workers (THIS IS THE KEY FIX!)
+					visit.start_time,                   // I: start_time
+					visit.end_time,                     // J: end_time
+					visit.amount,                       // K: amount
+					visit.expense,                      // L: expense
+					visit.notes                         // M: notes (NO paid column!)
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.VISITS}!A:M`,
+					range: `${SHEETS.VISITS}!A:M`,      // Correct range A:M (13 columns)
 					valueInputOption: 'USER_ENTERED',
 					resource: { 
 						values: values,
@@ -9486,9 +9487,7 @@
 			}
 		}
 
-		// החלף את saveEditedVisit בפונקציה זו:
-		// Update the existing saveEditedVisit function - add the dates update at the end
-		// Replace the existing saveEditedVisit function with this clear version
+		// saveEditedVisit
 		async function saveEditedVisit(visitId) {
 			console.log(`✅ saveEditedVisit ('${visitId}')`);
 			const visitIndex = visits.findIndex(v => v.ID == visitId);
@@ -9498,9 +9497,9 @@
 			}
 			
 			try {
-				// עדכן את הביקור במערך המקומי
+				// Update the visit in local array
 				const updatedVisit = {
-					...visits[visitIndex], // שמור נתונים קיימים
+					...visits[visitIndex], // Keep existing data
 					date: document.getElementById('editVisitDate').value,
 					visit_type: document.getElementById('editVisitType').value,
 					work_done: document.getElementById('editWorkDone').value,
@@ -9513,53 +9512,71 @@
 					notes: document.getElementById('editNotes').value
 				};
 				
-				const oldPaymentStatus = visits[visitIndex].paid;
-				const newPaymentStatus = document.getElementById('editPaid').value;
-
-				// עדכן את הביקור
 				visits[visitIndex] = updatedVisit;
-
-				// טפל בשינוי סטטוס תשלום
-				if (oldPaymentStatus !== newPaymentStatus) {
-					await handlePaymentStatusChange(visitId, newPaymentStatus, oldPaymentStatus);
-				}
-				
-				// שמירה מקומית תמיד מצליחה
 				saveToLocalStorage();
 				
-				// נסה לשמור בענן
-				let cloudSaved = false;
+				// Save to cloud with CORRECT column mapping (13 columns, no paid)
 				if (access_token && SPREADSHEET_ID) {
 					try {
-						await updateVisitInCloud(updatedVisit);
-						cloudSaved = true;
+						// Find the row in Google Sheets
+						const response = await gapi.client.sheets.spreadsheets.values.get({
+							spreadsheetId: SPREADSHEET_ID,
+							range: 'Visits!A:A'
+						});
+						
+						const rows = response.result.values || [];
+						const rowIndex = rows.findIndex(row => row[0] === visitId);
+						
+						if (rowIndex > 0) { // Found the row (index 0 is header)
+							const rowNum = rowIndex + 1;
+							
+							// CORRECTED: Update with 13 columns, no paid column
+							const updateData = [[
+								updatedVisit.ID,                           // A
+								formatDateForSheets(updatedVisit.date),    // B
+								updatedVisit.location_id,                  // C
+								updatedVisit.location_name,                // D
+								updatedVisit.visit_type,                   // E
+								updatedVisit.work_done,                    // F
+								updatedVisit.duration_minutes,             // G
+								updatedVisit.num_workers || 1,             // H (KEY FIX!)
+								updatedVisit.start_time,                   // I
+								updatedVisit.end_time,                     // J
+								updatedVisit.amount,                       // K
+								updatedVisit.expense,                      // L
+								updatedVisit.notes                         // M
+							]];
+							
+							await gapi.client.sheets.spreadsheets.values.update({
+								spreadsheetId: SPREADSHEET_ID,
+								range: `Visits!A${rowNum}:M${rowNum}`,     // Correct range A:M
+								valueInputOption: 'USER_ENTERED',
+								resource: { values: updateData }
+							});
+							
+							showToast('✅ הביקור עודכן בהצלחה במערכת ובענן!', 'success');
+						} else {
+							showToast('⚠️ הביקור עודכן מקומית, אך לא נמצא בענן', 'warning');
+						}
 					} catch (error) {
 						console.error('Cloud update failed:', error);
-						cloudSaved = false;
-					}
-				}
-				
-				// עדכון תאריכי טיפול
-				await updateSingleLocationTreatmentDates(updatedVisit.location_id);
-				
-				// עדכן תצוגה
-				loadVisitsHistory();
-				closeEditModal();
-				
-				// ✅ הודעה אחת וברורה בהתאם למה שקרה בפועל
-				if (access_token && SPREADSHEET_ID) {
-					if (cloudSaved) {
-						showToast('✅ הטיפול עודכן בהצלחה במערכת ובענן!', 'success');
-					} else {
-						showToast('⚠️ הטיפול עודכן מקומית בלבד - בעיה בחיבור לענן', 'warning');
+						showToast('⚠️ הביקור עודכן מקומית - בעיה בחיבור לענן', 'warning');
 					}
 				} else {
-					showToast('💾 הטיפול עודכן מקומית - התחבר לענן לעדכון מלא', 'info');
+					showToast('💾 הביקור עודכן מקומית - התחבר לענן לשמירה מלאה', 'info');
 				}
+				
+				// Update treatment dates after editing
+				await updateSingleLocationTreatmentDates(updatedVisit.location_id);
+				
+				// Refresh display
+				loadVisitsTable();
+				loadPlanningData();
+				closeEditModal();
 				
 			} catch (error) {
 				console.error('Error updating visit:', error);
-				showToast('❌ שגיאה בעדכון הטיפול - נסה שנית', 'error');
+				showToast('❌ שגיאה בעדכון הביקור', 'error');
 			}
 		}
 
