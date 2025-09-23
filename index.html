@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -5556,20 +5556,21 @@
 						// בניית תאריך נכון מ-3 עמודות
 						const visitDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 						
-						const visitData = {
-							ID: generateID(),
-							date: visitDate,
-							location_id: existingCustomer.ID,
-							location_name: existingCustomer.name,
-							visit_type: treatment,
-							work_done: workDone,
-							duration_minutes: parseFloat(duration) * 60 || 0, // שעות → דקות
-							start_time: '',
-							end_time: '',
-							amount: parseFloat(amount) || 0,
-							expense: parseFloat(expense) || 0,
-							notes: notes
-						};
+						const visitData = parseVisitFromRow([
+							generateID(),           // ID
+							visitDate,             // date  
+							existingCustomer.ID,   // location_id
+							customerName,          // location_name
+							treatment,             // visit_type
+							workDone,              // work_done
+							durationMinutes,       // duration_minutes
+							1,                     // num_workers - always 1
+							'',                    // start_time
+							'',                    // end_time
+							amount,                // amount
+							expenseAmount,         // expense
+							row[12] || ''          // notes
+						]);
 						
 						visits.push(visitData);
 						
@@ -7969,15 +7970,15 @@
 					const visitData = {
 						ID: generateID(),
 						date: telegramVisit.date,
-						location_id: telegramVisit.client_id,
+						location_id: locationId,
 						location_name: telegramVisit.client_name,
-						visit_type: 'ביון', // ברירת מחדל
+						visit_type: 'מלא',  // ✅ FIX: Use correct visit type from your system
 						work_done: telegramVisit.work_done,
 						duration_minutes: telegramVisit.duration_minutes,
 						num_workers: 1,
 						start_time: telegramVisit.time || '',
 						end_time: '',
-						amount: 0, // יחושב לפי זמן ותעריף
+						amount: 0,
 						expense: 0,
 						notes: `יובא מטלגרם: ${telegramVisit.raw_text}`
 					};
