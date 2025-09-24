@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -9127,6 +9127,11 @@
 								expense: parseFloat(row[11]) || 0,
 								notes: row[12] || ''
 							};
+							console.log(`C: ID=${visitData.ID}, date=${visitData.date}, location_name=${visitData.location_name}, num_workers=${visitData.num_workers} (type: ${typeof visitData.num_workers}), row[7]=${row[7]}, row[8]=${row[8]}`);
+
+							// ID	date	location_id	location_name	visit_type	
+							// work_done	duration_minutes	num_workers	start_time	end_time	
+							// amount	expense	notes
 
 							visits.push(visitData);
 							newVisits.push(visitData);
