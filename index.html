@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -5540,6 +5540,7 @@
 						const expense = row[11] || 0;           // expense
 						const notes = row[12] || '';            // notes
 						
+						
 						// מצא לקוח קיים לפי כתובת מלאה
 						const existingCustomer = locations.find(loc => 
 							loc.full_address && 
@@ -5571,6 +5572,13 @@
 							expenseAmount,         // expense
 							row[12] || ''          // notes
 						]);
+
+						console.log(`B: ID=${visitData.ID}, date=${visitData.date}, location_name=${visitData.location_name}, num_workers=${visitData.num_workers} (type: ${typeof visitData.num_workers})`);
+
+						// ID	date	location_id	location_name	visit_type	
+						// work_done	duration_minutes	num_workers	start_time	end_time	
+						// amount	expense	notes
+						
 						
 						visits.push(visitData);
 						
@@ -7010,23 +7018,30 @@
 
 		// פונקציות עזר לפרסור שורות
 		function parseVisitFromRow(row) {
-			return {
+			const result = {
 				ID: row[0] || generateID(),
 				date: row[1] || '',
 				location_id: row[2] || '',
-				location_name: row[3] || '', // ✅ ADD: location_name column
+				location_name: row[3] || '',
 				visit_type: row[4] || '',
 				work_done: row[5] || '',
 				duration_minutes: parseInt(row[6]) || 0,
-				num_workers: parseInt(row[7]) || 1,    // ✅ FIX: moved from position 6 to 7
-				start_time: row[8] || '',              // ✅ FIX: moved from position 7 to 8  
-				end_time: row[9] || '',                // ✅ FIX: moved from position 8 to 9
-				amount: parseFloat(row[10]) || 0,      // ✅ FIX: moved from position 9 to 10
-				expense: parseFloat(row[11]) || 0,     // ✅ FIX: moved from position 10 to 11
-				notes: row[12] || ''                   // ✅ FIX: moved from position 12 to 12
-				// ✅ REMOVED: paid field - this was causing the column shift problem!
+				num_workers: parseInt(row[7]) || 1,
+				start_time: row[8] || '',
+				end_time: row[9] || '',
+				amount: parseFloat(row[10]) || 0,
+				expense: parseFloat(row[11]) || 0,
+				notes: row[12] || ''
 			};
+			
+			console.log(`A: ID=${result.ID}, date=${result.date}, location_name=${result.location_name}, num_workers=${result.num_workers} (type: ${typeof result.num_workers})`);
+			
+			return result;
 		}
+		
+		// ID	date	location_id	location_name	visit_type	
+		// work_done	duration_minutes	num_workers	start_time	end_time	
+		// amount	expense	notes
 
 		function parseTelegramVisitFromRow(row) {
 			return {
