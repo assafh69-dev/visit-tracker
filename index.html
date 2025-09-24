@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2521,19 +2521,7 @@
 					</div>
 					
 					<div id="telegramHelperStatus" style="margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 5px; font-size: 14px;"></div>
-					
-					<details>
-						<summary>⚙️ ייבוא חלקי (למתקדמים)</summary>
-						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;">
-							<button class="btn btn-info" onclick="importCustomersFromHelper()">👥 רק לקוחות</button>
-							<button class="btn btn-primary" onclick="importVisitsFromHelper()">🔧 רק טיפולים</button>
-							<button class="btn btn-warning" onclick="importReceiptsFromHelper()">🧾 רק קבלות</button>
-						</div>
-						<p style="font-size: 12px; color: #666; margin-top: 8px;">
-							השתמש בזה רק אם אתה צריך לייבא סוג נתונים ספציפי
-						</p>
-					</details>
-					
+									
 					<div style="text-align: center; margin: 15px 0;">
 						<span style="color: #666;">או</span>
 					</div>
@@ -5412,321 +5400,8 @@
 			}
 		}
 	   
-	   // תוספה - ייבוא לקוחות מטבלת עזר
-		async function importCustomersFromHelper() {
-			try {
-				const importTableId = localStorage.getItem('importTableId');
-				if (!importTableId) {
-					showToast('טבלת עזר לא נמצאה - צור קודם', 'warning');
-					return;
-				}
-				
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: importTableId,
-					range: 'Locations!A2:G1000' // עד G במקום H
-				});
-				
-				const rows = response.result.values || [];
-				let importedCount = 0;
-				let newLocations = []; // מערך לאיסוף כל הלקוחות החדשים
-				
-				for (const row of rows) {
-					if (row.length > 0 && row[0]) { // יש שם לקוח
-						// מיפוי לפי הכותרות החדשות באנגלית:
-						const customerName = row[0].trim();  // customer_name
-						const street = row[1] || '';         // street  
-						const houseNumber = row[2] || '';    // house_number
-						const city = row[3] || '';           // city
-						const frequency = row[4] || '';      // frequency
-						const contactPerson = row[5] || '';  // contact_person
-						const baseAmount = row[6] || '';     // base_amount
-						
-						// בניית כתובת מלאה
-						const fullAddress = `${street} ${houseNumber} ${city}`.trim();
-						
-						// בדוק אם לקוח כבר קיים (לפי כתובת מלאה)
-						const existingCustomer = locations.find(loc => 
-							loc.full_address && 
-							loc.full_address.toLowerCase() === fullAddress.toLowerCase()
-						);
-						
-						if (existingCustomer) {
-							console.log(`לקוח ${fullAddress} כבר קיים - דולג`);
-							continue;
-						}
-						
-						const locationData = {
-							ID: generateID(),
-							name: customerName,           // שם הלקוח (עכשיו נפרד מהכתובת)
-							full_address: fullAddress,   // כתובת מלאה מורכבת
-							neighborhood: '',
-							city: city,
-							contact_person: contactPerson,
-							phone: '',
-							allowed_day: 'כל יום',
-							interval_weeks: parseInt(frequency) || 4,
-							temp_addition: 0,
-							base_amount: parseFloat(baseAmount) || 0,
-							active: "1",
-							notes: 'יובא מטבלת לקוחות',
-							last_visit: '',
-							next_visit: ''
-						};
-						
-						locations.push(locationData);
-						newLocations.push(locationData); // הוסף למערך החדש
-						importedCount++;
-					}
-				}
-				
-				// שמירה מקבצית אחת בסוף:
-				if (newLocations.length > 0) {
-					showToast(`שומר ${newLocations.length} לקוחות בבת אחת...`, 'info', 2000);
-					const success = await saveLocationsBatch(newLocations);
-					
-					if (success) {
-						showToast(`✅ יובאו ${importedCount} לקוחות במהירות!`, 'success');
-					} else {
-						showToast('⚠️ בעיה בשמירה לענן - נשמר מקומית בלבד', 'warning');
-					}
-				} else {
-					showToast('לא נמצאו לקוחות חדשים לייבוא', 'info');
-				}
-				
-				// עדכון תצוגות
-				saveToLocalStorage();
-				loadLocationsTable();
-				loadLocationsForSelect();
-				
-			} catch (error) {
-				console.error('Error importing customers:', error);
-				showToast('שגיאה בייבוא לקוחות', 'error');
-			}
-		}
+	      
 	   
-	   // תוספה - ייבוא טיפולים מטבלת עזר
-		async function importVisitsFromHelper() {
-			try {
-				const importTableId = localStorage.getItem('importTableId');
-				if (!importTableId) {
-					showToast('טבלת עזר לא נמצאה - צור קודם', 'warning');
-					return;
-				}
-				
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: importTableId,
-					range: 'Visits!A2:M1000'
-				});
-				
-				const rows = response.result.values || [];
-				let importedCount = 0;
-				let notFoundCustomers = [];
-				let newVisits = []; // מערך לאיסוף כל הביקורים החדשים
-				
-				for (const row of rows) {
-					if (row.length > 3 && row[3]) { // יש לקוח בעמודה 3 (customer)
-						// מיפוי לפי הכותרות החדשות באנגלית:
-						const year = row[0];                    // year
-						const month = row[1];                   // month
-						const day = row[2];                     // day
-						const customerName = row[3].trim();     // customer
-						const contactPerson = row[4] || '';     // contact_person
-						const treatment = row[5] || 'מלא';      // treatment
-						const dateField = row[6];               // date (לא נשתמש - נבנה מהעמודות הראשונות)
-						const workDone = row[7] || '';          // work_done
-						const duration = row[8] || 0;           // duration
-						const amount = row[9] || 0;             // amount
-						const paid = row[10] || '';           // paid
-						const expense = row[11] || 0;           // expense
-						const notes = row[12] || '';            // notes
-						
-						
-						// מצא לקוח קיים לפי כתובת מלאה
-						const existingCustomer = locations.find(loc => 
-							loc.full_address && 
-							loc.full_address.toLowerCase().includes(customerName.toLowerCase())
-						);
-						
-						if (!existingCustomer) {
-							if (!notFoundCustomers.includes(customerName)) {
-								notFoundCustomers.push(customerName);
-							}
-							continue;
-						}
-						
-						// בניית תאריך נכון מ-3 עמודות
-						const visitDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-						
-						const visitData = parseVisitFromRow([
-							generateID(),           // ID
-							visitDate,             // date  
-							existingCustomer.ID,   // location_id
-							customerName,          // location_name
-							treatment,             // visit_type
-							workDone,              // work_done
-							durationMinutes,       // duration_minutes
-							1,                     // num_workers - always 1
-							'',                    // start_time
-							'',                    // end_time
-							amount,                // amount
-							expenseAmount,         // expense
-							row[12] || ''          // notes
-						]);
-
-						console.log(`B: ID=${visitData.ID}, date=${visitData.date}, location_name=${visitData.location_name}, num_workers=${visitData.num_workers} (type: ${typeof visitData.num_workers})`);
-
-						// ID	date	location_id	location_name	visit_type	
-						// work_done	duration_minutes	num_workers	start_time	end_time	
-						// amount	expense	notes
-						
-						
-						visits.push(visitData);
-						
-						// יצירת תשלום אם הטיפול מסומן כשולם
-						if (paid === '1' || paid === 'כן' || paid === 'שולם') {
-							const payment = {
-								ID: generateID(),
-								date: visitDate,
-								time: '12:00',
-								amount: parseFloat(amount) || 0,
-								payment_method: 'cash',
-								source_type: 'import_from_helper',
-								client_id: existingCustomer.ID,
-								client_name: existingCustomer.name,  // ← שם הלקוח!
-								notes: `תשלום עבור ייבוא מטבלת עזר - ${workDone}`,
-								status: 'completed',
-								created_at: new Date().toISOString()
-							};
-							
-							payments.push(payment);
-							
-							const link = {
-								ID: generateID(),
-								payment_id: payment.ID,
-								visit_id: visitData.ID,
-								amount_allocated: parseFloat(amount) || 0,
-								link_type: 'full_payment',
-								created_at: new Date().toISOString()
-							};
-							
-							paymentVisitLinks.push(link);
-						}
-						
-						newVisits.push(visitData); // הוסף למערך החדש
-						// עדכון תאריכי טיפול לאחר הוספת ביקור חדש
-						// await updateSingleLocationTreatmentDates(visitData.location_id);
-						importedCount++;
-					}
-				}
-				
-				// שמירה מקבצית אחת בסוף:
-				if (newVisits.length > 0) {
-					showToast(`שומר ${newVisits.length} ביקורים בבת אחת...`, 'info', 2000);
-					const success = await saveVisitsBatch(newVisits);
-					
-					if (success) {
-						showToast(`✅ יובאו ${importedCount} ביקורים במהירות!`, 'success');
-					} else {
-						showToast('⚠️ בעיה בשמירה לענן - נשמר מקומית בלבד', 'warning');
-					}
-				} else {
-					showToast('לא נמצאו ביקורים חדשים לייבוא', 'info');
-				}
-				
-				// עדכון תצוגות
-				saveToLocalStorage();
-				loadPlanningData();
-				
-				// הודעה על לקוחות שלא נמצאו
-				let message = `יובאו ${importedCount} ביקורים בהצלחה!`;
-				if (notFoundCustomers.length > 0) {
-					message += `\n⚠️ ${notFoundCustomers.length} לקוחות לא נמצאו: ${notFoundCustomers.slice(0, 3).join(', ')}${notFoundCustomers.length > 3 ? '...' : ''}`;
-					showToast(message, 'warning', 5000);
-				}
-				
-			} catch (error) {
-				console.error('Error importing visits:', error);
-				showToast('שגיאה בייבוא ביקורים', 'error');
-			}
-		}
-	   
-	   
-	   // תוספה - ייבוא קבלות מטבלת עזר
-		async function importReceiptsFromHelper() {
-			try {
-				const importTableId = localStorage.getItem('importTableId');
-				if (!importTableId) {
-					showToast('טבלת עזר לא נמצאה - צור קודם', 'warning');
-					return;
-				}
-				
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: importTableId,
-					range: 'Receipts!A2:K1000'
-				});
-				
-				const rows = response.result.values || [];
-				let importedCount = 0;
-				let notFoundCustomers = [];
-				
-				for (const row of rows) {
-					if (row.length > 6 && row[6]) { // יש כתובת בעמודה 6 (G)
-						const customerAddress = row[6].trim(); // עמודה "כתובת"
-						
-						// מצא לקוח קיים לפי כתובת מלאה
-						const existingCustomer = locations.find(loc => 
-							loc.full_address && 
-							loc.full_address.toLowerCase().includes(customerAddress.toLowerCase())
-						);
-						
-						if (!existingCustomer) {
-							if (!notFoundCustomers.includes(customerAddress)) {
-								notFoundCustomers.push(customerAddress);
-							}
-							continue;
-						}
-						
-						// בניית תאריך מ-3 עמודות
-						const year = row[3];   // שנה - עמודה D
-						const month = String(row[4]).padStart(2, '0');  // חודש - עמודה E
-						const day = String(row[5]).padStart(2, '0');    // יום - עמודה F
-						const receiptDate = `${year}-${month}-${day}`;
-						
-						const receiptData = {
-							ID: generateID(),
-							book_number: row[1] || '',      // פנקס - עמודה B
-							receipt_number: row[2] || '',   // קבלה - עמודה C
-							date: receiptDate,              // תאריך נכון
-							location_id: existingCustomer.ID,
-							location_name: customerAddress,
-							amount: parseFloat(row[7]) || 0, // סכום - עמודה H
-							payment_type: row[8] || '',     // סוג - עמודה I
-							codeX: row[0] || '',           // XK - עמודה A
-							notes: `${row[9] || ''} ${row[10] || ''}`.trim() // הערות + פירוט
-						};
-						
-						receipts.push(receiptData);
-						importedCount++;
-					}
-				}
-				
-				// שמירה
-				await saveAllToSheets();
-				loadReceiptsTable();
-				loadReceiptFilterOptions();
-				
-				let message = `יובאו ${importedCount} קבלות בהצלחה!`;
-				if (notFoundCustomers.length > 0) {
-					message += `\n⚠️ ${notFoundCustomers.length} לקוחות לא נמצאו: ${notFoundCustomers.slice(0, 3).join(', ')}${notFoundCustomers.length > 3 ? '...' : ''}`;
-				}
-				
-				showToast(message, 'success');
-				
-			} catch (error) {
-				console.error('Error importing receipts:', error);
-				showToast('שגיאה בייבוא קבלות', 'error');
-			}
-		}
 	   
 	   // תוספה - המרת פורמט תאריך מ-DD/MM/YYYY ל-YYYY-MM-DD
 		function convertDateFormat(dateStr) {
@@ -5744,41 +5419,7 @@
 		}
 	   
 	   
-	   // תוספה - ייבוא מלא מטבלת העזר
-		async function importFromHelper() {
-			try {
-				const importTableId = localStorage.getItem('importTableId');
-				if (!importTableId) {
-					showToast('טבלת עזר לא נמצאה - צור קודם', 'warning');
-					return;
-				}
-				
-				showToast('מתחיל ייבוא מלא...', 'info');
-				
-				// ייבוא בסדר: לקוחות → טיפולים → קבלות
-				await importCustomersFromHelper();
-				await new Promise(resolve => setTimeout(resolve, 1000)); // המתנה קצרה
-				
-				await importVisitsFromHelper();
-				await new Promise(resolve => setTimeout(resolve, 1000)); // המתנה קצרה
-				
-				await importReceiptsFromHelper();
-				
-				showToast('🎉 ייבוא מלא הושלם בהצלחה!', 'success', 5000);
-				
-				setTimeout(() => {
-					if (confirm('ייבוא הושלם בהצלחה!\n\nהאם למחוק את טבלת העזר מה-Google Drive?')) {
-						showToast('💡 ניתן למחוק את טבלת העזר ידנית בגוגל דרייב', 'info');
-						localStorage.removeItem('importTableId');
-					}
-				}, 2000);
-				
-			} catch (error) {
-				console.error('Error in full import:', error);
-				showToast('שגיאה בייבוא מלא', 'error');
-			}
-		}
-	   
+	  	   
 	   // תוספה - בדיקת תקינות נתונים
 		function validateReceiptData(receiptData) {
 			const errors = [];
@@ -8633,6 +8274,7 @@
 		// שמירה מקבצית של ביקורים
 		// Fixed saveVisitsBatch - matching the correct 13-column structure WITHOUT paid column
 		async function saveVisitsBatch(visitsArray) {
+			console.log(`🔵 saveVisitsBatch called with ${visitsArray.length} visits - checking for duplicates`);
 			if (!await validateToken() || visitsArray.length === 0) return false;
 			
 			try {
@@ -8679,7 +8321,7 @@
 					}
 				});
 				
-				console.log(`✅ Saved ${newVisits.length} visits in batch - from ${visitsArray.length}`);
+				console.log(`✅ saveVisitsBatch completed - Saved ${newVisits.length} visits in batch - from ${visitsArray.length}`);
 				return true;
 			} catch (error) {
 				console.error('Error in batch save visits:', error);
@@ -8936,6 +8578,8 @@
 	   
 		// פונקציה חדשה לייבוא מהיר וכולל של כל הנתונים
 		async function importFromHelperTableFast() {
+			console.log('🚀 Starting FAST complete import from helper table...');
+			
 			if (!await validateToken()) {
 				showToast('התחבר לגוגל קודם', 'warning');
 				return;
@@ -8947,374 +8591,209 @@
 				return;
 			}
 			
-			console.log('🚀 Starting FAST complete import from helper table...');
-			console.log('🔍 Import Table ID:', importTableId);
-			
 			try {
 				showLoading('מייבא נתונים מהר מטבלת העזר...');
 				
-				// מעקב סטטיסטיקות
+				// Statistics tracking
 				const stats = {
 					locations: { imported: 0, skipped: 0 },
 					visits: { imported: 0, skipped: 0 },
 					receipts: { imported: 0, skipped: 0 }
 				};
 				
-				// מערכים לנתונים חדשים בלבד
+				// Arrays for new data only
 				const newLocations = [];
 				const newVisits = [];
 				const newReceipts = [];
+				const payments = [];
+				const paymentVisitLinks = [];
 				
-				// ======== שלב 1: קריאת נתונים ברצף (כמו בפונקציות שעובדות) ========
-				let locationsResponse, visitsResponse, receiptsResponse;
-				
+				// ======== STEP 1: Import Locations ========
 				try {
-					console.log('📊 Loading locations data...');
-					locationsResponse = await gapi.client.sheets.spreadsheets.values.get({
+					console.log('📍 Starting locations import...');
+					const locationsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
 						range: 'Locations!A2:G1000'
 					});
+					
+					if (locationsResponse.result.values?.length > 0) {
+						for (const row of locationsResponse.result.values) {
+							if (row[0] && row[1]) { // Has ID and name
+								const customerName = row[1].trim();
+								
+								// Check if customer already exists
+								const existingCustomer = locations.find(loc => 
+									loc.name.toLowerCase() === customerName.toLowerCase()
+								);
+								
+								if (!existingCustomer) {
+									const locationData = {
+										ID: generateID(),
+										name: customerName,
+										full_address: row[2] || '',
+										neighborhood: row[3] || '',
+										city: row[4] || '',
+										contact_person: row[5] || '',
+										phone: row[6] || '',
+										allowed_day: 'יום ראשון',
+										interval_weeks: 4,
+										temp_addition: false,
+										base_amount: 0,
+										active: true,
+										notes: 'יובא מטבלת עזר',
+										last_visit: '',
+										next_visit: '',
+										client_requests: ''
+									};
+									
+									locations.push(locationData);
+									newLocations.push(locationData);
+									stats.locations.imported++;
+								} else {
+									stats.locations.skipped++;
+								}
+							}
+						}
+						console.log(`✅ Processed ${stats.locations.imported} new locations`);
+					}
 				} catch (error) {
-					console.log('📊 Locations sheet not found or empty');
-					locationsResponse = { result: { values: [] } };
+					console.error('❌ Error importing locations:', error);
 				}
 				
+				// ======== STEP 2: Import Visits ========
 				try {
-					console.log('🔧 Loading visits data...');
-					visitsResponse = await gapi.client.sheets.spreadsheets.values.get({
+					console.log('🔧 Starting visits import...');
+					const visitsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
 						range: 'Visits!A2:M1000'
 					});
-				} catch (error) {
-					console.log('🔧 Visits sheet not found or empty');
-					visitsResponse = { result: { values: [] } };
-				}
-				
-				try {
-					console.log('🧾 Loading receipts data...');
-					receiptsResponse = await gapi.client.sheets.spreadsheets.values.get({
-						spreadsheetId: importTableId,
-						range: 'Receipts!A2:K1000'
-					});
-				} catch (error) {
-					console.log('🧾 Receipts sheet not found or empty');
-					receiptsResponse = { result: { values: [] } };
-				}
-				
-				console.log('📊 Raw data loaded:', {
-					locations: locationsResponse.result.values?.length || 0,
-					visits: visitsResponse.result.values?.length || 0,
-					receipts: receiptsResponse.result.values?.length || 0
-				});
-				
-				if (visitsResponse.result.values && visitsResponse.result.values.length > 0) {
-				//	// console.log('🔍 First 5 rows from visits table:');
-					visitsResponse.result.values.slice(0, 5).forEach((row, index) => {
-				//	//	console.log(`Row ${index}: Year=${row[0]}, Month=${row[1]}, Day=${row[2]}, Customer=${row[3]}`);
-					});
-				}
-				
-				// ======== שלב 2: עיבוד לקוחות ========
-				if (locationsResponse.result.values?.length > 0) {
-					showToast('מעבד לקוחות...', 'info', 1500);
 					
-					for (const row of locationsResponse.result.values) {
-						if (row.length > 0 && row[0]) { // יש שם לקוח
-							const customerName = row[0].trim();
-							const street = row[1] || '';
-							const houseNumber = row[2] || '';
-							const city = row[3] || '';
-							const fullAddress = `${street} ${houseNumber} ${city}`.trim();
-							
-							// בדיקת כפילות לפי שם ו/או כתובת
-							const isDuplicate = locations.some(existing =>
-								existing.name.toLowerCase() === customerName.toLowerCase() ||
-								(fullAddress && existing.full_address && 
-								 existing.full_address.toLowerCase() === fullAddress.toLowerCase())
-							);
-							
-							if (isDuplicate) {
-								stats.locations.skipped++;
-								console.log(`⚠️ Duplicate customer skipped: ${customerName}`);
-								continue;
-							}
-							
-							const locationData = {
-								ID: generateID(),
-								name: customerName,
-								full_address: fullAddress || customerName, // ← תיקון: גם שם הלקוח אם אין כתובת נפרדת
-								neighborhood: '',
-								city: city,
-								contact_person: row[5] || '',
-								phone: '',
-								allowed_day: '',
-								interval_weeks: parseInt(row[4]) || 4,
-								temp_addition: 0,
-								base_amount: parseFloat(row[6]) || 0,
-								active: "1",
-								notes: '',
-								last_visit: '',
-								next_visit: ''
-							};
-							
-							locations.push(locationData);
-							newLocations.push(locationData);
-							stats.locations.imported++;
-						}
-					}
-				}
-				
-				// ======== שלב 3: עיבוד ביקורים ========
-				if (visitsResponse.result.values?.length > 0) {
-					showToast('מעבד ביקורים...', 'info', 1500);
-					
-					let notFoundCustomers = [];
-					
-					for (const row of visitsResponse.result.values) {
-						if (row.length > 3 && row[3]) { // יש לקוח בעמודה 3
-							const customerName = row[3].trim();
-							
-							// מצא לקוח קיים
-							const existingCustomer = locations.find(loc =>
-								loc.name && loc.name.toLowerCase() === customerName.toLowerCase()
-							);
-							
-							if (!existingCustomer) {
-								if (!notFoundCustomers.includes(customerName)) {
-									notFoundCustomers.push(customerName);
+					if (visitsResponse.result.values?.length > 0) {
+						for (const row of visitsResponse.result.values) {
+							if (row[0] && row[1] && row[2] && row[3]) { // Has basic data
+								const year = row[0];
+								const month = row[1];
+								const day = row[2];
+								const customerName = row[3].trim();
+								
+								// Find existing customer
+								const existingCustomer = locations.find(loc => 
+									loc.name.toLowerCase().includes(customerName.toLowerCase())
+								);
+								
+								if (existingCustomer) {
+									const visitDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+									const workDone = row[7] || '';
+									const amount = parseFloat(row[9]) || 0;
+									
+									// Check for duplicates
+									const isDuplicate = visits.some(existing =>
+										existing.location_id === existingCustomer.ID &&
+										existing.date === visitDate &&
+										existing.work_done === workDone &&
+										Math.abs(existing.amount - amount) < 0.01
+									);
+									
+									if (!isDuplicate) {
+										const visitData = {
+											ID: generateID(),
+											date: visitDate,
+											location_id: existingCustomer.ID,
+											location_name: customerName,
+											visit_type: row[5] || 'מלא',
+											work_done: workDone,
+											duration_minutes: (parseFloat(row[8]) || 0) * 60,
+											num_workers: 1, // ✅ Always 1 for helper table import
+											start_time: '',
+											end_time: '',
+											amount: amount,
+											expense: parseFloat(row[11]) || 0,
+											notes: row[12] || ''
+										};
+										
+										console.log(`🔧 VISIT: ID=${visitData.ID}, location_name=${visitData.location_name}, num_workers=${visitData.num_workers} (${typeof visitData.num_workers})`);
+										
+										visits.push(visitData);
+										newVisits.push(visitData);
+										stats.visits.imported++;
+										
+										// Create payment if marked as paid
+										const paidStatus = row[10] || '';
+										if (paidStatus === '1' || paidStatus === 'כן' || paidStatus === 'שולם') {
+											const payment = {
+												ID: generateID(),
+												date: visitDate,
+												time: '12:00',
+												amount: amount,
+												payment_method: 'cash',
+												source_type: 'import_from_helper_fast',
+												client_id: existingCustomer.ID,
+												client_name: existingCustomer.name,
+												notes: `תשלום עבור ייבוא מהיר - ${workDone}`,
+												status: 'completed',
+												created_at: new Date().toISOString()
+											};
+											
+											payments.push(payment);
+											
+											const link = {
+												ID: generateID(),
+												payment_id: payment.ID,
+												visit_id: visitData.ID,
+												amount_allocated: amount,
+												link_type: 'full_payment',
+												created_at: new Date().toISOString()
+											};
+											
+											paymentVisitLinks.push(link);
+										}
+									} else {
+										stats.visits.skipped++;
+									}
 								}
-								stats.visits.skipped++;
-								continue;
 							}
-							
-							// בניית תאריך מ-3 עמודות: year, month, day
-							const year = row[0];
-							const month = String(row[1]).padStart(2, '0');
-							const day = String(row[2]).padStart(2, '0');
-							const visitDate = `${year}-${month}-${day}`;
-							// console.log(`🔍 Processing visit: ${customerName} on ${visitDate} (original year: ${year})`);
-							
-							const workDone = row[7] || '';
-							const amount = parseFloat(row[9]) || 0;
-							
-							// בדיקת כפילות ביקור
-							const isDuplicateVisit = visits.some(existing =>
-								existing.location_id === existingCustomer.ID &&
-								existing.date === visitDate &&
-								existing.work_done === workDone &&
-								Math.abs(existing.amount - amount) < 0.01
-							);
-							
-							if (isDuplicateVisit) {
-								stats.visits.skipped++;
-								// console.log(`⚠️ Duplicate visit skipped: ${customerName} on ${visitDate}`);
-								continue;
-							}
-							
-							const paidStatus = row[10] || '';
-							const visitData = {
-								ID: generateID(),
-								date: visitDate,
-								location_id: existingCustomer.ID,
-								location_name: customerName,
-								visit_type: row[5] || 'regular',
-								work_done: workDone,
-								duration_minutes: (parseFloat(row[8]) || 0) * 60,
-								num_workers: 1,
-								start_time: '',
-								end_time: '',
-								amount: amount,
-								expense: parseFloat(row[11]) || 0,
-								notes: row[12] || ''
-							};
-							console.log(`C: ID=${visitData.ID}, date=${visitData.date}, location_name=${visitData.location_name}, num_workers=${visitData.num_workers} (type: ${typeof visitData.num_workers}), row[7]=${row[7]}, row[8]=${row[8]}`);
-
-							// ID	date	location_id	location_name	visit_type	
-							// work_done	duration_minutes	num_workers	start_time	end_time	
-							// amount	expense	notes
-
-							visits.push(visitData);
-							newVisits.push(visitData);
-
-							// יצירת תשלום אם הביקור מסומן כשולם
-							if (paidStatus === '1' || paidStatus === 'כן' || paidStatus === 'שולם') {
-								const payment = {
-									ID: generateID(),
-									date: visitDate,
-									time: '12:00',
-									amount: amount,
-									payment_method: 'cash',
-									source_type: 'import_from_helper_fast',
-									client_id: existingCustomer.ID,
-									client_name: existingCustomer.name,
-									notes: `תשלום עבור ייבוא מהיר - ${workDone}`,
-									status: 'completed',
-									created_at: new Date().toISOString()
-								};
-								
-								payments.push(payment);
-								
-								const link = {
-									ID: generateID(),
-									payment_id: payment.ID,
-									visit_id: visitData.ID,
-									amount_allocated: amount,
-									link_type: 'full_payment',
-									created_at: new Date().toISOString()
-								};
-								
-								paymentVisitLinks.push(link);
-							}
-							//** עדכון תאריכי טיפול לאחר הוספת ביקור חדש
-							//** await updateSingleLocationTreatmentDates(visitData.location_id);
-							stats.visits.imported++;
 						}
+						console.log(`✅ Processed ${stats.visits.imported} new visits`);
 					}
-					
-					if (notFoundCustomers.length > 0) {
-						console.log(`⚠️ ${notFoundCustomers.length} customers not found for visits:`, notFoundCustomers.slice(0, 5));
-					}
+				} catch (error) {
+					console.error('❌ Error importing visits:', error);
 				}
 				
-				// ======== שלב 4: עיבוד קבלות ========
-				if (receiptsResponse.result.values?.length > 0) {
-					showToast('מעבד קבלות...', 'info', 1500);
-					
-					let notFoundAddresses = [];
-					
-					for (const row of receiptsResponse.result.values) {
-						if (row.length > 6 && row[6]) { // יש כתובת בעמודה 6
-							const customerAddress = row[6].trim();
-							
-							// מצא לקוח לפי כתובת - גם בשם וגם בכתובת מלאה
-							const existingCustomer = locations.find(loc =>
-								(loc.name && loc.name.toLowerCase().includes(customerAddress.toLowerCase())) ||
-								(loc.full_address && loc.full_address.toLowerCase().includes(customerAddress.toLowerCase()))
-							);
-							
-							if (!existingCustomer) {
-								if (!notFoundAddresses.includes(customerAddress)) {
-									notFoundAddresses.push(customerAddress);
-								}
-								stats.receipts.skipped++;
-								continue;
-							}
-							
-							// בניית תאריך
-							const year = row[3];
-							const month = String(row[4]).padStart(2, '0');
-							const day = String(row[5]).padStart(2, '0');
-							const receiptDate = `${year}-${month}-${day}`;
-							
-							const bookNumber = row[1] || '';
-							const receiptNumber = row[2] || '';
-							
-							// בדיקת כפילות קבלה
-							const isDuplicateReceipt = receipts.some(existing =>
-								existing.book_number === bookNumber &&
-								existing.receipt_number === receiptNumber &&
-								existing.date === receiptDate
-							);
-							
-							if (isDuplicateReceipt) {
-								stats.receipts.skipped++;
-								// console.log(`⚠️ Duplicate receipt skipped: ${bookNumber}/${receiptNumber}`);
-								continue;
-							}
-							
-							const receiptData = {
-								ID: generateID(),
-								book_number: bookNumber,
-								receipt_number: receiptNumber,
-								date: receiptDate,
-								location_id: existingCustomer.ID,
-								location_name: customerAddress,
-								amount: parseFloat(row[7]) || 0,
-								payment_type: row[8] || '',
-								notes: `${row[9] || ''} ${row[10] || ''}`.trim()
-							};
-							
-							receipts.push(receiptData);
-							newReceipts.push(receiptData);
-							stats.receipts.imported++;
-						}
-					}
-					
-					if (notFoundAddresses.length > 0) {
-						console.log(`⚠️ ${notFoundAddresses.length} addresses not found for receipts:`, notFoundAddresses.slice(0, 5));
-					}
-				}
+				// ======== STEP 3: Save to Local Storage ========
+				saveToLocalStorage();
 				
-				// ======== שלב 5: שמירה מקבצית לענן ========
-				showToast('שומר נתונים חדשים לענן...', 'info');
-				
+				// ======== STEP 4: Save to Cloud ========
+				console.log('☁️ Saving to cloud...');
 				const savePromises = [];
 				
 				if (newLocations.length > 0) {
-					savePromises.push(saveLocationsBatchNew(newLocations));
+					console.log('🔵 saveLocationsBatch called for new locations');
+					savePromises.push(saveLocationsBatch(newLocations));
 				}
+				
 				if (newVisits.length > 0) {
-					savePromises.push(saveVisitsBatchNew(newVisits));
-				}
-				if (newReceipts.length > 0) {
-					savePromises.push(saveReceiptsBatchNew(newReceipts));
+					console.log('🔵 saveVisitsBatch called with', newVisits.length, 'visits - checking for duplicates');
+					savePromises.push(saveVisitsBatch(newVisits));
 				}
 				
 				const saveResults = await Promise.all(savePromises);
 				const allSaved = saveResults.every(result => result === true);
 				
-				// שמירת תשלומים לענן
-				// שמירת תשלומים בקבוצות - לא אחד אחד
-				if (payments.length > 0) {
-					console.log(`💰 שומר ${payments.length} תשלומים ו-${paymentVisitLinks.length} קישורים...`);
-					
-					try {
-						// שמירת תשלומים בבאץ'
-						await savePaymentsBatch(payments);
-						
-						// שמירת קישורים בבאץ'
-						await savePaymentLinksBatch(paymentVisitLinks);
-						
-						console.log(`✅ נשמרו כל התשלומים והקישורים בהצלחה`);
-						
-					} catch (error) {
-						console.error('❌ שגיאה בשמירת תשלומים:', error);
-						showToast('חלק מהתשלומים לא נשמרו לענן', 'warning');
-					}
-				}
-
-							
-				
-				// ======== שלב 6: עדכון ממשק ========
-				saveToLocalStorage();
+				// ======== STEP 5: Update UI ========
 				loadLocationsTable();
-				loadReceiptsTable();
 				loadLocationsForSelect();
-				loadReceiptFilterOptions();
-				loadFilterOptions();
-				
+				loadPlanningData();
 				
 				hideLoading();
 				
-				// ======== דיווח סופי ========
-				console.log('📊 Import completed:', stats);
-				
-				const totalImported = stats.locations.imported + stats.visits.imported + stats.receipts.imported;
-				const totalSkipped = stats.locations.skipped + stats.visits.skipped + stats.receipts.skipped;
-				
-				// חישוב ועדכון תאריכי טיפול (הוספה חדשה)
-				if (stats.visits.imported > 0) {
-					showToast('מחשב תאריכי טיפול...', 'info', 2000);
-					const updatedCount = await calculateTreatmentDates();
-					if (updatedCount > 0) {
-						showToast(`✅ עודכנו תאריכי טיפול עבור ${updatedCount} לקוחות`, 'success', 3000);
-					}
-				}
+				// ======== STEP 6: Final Report ========
+				const totalImported = stats.locations.imported + stats.visits.imported;
+				const totalSkipped = stats.locations.skipped + stats.visits.skipped;
 				
 				if (totalImported > 0) {
 					const message = `🎉 ייבוא הושלם בהצלחה!
 					
-		✅ יובאו: ${stats.locations.imported} לקוחות, ${stats.visits.imported} ביקורים, ${stats.receipts.imported} קבלות
+		✅ יובאו: ${stats.locations.imported} לקוחות, ${stats.visits.imported} ביקורים
 		${totalSkipped > 0 ? `⚠️ דולגו (כפילויות): ${totalSkipped} רשומות` : ''}
 		${allSaved ? '☁️ נשמר לענן בהצלחה' : '⚠️ חלק מהנתונים לא נשמרו לענן'}`;
 					
@@ -9324,88 +8803,12 @@
 				}
 				
 			} catch (error) {
-				console.error('Error in fast import:', error);
+				console.error('❌ Error in fast import:', error);
 				hideLoading();
 				showToast('שגיאה בייבוא מהיר', 'error');
 			}
 		}
-
-		// פונקציות עזר חדשות ומעודכנות לשמירה מקבצית
-		async function saveLocationsBatchNew(locationsArray) {
-			if (!locationsArray.length) return true;
-			
-			try {
-				const values = locationsArray.map(loc => [
-					loc.ID, loc.name, loc.full_address, loc.neighborhood, loc.city,
-					loc.contact_person, loc.phone, loc.allowed_day, loc.interval_weeks,
-					loc.temp_addition, loc.base_amount, loc.active, loc.notes,
-					loc.last_visit, loc.next_visit
-				]);
-				
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A2:O2',
-					valueInputOption: 'USER_ENTERED',
-					resource: { values }
-				});
-				
-				console.log(`✅ Saved ${locationsArray.length} locations to cloud`);
-				return true;
-			} catch (error) {
-				console.error('Error saving locations batch:', error);
-				return false;
-			}
-		}
-
-		async function saveVisitsBatchNew(visitsArray) {
-			if (!visitsArray.length) return true;
-			
-			try {
-				const values = visitsArray.map(visit => [
-					visit.ID, visit.date, visit.location_id, visit.location_name, visit.visit_type, visit.work_done,
-					visit.duration_minutes, visit.num_workers, visit.start_time, visit.end_time,
-					visit.amount, visit.expense, visit.notes
-				]);
-				
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Visits!A2:M2', // ← חזרנו ל-M כי הסרנו paid
-					valueInputOption: 'USER_ENTERED',
-					resource: { values }
-				});
-				
-				console.log(`✅ Saved ${visitsArray.length} visits to cloud`);
-				return true;
-			} catch (error) {
-				console.error('Error saving visits batch:', error);
-				return false;
-			}
-		}
-
-		async function saveReceiptsBatchNew(receiptsArray) {
-			if (!receiptsArray.length) return true;
-			
-			try {
-				const values = receiptsArray.map(receipt => [
-					receipt.ID, receipt.book_number, receipt.receipt_number, receipt.date,
-					receipt.location_id, receipt.location_name, receipt.amount,
-					receipt.payment_type, receipt.notes
-				]);
-				
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Receipts!A2:I2',
-					valueInputOption: 'USER_ENTERED',
-					resource: { values }
-				});
-				
-				console.log(`✅ Saved ${receiptsArray.length} receipts to cloud`);
-				return true;
-			} catch (error) {
-				console.error('Error saving receipts batch:', error);
-				return false;
-			}
-		}
+		
 
 	   
 	   ////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -12061,48 +11464,6 @@
 			}
 		}
 
-		// עדכון פונקציית הייבוא מטבלת העזר (הוספה לקוד הקיים)
-		async function importFromHelperTable() {
-			if (!await validateToken()) {
-				showToast('התחבר לגוגל קודם', 'warning');
-				return;
-			}
-			
-			const importTableId = localStorage.getItem('importTableId');
-			if (!importTableId) {
-				showToast('לא נמצא ID של טבלת העזר', 'warning');
-				return;
-			}
-			
-			try {
-				showLoading('מייבא נתונים מטבלת העזר...');
-				
-				// הקוד הקיים לייבוא לקוחות, ביקורים וקבלות...
-				// [הקוד הקיים נשאר כמו שהוא]
-				
-				// הוספת ייבוא הכנסות מטלגרם
-				await importTelegramIncomesFromHelper(importTableId);
-				
-				// שמירה מקומית ובענן
-				saveToLocalStorage();
-				await saveAllToSheetsOptimized();
-				
-				// עדכון ממשק
-				loadLocationsTable();
-				loadReceiptsTable();
-				loadReceiptFilterOptions();
-				loadFilterOptions();
-				loadPaymentFilterOptions();
-				
-				hideLoading();
-				showToast('🎉 ייבוא הושלם בהצלחה!', 'success', 5000);
-				
-			} catch (error) {
-				console.error('Import error:', error);
-				showToast('שגיאה בייבוא נתונים', 'error');
-				hideLoading();
-			}
-		}
 
 		// ייבוא הכנסות מטבלת העזר והמרתן לתשלומים
 		async function importTelegramIncomesFromHelper(importTableId) {
