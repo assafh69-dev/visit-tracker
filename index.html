@@ -2406,9 +2406,12 @@
 				<h2>💳 ניהול תשלומים</h2>
 				
 				<div class="section-actions" style="margin-bottom: 20px;">
-					<button onclick="openPaymentModal()" class="btn-primary">
-						💰 תשלום חדש
+					<button onclick="showSection('history')" class="btn-primary">
+						📋 עבור לטיפולים
 					</button>
+					<p style="color: #666; font-size: 14px; margin-top: 10px;">
+						💡 לעדכן תשלום: עבור לטאב טיפולים ושנה את סטטוס התשלום
+					</p>
 				</div>
 				
 				<!-- פאנל סינון -->
@@ -2592,102 +2595,6 @@
     </div>
 
 	<!-- חלונית תשלום -->
-	<!-- Replace the existing paymentModal HTML with this improved version -->
-	<div id="paymentModal" class="modal" style="display: none;">
-		<div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90vw; max-height: 85vh; overflow-y: auto;">
-			<h3 id="paymentModalTitle" style="margin-bottom: 20px; color: #2c3e50;">💰 תשלום חדש</h3>
-			
-			<!-- בחירת לקוח -->
-			<div id="clientSelectionSection" class="form-group">
-				<label>בחר לקוח:</label>
-				<input type="text" id="paymentClientSearch" placeholder="חפש לקוח..." 
-					   oninput="searchPaymentClients(this.value)" onfocus="showPaymentClientDropdown()">
-				<div id="paymentClientDropdown" class="client-dropdown" style="display: none;"></div>
-			</div>
-			
-			<!-- רשימת טיפולים -->
-			<div id="visitsSelectionSection" style="display: none;">
-				<div class="form-group">
-					<label>בחר טיפולים לתשלום:</label>
-					<div id="visitsList" class="visits-list"></div>
-				</div>
-				
-				<!-- סיכום -->
-				<div class="payment-summary">
-					<strong>סכום נבחר: <span id="selectedAmount">0</span>₪ 
-					(<span id="selectedCount">0</span> טיפולים)</strong>
-				</div>
-				
-				<div style="text-align: center; margin: 20px 0;">
-					<button type="button" onclick="proceedToPaymentDetails()" class="btn" style="background: #3498db; color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-						➡️ המשך לפרטי תשלום
-					</button>
-				</div>
-			</div>
-			
-			<!-- פרטי התשלום -->
-			<div id="paymentDetailsSection" style="display: none;">
-				<h4 style="color: #2c3e50; margin-bottom: 15px;">פרטי התשלום:</h4>
-				
-				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-					<div class="form-group">
-						<label>תאריך תשלום:</label>
-						<input type="date" id="paymentDate" required>
-					</div>
-					<div class="form-group">
-						<label>שעה:</label>
-						<input type="time" id="paymentTime" required>
-					</div>
-				</div>
-				
-				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-					<div class="form-group">
-						<label>אמצעי תשלום:</label>
-						<select id="paymentMethod" onchange="togglePaymentFields()" required>
-							<option value="cash">מזומן</option>
-							<option value="check">צ'ק</option>
-							<option value="transfer">העברה בנקאית</option>
-							<option value="app">אפליקציה (ביט/פייבוקס)</option>
-						</select>
-					</div>
-					<div class="form-group">
-						<label>אסמכתא/מספר:</label>
-						<input type="text" id="paymentReference" placeholder="ספרות אחרונות/מספר אסמכתא">
-					</div>
-				</div>
-				
-				<div id="checkFields" style="display: none;">
-					<div class="form-group">
-						<label>תאריך צ'ק:</label>
-						<input type="date" id="checkDate">
-					</div>
-				</div>
-				
-				<div id="transferFields" style="display: none;">
-					<div class="form-group">
-						<label>פרטי חשבון לקוח:</label>
-						<input type="text" id="bankAccount" placeholder="מספר חשבון/שם בנק">
-					</div>
-				</div>
-				
-				<div class="form-group">
-					<label>הערות:</label>
-					<textarea id="paymentNotes" rows="3" placeholder="פרטים נוספים על התשלום..."></textarea>
-				</div>
-			</div>
-			
-			<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
-				<button type="button" id="savePaymentBtn" onclick="savePaymentFromModal()" 
-						class="btn btn-success" disabled style="background: #27ae60; color: white; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
-					💾 שמור תשלום
-				</button>
-				<button type="button" onclick="closePaymentModal()" 
-						class="btn btn-secondary" style="background: #95a5a6; color: white; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
-					❌ ביטול
-				</button>
-			</div>
-		</div>
-	</div>
 
     <!-- Modal Container -->
     <div id="modalContainer"></div>
@@ -5243,27 +5150,23 @@
 	   
 		// יצירת טבלת עזר לייבוא
 		async function clearAllDataBeforeImport() {
-			if (confirm('האם אתה בטוח שברצונך למחוק את כל הנתונים הקיימים לפני הייבוא החדש?\n\nפעולה זו תמחק:\n- את כל המיקומים\n- את כל הביקורים\n- את כל הקבלות\n- את כל התשלומים\n- את כל הקישורים\n- את כל ההכנסות\n\nהנתונים בגוגל שיטס לא יימחקו.')) {
-				// מחיקה עקבית של כל המערכים
+			if (confirm('האם אתה בטוח שברצונך למחוק את כל הנתונים הקיימים לפני הייבוא החדש?\n\nפעולה זו תמחק:\n- את כל המיקומים\n- את כל הביקורים\n- את כל הקבלות\n- את כל התשלומים\n- את כל הקישורים בין תשלומים לביקורים\n\nהנתונים בגוגל שיטס לא יימחקו.')) {
 				locations = [];
 				visits = [];
 				receipts = [];
-				payments = [];
-				paymentVisitLinks = [];
-				incomes = [];
+				payments = [];  // ✅ Clear payments array if exists
+				paymentVisitLinks = [];  // ✅ Clear payment links if exists
 				
-				// שמירה מקומית
 				saveToLocalStorage();
 				
-				// עדכון כל הטבלאות בממשק
-				loadLocationsTable();
-				loadReceiptsTable(); 
-				loadReceiptFilterOptions();
-				loadFilterOptions();
-				loadPaymentFilterOptions();
-				loadIncomesTable();
+				// Update displays
+				if (typeof loadLocationsTable === 'function') loadLocationsTable();
+				if (typeof filterVisits === 'function') filterVisits();
+				if (typeof loadReceiptsTable === 'function') loadReceiptsTable();
+				if (typeof displayDebts === 'function') displayDebts();
+				if (typeof displayPayments === 'function') displayPayments();
 				
-				showToast('כל הנתונים נוקו בהצלחה', 'success');
+				showToast('✅ כל הנתונים נוקו בהצלחה', 'success');
 				return true;
 			}
 			return false;
@@ -5582,15 +5485,15 @@
 		function displayFilteredVisits(filteredVisits) {
 			const tbody = document.getElementById('visitsHistoryTableBody');
 			
-			// ניקוי מהיר
+			// Clear quickly
 			tbody.innerHTML = '';
 			
 			if (filteredVisits.length === 0) {
-				tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #666;">אין טיפולים תואמים לסינון</td></tr>';
+				tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #666;">אין טיפולים תואמים לסינון</td></tr>';
 				return;
 			}
 			
-			// שאר הקוד זהה...
+			// Sort by date descending
 			filteredVisits.sort((a, b) => b.date.localeCompare(a.date));
 			
 			const fragment = document.createDocumentFragment();
@@ -5601,55 +5504,78 @@
 				const location = locationMap.get(visit.location_id);
 				const locationName = visit.location_name || location?.name || 'לקוח לא ידוע';
 				
-				// שורה ראשית
+				// Main row
 				const mainRow = document.createElement('tr');
 				mainRow.className = 'main-row';
 				const hours = visit.duration_minutes ? (visit.duration_minutes / 60).toFixed(1) : '0';
-				const paymentStatus = getVisitPaymentStatus(visit.ID); 
+				
+				// ✅ NEW: Parse paid field for better display
+				const paidInfo = parsePaidField(visit.paid);
+				let paymentDisplay = '';
+				
+				if (paidInfo.status === 'paid') {
+					paymentDisplay = `
+						<div style="color: #27ae60; font-weight: bold;">
+							✅ שולם
+							${paidInfo.date ? `<div style="font-size: 11px; color: #666;">${formatDate(paidInfo.date)}</div>` : ''}
+						</div>
+					`;
+				} else if (paidInfo.status === 'partial') {
+					const debt = (parseFloat(visit.amount) || 0) - paidInfo.amount;
+					paymentDisplay = `
+						<div style="color: #f39c12; font-weight: bold;">
+							⚠️ חלקי: ${paidInfo.amount}₪
+							<div style="font-size: 11px; color: #666;">חוב: ${debt}₪</div>
+						</div>
+					`;
+				} else if (paidInfo.status === 'no_payment') {
+					paymentDisplay = `<div style="color: #95a5a6;">🚫 ללא תשלום</div>`;
+				} else {
+					paymentDisplay = `<div style="color: #e74c3c; font-weight: bold;">❌ לא שולם</div>`;
+				}
 				
 				mainRow.innerHTML = `
 					<td>${formatDate(visit.date)}</td>
 					<td><strong>${locationName}</strong></td>
 					<td><span class="visit-type-badge visit-type-${visit.visit_type || 'other'}">${visit.visit_type || '-'}</span></td>
+					<td style="color: #666;">-</td>
 					<td><span class="duration-badge">${hours}ש</span></td>
 					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${visit.amount || 0} ₪</td>
 					<td>
-						<select class="payment-status-select" onchange="updatePaymentStatus('${visit.ID}', this.value)">
-							<option value="unpaid" ${paymentStatus === 'unpaid' ? 'selected' : ''}>לא שולם</option>
-							<option value="paid" ${paymentStatus === 'paid' ? 'selected' : ''}>שולם</option>
-							<option value="no_payment" ${paymentStatus === 'no_payment' ? 'selected' : ''}>ללא תשלום</option>
+						${paymentDisplay}
+						<select class="payment-status-select" onchange="updatePaymentStatus('${visit.ID}', this.value)" style="margin-top: 5px; font-size: 12px;">
+							<option value="">-- שנה סטטוס --</option>
+							<option value="paid">✅ סמן כשולם</option>
+							<option value="partial">⚠️ תשלום חלקי</option>
+							<option value="unpaid">❌ לא שולם</option>
+							<option value="no_payment">🚫 ללא תשלום</option>
 						</select>
 					</td>
 					<td>
-						${paymentStatus !== 'paid' ? `<button class="action-btn payment-btn" onclick="openPaymentFromVisit('${visit.ID}')" title="פתח תשלום">💰</button>` : ''}
-						<button class="action-btn edit-btn" onclick="editVisit('${visit.ID}')" title="ערוך טיפול">✏️</button>
-						<button class="action-btn delete-btn" onclick="deleteVisit('${visit.ID}')" title="מחק טיפול">🗑️</button>
+						<button onclick="editVisit('${visit.ID}')" class="icon-btn" title="ערוך">✏️</button>
+						<button onclick="deleteVisit('${visit.ID}')" class="icon-btn" title="מחק">🗑️</button>
+						<button onclick="toggleVisitDetails('${visit.ID}')" class="icon-btn" title="פרטים">ℹ️</button>
 					</td>
 				`;
-				
 				fragment.appendChild(mainRow);
 				
-				// שורת פרטים עם colspan 8
-				if (visit.work_done || visit.notes) {
-					const detailsRow = document.createElement('tr');
-					detailsRow.className = 'details-row';
-					
-					let detailsContent = '';
-					if (visit.work_done) {
-						detailsContent += `<div class="work-done-section"><strong>עבודה שבוצעה:</strong> ${visit.work_done}</div>`;
-					}
-					if (visit.notes) {
-						detailsContent += `<div class="notes-section"><strong>הערות:</strong> ${visit.notes}</div>`;
-					}
-					
-					detailsRow.innerHTML = `
-						<td colspan="7" class="details-cell">
-							<div class="details-content">${detailsContent}</div>
-						</td>
-					`;
-					
-					fragment.appendChild(detailsRow);
-				}
+				// Details row (collapsed by default)
+				const detailsRow = document.createElement('tr');
+				detailsRow.id = `details-${visit.ID}`;
+				detailsRow.className = 'details-row';
+				detailsRow.style.display = 'none';
+				detailsRow.innerHTML = `
+					<td colspan="8">
+						<div class="visit-details-content">
+							<div><strong>עבודה שבוצעה:</strong> ${visit.work_done || 'לא צוין'}</div>
+							<div><strong>שעת התחלה:</strong> ${visit.start_time || '-'} | <strong>שעת סיום:</strong> ${visit.end_time || '-'}</div>
+							<div><strong>עובדים:</strong> ${visit.num_workers || 1}</div>
+							<div><strong>הוצאה:</strong> ${visit.expense || 0} ₪</div>
+							<div><strong>הערות:</strong> ${visit.notes || 'אין'}</div>
+						</div>
+					</td>
+				`;
+				fragment.appendChild(detailsRow);
 			});
 			
 			tbody.appendChild(fragment);
@@ -6359,69 +6285,32 @@
 		
 		// פונקציה חדשה להוספת כותרות לגיליון ספציפי
 		async function addHeadersToSheet(sheetName) {
+			const headersMap = {
+				'Locations': ['ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 'base_amount', 'active', 'notes', 'last_visit', 'next_visit'],
+				'Visits': ['ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 'duration_minutes', 'num_workers', 'start_time', 'end_time', 'amount', 'paid', 'expense', 'notes'],  // ✅ ADDED: 'paid' field
+				'Receipts': ['ID', 'book_number', 'receipt_number', 'date', 'location_id', 'location_name', 'amount', 'payment_type', 'notes'],
+				'TelegramVisits': ['message_id', 'date', 'text', 'processed', 'location_id', 'visit_id'],
+				'TelegramIncomes': ['message_id', 'date', 'text', 'processed', 'receipt_id'],
+				'Payments': ['ID', 'date', 'location_id', 'location_name', 'amount', 'payment_method', 'reference', 'check_date', 'bank_account', 'notes'],
+				'PaymentVisitLink': ['ID', 'payment_id', 'visit_id', 'amount_allocated', 'created_at']
+			};
+			
+			const headers = headersMap[sheetName];
+			if (!headers) {
+				console.error(`No headers defined for sheet: ${sheetName}`);
+				return;
+			}
+			
 			try {
-				let headers = [];
-				
-				switch (sheetName) {
-					case 'Locations':
-						headers = [
-							'ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 
-							'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 
-							'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 
-							'client_requests', 'debt_notes'  
-						];
-						break;
-					case 'Visits':
-						headers = [
-							'ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 
-							'duration_minutes', 'num_workers', 'start_time', 'end_time', 
-							'amount', 'expense', 'notes'
-						];
-						break;
-					case 'Receipts':
-						headers = [
-							'ID', 'book_number', 'receipt_number', 'date', 'location_id', 
-							'location_name', 'amount', 'payment_type', 'notes'
-						];
-						break;
-					case 'TelegramVisits':
-						headers = [
-							'ID', 'date', 'time', 'client_name', 'visit_type', 
-							'work_done', 'duration_minutes', 'raw_text', 'processed', 'created_at'
-						];
-						break;
-						
-					case 'TelegramIncomes':
-						headers = [
-							'ID', 'date', 'time', 'client_address', 'amount', 'payment_method',
-							'notes', 'raw_text', 'matched_to_visit', 'visit_ids', 'processed', 'created_at'
-						];
-						break;
-						
-					case 'Payments':
-					headers = [
-						'ID', 'date', 'time', 'amount', 'payment_method', 'source_type',
-						'client_id', 'client_name', 'notes', 'status', 'created_at',
-						'reference', 'check_date', 'bank_account', 'payment_details'
-					];
-					break;
-						
-					case 'PaymentVisitLink':
-						headers = [
-							'ID', 'payment_id', 'visit_id', 'amount_allocated', 'link_type', 'created_at'
-						];
-						break;
-				}
-				
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${sheetName}!A1:Z1`,
+					range: `${sheetName}!A1:${String.fromCharCode(64 + headers.length)}1`,
 					valueInputOption: 'RAW',
-					values: [headers]
+					resource: {
+						values: [headers]
+					}
 				});
-				
-				console.log(`✅ Added headers to ${sheetName}`);
-				
+				console.log(`✅ Headers added to ${sheetName}`);
 			} catch (error) {
 				console.error(`Error adding headers to ${sheetName}:`, error);
 			}
@@ -6657,9 +6546,10 @@
 			}
 		}
 
+	
 		// פונקציות עזר לפרסור שורות
 		function parseVisitFromRow(row) {
-			const result = {
+			return {
 				ID: row[0] || generateID(),
 				date: row[1] || '',
 				location_id: row[2] || '',
@@ -6671,14 +6561,13 @@
 				start_time: row[8] || '',
 				end_time: row[9] || '',
 				amount: parseFloat(row[10]) || 0,
-				expense: parseFloat(row[11]) || 0,
-				notes: row[12] || ''
+				paid: row[11] || 'no',  // ✅ ADDED: paid field
+				expense: parseFloat(row[12]) || 0,
+				notes: row[13] || ''
 			};
-			
-			console.log(`A: ID=${result.ID}, date=${result.date}, location_name=${result.location_name}, num_workers=${result.num_workers} (type: ${typeof result.num_workers})`);
-			
-			return result;
 		}
+
+
 		
 		// ID	date	location_id	location_name	visit_type	
 		// work_done	duration_minutes	num_workers	start_time	end_time	
@@ -7729,17 +7618,13 @@
 			try {
 				await checkAndFixTableStructure();
 				
-				// שמירת נתונים קיימים
+				// ✅ SIMPLIFIED: Only save the 3 main tables now (removed payments & links)
 				const locationSuccess = locations.length > 0 ? await saveLocationsBatch(locations) : true;
 				const visitSuccess = visits.length > 0 ? await saveVisitsBatch(visits) : true;
 				const receiptSuccess = receipts.length > 0 ? await saveReceiptsBatch(receipts) : true;
-				const paymentSuccess = payments.length > 0 ? await savePaymentsBatch(payments) : true;
-				const linkSuccess = paymentVisitLinks.length > 0 ? await savePaymentLinksBatch(paymentVisitLinks) : true;
-				
-				// הוספת שמירת הכנסות
 				const incomeSuccess = incomes.length > 0 ? await saveIncomesBatch(incomes) : true;
 				
-				const allSaved = locationSuccess && visitSuccess && receiptSuccess && paymentSuccess && linkSuccess && incomeSuccess;
+				const allSaved = locationSuccess && visitSuccess && receiptSuccess && incomeSuccess;
 				
 				if (allSaved) {
 					showToast('✅ כל הנתונים נשמרו בהצלחה', 'success');
@@ -7758,8 +7643,17 @@
 	   
 	   // פונקציה להצגת חובות
 		function displayDebts() {
-			// Calculate debts for all clients
-			const debtsByLocation = {};
+			const container = document.getElementById('debtsContainer');
+			if (!container) return;
+			
+			// Get filter values
+			const sortBy = document.getElementById('debtSortBy')?.value || 'amount_desc';
+			const minAmount = parseFloat(document.getElementById('minDebtAmount')?.value) || 0;
+			const selectedDay = document.getElementById('debtDayFilter')?.value || '';
+			const selectedClientId = document.getElementById('debtClientSearch')?.getAttribute('data-selected-id') || '';
+			
+			// ✅ UPDATED: Calculate debts with partial payment support
+			const clientDebts = new Map();
 			
 			visits.forEach(visit => {
 				if (visit.amount > 0) {
@@ -7767,128 +7661,161 @@
 					const paidAmount = getVisitPaidAmount(visit.ID);
 					const debt = visitAmount - paidAmount;
 					
-					if (debt > 0) {
-						if (!debtsByLocation[visit.location_id]) {
-							const location = locations.find(loc => loc.ID === visit.location_id);
-							if (location) {
-								debtsByLocation[visit.location_id] = {
-									location: location,
-									totalDebt: 0,
-									visits: []
-								};
-							}
-						}
-						
-						if (debtsByLocation[visit.location_id]) {
-							debtsByLocation[visit.location_id].totalDebt += debt;
-							debtsByLocation[visit.location_id].visits.push({
-								...visit,
-								debt: debt,
-								paidAmount: paidAmount
+					// Only show if there's actual debt
+					if (debt > 0.01) { // Small threshold for rounding errors
+						const clientId = visit.location_id;
+						if (!clientDebts.has(clientId)) {
+							clientDebts.set(clientId, {
+								clientId: clientId,
+								clientName: visit.location_name || 'לא ידוע',
+								totalDebt: 0,
+								visits: []
 							});
 						}
+						
+						const clientDebt = clientDebts.get(clientId);
+						clientDebt.totalDebt += debt;
+						
+						const paidInfo = parsePaidField(visit.paid);
+						clientDebt.visits.push({
+							visitId: visit.ID,
+							date: visit.date,
+							amount: visitAmount,
+							paidAmount: paidAmount,
+							debt: debt,
+							workDone: visit.work_done || '',
+							paymentStatus: paidInfo.status
+						});
 					}
 				}
 			});
 			
 			// Convert to array
-			let debtsArray = Object.values(debtsByLocation);
+			let debtsArray = Array.from(clientDebts.values());
 			
 			// Apply filters
-			const sortBy = document.getElementById('debtSortBy')?.value || 'amount_desc';
-			const minAmount = parseFloat(document.getElementById('minDebtAmount')?.value) || 0;
-			const dayFilter = document.getElementById('debtDayFilter')?.value;
-			
-			// NEW: Client filter using the search field
-			const clientSearchInput = document.getElementById('debtClientSearch');
-			const selectedClientId = clientSearchInput ? clientSearchInput.getAttribute('data-selected-id') : '';
-			
-			// Filter by minimum amount
-			debtsArray = debtsArray.filter(debt => debt.totalDebt >= minAmount);
-			
-			// Filter by selected client
-			if (selectedClientId) {
-				debtsArray = debtsArray.filter(debt => debt.location.ID === selectedClientId);
+			if (minAmount > 0) {
+				debtsArray = debtsArray.filter(d => d.totalDebt >= minAmount);
 			}
 			
-			// Filter by day
-			if (dayFilter) {
-				debtsArray = debtsArray.filter(debt => debt.location.allowed_day === dayFilter);
+			if (selectedClientId) {
+				debtsArray = debtsArray.filter(d => d.clientId === selectedClientId);
+			}
+			
+			if (selectedDay && selectedDay !== '') {
+				debtsArray = debtsArray.filter(d => {
+					const client = locations.find(loc => loc.ID === d.clientId);
+					return client && client.allowed_day === selectedDay;
+				});
 			}
 			
 			// Sort
-			switch (sortBy) {
-				case 'amount_desc':
-					debtsArray.sort((a, b) => b.totalDebt - a.totalDebt);
-					break;
-				case 'amount_asc':
-					debtsArray.sort((a, b) => a.totalDebt - b.totalDebt);
-					break;
-				case 'location':
-					debtsArray.sort((a, b) => a.location.name.localeCompare(b.location.name, 'he'));
-					break;
-				case 'date_old':
-					debtsArray.sort((a, b) => new Date(a.visits[0].date) - new Date(b.visits[0].date));
-					break;
-				case 'date_new':
-					debtsArray.sort((a, b) => new Date(b.visits[0].date) - new Date(a.visits[0].date));
-					break;
-			}
+			debtsArray.sort((a, b) => {
+				switch(sortBy) {
+					case 'amount_desc': return b.totalDebt - a.totalDebt;
+					case 'amount_asc': return a.totalDebt - b.totalDebt;
+					case 'location': return a.clientName.localeCompare(b.clientName, 'he');
+					case 'date_old': 
+						return new Date(a.visits[0]?.date || '9999') - new Date(b.visits[0]?.date || '9999');
+					case 'date_new':
+						return new Date(b.visits[0]?.date || '0') - new Date(a.visits[0]?.date || '0');
+					default: return 0;
+				}
+			});
 			
-			// Display results
-			const tbody = document.getElementById('debtsTableBody');
-			tbody.innerHTML = '';
+			// Update statistics
+			updateDebtStats(debtsArray);
 			
+			// Display debts
 			if (debtsArray.length === 0) {
-				tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #666;">אין חובות תואמים לסינון</td></tr>';
-				updateDebtsStats([]);
+				container.innerHTML = '<div class="empty-state"><h3>🎉 אין חובות פתוחים!</h3></div>';
 				return;
 			}
 			
-			debtsArray.forEach(debt => {
-				const location = debt.location;
-				const row = document.createElement('tr');
-				
-				row.innerHTML = `
-					<td>
-						<strong>${location.name}</strong>
-						${location.contact_person ? `<br><small style="color: #666;">${location.contact_person}</small>` : ''}
-					</td>
-					<td style="text-align: center;">
-						<span style="background: #e3f2fd; padding: 2px 8px; border-radius: 12px; font-size: 12px;">
-							${location.allowed_day || 'כל יום'}
-						</span>
-					</td>
-					<td style="text-align: center;">
-						<strong style="color: #e74c3c; font-size: 16px;">₪${Math.round(debt.totalDebt).toLocaleString()}</strong>
-					</td>
-					<td style="text-align: center;">
-						<span style="background: #fff3cd; padding: 2px 8px; border-radius: 12px; font-size: 12px;">
-							${debt.visits.length}
-						</span>
-					</td>
-					<td>
-						<input type="text" 
-							   value="${location.debt_notes || ''}" 
-							   placeholder="הערות מעקב..."
-							   style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"
-							   onchange="updateDebtNotes('${location.ID}', this.value)">
-					</td>
-					<td style="text-align: center;">
-						<button class="action-btn" onclick="showClientTreatments('${location.ID}')" style="background: #007bff; margin: 2px; padding: 4px 8px; font-size: 11px;">
-							🔧 טיפולים
+			// ✅ UPDATED: Show partial payments in display
+			const html = debtsArray.map(debt => `
+				<div class="debt-card">
+					<div class="debt-header">
+						<h3>${debt.clientName}</h3>
+						<div class="debt-total">${debt.totalDebt.toFixed(2)} ₪</div>
+					</div>
+					<div class="debt-visits">
+						${debt.visits.map(v => `
+							<div class="debt-visit-item">
+								<span class="debt-date">${formatDate(v.date)}</span>
+								<span class="debt-work">${v.workDone}</span>
+								<span class="debt-amount">
+									${v.amount} ₪
+									${v.paymentStatus === 'partial' ? 
+										`<span style="color: #f39c12; font-size: 11px;">(שולם: ${v.paidAmount}₪)</span>` : 
+										''}
+								</span>
+							</div>
+						`).join('')}
+					</div>
+					<div class="debt-actions">
+						<button onclick="markClientDebtsPaid('${debt.clientId}')" class="btn-pay">
+							💰 סמן הכל כשולם
 						</button>
-						<button class="action-btn" onclick="showClientReceipts('${location.ID}')" style="background: #17a2b8; margin: 2px; padding: 4px 8px; font-size: 11px;">
-							🧾 קבלות
+						<button onclick="showClientTreatments('${debt.clientId}')" class="btn-payment">
+							📋 עבור לטיפולים
 						</button>
-					</td>
-				`;
-				
-				tbody.appendChild(row);
+					</div>
+				</div>
+			`).join('');
+			
+			container.innerHTML = html;
+		}
+
+
+		async function markClientDebtsPaid(clientId) {
+			const clientName = locations.find(loc => loc.ID === clientId)?.name || 'הלקוח';
+			
+			if (!confirm(`האם לסמן את כל החובות של ${clientName} כשולמו?`)) {
+				return;
+			}
+			
+			// ✅ UPDATED: Mark as paid with today's date
+			const today = new Date().toISOString().split('T')[0];
+			let updatedCount = 0;
+			
+			visits.forEach(visit => {
+				if (visit.location_id === clientId && visit.amount > 0) {
+					const paidInfo = parsePaidField(visit.paid);
+					
+					// Only update if not already fully paid
+					if (paidInfo.status !== 'paid' && paidInfo.status !== 'no_payment') {
+						visit.paid = `paid:${today}`;
+						updatedCount++;
+					}
+				}
 			});
 			
-			updateDebtsStats(debtsArray);
+			if (updatedCount === 0) {
+				showToast('אין חובות פתוחים ללקוח זה', 'info');
+				return;
+			}
+			
+			// Save locally
+			saveToLocalStorage();
+			
+			// Save to cloud if connected
+			if (access_token && SPREADSHEET_ID) {
+				const success = await saveAllToSheetsOptimized();
+				if (success) {
+					showToast(`✅ ${updatedCount} טיפולים סומנו כשולמו ונשמרו בענן`, 'success');
+				} else {
+					showToast(`⚠️ ${updatedCount} טיפולים סומנו כשולמו מקומית בלבד`, 'warning');
+				}
+			} else {
+				showToast(`💾 ${updatedCount} טיפולים סומנו כשולמו מקומית`, 'info');
+			}
+			
+			// Refresh displays
+			displayDebts();
+			filterVisits();
 		}
+
 
 		// Function to populate debt filter dropdowns
 		// Update loadDebtFilterOptions function with safety checks:
@@ -8272,59 +8199,41 @@
 		}
 
 		// שמירה מקבצית של ביקורים
-		// Fixed saveVisitsBatch - matching the correct 13-column structure WITHOUT paid column
-		async function saveVisitsBatch(visitsArray) {
-			console.log(`🔵 saveVisitsBatch called with ${visitsArray.length} visits - checking for duplicates`);
-			if (!await validateToken() || visitsArray.length === 0) return false;
+		async function saveVisitsBatch(visitsToSave) {
+			if (!await validateToken()) return false;
 			
 			try {
-				// Read existing data first
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Visits!A:A'
-				});
+				console.log('🔵 saveVisitsBatch called with', visitsToSave.length, 'visits');
 				
-				const existingIDs = new Set(response.result.values?.slice(1).map(row => row[0]) || []);
-				
-				// Filter only new visits
-				const newVisits = visitsArray.filter(visit => !existingIDs.has(visit.ID));
-				
-				if (newVisits.length === 0) {
-					console.log('✅ No new visits to save');
-					return true;
-				}
-				
-				// CORRECTED: 13 columns WITHOUT paid column - matching addHeadersToSheet structure
-				const values = newVisits.map(visit => [
-					visit.ID,                           // A: ID
-					formatDateForSheets(visit.date),    // B: date
-					visit.location_id,                  // C: location_id
-					visit.location_name,                // D: location_name
-					visit.visit_type,                   // E: visit_type
-					visit.work_done,                    // F: work_done
-					visit.duration_minutes,             // G: duration_minutes
-					visit.num_workers || 1,             // H: num_workers (THIS IS THE KEY FIX!)
-					visit.start_time,                   // I: start_time
-					visit.end_time,                     // J: end_time
-					visit.amount,                       // K: amount
-					visit.expense,                      // L: expense
-					visit.notes                         // M: notes (NO paid column!)
+				const values = visitsToSave.map(visit => [
+					visit.ID || '',
+					visit.date || '',
+					visit.location_id || '',
+					visit.location_name || '',
+					visit.visit_type || '',
+					visit.work_done || '',
+					visit.duration_minutes || 0,
+					visit.num_workers || 1,
+					visit.start_time || '',
+					visit.end_time || '',
+					visit.amount || 0,
+					visit.paid || 'no',  // ✅ ADDED: paid field in correct position
+					visit.expense || 0,
+					visit.notes || ''
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.VISITS}!A:M`,      // Correct range A:M (13 columns)
+					range: 'Visits!A:N',  // ✅ UPDATED: Now 14 columns (A:N)
 					valueInputOption: 'USER_ENTERED',
-					resource: { 
-						values: values,
-						majorDimension: 'ROWS'
-					}
+					resource: { values }
 				});
 				
-				console.log(`✅ saveVisitsBatch completed - Saved ${newVisits.length} visits in batch - from ${visitsArray.length}`);
+				console.log(`✅ Saved ${visitsToSave.length} visits to cloud`);
 				return true;
+				
 			} catch (error) {
-				console.error('Error in batch save visits:', error);
+				console.error('Error saving visits batch:', error);
 				return false;
 			}
 		}
@@ -8700,15 +8609,16 @@
 											date: visitDate,
 											location_id: existingCustomer.ID,
 											location_name: customerName,
-											visit_type: row[5] || 'מלא',
+											visit_type: row[5] || 'regular',
 											work_done: workDone,
-											duration_minutes: (parseFloat(row[8]) || 0) * 60,
-											num_workers: 1, // ✅ Always 1 for helper table import
+											duration_minutes: (parseFloat(row[8]) || 0) * 60,  // ✅ row[8] is duration in hours
+											num_workers: 1,
 											start_time: '',
 											end_time: '',
 											amount: amount,
-											expense: parseFloat(row[11]) || 0,
-											notes: row[12] || ''
+											paid: row[10] || 'no',  // ✅ ADDED: row[10] is paid status from helper table
+											expense: parseFloat(row[11]) || 0,  // ✅ CORRECTED: was row[11], still is
+											notes: row[12] || ''  // ✅ CORRECTED: was row[12], still is
 										};
 										
 										console.log(`🔧 VISIT: ID=${visitData.ID}, location_name=${visitData.location_name}, num_workers=${visitData.num_workers} (${typeof visitData.num_workers})`);
@@ -8952,79 +8862,49 @@
 
 
 		// saveEditedVisit
-		async function saveEditedVisit(visitId) {
-			console.log(`✅ saveEditedVisit ('${visitId}')`);
-			const visitIndex = visits.findIndex(v => v.ID == visitId);
+		async function saveEditedVisit() {
+			const visitId = document.getElementById('editVisitId').value;
+			const visitIndex = visits.findIndex(v => v.ID === visitId);
+			
 			if (visitIndex === -1) {
-				showToast('❌ ביקור לא נמצא', 'error');
+				showToast('ביקור לא נמצא', 'error');
 				return;
 			}
 			
-			try {
-				// עדכן את הביקור במערך המקומי
-				const updatedVisit = {
-					...visits[visitIndex], // שמור נתונים קיימים
-					date: document.getElementById('editVisitDate').value,
-					visit_type: document.getElementById('editVisitType').value,
-					work_done: document.getElementById('editWorkDone').value,
-					duration_minutes: parseInt(document.getElementById('editDuration').value) || 0,
-					start_time: document.getElementById('editStartTime').value,
-					end_time: document.getElementById('editEndTime').value,
-					amount: parseFloat(document.getElementById('editAmount').value) || 0,
-					expense: parseFloat(document.getElementById('editExpense').value) || 0,
-					num_workers: parseInt(document.getElementById('editNumWorkers').value) || 1,
-					notes: document.getElementById('editNotes').value
-				};
-				
-				// ✅ הסר את הטיפול בסטטוס תשלום - כי אין עוד שדה 'paid' בביקורים
-				// const oldPaymentStatus = visits[visitIndex].paid;  // ❌ Remove
-				// const newPaymentStatus = document.getElementById('editPaid').value;  // ❌ Remove
-				
-				// עדכן את הביקור
-				visits[visitIndex] = updatedVisit;
-				
-				// ✅ הסר את הטיפול בשינוי סטטוס תשלום
-				// if (oldPaymentStatus !== newPaymentStatus) {  // ❌ Remove
-				//     await handlePaymentStatusChange(visitId, newPaymentStatus, oldPaymentStatus);
-				// }
-				
-				// שמירה מקומית תמיד מצליחה
-				saveToLocalStorage();
-				
-				// נסה לשמור בענן
-				let cloudSaved = false;
-				if (access_token && SPREADSHEET_ID) {
-					try {
-						await updateVisitInCloud(updatedVisit);
-						cloudSaved = true;
-					} catch (error) {
-						console.error('Cloud update failed:', error);
-						cloudSaved = false;
-					}
-				}
-				
-				// עדכון תאריכי טיפול
-				await updateSingleLocationTreatmentDates(updatedVisit.location_id);
-				
-				// עדכן תצוגה - ✅ רק הפונקציות הנחוצות
-				loadPlanningData();  // רענון תכנון
-				closeEditModal();
-				
-				// ✅ הודעה אחת וברורה בהתאם למה שקרה בפועל
-				if (access_token && SPREADSHEET_ID) {
-					if (cloudSaved) {
-						showToast('✅ הטיפול עודכן בהצלחה במערכת ובענן!', 'success');
-					} else {
-						showToast('⚠️ הטיפול עודכן מקומית בלבד - בעיה בחיבור לענן', 'warning');
-					}
-				} else {
-					showToast('💾 הטיפול עודכן מקומית - התחבר לענן לעדכון מלא', 'info');
-				}
-				
-			} catch (error) {
-				console.error('Error updating visit:', error);
-				showToast('❌ שגיאה בעדכון הטיפול - נסה שנית', 'error');
+			// Update visit object
+			visits[visitIndex] = {
+				ID: visitId,
+				date: document.getElementById('editVisitDate').value,
+				location_id: visits[visitIndex].location_id,
+				location_name: visits[visitIndex].location_name,
+				visit_type: document.getElementById('editVisitType').value,
+				work_done: document.getElementById('editWorkDone').value,
+				duration_minutes: parseInt(document.getElementById('editManualDurationMinutes').value) || 0,
+				num_workers: parseInt(document.getElementById('editNumWorkers').value) || 1,
+				start_time: document.getElementById('editStartTime').value || '',
+				end_time: document.getElementById('editEndTime').value || '',
+				amount: parseFloat(document.getElementById('editAmount').value) || 0,
+				paid: visits[visitIndex].paid || 'no',  // ✅ PRESERVE: keep existing paid status
+				expense: parseFloat(document.getElementById('editExpense').value) || 0,
+				notes: document.getElementById('editNotes').value || ''
+			};
+			
+			// Save locally
+			saveToLocalStorage();
+			
+			// Save to cloud if connected
+			if (access_token && SPREADSHEET_ID) {
+				await saveAllToSheetsOptimized();
 			}
+			
+			// Update treatment dates
+			await updateSingleLocationTreatmentDates(visits[visitIndex].location_id);
+			
+			// Refresh display
+			filterVisits();
+			closeEditModal();
+			
+			showToast('✅ הטיפול עודכן בהצלחה', 'success');
 		}
 
 	
@@ -9861,27 +9741,43 @@
 
 		// בדיקת סטטוס תשלום של ביקור
 		function getVisitPaymentStatus(visitId) {
-			if (!visitId) return 'unpaid';
-			
 			const visit = visits.find(v => v.ID === visitId);
-			if (visit && visit.paid === '2') {
-				return 'no_payment'; // ללא תשלום
+			if (!visit) return 'unpaid';
+			
+			// ✅ UPDATED: Use the new parser
+			const paidInfo = parsePaidField(visit.paid);
+			return paidInfo.status;
+		}
+
+		// ✅ NEW: Parse the paid field to get detailed payment info
+		function parsePaidField(paidValue) {
+			if (!paidValue || paidValue === 'unpaid') {
+				return { status: 'unpaid', date: null, amount: 0 };
 			}
 			
-			// חיפוש קישורים לביקור הזה
-			const visitLinks = paymentVisitLinks.filter(link => link.visit_id === visitId);
-			
-			if (visitLinks.length === 0) {
-				return 'unpaid';
+			if (paidValue === 'no_payment') {
+				return { status: 'no_payment', date: null, amount: 0 };
 			}
 			
-			// בדיקה אם יש תשלומים מושלמים
-			const hasCompletedPayments = visitLinks.some(link => {
-				const payment = payments.find(p => p.ID === link.payment_id);
-				return payment && payment.status === 'completed';
-			});
+			// Check for paid with date: "paid:2024-10-23"
+			if (paidValue.startsWith('paid:')) {
+				const date = paidValue.substring(5);
+				return { status: 'paid', date: date, amount: null };
+			}
 			
-			return hasCompletedPayments ? 'paid' : 'unpaid';
+			// Check for partial payment: "partial:500"
+			if (paidValue.startsWith('partial:')) {
+				const amount = parseFloat(paidValue.substring(8)) || 0;
+				return { status: 'partial', date: null, amount: amount };
+			}
+			
+			// Old format compatibility: just "paid" without date
+			if (paidValue === 'paid') {
+				return { status: 'paid', date: null, amount: null };
+			}
+			
+			// Default fallback
+			return { status: 'unpaid', date: null, amount: 0 };
 		}
 
 		// טקסט סטטוס תשלום מעודכן
@@ -9897,19 +9793,31 @@
 
 		// חישוב סכום שולם עבור ביקור
 		function getVisitPaidAmount(visitId) {
-			const visitLinks = paymentVisitLinks.filter(link => link.visit_id === visitId);
+			const visit = visits.find(v => v.ID === visitId);
+			if (!visit) return 0;
 			
-			let totalPaid = 0;
-			visitLinks.forEach(link => {
-				const payment = payments.find(p => p.ID === link.payment_id);
-				if (payment && payment.status === 'completed') {
-					totalPaid += parseFloat(link.amount_allocated) || 0;
-				}
-			});
+			// ✅ UPDATED: Parse paid field to handle partial payments
+			const paidInfo = parsePaidField(visit.paid);
+			const visitAmount = parseFloat(visit.amount) || 0;
 			
-			return totalPaid;
+			if (paidInfo.status === 'paid') {
+				// Fully paid - return full amount
+				return visitAmount;
+			}
+			
+			if (paidInfo.status === 'partial') {
+				// Partially paid - return the partial amount
+				return paidInfo.amount;
+			}
+			
+			if (paidInfo.status === 'no_payment') {
+				// No payment needed - return full amount (no debt)
+				return visitAmount;
+			}
+			
+			// Unpaid - return 0
+			return 0;
 		}
-
 
 		// ===== פונקציות טיפול בתשלומים ===== 
 
@@ -10010,81 +9918,6 @@
 					console.error('שגיאה בעדכון תשלומים:', error);
 					showToast('שגיאה בעדכון התשלומים', 'error');
 				}
-			}
-		}
-
-
-
-		// שמירת תשלומים בקבוצה
-		async function savePaymentsBatch(paymentsArray) {
-			if (!paymentsArray.length || !access_token || !SPREADSHEET_ID) {
-				return false;
-			}
-			
-			try {
-				const values = paymentsArray.map(payment => [
-					payment.ID,
-					payment.date,
-					payment.time,
-					payment.amount,
-					payment.payment_method,
-					payment.source_type,
-					payment.client_id,
-					payment.client_name || '',
-					payment.notes,
-					payment.status,
-					payment.created_at,
-					payment.reference || '',        // שדה חדש
-					payment.check_date || '',       // שדה חדש
-					payment.bank_account || '',     // שדה חדש
-					payment.payment_details || ''   // שדה חדש
-				]);
-				
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Payments!A:O',  // עדכון טווח לכלול שדות חדשים
-					valueInputOption: 'USER_ENTERED',
-					resource: { values }
-				});
-				
-				console.log(`✅ נשמרו ${paymentsArray.length} תשלומים בענן`);
-				return true;
-				
-			} catch (error) {
-				console.error('שגיאה בשמירת תשלומים בקבוצה:', error);
-				return false;
-			}
-		}
-
-		// שמירת קישורי תשלום-ביקור בקבוצה
-		async function savePaymentLinksBatch(linksArray) {
-			if (!linksArray.length || !access_token || !SPREADSHEET_ID) {
-				return false;
-			}
-			
-			try {
-				const values = linksArray.map(link => [
-					link.ID,
-					link.payment_id,
-					link.visit_id,
-					link.amount_allocated,
-					link.link_type,
-					link.created_at
-				]);
-				
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'PaymentVisitLink!A:F',
-					valueInputOption: 'USER_ENTERED',
-					resource: { values }
-				});
-				
-				console.log(`✅ נשמרו ${linksArray.length} קישורי תשלום-ביקור בענן`);
-				return true;
-				
-			} catch (error) {
-				console.error('שגיאה בשמירת קישורים בקבוצה:', error);
-				return false;
 			}
 		}
 
@@ -11012,80 +10845,62 @@
 		async function handleModalVisitSubmit(event) {
 			event.preventDefault();
 			
-			// איסוף נתונים מהטופס
-			const visitDate = document.getElementById('modalVisitDate').value;
-			const selectedClientId = document.getElementById('modalSelectedClientId').value;
-			const visitType = document.getElementById('modalVisitType').value;
-			const workDone = document.getElementById('modalWorkDone').value;
-			const startTime = document.getElementById('modalStartTime').value;
-			const endTime = document.getElementById('modalEndTime').value;
-			const durationMinutes = parseInt(document.getElementById('modalManualDurationMinutes').value) || 0;
-			const numWorkers = parseInt(document.getElementById('modalNumWorkers').value) || 1;
-			const amount = parseFloat(document.getElementById('modalAmount').value) || 0;
-			const expense = parseFloat(document.getElementById('modalExpense').value) || 0;
-			const paymentStatus = document.getElementById('modalPaymentStatus').value;
-			const notes = document.getElementById('modalNotes').value;
+			const clientId = document.getElementById('selectedClientId')?.value;
+			const clientName = document.getElementById('clientSearchInput')?.value;
 			
-			// בדיקות בסיסיות
-			if (!selectedClientId) {
-				showToast('❌ אנא בחר לקוח', 'error');
+			if (!clientId) {
+				showToast('נא לבחור לקוח', 'error');
 				return;
 			}
 			
-			if (!visitDate) {
-				showToast('❌ נדרש תאריך טיפול', 'error');
-				return;
-			}
-			
-			if (!visitType) {
-				showToast('❌ נדרש סוג טיפול', 'error');
-				return;
-			}
-			
-			// בדיקת כפילות
-			const duplicateVisit = checkDuplicateVisit(selectedClientId, visitDate);
-			if (duplicateVisit) {
-				const location = locations.find(loc => loc.ID == selectedClientId);
-				const locationName = location ? location.name : 'לקוח לא ידוע';
-				
-				const confirmMessage = `כבר קיים טיפול ללקוח "${locationName}" היום (${formatDate(visitDate)}).\n\nהאם להוסיף טיפול נוסף בכל זאת?`;
-				
-				if (!confirm(confirmMessage)) {
-					return;
-				}
-			}
-			
-			// חישוב משך זמן
-			let calculatedDuration = durationMinutes;
-			if (startTime && endTime) {
-				const start = new Date(`2000-01-01 ${startTime}`);
-				const end = new Date(`2000-01-01 ${endTime}`);
-				const diffMs = end - start;
-				if (diffMs > 0) {
-					calculatedDuration = Math.round(diffMs / (1000 * 60));
-				}
-			}
-			
-			const visitData = {
-				location_id: selectedClientId,  
-				visit_type: visitType,
-				work_done: workDone,
-				duration_minutes: calculatedDuration,
-				workers_count: numWorkers,		
-				amount: amount,
-				expense: expense,
-				date: visitDate,
-				start_time: startTime,
-				end_time: endTime,
-				paid: paymentStatus,
-				notes: notes
+			const newVisit = {
+				ID: generateID(),
+				date: document.getElementById('modalVisitDate').value,
+				location_id: clientId,
+				location_name: clientName,
+				visit_type: document.getElementById('modalVisitType').value,
+				work_done: document.getElementById('modalWorkDone').value,
+				duration_minutes: parseInt(document.getElementById('modalManualDurationMinutes').value) || 0,
+				num_workers: parseInt(document.getElementById('modalNumWorkers').value) || 1,
+				start_time: document.getElementById('modalStartTime').value || '',
+				end_time: document.getElementById('modalEndTime').value || '',
+				amount: parseFloat(document.getElementById('modalAmount').value) || 0,
+				paid: 'no',  // ✅ ADDED: default to 'no' for new visits
+				expense: parseFloat(document.getElementById('modalExpense').value) || 0,
+				notes: document.getElementById('modalNotes').value || ''
 			};
 			
-			// ✅ שמירת הטיפול (saveVisit תטפל בהודעות)
-			await saveVisit(visitData);
+			// Add to array and save
+			visits.push(newVisit);
+			saveToLocalStorage();
 			
-			// ✅ סגירת החלונית רק אחרי שמירה
+			// Save to cloud if connected
+			let cloudSaved = false;
+			if (access_token && SPREADSHEET_ID) {
+				cloudSaved = await saveVisitsBatch([newVisit]);
+			}
+			
+			// Update treatment dates
+			await updateSingleLocationTreatmentDates(newVisit.location_id);
+			
+			// Refresh displays
+			document.getElementById('modalVisitForm')?.reset();
+			loadPlanningData();
+			filterVisits();
+			
+			// Close modal
 			closeModal();
+			
+			// Success message
+			if (access_token && SPREADSHEET_ID) {
+				if (cloudSaved) {
+					showToast('✅ הטיפול נשמר בהצלחה במערכת ובענן!', 'success');
+				} else {
+					showToast('⚠️ הטיפול נשמר מקומית בלבד - בעיה בחיבור לענן', 'warning');
+				}
+			} else {
+				showToast('💾 הטיפול נשמר מקומית - התחבר לענן לשמירה מלאה', 'info');
+			}
 		}
 
 		function filterClientOptions(inputId, optionsId) {
@@ -11655,175 +11470,6 @@
 		}
 
 
-		// פתיחת חלונית תשלום מטיפול ספציפי
-		function openPaymentFromVisit(visitId) {
-			const visit = visits.find(v => v.ID === visitId);
-			if (!visit) {
-				showToast('טיפול לא נמצא', 'error');
-				return;
-			}
-			
-			const client = locations.find(loc => loc.ID === visit.location_id);
-			if (!client) {
-				showToast('לקוח לא נמצא', 'error');
-				return;
-			}
-			
-			// פתיחת החלונית עם הטיפול הזה כבר מסומן
-			openPaymentModal(client, [visitId]);
-		}
-
-		// משתנים גלובליים לחלונית התשלום
-		let selectedClient = null;
-		let selectedVisitIds = [];
-
-		// פתיחת חלונית תשלום עם לקוח ספציפי (אופציונלי)
-		// עדכון פונקציית פתיחת חלונית התשלום
-		function openPaymentModal(client = null, preSelectedVisitIds = []) {
-			selectedClient = client;
-			selectedVisitIds = preSelectedVisitIds;
-			
-			document.body.classList.add('modal-open');
-			resetPaymentModal();
-			
-			if (client) {
-				document.getElementById('paymentModalTitle').textContent = `💰 תשלום עבור: ${client.name}`;
-				document.getElementById('clientSelectionSection').style.display = 'none';
-				document.getElementById('visitsSelectionSection').style.display = 'block';
-				loadClientVisitsForPayment(client.ID);
-			} else {
-				document.getElementById('paymentModalTitle').textContent = '💰 תשלום חדש';
-				document.getElementById('clientSelectionSection').style.display = 'block';
-				document.getElementById('visitsSelectionSection').style.display = 'none';
-			}
-			
-			document.getElementById('paymentDetailsSection').style.display = 'none';
-			
-			// ✅ שימוש ב-class במקום style ישיר
-			const modal = document.getElementById('paymentModal');
-			modal.classList.add('show');
-		}
-
-		// איפוס החלונית
-		function resetPaymentModal() {
-			document.getElementById('paymentClientSearch').value = '';
-			document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
-			document.getElementById('paymentTime').value = new Date().toTimeString().substr(0, 5);
-			document.getElementById('paymentMethod').value = 'cash';
-			document.getElementById('paymentReference').value = '';
-			document.getElementById('checkDate').value = '';
-			document.getElementById('bankAccount').value = '';
-			document.getElementById('paymentNotes').value = '';
-			document.getElementById('selectedAmount').textContent = '0';
-			document.getElementById('selectedCount').textContent = '0';
-			document.getElementById('savePaymentBtn').disabled = true;
-			hidePaymentClientDropdown();
-			togglePaymentFields();
-		}
-
-		// סגירת החלונית
-		// עדכון פונקציית סגירת החלונית
-		function closePaymentModal() {
-			const modal = document.getElementById('paymentModal');
-			modal.classList.remove('show'); // ✅ הסרת class
-			
-			document.body.classList.remove('modal-open');
-			selectedClient = null;
-			selectedVisitIds = [];
-		}
-
-
-		// חיפוש לקוחות בחלונית התשלום
-		function searchPaymentClients(searchTerm) {
-			const clients = searchClientsAdvanced(searchTerm);
-			populatePaymentClientDropdown(clients);
-			if (searchTerm.length > 0) {
-				showPaymentClientDropdown();
-			}
-		}
-
-		// הצגת רשימת לקוחות
-		function populatePaymentClientDropdown(clients) {
-			const dropdown = document.getElementById('paymentClientDropdown');
-			
-			if (clients.length === 0) {
-				dropdown.innerHTML = '<div style="padding: 10px; color: #666;">לא נמצאו לקוחות</div>';
-				return;
-			}
-			
-			const html = clients.map(client => `
-				<div class="client-option" onclick="selectPaymentClient('${client.ID}')" 
-					 style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;">
-					<div style="font-weight: bold;">${client.name}</div>
-					<div style="font-size: 12px; color: #666;">${client.full_address}</div>
-				</div>
-			`).join('');
-			
-			dropdown.innerHTML = html;
-		}
-
-		// הצגת/הסתרת רשימת לקוחות
-		function showPaymentClientDropdown() {
-			document.getElementById('paymentClientDropdown').style.display = 'block';
-		}
-
-		function hidePaymentClientDropdown() {
-			setTimeout(() => {
-				document.getElementById('paymentClientDropdown').style.display = 'none';
-			}, 200);
-		}
-
-		// בחירת לקוח
-		function selectPaymentClient(clientId) {
-			selectedClient = locations.find(c => c.ID === clientId);
-			if (!selectedClient) return;
-			
-			document.getElementById('paymentClientSearch').value = `${selectedClient.name} - ${selectedClient.full_address}`;
-			hidePaymentClientDropdown();
-			
-			// מעבר לשלב הבא - הצגת טיפולים
-			document.getElementById('paymentModalTitle').textContent = `💰 תשלום עבור: ${selectedClient.name}`;
-			document.getElementById('clientSelectionSection').style.display = 'none';
-			document.getElementById('visitsSelectionSection').style.display = 'block';
-			
-			loadClientVisitsForPayment(clientId);
-		}
-
-		// טעינת טיפולים של לקוח שטרם שולמו
-		function loadClientVisitsForPayment(clientId) {
-			const clientVisits = visits.filter(visit => 
-				visit.location_id === clientId && 
-				getVisitPaymentStatus(visit.ID) !== 'paid'
-			);
-			
-			if (clientVisits.length === 0) {
-				document.getElementById('visitsList').innerHTML = 
-					'<div style="text-align: center; padding: 20px; color: #666;">אין טיפולים פתוחים ללקוח זה</div>';
-				return;
-			}
-			
-			const visitsHtml = clientVisits.map(visit => {
-				const isPreSelected = selectedVisitIds.includes(visit.ID);
-				return `
-					<div class="visit-item">
-						<input type="checkbox" 
-							   class="visit-checkbox" 
-							   id="visit_${visit.ID}" 
-							   value="${visit.ID}"
-							   ${isPreSelected ? 'checked' : ''}
-							   onchange="updateSelectedVisits()">
-						<div class="visit-details">
-							<strong>${formatDate(visit.date)}</strong> - ${visit.work_done || 'ללא תיאור'}
-							<br><small>${visit.visit_type || 'כללי'}</small>
-						</div>
-						<div class="visit-amount">${visit.amount || 0}₪</div>
-					</div>
-				`;
-			}).join('');
-			
-			document.getElementById('visitsList').innerHTML = visitsHtml;
-			updateSelectedVisits(); // עדכון ראשוני של הסכום
-		}
 
 		// עדכון טיפולים נבחרים וחישוב סכום
 		function updateSelectedVisits() {
@@ -11860,139 +11506,7 @@
 			}
 		}
 
-		// הצגה/הסתרה של שדות בהתאם לסוג התשלום
-		function togglePaymentFields() {
-			const paymentMethod = document.getElementById('paymentMethod').value;
-			const checkFields = document.getElementById('checkFields');
-			const transferFields = document.getElementById('transferFields');
-			const referenceLabel = document.querySelector('label[for="paymentReference"]');
-			const referenceInput = document.getElementById('paymentReference');
-			
-			// הסתרת כל השדות תחילה
-			checkFields.style.display = 'none';
-			transferFields.style.display = 'none';
-			
-			// הצגת שדות רלוונטיים ושינוי תוויות
-			switch(paymentMethod) {
-				case 'cash':
-					if (referenceLabel) referenceLabel.textContent = 'מספר סידורי:';
-					referenceInput.placeholder = 'מספר סידורי אופציונלי';
-					break;
-					
-				case 'check':
-					if (referenceLabel) referenceLabel.textContent = 'ספרות אחרונות צ\'ק:';
-					referenceInput.placeholder = 'ספרות אחרונות של הצ\'ק';
-					checkFields.style.display = 'block';
-					break;
-					
-				case 'transfer':
-					if (referenceLabel) referenceLabel.textContent = 'מספר אסמכתא:';
-					referenceInput.placeholder = 'מספר אסמכתא מהבנק';
-					transferFields.style.display = 'block';
-					break;
-					
-				case 'app':
-					if (referenceLabel) referenceLabel.textContent = 'מספר עסקה:';
-					referenceInput.placeholder = 'מספר עסקה מהאפליקציה';
-					break;
-			}
-		}
 
-		// שמירת התשלום החדש
-		async function savePaymentFromModal() {
-			try {
-				// בדיקת תקינות
-				if (!selectedClient || selectedVisitIds.length === 0) {
-					showToast('יש לבחור לקוח וטיפולים', 'error');
-					return;
-				}
-				
-				const paymentDate = document.getElementById('paymentDate').value;
-				const paymentTime = document.getElementById('paymentTime').value;
-				const paymentMethod = document.getElementById('paymentMethod').value;
-				
-				if (!paymentDate || !paymentTime) {
-					showToast('יש למלא תאריך ושעה', 'error');
-					return;
-				}
-				
-				showLoading('שומר תשלום...');
-				
-				// חישוב סכום כולל
-				let totalAmount = 0;
-				const visitAmounts = {};
-				
-				selectedVisitIds.forEach(visitId => {
-					const visit = visits.find(v => v.ID === visitId);
-					if (visit) {
-						const amount = parseFloat(visit.amount) || 0;
-						totalAmount += amount;
-						visitAmounts[visitId] = amount;
-					}
-				});
-				
-				// יצירת תשלום חדש
-				const newPayment = {
-					ID: generateID(),
-					date: paymentDate,
-					time: paymentTime,
-					amount: totalAmount,
-					payment_method: paymentMethod,
-					source_type: 'manual_payment',
-					client_id: selectedClient.ID,
-					client_name: selectedClient.name,
-					notes: document.getElementById('paymentNotes').value || '',
-					status: 'completed',
-					created_at: new Date().toISOString(),
-					reference: document.getElementById('paymentReference').value || '',
-					check_date: document.getElementById('checkDate').value || '',
-					bank_account: document.getElementById('bankAccount').value || '',
-					payment_details: document.getElementById('paymentDetails') ? document.getElementById('paymentDetails').value || '' : ''
-				};
-				
-				// הוספה למערכת
-				payments.push(newPayment);
-				
-				// יצירת קישורים לטיפולים
-				selectedVisitIds.forEach(visitId => {
-					const link = {
-						ID: generateID(),
-						payment_id: newPayment.ID,
-						visit_id: visitId,
-						amount_allocated: visitAmounts[visitId],
-						link_type: 'full_payment',
-						created_at: new Date().toISOString()
-					};
-					paymentVisitLinks.push(link);
-				});
-				
-				// שמירה מקומית
-				saveToLocalStorage();
-				
-				// שמירה בענן
-				if (access_token) {
-					await saveAllToSheetsOptimized();
-				}
-				
-				hideLoading();
-				closePaymentModal();
-				
-				// רענון תצוגות
-				if (typeof displayFilteredVisits === 'function') {
-					displayFilteredVisits();
-				}
-				if (typeof loadPaymentFilterOptions === 'function') {
-					loadPaymentFilterOptions();
-				}
-				
-				showToast(`תשלום של ${totalAmount}₪ נשמר בהצלחה`, 'success');
-				
-			} catch (error) {
-				console.error('Error saving payment:', error);
-				hideLoading();
-				showToast('שגיאה בשמירת התשלום', 'error');
-			}
-		}
 
 		// עדכון סטטוס תשלום של טיפול
 		async function updatePaymentStatus(visitId, newStatus) {
@@ -12002,53 +11516,113 @@
 				return;
 			}
 			
-			const oldStatus = getVisitPaymentStatus(visitId);
-			
-			try {
-				if (newStatus === 'paid' && oldStatus !== 'paid') {
-					// מעבר לסטטוס שולם - פתח חלונית תשלום
-					const client = locations.find(loc => loc.ID === visit.location_id);
-					if (!client) {
-						showToast('לקוח לא נמצא', 'error');
+			// ✅ UPDATED: Handle different payment statuses with date selection
+			if (newStatus === 'paid') {
+				// Ask user for payment date with today as default
+				const today = new Date();
+				const defaultDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+				
+				const dateInput = prompt('תאריך תשלום (DD/MM/YYYY):\n\nלחץ OK להיום, או הזן תאריך אחר:', defaultDate);
+				
+				if (dateInput === null) return; // User cancelled
+				
+				let paymentDate;
+				
+				if (!dateInput || dateInput.trim() === '') {
+					// Empty input - use today
+					paymentDate = today.toISOString().split('T')[0];
+				} else {
+					// Parse user input
+					const parts = dateInput.trim().split('/');
+					if (parts.length !== 3) {
+						showToast('פורמט תאריך לא תקין. השתמש ב: DD/MM/YYYY', 'error');
 						return;
 					}
-					openPaymentModal(client, [visitId]);
 					
-				} else if (newStatus === 'no_payment') {
-					// ללא תשלום - עדכן רק את הסטטוס
-					visit.paid = '2'; // קוד מיוחד ל"ללא תשלום"
-					saveToLocalStorage();
+					const day = parts[0].padStart(2, '0');
+					const month = parts[1].padStart(2, '0');
+					const year = parts[2];
 					
-					if (access_token) {
-						await saveAllToSheetsOptimized();
+					// Validate date
+					const dateObj = new Date(`${year}-${month}-${day}`);
+					if (isNaN(dateObj.getTime())) {
+						showToast('תאריך לא תקין', 'error');
+						return;
 					}
 					
-					showToast('הטיפול סומן כ"ללא תשלום"', 'success');
-					displayFilteredVisits();
-					
-				} else if (newStatus === 'unpaid' && oldStatus === 'paid') {
-					// מעבר מ"שולם" ל"לא שולם" - מחק תשלומים קשורים
-					if (confirm('פעולה זו תמחק את התשלום הקשור לטיפול. האם להמשיך?')) {
-						removePaymentsForVisit(visitId);
-						visit.paid = '0';
-						saveToLocalStorage();
-						
-						if (access_token) {
-							await saveAllToSheetsOptimized();
-						}
-						
-						showToast('התשלום הוסר מהטיפול', 'success');
-						displayFilteredVisits();
-					} else {
-						// החזר את הבחירה אם המשתמש ביטל
-						displayFilteredVisits();
-					}
+					paymentDate = `${year}-${month}-${day}`;
 				}
 				
-			} catch (error) {
-				console.error('Error updating payment status:', error);
-				showToast('שגיאה בעדכון סטטוס התשלום', 'error');
-				displayFilteredVisits(); // רענון התצוגה במקרה של שגיאה
+				visit.paid = `paid:${paymentDate}`;
+				
+			} else if (newStatus === 'partial') {
+				// Ask user for partial amount
+				const visitAmount = parseFloat(visit.amount) || 0;
+				const partialAmount = prompt(`כמה שולם? (מתוך ${visitAmount}₪)`, '');
+				
+				if (partialAmount === null) return; // User cancelled
+				
+				const amount = parseFloat(partialAmount);
+				if (isNaN(amount) || amount <= 0) {
+					showToast('סכום לא תקין', 'error');
+					return;
+				}
+				
+				if (amount >= visitAmount) {
+					// If paid full or more, ask for date and mark as fully paid
+					const today = new Date();
+					const defaultDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+					
+					const dateInput = prompt('תאריך תשלום (DD/MM/YYYY):', defaultDate);
+					
+					if (dateInput === null) return;
+					
+					let paymentDate;
+					if (!dateInput || dateInput.trim() === '') {
+						paymentDate = today.toISOString().split('T')[0];
+					} else {
+						const parts = dateInput.trim().split('/');
+						if (parts.length === 3) {
+							const day = parts[0].padStart(2, '0');
+							const month = parts[1].padStart(2, '0');
+							const year = parts[2];
+							paymentDate = `${year}-${month}-${day}`;
+						} else {
+							paymentDate = today.toISOString().split('T')[0];
+						}
+					}
+					
+					visit.paid = `paid:${paymentDate}`;
+				} else {
+					visit.paid = `partial:${amount}`;
+				}
+				
+			} else if (newStatus === 'no_payment') {
+				visit.paid = 'no_payment';
+				
+			} else if (newStatus === 'unpaid') {
+				visit.paid = 'unpaid';
+			}
+			
+			// Save locally
+			saveToLocalStorage();
+			
+			// Save to cloud if connected
+			if (access_token && SPREADSHEET_ID) {
+				const success = await saveAllToSheetsOptimized();
+				if (success) {
+					showToast('✅ סטטוס תשלום עודכן', 'success', 2000);
+				} else {
+					showToast('⚠️ עודכן מקומית בלבד', 'warning', 2000);
+				}
+			} else {
+				showToast('💾 עודכן מקומית', 'info', 2000);
+			}
+			
+			// Refresh displays
+			filterVisits();
+			if (typeof displayDebts === 'function') {
+				displayDebts();
 			}
 		}
 
@@ -12580,35 +12154,6 @@
 				`💰 תשלום ${totalAmount}₪ עבור: ${selectedClient.name}`;
 		}
 
-
-		// Update this function to work with the new design
-		function updateSelectedVisitsCount() {
-			const checkboxes = document.querySelectorAll('.visit-checkbox:checked');
-			const count = checkboxes.length;
-			
-			let totalAmount = 0;
-			selectedVisitIds = [];
-			
-			checkboxes.forEach(checkbox => {
-				const visitId = checkbox.value;
-				selectedVisitIds.push(visitId);
-				
-				const visit = visits.find(v => v.ID === visitId);
-				if (visit) {
-					totalAmount += parseFloat(visit.amount) || 0;
-				}
-			});
-			
-			document.getElementById('selectedAmount').textContent = totalAmount;
-			document.getElementById('selectedCount').textContent = count;
-			
-			// אפשר/נטרל כפתור המשך
-			const proceedBtn = document.querySelector('[onclick="proceedToPaymentDetails()"]');
-			if (proceedBtn) {
-				proceedBtn.disabled = count === 0;
-				proceedBtn.style.opacity = count === 0 ? '0.6' : '1';
-			}
-		}
 
 		// Add event listeners to checkboxes when creating visit items
 		function loadClientVisitsForPayment(clientId) {
