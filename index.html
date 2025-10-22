@@ -2484,47 +2484,15 @@
 				<div class="form-section">
 					<h3>📥 ייבוא נתונים</h3>
 					
-					<div class="import-main-buttons">
-						<button onclick="createImportTable()">📗 צור טבלת עזר לייבוא</button>
-						<button onclick="importFromHelperTableFast()">🚀 ייבוא מהיר וכולל</button>
-					</div>
-					
-					<div class="import-other-buttons">
-						<button onclick="importFromTelegramToHelper()" class="btn btn-warning">
-							📱 יבוא מטלגרם לטבלת עזר
+					<div class="import-main-buttons" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;">
+						<button onclick="createImportTable()" class="btn">
+							📗 צור טבלת עזר לייבוא
 						</button>
-						<button onclick="importFromTelegramHelper()" class="btn btn-info">
-							⬇️ יבוא מטבלת עזר טלגרם
-						</button>
-					</div>
-
-					<div style="margin: 25px 0; padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
-						<div style="text-align: center;">
-							<h3 style="color: white; margin-bottom: 10px; font-size: 1.4em;">💰 ייבוא הכנסות מטלגרם</h3>
-							<p style="color: rgba(255,255,255,0.9); margin-bottom: 20px; font-size: 14px;">
-								העלה קובץ ייצוא הכנסות מטלגרם לייבוא אוטומטי למערכת
-							</p>
-							<input type="file" id="telegramIncomeFile" accept=".txt,.json" style="display: none;" onchange="handleTelegramIncomeFileUpload(event)">
-							<button class="btn" onclick="document.getElementById('telegramIncomeFile').click()" 
-									style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3); padding: 12px 30px; font-size: 16px; border-radius: 8px; transition: all 0.3s ease; backdrop-filter: blur(10px);">
-								📁 בחר קובץ הכנסות מטלגרם
-							</button>
-						</div>
-						<div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 12px; text-align: center; color: rgba(255,255,255,0.8);">
-							תומך בקבצי .txt ו-.json מייצוא טלגרם
-						</div>
-					</div>
-
-
-					<!-- הוסף גם כפתור ליצירת טבלת עזר חדשה: -->
-					<div style="margin-top: 10px;">
-						<button onclick="createTelegramHelperTable()" class="btn btn-secondary" style="font-size: 12px;">
-							🗂️ צור טבלת עזר טלגרם חדשה
+						<button onclick="importFromHelperTableFast()" class="btn" style="background: #27ae60; color: white;">
+							🚀 ייבוא מהיר וכולל
 						</button>
 					</div>
 					
-					<div id="telegramHelperStatus" style="margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 5px; font-size: 14px;"></div>
-									
 					<div style="text-align: center; margin: 15px 0;">
 						<span style="color: #666;">או</span>
 					</div>
@@ -2569,26 +2537,24 @@
 				</div>
 				
 				<!-- Additional System Features -->
-					<div class="form-section">
-						<h3>⚙️ הגדרות מערכת</h3>
-						
-						<!-- Cost Settings -->
-						<div style="background: rgba(39, 174, 96, 0.1); border: 2px solid #27ae60; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-							<h4 style="color: #27ae60; margin-bottom: 10px;">💰 הגדרות עלות טיפול</h4>
-							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-								<div class="form-group">
-									<label for="hourlyRate">שעת עבודה (₪):</label>
-									<input type="number" id="hourlyRate" value="150" min="0" onchange="saveCostSettings()">
-								</div>
-								<div class="form-group">
-									<label for="workerCost">תוספת לפועל (₪):</label>
-									<input type="number" id="workerCost" value="50" min="0" onchange="saveCostSettings()">
-								</div>
+				<div class="form-section">
+					<h3>⚙️ הגדרות מערכת</h3>
+					
+					<!-- Cost Settings -->
+					<div style="background: rgba(39, 174, 96, 0.1); border: 2px solid #27ae60; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+						<h4 style="color: #27ae60; margin-bottom: 10px;">💰 הגדרות עלות טיפול</h4>
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+							<div class="form-group">
+								<label for="hourlyRate">שעת עבודה (₪):</label>
+								<input type="number" id="hourlyRate" value="150" min="0" onchange="saveCostSettings()">
+							</div>
+							<div class="form-group">
+								<label for="workerCost">תוספת לפועל (₪):</label>
+								<input type="number" id="workerCost" value="50" min="0" onchange="saveCostSettings()">
 							</div>
 						</div>
-						
-						<p style="color: #666;">תכונות נוספות יתווספו כאן בהמשך...</p>
 					</div>
+				</div>
 			</section>
 			
         </main>
@@ -3724,7 +3690,7 @@
 								<option value="1" selected>פעיל</option>
 								<option value="0">לא פעיל</option>
 							</select>
-							<button class="planning-history-btn" onclick="showClientHistory('${client.ID}')" title="היסטוריית טיפולים">📋</button>
+							<button class="planning-history-btn" onclick="showClientProfile('${client.ID}')" title="פרופיל לקוח מלא">👤</button>
 						</div>
 					</div>
 					${(client.notes || client.client_requests) ? `
@@ -4199,8 +4165,9 @@
 							   onchange="updateLocationNotes('${location.ID}', this.value)">
 					</td>
 					<td>
-						<button class="action-btn edit-btn" onclick="editLocation('${location.ID}')">ערוך</button>
-						<button class="action-btn delete-btn" onclick="deleteLocation('${location.ID}')">מחק</button>
+						<button class="action-btn profile-btn" onclick="showClientProfile('${location.ID}')" title="פרופיל לקוח מלא" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">👤 פרופיל</button>
+						<button class="action-btn edit-btn" onclick="editLocation('${location.ID}')">עריכה</button>
+						<button class="action-btn delete-btn" onclick="deleteLocation('${location.ID}')">מחיקה</button>
 					</td>
 				`;
 				tbody.appendChild(row);
@@ -4593,6 +4560,348 @@
 			loadLocationsForSelect();
 			saveToLocalStorage();
         }
+
+
+		// ✅ NEW: Show comprehensive client profile modal
+		function showClientProfile(clientId) {
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			// Get client's visits
+			const clientVisits = visits
+				.filter(v => v.location_id === clientId)
+				.sort((a, b) => b.date.localeCompare(a.date));
+			
+			// Calculate statistics
+			const totalVisits = clientVisits.length;
+			const totalIncome = clientVisits.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
+			const totalPaid = clientVisits.reduce((sum, v) => sum + getVisitPaidAmount(v.ID), 0);
+			const totalDebt = totalIncome - totalPaid;
+			
+			// Last visit date
+			const lastVisit = clientVisits.length > 0 ? clientVisits[0].date : 'אין';
+			
+			// Build modal HTML
+			const modalHTML = `
+				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 900px; width: 95vw; max-height: 90vh; overflow-y: auto;">
+					<!-- Header -->
+					<div style="border-bottom: 3px solid #3498db; padding-bottom: 15px; margin-bottom: 20px;">
+						<h2 style="margin: 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+							👤 ${client.name}
+							<span style="font-size: 14px; color: #666; font-weight: normal;">${client.full_address}</span>
+						</h2>
+					</div>
+					
+					<!-- Statistics Cards -->
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+						<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 10px; color: white;">
+							<div style="font-size: 13px; opacity: 0.9;">סה"כ טיפולים</div>
+							<div style="font-size: 28px; font-weight: bold;">${totalVisits}</div>
+						</div>
+						<div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 15px; border-radius: 10px; color: white;">
+							<div style="font-size: 13px; opacity: 0.9;">סה"כ הכנסות</div>
+							<div style="font-size: 28px; font-weight: bold;">₪${totalIncome.toFixed(0)}</div>
+						</div>
+						<div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 15px; border-radius: 10px; color: white;">
+							<div style="font-size: 13px; opacity: 0.9;">שולם</div>
+							<div style="font-size: 28px; font-weight: bold;">₪${totalPaid.toFixed(0)}</div>
+						</div>
+						<div style="background: ${totalDebt > 0 ? 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' : 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'}; padding: 15px; border-radius: 10px; color: white;">
+							<div style="font-size: 13px; opacity: 0.9;">${totalDebt > 0 ? 'חוב' : 'ללא חובות'}</div>
+							<div style="font-size: 28px; font-weight: bold;">₪${Math.abs(totalDebt).toFixed(0)}</div>
+						</div>
+					</div>
+					
+					<!-- Next Treatment Info -->
+					<div style="background: #e8f5e9; border: 2px solid #4caf50; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+						<div style="display: flex; justify-content: space-between; align-items: center;">
+							<div>
+								<div style="font-size: 14px; color: #2e7d32; margin-bottom: 5px;">📅 טיפול הבא מתוכנן ל:</div>
+								<div style="font-size: 20px; font-weight: bold; color: #1b5e20;">${formatDate(client.next_visit)}</div>
+								<div style="font-size: 12px; color: #666; margin-top: 3px;">טיפול אחרון: ${lastVisit !== 'אין' ? formatDate(lastVisit) : 'אין'}</div>
+							</div>
+							<button onclick="startTreatment('${clientId}')" 
+									style="padding: 12px 24px; background: #4caf50; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold;">
+								🚀 התחל טיפול עכשיו
+							</button>
+						</div>
+					</div>
+					
+					<!-- Tabs -->
+					<div style="border-bottom: 2px solid #e0e0e0; margin-bottom: 20px;">
+						<button onclick="switchClientProfileTab('treatments')" 
+								class="client-profile-tab active" 
+								data-tab="treatments"
+								style="padding: 10px 20px; background: none; border: none; border-bottom: 3px solid #3498db; cursor: pointer; font-size: 15px; font-weight: bold; color: #3498db;">
+							🔧 טיפולים (${totalVisits})
+						</button>
+						<button onclick="switchClientProfileTab('payments')" 
+								class="client-profile-tab" 
+								data-tab="payments"
+								style="padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 15px; color: #666;">
+							💰 תשלומים
+						</button>
+						<button onclick="switchClientProfileTab('info')" 
+								class="client-profile-tab" 
+								data-tab="info"
+								style="padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 15px; color: #666;">
+							ℹ️ פרטים
+						</button>
+					</div>
+					
+					<!-- Tab Content -->
+					<div id="clientProfileTabContent">
+						<!-- Will be populated by switchClientProfileTab -->
+					</div>
+					
+					<!-- Close Button -->
+					<div style="text-align: center; margin-top: 20px;">
+						<button onclick="closeEditModal()" 
+								style="padding: 10px 30px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+							סגור
+						</button>
+					</div>
+				</div>
+			`;
+			
+			showEditModal(modalHTML);
+			
+			// Show treatments tab by default
+			setTimeout(() => switchClientProfileTab('treatments', clientId), 100);
+		}
+
+
+		// ✅ NEW: Start treatment from client profile
+		function startTreatment(clientId) {
+			// Close the profile modal
+			closeEditModal();
+			
+			// Switch to visits tab
+			showSection('visit');
+			
+			// Pre-select the client in the visit form
+			const clientSearchInput = document.getElementById('clientSearchInput');
+			const selectedClientIdInput = document.getElementById('selectedClientId');
+			
+			if (selectedClientIdInput) {
+				selectedClientIdInput.value = clientId;
+			}
+			
+			// Find the client and set the search input display
+			const client = locations.find(loc => loc.ID === clientId);
+			if (client && clientSearchInput) {
+				clientSearchInput.value = `${client.name} - ${client.full_address}`;
+			}
+			
+			// Set today's date
+			const visitDateInput = document.getElementById('visitDate');
+			if (visitDateInput) {
+				visitDateInput.value = new Date().toISOString().split('T')[0];
+			}
+			
+			// Focus on work done field
+			setTimeout(() => {
+				const workDoneInput = document.getElementById('workDone');
+				if (workDoneInput) {
+					workDoneInput.focus();
+				}
+			}, 100);
+			
+			showToast(`מוכן לתעד טיפול עבור ${client.name}`, 'success');
+		}
+
+
+		// ✅ NEW: Switch between tabs in client profile
+		function switchClientProfileTab(tabName, clientId) {
+			// If clientId not provided, try to get it from the modal
+			if (!clientId) {
+				const modal = document.getElementById('editModal');
+				if (!modal) return;
+				// Try to extract clientId from the modal content
+				const startButton = modal.querySelector('[onclick*="startTreatment"]');
+				if (startButton) {
+					const match = startButton.getAttribute('onclick').match(/'([^']+)'/);
+					clientId = match ? match[1] : null;
+				}
+			}
+			
+			if (!clientId) {
+				console.error('Client ID not found');
+				return;
+			}
+			
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) return;
+			
+			// Update tab buttons
+			document.querySelectorAll('.client-profile-tab').forEach(btn => {
+				if (btn.dataset.tab === tabName) {
+					btn.style.borderBottom = '3px solid #3498db';
+					btn.style.color = '#3498db';
+					btn.style.fontWeight = 'bold';
+				} else {
+					btn.style.borderBottom = '3px solid transparent';
+					btn.style.color = '#666';
+					btn.style.fontWeight = 'normal';
+				}
+			});
+			
+			const contentDiv = document.getElementById('clientProfileTabContent');
+			if (!contentDiv) return;
+			
+			// Generate content based on tab
+			let html = '';
+			
+			if (tabName === 'treatments') {
+				// Treatments tab
+				const clientVisits = visits
+					.filter(v => v.location_id === clientId)
+					.sort((a, b) => b.date.localeCompare(a.date));
+				
+				if (clientVisits.length === 0) {
+					html = '<div style="text-align: center; padding: 40px; color: #666;">עדיין אין טיפולים ללקוח זה</div>';
+				} else {
+					html = `
+						<div style="max-height: 400px; overflow-y: auto;">
+							<table style="width: 100%; border-collapse: collapse;">
+								<thead style="position: sticky; top: 0; background: #f8f9fa;">
+									<tr style="border-bottom: 2px solid #dee2e6;">
+										<th style="padding: 10px; text-align: right;">תאריך</th>
+										<th style="padding: 10px; text-align: right;">עבודה</th>
+										<th style="padding: 10px; text-align: right;">זמן</th>
+										<th style="padding: 10px; text-align: right;">סכום</th>
+										<th style="padding: 10px; text-align: right;">תשלום</th>
+									</tr>
+								</thead>
+								<tbody>
+									${clientVisits.map(visit => {
+										const paidInfo = parsePaidField(visit.paid);
+										let paymentBadge = '';
+										
+										if (paidInfo.status === 'paid') {
+											paymentBadge = `<span style="background: #d4edda; color: #155724; padding: 3px 8px; border-radius: 4px; font-size: 12px;">✓ שולם</span>`;
+										} else if (paidInfo.status === 'partial') {
+											paymentBadge = `<span style="background: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 4px; font-size: 12px;">⚠ חלקי</span>`;
+										} else if (paidInfo.status === 'no_payment') {
+											paymentBadge = `<span style="background: #e2e3e5; color: #383d41; padding: 3px 8px; border-radius: 4px; font-size: 12px;">🚫 ללא</span>`;
+										} else {
+											paymentBadge = `<span style="background: #f8d7da; color: #721c24; padding: 3px 8px; border-radius: 4px; font-size: 12px;">✗ לא שולם</span>`;
+										}
+										
+										const duration = visit.duration_minutes ? `${(visit.duration_minutes / 60).toFixed(1)}ש` : '-';
+										
+										return `
+											<tr style="border-bottom: 1px solid #dee2e6;">
+												<td style="padding: 10px;">${formatDate(visit.date)}</td>
+												<td style="padding: 10px; font-size: 13px; color: #666;">${visit.work_done || '-'}</td>
+												<td style="padding: 10px;">${duration}</td>
+												<td style="padding: 10px; font-weight: bold; color: #27ae60;">${visit.amount || 0}₪</td>
+												<td style="padding: 10px;">${paymentBadge}</td>
+											</tr>
+										`;
+									}).join('')}
+								</tbody>
+							</table>
+						</div>
+					`;
+				}
+				
+			} else if (tabName === 'payments') {
+				// Payments tab - show all paid visits
+				const paidVisits = visits
+					.filter(v => v.location_id === clientId)
+					.filter(v => {
+						const paidInfo = parsePaidField(v.paid);
+						return paidInfo.status === 'paid' || paidInfo.status === 'partial';
+					})
+					.sort((a, b) => b.date.localeCompare(a.date));
+				
+				if (paidVisits.length === 0) {
+					html = '<div style="text-align: center; padding: 40px; color: #666;">עדיין אין תשלומים ללקוח זה</div>';
+				} else {
+					html = `
+						<div style="max-height: 400px; overflow-y: auto;">
+							<table style="width: 100%; border-collapse: collapse;">
+								<thead style="position: sticky; top: 0; background: #f8f9fa;">
+									<tr style="border-bottom: 2px solid #dee2e6;">
+										<th style="padding: 10px; text-align: right;">תאריך טיפול</th>
+										<th style="padding: 10px; text-align: right;">תאריך תשלום</th>
+										<th style="padding: 10px; text-align: right;">סכום</th>
+										<th style="padding: 10px; text-align: right;">סטטוס</th>
+									</tr>
+								</thead>
+								<tbody>
+									${paidVisits.map(visit => {
+										const paidInfo = parsePaidField(visit.paid);
+										const paidDate = paidInfo.date ? formatDate(paidInfo.date) : '-';
+										const amount = paidInfo.status === 'partial' ? paidInfo.amount : visit.amount;
+										const statusText = paidInfo.status === 'partial' ? 'תשלום חלקי' : 'שולם במלואו';
+										
+										return `
+											<tr style="border-bottom: 1px solid #dee2e6;">
+												<td style="padding: 10px;">${formatDate(visit.date)}</td>
+												<td style="padding: 10px;">${paidDate}</td>
+												<td style="padding: 10px; font-weight: bold; color: #27ae60;">${amount}₪</td>
+												<td style="padding: 10px; color: #666; font-size: 13px;">${statusText}</td>
+											</tr>
+										`;
+									}).join('')}
+								</tbody>
+							</table>
+						</div>
+					`;
+				}
+				
+			} else if (tabName === 'info') {
+				// Info tab
+				html = `
+					<div style="display: grid; gap: 15px;">
+						<div>
+							<strong style="color: #666;">כתובת מלאה:</strong>
+							<div style="margin-top: 5px;">${client.full_address}</div>
+						</div>
+						<div>
+							<strong style="color: #666;">איש קשר:</strong>
+							<div style="margin-top: 5px;">${client.contact_person || 'לא צוין'}</div>
+						</div>
+						<div>
+							<strong style="color: #666;">טלפון:</strong>
+							<div style="margin-top: 5px;">${client.phone || 'לא צוין'}</div>
+						</div>
+						<div>
+							<strong style="color: #666;">יום מועדף:</strong>
+							<div style="margin-top: 5px;">${client.allowed_day || 'לא צוין'}</div>
+						</div>
+						<div>
+							<strong style="color: #666;">תדירות (שבועות):</strong>
+							<div style="margin-top: 5px;">${client.interval_weeks || 4} שבועות</div>
+						</div>
+						<div>
+							<strong style="color: #666;">מחיר בסיס:</strong>
+							<div style="margin-top: 5px;">${client.base_amount || 0}₪</div>
+						</div>
+						<div>
+							<strong style="color: #666;">הערות:</strong>
+							<div style="margin-top: 5px; background: #f8f9fa; padding: 10px; border-radius: 5px; min-height: 60px;">
+								${client.notes || 'אין הערות'}
+							</div>
+						</div>
+						<div style="text-align: center; margin-top: 10px;">
+							<button onclick="editLocation('${clientId}')" 
+									style="padding: 8px 20px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer;">
+								✏️ ערוך פרטי לקוח
+							</button>
+						</div>
+					</div>
+				`;
+			}
+			
+			contentDiv.innerHTML = html;
+		}
+
 
 		function editLocation(locationId) {
 			console.log(`✅ editLocation ('${locationId}')`);
@@ -6568,28 +6877,6 @@
 		}
 
 
-		
-		// ID	date	location_id	location_name	visit_type	
-		// work_done	duration_minutes	num_workers	start_time	end_time	
-		// amount	expense	notes
-
-		function parseTelegramVisitFromRow(row) {
-			return {
-				ID: row[0] || generateID(),
-				date: `${row[0]}-${row[1].padStart(2, '0')}-${row[2].padStart(2, '0')}`,
-				location_id: findLocationByName(row[3])?.ID || null,
-				location_name: row[3] || '',
-				visit_type: row[5] || 'כללי',
-				work_done: row[7] || '',
-				duration_minutes: parseInt(row[8]) || 60,
-				num_workers: 1,  // ✅ Always 1 for Telegram imports
-				start_time: '',
-				end_time: '',
-				amount: parseInt(row[9]) || 0,
-				expense: parseInt(row[11]) || 0,
-				notes: row[12] || ''
-			};
-		}
 
 		function parseReceiptFromRow(row) {
 			return {
@@ -6684,140 +6971,6 @@
 			}
 		}
 
-		// פונקציה ראשית משופרת לפיענוח טקסט טלגרם
-		function parseTelegramText(text) {
-			const lines = text.split('\n');
-			const visits = [];
-			
-			let currentDate = '';
-			let currentTime = '';
-			let currentVisit = null;
-			let pendingNotes = [];
-			
-			for (let i = 0; i < lines.length; i++) {
-				const line = lines[i].trim();
-				if (!line) continue;
-				
-				// זיהוי תאריך
-				if (isDateLine(line)) {
-					// אם יש ביקור פתוח, סגור אותו
-					if (currentVisit) {
-						visits.push(finalizeVisit(currentVisit, pendingNotes));
-						currentVisit = null;
-						pendingNotes = [];
-					}
-					currentDate = parseTelegramDate(line);
-					continue;
-				}
-				
-				// זיהוי שעה
-				if (isTimeLine(line)) {
-					currentTime = line;
-					continue;
-				}
-				
-				// זיהוי שורה של Assaf H
-				if (line === 'Assaf H') {
-					const nextLine = lines[i + 1];
-					if (!nextLine) continue;
-					
-					// בדוק אם זה תחילת ביקור חדש
-					if (isNewVisitStart(nextLine, locations)) {
-						// סגור ביקור קודם אם קיים
-						if (currentVisit) {
-							visits.push(finalizeVisit(currentVisit, pendingNotes));
-							pendingNotes = [];
-						}
-						
-						// התחל ביקור חדש
-						const client = findClientSmart(nextLine, locations);
-						currentVisit = {
-							date: currentDate,
-							time: currentTime,
-							client: client,
-							workDescription: [nextLine],
-							duration: 0,
-							workType: identifyWorkType(nextLine),
-							notes: []
-						};
-					}
-					// בדוק אם זה סיום ביקור
-					else if (currentVisit && isVisitEnd(nextLine)) {
-						currentVisit.workDescription.push(nextLine);
-						const duration = extractTimeFromText(nextLine);
-						if (duration > 0) {
-							currentVisit.duration = duration;
-						}
-						
-						// בדוק אם יש זמן בשורות הבאות
-						if (currentVisit.duration === 0 && i + 2 < lines.length) {
-							const timeInfo = extractTimeFromText(lines[i + 2]);
-							if (timeInfo > 0) {
-								currentVisit.duration = timeInfo;
-							}
-						}
-						
-						visits.push(finalizeVisit(currentVisit, pendingNotes));
-						currentVisit = null;
-						pendingNotes = [];
-					}
-					// אחרת, זה פרט נוסף על הביקור הנוכחי
-					else if (currentVisit) {
-						currentVisit.workDescription.push(nextLine);
-						
-						// בדוק אם יש זמן בשורה זו
-						const duration = extractTimeFromText(nextLine);
-						if (duration > 0 && currentVisit.duration === 0) {
-							currentVisit.duration = duration;
-						}
-						
-						// עדכן סוג עבודה אם נמצא סוג חדש
-						const workType = identifyWorkType(nextLine);
-						if (workType !== 'כללי' && currentVisit.workType === 'כללי') {
-							currentVisit.workType = workType;
-						}
-					}
-					
-					// איסוף הערות
-					const notes = extractNotes(nextLine);
-					if (notes) {
-						if (currentVisit) {
-							currentVisit.notes.push(notes);
-						} else {
-							pendingNotes.push(notes);
-						}
-					}
-					
-					i++; // דלג על השורה הבאה כי כבר עיבדנו אותה
-				}
-				// שורות אחרות שעלולות להכיל מידע
-				else {
-					const notes = extractNotes(line);
-					if (notes) {
-						if (currentVisit) {
-							currentVisit.notes.push(notes);
-						} else {
-							pendingNotes.push(notes);
-						}
-					}
-					
-					// בדוק אם יש זמן בשורות עצמאיות
-					if (currentVisit && currentVisit.duration === 0) {
-						const duration = extractTimeFromText(line);
-						if (duration > 0) {
-							currentVisit.duration = duration;
-						}
-					}
-				}
-			}
-			
-			// סגור ביקור אחרון אם קיים
-			if (currentVisit) {
-				visits.push(finalizeVisit(currentVisit, pendingNotes));
-			}
-			
-			return visits;
-		}
 
 		// פונקציה עזר לסיום ביקור
 		function finalizeVisit(visit, pendingNotes) {
@@ -6878,262 +7031,7 @@
 			return '';
 		}
 
-		// יצירת טבלת עזר טלגרם חדשה
-		async function createTelegramHelperTable() {
-			if (!await validateToken()) {
-				showToast('נדרש חיבור לגוגל תחילה', 'warning');
-				return null;
-			}
-			
-			try {
-				showLoading('יוצר טבלת עזר טלגרם...');
-				
-				const response = await gapi.client.sheets.spreadsheets.create({
-					resource: {
-						properties: {
-							title: `טבלת עזר טלגרם - ${new Date().toLocaleDateString('he-IL')}`
-						},
-						sheets: [{
-							properties: { title: 'Visits' }
-						}]
-					}
-				});
-				
-				const spreadsheetId = response.result.spreadsheetId;
-				
-				// הוסף כותרות
-				await gapi.client.sheets.spreadsheets.values.update({
-					spreadsheetId: spreadsheetId,
-					range: 'Visits!A1:M1',
-					valueInputOption: 'RAW',
-					resource: {
-						values: [[
-							'year', 'month', 'day', 'customer', 'contact_person', 
-							'treatment', 'date', 'work_done', 'duration', 'amount', 
-							'paid', 'expense', 'notes'
-						]]
-					}
-				});
-				
-				localStorage.setItem('telegramHelperTableId', spreadsheetId);
-				
-				showToast('✅ טבלת עזר טלגרם נוצרה בהצלחה!', 'success');
-				
-				return spreadsheetId;
-				
-			} catch (error) {
-				console.error('Error creating telegram helper table:', error);
-				showToast('שגיאה ביצירת טבלת עזר טלגרם', 'error');
-				return null;
-			} finally {
-				hideLoading();
-			}
-		}
 
-
-		// פונקציה חדשה - יבוא מטלגרם לטבלת עזר טלגרם
-		async function importFromTelegramToHelper() {
-			const fileInput = document.createElement('input');
-			fileInput.type = 'file';
-			fileInput.accept = '.txt';
-			fileInput.multiple = true;
-			
-			fileInput.onchange = async (event) => {
-				const files = Array.from(event.target.files);
-				if (files.length === 0) return;
-				
-				try {
-					showLoading(`מפרסר ${files.length} קבצי טלגרם לטבלת עזר...`);
-					
-					let allParsedVisits = [];
-					
-					for (let i = 0; i < files.length; i++) {
-						const file = files[i];
-						console.log(`📄 Processing file ${i+1}/${files.length}: ${file.name}`);
-						
-						const text = await file.text();
-						const parsedVisits = parseTelegramText(text);
-						
-						console.log(`📄 File ${file.name}: found ${parsedVisits.length} visits`);
-						allParsedVisits = allParsedVisits.concat(parsedVisits);
-						
-						if (i < files.length - 1) {
-							await new Promise(resolve => setTimeout(resolve, 300));
-						}
-					}
-					
-					if (allParsedVisits.length > 0) {
-						// שלח ישירות לטבלת עזר טלגרם
-						await saveTelegramDataToHelper(allParsedVisits);
-						showToast(`נתונים נשמרו בטבלת עזר טלגרם: ${allParsedVisits.length} ביקורים`, 'success');
-					} else {
-						showToast('לא נמצאו ביקורים בקבצים', 'warning');
-					}
-					
-				} catch (error) {
-					console.error('Error parsing telegram files:', error);
-					showToast('שגיאה בפרסור קבצי טלגרם', 'error');
-				} finally {
-					hideLoading();
-				}
-			};
-			
-			fileInput.click();
-		}
-
-		// פונקציה לשמירת נתונים בטבלת עזר טלגרם
-		async function saveTelegramDataToHelper(parsedVisits) {
-			if (!await validateToken()) {
-				showToast('נדרש חיבור לגוגל', 'error');
-				return;
-			}
-			
-			try {
-				// שמור לשתי המערכות: הישנה והחדשה
-				
-				// 1. שמירה למערכת הישנה (טבלה נפרדת)
-				let telegramTableId = localStorage.getItem('telegramHelperTableId');
-				
-				if (!telegramTableId) {
-					telegramTableId = await createTelegramHelperTable();
-					if (!telegramTableId) return;
-				}
-				
-				// המר את הנתונים לפורמט CSV הישן
-				const csvData = parsedVisits.map(visit => [
-					visit.date.split('-')[0], // year
-					visit.date.split('-')[1], // month
-					visit.date.split('-')[2], // day
-					visit.client_name,
-					'', // contact_person - ימולא מהמערכת
-					identifyWorkType(visit.work_done),
-					visit.date,
-					visit.work_done,
-					visit.duration_minutes.toString(),
-					'0', // amount
-					'לא', // paid
-					'0', // expense
-					visit.raw_text || '' // notes
-				]);
-				
-				// שמור לטבלת עזר הישנה
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: telegramTableId,
-					range: 'Visits!A:M',
-					valueInputOption: 'USER_ENTERED',
-					resource: {
-						values: csvData
-					}
-				});
-				
-				// 2. שמירה למערכת החדשה (TelegramVisits)
-				await saveTelegramVisitsToCloud(parsedVisits);
-				
-				console.log(`✅ שמר ${parsedVisits.length} ביקורים לשתי המערכות`);
-				
-			} catch (error) {
-				console.error('Error saving to telegram helper table:', error);
-				showToast('שגיאה בשמירה לטבלת עזר טלגרם', 'error');
-			}
-		}
-
-		// פונקציה ליבוא מטבלת עזר טלגרם למערכת הראשית
-		async function importFromTelegramHelper() {
-			if (!await validateToken()) {
-				showToast('נדרש חיבור לגוגל', 'error');
-				return;
-			}
-			
-			const telegramTableId = localStorage.getItem('telegramHelperTableId');
-			if (!telegramTableId) {
-				showToast('לא נמצאה טבלת עזר טלגרם. צור טבלה חדשה תחילה.', 'warning');
-				return;
-			}
-			
-			try {
-				showLoading('מייבא נתונים מטבלת עזר טלגרם...');
-				
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: telegramTableId,
-					range: 'Visits!A2:M1000'
-				});
-				
-				if (!response.result.values || response.result.values.length === 0) {
-					showToast('טבלת עזר טלגרם ריקה', 'warning');
-					return;
-				}
-				
-				let importedCount = 0;
-				let createdPayments = 0;
-				
-				for (const row of response.result.values) {
-					if (row[0] && row[3]) { // יש שנה ושם לקוח
-						const visitData = parseTelegramVisitFromRow(row);
-						
-						visits.push(visitData);
-						importedCount++;
-						
-						// יצירת תשלום אם הטיפול מסומן כשולם (row[10] = 'paid' column מטבלת העזר)
-						const paidStatus = row[10] || 'לא';
-						if (paidStatus === '1' || paidStatus === 'כן' || paidStatus === 'שולם') {
-							const payment = {
-								ID: generateID(),
-								date: visitData.date, // אותו תאריך כמו הביקור
-								time: '12:00', // שעה ברירת מחדל
-								amount: visitData.amount,
-								payment_method: 'cash',
-								source_type: 'import_from_helper',
-								client_id: visitData.location_id,
-								notes: `תשלום עבור ייבוא מטבלת עזר - ${visitData.work_done}`,
-								status: 'completed',
-								created_at: new Date().toISOString()
-							};
-							
-							payments.push(payment);
-				
-							// יצירת קישור בין התשלום לביקור
-							const link = {
-								ID: generateID(),
-								payment_id: payment.ID,
-								visit_id: visitData.ID,
-								amount_allocated: visitData.amount,
-								link_type: 'full_payment',
-								created_at: new Date().toISOString()
-							};
-							
-							paymentVisitLinks.push(link);
-							createdPayments++;
-						}
-						
-					}
-				}
-				
-				// שמור הכל כולל תשלומים
-				saveToLocalStorage();
-				loadReceiptsTable();
-				loadFilterOptions();
-				await saveAllToSheetsOptimized();
-
-				// שמירת תשלומים לענן
-				if (payments.length > 0) {
-					for (const payment of payments) {
-						await saveAllToSheetsOptimized();
-					}
-					for (const link of paymentVisitLinks) {
-						await saveAllToSheetsOptimized();
-					}
-				}
-
-				showToast(`יובאו בהצלחה ${importedCount} ביקורים מטבלת עזר טלגרם!
-				💰 נוצרו ${createdPayments} תשלומים`, 'success');
-				
-			} catch (error) {
-				console.error('Error importing from telegram helper:', error);
-				showToast('שגיאה ביבוא מטבלת עזר טלגרם', 'error');
-			} finally {
-				hideLoading();
-			}
-		}
 
 		// פונקציה עזר למציאת לקוח לפי שם
 		function findLocationByName(customerName) {
@@ -7292,66 +7190,7 @@
 			
 			return 0;
 		}
-
-
-		// פונקציה משופרת לזיהוי סוגי עבודה - תחליף את getWorkType הקיימת
-		function identifyWorkType(text) {
-			if (!text) return 'כללי';
-			
-			const textLower = text.toLowerCase().trim();
-			
-			// סוגי עבודה ספציפיים
-			if (textLower.includes('חרמש')) return 'חרמש';
-			if (textLower.includes('גיזום')) return 'גיזום';
-			if (textLower.includes('כיסוח') || textLower.includes('מכסחת')) return 'כיסוח';
-			if (textLower.includes('מפוח')) return 'מפוח';
-			if (textLower.includes('שתילה') || textLower.includes('שתלתי')) return 'שתילה';
-			if (textLower.includes('ריסוס') || textLower.includes('ריססתי')) return 'ריסוס';
-			
-			// השקיה ותיקונים
-			if (textLower.includes('השקיה') || textLower.includes('השקייה')) return 'השקיה';
-			if (textLower.includes('תיקוני השקיה') || textLower.includes('בדיקת השקיה')) return 'השקיה';
-			if (textLower.includes('החלפת סוללות') || textLower.includes('החלפת מחשב')) return 'השקיה';
-			if (textLower.includes('מחשב השקיה') || textLower.includes('ברז חשמלי')) return 'השקיה';
-			if (textLower.includes('צנרת') || textLower.includes('טפטוף')) return 'השקיה';
-			if (textLower.includes('ממטירים') || textLower.includes('מתזים')) return 'השקיה';
-			
-			// עבודות פינוי וניקיון
-			if (textLower.includes('הוצאת גזם') || textLower.includes('פינוי גזם')) return 'הוצאת גזם';
-			if (textLower.includes('פינוי') && textLower.includes('גזם')) return 'הוצאת גזם';
-			if (textLower.includes('איסוף') || textLower.includes('גירוף')) return 'ניקיון';
-			if (textLower.includes('ניקיון') || textLower.includes('לנקות')) return 'ניקיון';
-			
-			// עבודות מסור
-			if (textLower.includes('מסור') || textLower.includes('חיתוך')) return 'גיזום';
-			if (textLower.includes('כריתת ענפים') || textLower.includes('הורדת ענפים')) return 'גיזום';
-			
-			// עבודות תחזוקה מיוחדות
-			if (textLower.includes('תיקון') || textLower.includes('החלפה')) return 'תחזוקה';
-			if (textLower.includes('התקנה') || textLower.includes('התקנת')) return 'תחזוקה';
-			
-			// זיהוי לפי כלים שמוזכרים
-			if (textLower.includes('מגזמת')) return 'גיזום';
-			if (textLower.includes('מרסס')) return 'ריסוס';
-			
-			// אם מוזכרים מספר סוגי עבודה - החזר את הראשי
-			const workTypes = [];
-			if (textLower.includes('חרמש')) workTypes.push('חרמש');
-			if (textLower.includes('גיזום')) workTypes.push('גיזום');
-			if (textLower.includes('מפוח')) workTypes.push('מפוח');
-			if (textLower.includes('איסוף')) workTypes.push('ניקיון');
-			
-			if (workTypes.length > 0) {
-				return workTypes[0]; // החזר את הראשון שנמצא
-			}
-			
-			// בדיקות מיוחדות לפי הקשר
-			if (textLower.includes('בדיקה') || textLower.includes('סיור')) return 'בדיקה';
-			if (textLower.includes('טיפול ראשוני') || textLower.includes('הערכה')) return 'הערכה';
-			
-			return 'כללי';
-		}
-		
+	
 		
 		// פונקציה לזיהוי האם שורה מציינת תחילת ביקור חדש
 		function isNewVisitStart(text, locations) {
@@ -9303,148 +9142,6 @@
 			
 			return incomes;
 		}
-	   
-	   
-	   // ===== פונקציות העלאה וטיפול בקובץ הכנסות טלגרם =====
-
-		// מערך גלובלי לאחסון הכנסות מטלגרם
-		let telegramIncomes = [];
-
-		// פונקציה לטיפול בהעלאת קובץ הכנסות מטלגרם
-		async function handleTelegramIncomeFileUpload(event) {
-			const file = event.target.files[0];
-			if (!file) {
-				showToast('לא נבחר קובץ', 'warning');
-				return;
-			}
-
-			console.log('✅ מערכת ייבוא הכנסות מטלגרם מופעלת');
-
-			try {
-				showLoading('קורא קובץ הכנסות מטלגרם...');
-				
-				const text = await file.text();
-				console.log('📄 קובץ נקרא:', file.name, 'גודל:', text.length, 'תווים');
-				
-				// פענוח הנתונים
-				const parsedIncomes = parseIncomesFromTelegramText(text);
-				
-				if (parsedIncomes.length === 0) {
-					hideLoading();
-					showToast('לא נמצאו הכנסות בקובץ', 'warning');
-					return;
-				}
-				
-				// שמירה במערך הגלובלי
-				telegramIncomes = parsedIncomes;
-				
-				hideLoading();
-				
-				// הצגת תוצאות
-				const totalAmount = parsedIncomes.reduce((sum, income) => sum + income.amount, 0);
-				showToast(`🎉 נמצאו ${parsedIncomes.length} הכנסות, סך ${totalAmount.toLocaleString()} ש"ח`, 'success', 4000);
-				
-				// הצגת תצוגה מקדימה
-				showTelegramIncomesPreview(parsedIncomes);
-				
-			} catch (error) {
-				console.error('שגיאה בקריאת קובץ הכנסות:', error);
-				hideLoading();
-				showToast('שגיאה בקריאת הקובץ', 'error');
-			}
-		}
-
-		// הצגת תצוגה מקדימה של ההכנסות שנמצאו
-		function showTelegramIncomesPreview(incomes) {
-			const totalAmount = incomes.reduce((sum, income) => sum + income.amount, 0);
-			
-			// התפלגות אמצעי תשלום
-			const paymentMethods = {};
-			incomes.forEach(income => {
-				paymentMethods[income.payment_method] = (paymentMethods[income.payment_method] || 0) + 1;
-			});
-			
-			let previewHTML = `
-				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 900px; max-height: 70vh; overflow-y: auto; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
-					<h3 style="margin-bottom: 20px; color: #2c3e50;">💰 תצוגה מקדימה - הכנסות מטלגרם</h3>
-					
-					<div style="margin-bottom: 25px; padding: 18px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #27ae60;">
-						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; text-align: center;">
-							<div>
-								<strong style="font-size: 20px; color: #27ae60;">${incomes.length}</strong><br>
-								<span style="color: #666;">הכנסות נמצאו</span>
-							</div>
-							<div>
-								<strong style="font-size: 20px; color: #27ae60;">${totalAmount.toLocaleString()}</strong><br>
-								<span style="color: #666;">ש"ח סה"כ</span>
-							</div>
-							<div>
-								<strong style="font-size: 20px; color: #27ae60;">${Object.keys(paymentMethods).length}</strong><br>
-								<span style="color: #666;">אמצעי תשלום</span>
-							</div>
-						</div>
-					</div>
-					
-					<div style="margin-bottom: 20px;">
-						<h4 style="color: #34495e; margin-bottom: 10px;">📊 פילוח אמצעי תשלום:</h4>
-						<div style="display: flex; flex-wrap: wrap; gap: 10px;">
-							${Object.entries(paymentMethods).map(([method, count]) => 
-								`<span style="background: #3498db; color: white; padding: 5px 12px; border-radius: 15px; font-size: 13px;">
-									${method}: ${count}
-								</span>`
-							).join('')}
-						</div>
-					</div>
-					
-					<div style="margin-bottom: 20px;">
-						<h4 style="color: #34495e; margin-bottom: 15px;">📋 דוגמאות (10 ראשונות):</h4>
-						<div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px;">
-							<table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-								<thead style="background: #f8f9fa; position: sticky; top: 0;">
-									<tr>
-										<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">תאריך</th>
-										<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">לקוח</th>
-										<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">סכום</th>
-										<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">תשלום</th>
-										<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">הערות</th>
-									</tr>
-								</thead>
-								<tbody>
-									${incomes.slice(0, 10).map((income, index) => `
-										<tr style="background: ${index % 2 === 0 ? '#f8f9fa' : 'white'};">
-											<td style="padding: 8px; border: 1px solid #ddd;">${income.date}</td>
-											<td style="padding: 8px; border: 1px solid #ddd; max-width: 150px; word-wrap: break-word;">${income.client_address}</td>
-											<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #27ae60;">${income.amount}</td>
-											<td style="padding: 8px; border: 1px solid #ddd;">${income.payment_method}</td>
-											<td style="padding: 8px; border: 1px solid #ddd; font-size: 11px; color: #666;">${income.notes || '-'}</td>
-										</tr>
-									`).join('')}
-								</tbody>
-							</table>
-						</div>
-						${incomes.length > 10 ? `<p style="text-align: center; color: #666; margin-top: 10px;">ועוד ${incomes.length - 10} הכנסות...</p>` : ''}
-					</div>
-					
-					<div style="text-align: center; gap: 15px; display: flex; justify-content: center;">
-						<button class="btn btn-success" onclick="confirmTelegramIncomesImport()" style="padding: 12px 25px; font-size: 16px;">
-							✅ ייבא ${incomes.length} הכנסות למערכת
-						</button>
-						<button class="btn btn-secondary" onclick="cancelTelegramIncomesImport()" style="padding: 12px 25px; font-size: 16px;">
-							❌ ביטול
-						</button>
-					</div>
-				</div>
-			`;
-			
-			showModal(previewHTML);
-		}
-
-		// ביטול ייבוא הכנסות
-		function cancelTelegramIncomesImport() {
-			telegramIncomes = [];
-			closeModal();
-			showToast('ייבוא הכנסות בוטל', 'info');
-		}
 
 
 		// ===== פונקציות אישור ייבוא הכנסות =====
@@ -9618,83 +9315,7 @@
 
 		// ===== פונקציות שמירה לטבלאות החדשות =====
 
-		// שמירת ביקורים מטלגרם לטבלת TelegramVisits
-		async function saveTelegramVisitsToCloud(telegramVisits) {
-			if (!access_token || !SPREADSHEET_ID || !telegramVisits || telegramVisits.length === 0) {
-				return false;
-			}
-			
-			try {
-				console.log('💾 שומר ביקורי טלגרם...');
-				
-				// ודא שהטבלה קיימת
-				await checkAndFixTableStructure();
-				
-				// הכן נתונים לשמירה
-				const rows = telegramVisits.map(visit => [
-					visit.ID || generateID(),
-					visit.date,
-					visit.time || '',
-					visit.client_name,
-					visit.visit_type || 'general',
-					visit.work_done,
-					visit.duration_minutes || 60,
-					visit.raw_text || '',
-					false, // processed
-					new Date().toISOString()
-				]);
-				
-				// שמור לטבלה
-				await gapi.client.sheets.spreadsheets.values.append({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'TelegramVisits!A:J',
-					valueInputOption: 'USER_ENTERED',
-					resource: { values: rows }
-				});
-				
-				console.log(`✅ נשמרו ${telegramVisits.length} ביקורי טלגרם`);
-				return true;
-				
-			} catch (error) {
-				console.error('שגיאה בשמירת ביקורי טלגרם:', error);
-				return false;
-			}
-		}
 
-		// טעינת ביקורים מטלגרם מהעלנן
-		async function loadTelegramVisitsFromCloud() {
-			if (!access_token || !SPREADSHEET_ID) {
-				return [];
-			}
-			
-			try {
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'TelegramVisits!A2:J1000'
-				});
-				
-				if (!response.result.values) {
-					return [];
-				}
-				
-				return response.result.values.map(row => ({
-					ID: row[0] || '',
-					date: row[1] || '',
-					time: row[2] || '',
-					client_name: row[3] || '',
-					visit_type: row[4] || '',
-					work_done: row[5] || '',
-					duration_minutes: parseInt(row[6]) || 60,
-					raw_text: row[7] || '',
-					processed: row[8] === 'true' || row[8] === true,
-					created_at: row[9] || ''
-				}));
-				
-			} catch (error) {
-				console.error('שגיאה בטעינת ביקורי טלגרם:', error);
-				return [];
-			}
-		}
 
 		// טעינת הכנסות מטלגרם מהעלנן
 		async function loadTelegramIncomesFromCloud() {
@@ -9779,6 +9400,9 @@
 			// Default fallback
 			return { status: 'unpaid', date: null, amount: 0 };
 		}
+
+		
+
 
 		// טקסט סטטוס תשלום מעודכן
 		function getPaymentStatusText(status) {
@@ -10841,55 +10465,85 @@
 		// הפונקציה filterClientOptions כבר קיימת ותעבוד עם ה-IDs החדשים
 
 		// טיפול בשליחת הטופס מהמודל
-		// Replace handleModalVisitSubmit with this final clean version
 		async function handleModalVisitSubmit(event) {
 			event.preventDefault();
 			
-			const clientId = document.getElementById('selectedClientId')?.value;
-			const clientName = document.getElementById('clientSearchInput')?.value;
+			// איסוף נתונים מהטופס
+			const visitDate = document.getElementById('modalVisitDate').value;
+			const selectedClientId = document.getElementById('modalSelectedClientId').value;
+			const visitType = document.getElementById('modalVisitType').value;
+			const workDone = document.getElementById('modalWorkDone').value;
+			const startTime = document.getElementById('modalStartTime').value;
+			const endTime = document.getElementById('modalEndTime').value;
+			const durationMinutes = parseInt(document.getElementById('modalManualDurationMinutes').value) || 0;
+			const numWorkers = parseInt(document.getElementById('modalNumWorkers').value) || 1;
+			const amount = parseFloat(document.getElementById('modalAmount').value) || 0;
+			const expense = parseFloat(document.getElementById('modalExpense').value) || 0;
+			const notes = document.getElementById('modalNotes').value;
 			
-			if (!clientId) {
-				showToast('נא לבחור לקוח', 'error');
+			// בדיקות בסיסיות
+			if (!selectedClientId) {
+				showToast('❌ אנא בחר לקוח', 'error');
 				return;
 			}
 			
+			if (!visitDate) {
+				showToast('❌ נדרש תאריך טיפול', 'error');
+				return;
+			}
+			
+			if (!visitType) {
+				showToast('❌ נדרש סוג טיפול', 'error');
+				return;
+			}
+			
+			// Get client info
+			const client = locations.find(loc => loc.ID === selectedClientId);
+			const clientName = client ? client.name : 'לקוח לא ידוע';
+			
+			// Create new visit
 			const newVisit = {
 				ID: generateID(),
-				date: document.getElementById('modalVisitDate').value,
-				location_id: clientId,
+				date: visitDate,
+				location_id: selectedClientId,
 				location_name: clientName,
-				visit_type: document.getElementById('modalVisitType').value,
-				work_done: document.getElementById('modalWorkDone').value,
-				duration_minutes: parseInt(document.getElementById('modalManualDurationMinutes').value) || 0,
-				num_workers: parseInt(document.getElementById('modalNumWorkers').value) || 1,
-				start_time: document.getElementById('modalStartTime').value || '',
-				end_time: document.getElementById('modalEndTime').value || '',
-				amount: parseFloat(document.getElementById('modalAmount').value) || 0,
-				paid: 'no',  // ✅ ADDED: default to 'no' for new visits
-				expense: parseFloat(document.getElementById('modalExpense').value) || 0,
-				notes: document.getElementById('modalNotes').value || ''
+				visit_type: visitType,
+				work_done: workDone,
+				duration_minutes: durationMinutes,
+				num_workers: numWorkers,
+				start_time: startTime || '',
+				end_time: endTime || '',
+				amount: amount,
+				paid: 'unpaid',  // ✅ NEW: Default to unpaid
+				expense: expense,
+				notes: notes
 			};
 			
-			// Add to array and save
+			// Add to visits array
 			visits.push(newVisit);
+			
+			// Save locally
 			saveToLocalStorage();
 			
 			// Save to cloud if connected
 			let cloudSaved = false;
 			if (access_token && SPREADSHEET_ID) {
-				cloudSaved = await saveVisitsBatch([newVisit]);
+				try {
+					cloudSaved = await saveVisitsBatch([newVisit]);
+				} catch (error) {
+					console.error('Cloud save failed:', error);
+				}
 			}
 			
 			// Update treatment dates
 			await updateSingleLocationTreatmentDates(newVisit.location_id);
 			
+			// Close modal
+			closeEditModal();
+			
 			// Refresh displays
-			document.getElementById('modalVisitForm')?.reset();
 			loadPlanningData();
 			filterVisits();
-			
-			// Close modal
-			closeModal();
 			
 			// Success message
 			if (access_token && SPREADSHEET_ID) {
@@ -11277,170 +10931,8 @@
 				console.error('שגיאה בשמירת הכנסות בקבוצה:', error);
 				return false;
 			}
-		}
+		}		
 
-
-		// ייבוא הכנסות מטבלת העזר והמרתן לתשלומים
-		async function importTelegramIncomesFromHelper(importTableId) {
-			try {
-				console.log('📥 מייבא הכנסות מטבלת עזר...');
-				
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: importTableId,
-					range: 'TelegramIncomes!A2:L1000'
-				});
-				
-				if (!response.result.values || response.result.values.length === 0) {
-					console.log('לא נמצאו הכנסות בטבלת העזר');
-					return;
-				}
-				
-				let importedCount = 0;
-				let convertedPayments = 0;
-				
-				for (const row of response.result.values) {
-					if (row[0] && row[3] && row[5]) { // ID, כתובת לקוח, וסכום
-						// יצירת רשומת הכנסה
-						const income = {
-							ID: row[0] || generateID(),
-							date: row[1] || '',
-							time: row[2] || '',
-							client_address: row[3] || '',
-							client_id: row[4] || null,
-							amount: parseFloat(row[5]) || 0,
-							payment_method: row[6] || 'cash',
-							notes: row[7] || '',
-							raw_text: row[8] || '',
-							imported_from: 'telegram_helper',
-							import_date: row[10] || new Date().toISOString().split('T')[0],
-							matched_to_visit: row[11] === 'true' || false
-						};
-						
-						// הוספה למערך הכנסות
-						incomes.push(income);
-						importedCount++;
-						
-						// המרה לתשלום אם אפשר
-						const convertedPayment = await convertIncomeToPayment(income);
-						if (convertedPayment) {
-							convertedPayments++;
-						}
-					}
-				}
-				
-				if (importedCount > 0) {
-					console.log(`✅ יובאו ${importedCount} הכנסות, ${convertedPayments} הומרו לתשלומים`);
-					showToast(`📥 יובאו ${importedCount} הכנסות מטלגרם`, 'success');
-				}
-				
-			} catch (error) {
-				console.error('שגיאה בייבוא הכנסות:', error);
-				showToast('שגיאה בייבוא הכנסות מטלגרם', 'error');
-			}
-		}
-
-
-		// המרת הכנסה לתשלום מקושר
-		async function convertIncomeToPayment(income) {
-			try {
-				// חיפוש לקוח לפי כתובת
-				const client = findClientByAddress(income.client_address);
-				if (!client) {
-					console.log(`⚠️ לא נמצא לקוח עבור כתובת: ${income.client_address}`);
-					return null;
-				}
-				
-				// חיפוש ביקור תואם (באותו תאריך ולאותו לקוח)
-				const matchingVisit = visits.find(visit => 
-					visit.location_id === client.ID && 
-					visit.date === income.date &&
-					visit.amount === income.amount
-				);
-				
-				// יצירת תשלום
-				const payment = {
-					ID: generateID(),
-					date: income.date,
-					time: income.time || '12:00',
-					amount: income.amount,
-					payment_method: income.payment_method,
-					source_type: 'telegram_import',
-					client_id: client.ID,
-					client_name: client.name,
-					notes: `תשלום מטלגרם - ${income.client_address}${income.notes ? ' | ' + income.notes : ''}`,
-					status: 'completed',
-					created_at: new Date().toISOString()
-				};
-				
-				payments.push(payment);
-				
-				// יצירת קישור אם נמצא ביקור תואם
-				if (matchingVisit) {
-					const link = {
-						ID: generateID(),
-						payment_id: payment.ID,
-						visit_id: matchingVisit.ID,
-						amount_allocated: income.amount,
-						link_type: 'full_payment',
-						created_at: new Date().toISOString()
-					};
-					
-					paymentVisitLinks.push(link);
-					console.log(`🔗 קישור תשלום לביקור: ${client.name}`);
-				} else {
-					console.log(`💰 תשלום ללא קישור לביקור: ${client.name}`);
-				}
-				
-				return payment;
-				
-			} catch (error) {
-				console.error('שגיאה בהמרת הכנסה לתשלום:', error);
-				return null;
-			}
-		}
-
-		// חיפוש לקוח לפי כתובת (גמיש)
-		function findClientByAddress(address) {
-			if (!address || address.trim() === '') return null;
-			
-			const searchAddress = address.toLowerCase().trim();
-			
-			// חיפוש מדויק
-			let client = locations.find(loc => 
-				loc.full_address && loc.full_address.toLowerCase() === searchAddress
-			);
-			
-			if (client) return client;
-			
-			// חיפוש חלקי - כתובת מכילה חלק מהכתובת של הלקוח
-			client = locations.find(loc => {
-				if (!loc.full_address) return false;
-				const clientAddress = loc.full_address.toLowerCase();
-				return clientAddress.includes(searchAddress) || searchAddress.includes(clientAddress);
-			});
-			
-			if (client) return client;
-			
-			// חיפוש לפי שם הלקוח (אם הכתובת מכילה את השם)
-			client = locations.find(loc => {
-				if (!loc.name) return false;
-				const clientName = loc.name.toLowerCase();
-				return searchAddress.includes(clientName) || clientName.includes(searchAddress);
-			});
-			
-			if (client) return client;
-			
-			// חיפוש לפי עיר או שכונה
-			client = locations.find(loc => {
-				const city = (loc.city || '').toLowerCase();
-				const neighborhood = (loc.neighborhood || '').toLowerCase();
-				
-				return (city && searchAddress.includes(city)) || 
-					   (neighborhood && searchAddress.includes(neighborhood));
-			});
-			
-			return client || null;
-		}
 
 		// חיפוש חכם לקוחות - החלפת הפונקציה הקיימת
 		function searchClientsAdvanced(searchTerm) {
@@ -12225,20 +11717,14 @@
 			console.log('🧪 Test complete - check console output above');
 		}
 
-		// Call this function in browser console to test: testTreatmentDatesUpdate()
-
-
-		// Add these functions after the existing planning functions
 
 		// Load and display today's treatments in the work day section
-		
 		function loadTodayTreatments() {
 			const today = new Date().toISOString().split('T')[0];
 			const todayVisits = visits.filter(visit => visit.date === today)
 				.sort((a, b) => {
-					// Fix: use 'a' and 'b' instead of 'visit'
-					const timeA = a.start_time || '00:00';
-					const timeB = b.start_time || '00:00';
+					const timeA = a.start_time || '23:59';
+					const timeB = b.start_time || '23:59';
 					return timeA.localeCompare(timeB);
 				});
 			
@@ -12255,77 +11741,107 @@
 				return;
 			}
 			
+			// ✅ NEW: Separate in-progress from completed
+			const inProgressVisits = todayVisits.filter(v => v.start_time && !v.end_time);
+			const completedVisits = todayVisits.filter(v => v.end_time);
+			const notStartedVisits = todayVisits.filter(v => !v.start_time);
+			
 			// Update status summary
-			const completedCount = todayVisits.filter(v => v.end_time).length;
 			const totalIncome = todayVisits.reduce((sum, v) => sum + parseFloat(v.amount || 0), 0);
-			statusElement.textContent = `(${completedCount}/${todayVisits.length} הסתיימו • ₪${totalIncome} סה"כ)`;
+			statusElement.textContent = `(${completedVisits.length}/${todayVisits.length} הסתיימו • ₪${totalIncome} סה"כ)`;
 			
 			// Generate treatments HTML
-			const treatmentsHtml = todayVisits.map(visit => {
-				const client = locations.find(loc => loc.ID === visit.location_id);
-				const clientName = visit.location_name || client?.name || 'לקוח לא מזוהה';
+			let html = '';
+			
+			// ✅ Show in-progress treatments first
+			if (inProgressVisits.length > 0) {
+				html += `<div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+					<h4 style="margin: 0 0 10px 0; color: #856404;">🔄 בתהליך עכשיו</h4>`;
 				
-				const startTime = visit.start_time || '--:--';
-				const endTime = visit.end_time || '';
-				const amount = visit.amount || 0;
-				const workDone = visit.work_done || 'ללא תיאור';
-				
-				// Determine status and icon
-				let statusIcon, statusText, statusColor;
-				if (visit.end_time) {
-					statusIcon = '✅';
-					statusText = 'הסתיים';
-					statusColor = '#28a745';
-				} else if (visit.start_time) {
-					statusIcon = '🟡';
-					statusText = 'בטיפול';
-					statusColor = '#ffc107';
-				} else {
-					statusIcon = '🟢';
-					statusText = 'רק התחלתי';
-					statusColor = '#17a2b8';
-				}
-				
-				return `
-					<div class="today-treatment-item" style="
-						display: flex; 
-						align-items: center; 
-						justify-content: space-between; 
-						padding: 10px 15px; 
-						margin-bottom: 8px; 
-						background: white; 
-						border-radius: 8px; 
-						border-left: 4px solid ${statusColor};
-						box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-					">
-						<div style="flex: 1;">
-							<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-								<span style="font-size: 16px;">${statusIcon}</span>
-								<strong style="color: #2c3e50;">${startTime}</strong>
-								<span style="color: #666;">-</span>
-								<strong style="color: #2c3e50;">${clientName}</strong>
-							</div>
-							<div style="font-size: 12px; color: #666; margin-left: 24px;">
-								${workDone}
+				html += inProgressVisits.map(visit => {
+					const client = locations.find(loc => loc.ID === visit.location_id);
+					const clientName = visit.location_name || client?.name || 'לקוח לא מזוהה';
+					const startTime = visit.start_time || '--:--';
+					const workDone = visit.work_done || 'ללא תיאור';
+					
+					return `
+						<div style="background: white; padding: 10px; border-radius: 5px; margin-bottom: 8px; border-left: 4px solid #ffc107;">
+							<div style="display: flex; justify-content: space-between; align-items: center;">
+								<div style="flex: 1;">
+									<div style="font-weight: bold; color: #2c3e50;">${clientName}</div>
+									<div style="font-size: 12px; color: #666;">${workDone}</div>
+									<div style="font-size: 11px; color: #856404; margin-top: 3px;">⏱️ התחלה: ${startTime}</div>
+								</div>
+								<button onclick="editVisit('${visit.ID}')" 
+										style="padding: 8px 16px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px;">
+									✅ סיים טיפול
+								</button>
 							</div>
 						</div>
-						
-						<div style="display: flex; align-items: center; gap: 10px;">
-							<div style="text-align: right;">
-								<div style="font-weight: bold; color: ${statusColor};">₪${amount}</div>
-								<div style="font-size: 11px; color: #666;">${statusText}</div>
+					`;
+				}).join('');
+				
+				html += `</div>`;
+			}
+			
+			// Show completed treatments
+			if (completedVisits.length > 0) {
+				html += `<div style="margin-bottom: 10px;">
+					<h4 style="margin: 0 0 10px 0; color: #27ae60;">✅ הושלמו היום</h4>`;
+				
+				html += completedVisits.map(visit => {
+					const client = locations.find(loc => loc.ID === visit.location_id);
+					const clientName = visit.location_name || client?.name || 'לקוח לא מזוהה';
+					const startTime = visit.start_time || '--:--';
+					const endTime = visit.end_time || '--:--';
+					const amount = visit.amount || 0;
+					const workDone = visit.work_done || 'ללא תיאור';
+					
+					return `
+						<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 8px; opacity: 0.8;">
+							<div style="display: flex; justify-content: space-between;">
+								<div style="flex: 1;">
+									<div style="font-weight: bold; color: #2c3e50;">${clientName}</div>
+									<div style="font-size: 12px; color: #666;">${workDone}</div>
+									<div style="font-size: 11px; color: #666; margin-top: 3px;">
+										${startTime} → ${endTime}
+									</div>
+								</div>
+								<div style="text-align: left; color: #27ae60; font-weight: bold;">
+									${amount}₪
+								</div>
 							</div>
+						</div>
+					`;
+				}).join('');
+				
+				html += `</div>`;
+			}
+			
+			// Show not started treatments
+			if (notStartedVisits.length > 0) {
+				html += `<div>
+					<h4 style="margin: 0 0 10px 0; color: #666;">📋 מתוכננים</h4>`;
+				
+				html += notStartedVisits.map(visit => {
+					const client = locations.find(loc => loc.ID === visit.location_id);
+					const clientName = visit.location_name || client?.name || 'לקוח לא מזוהה';
+					
+					return `
+						<div style="background: #e9ecef; padding: 10px; border-radius: 5px; margin-bottom: 8px;">
+							<div style="font-weight: bold; color: #495057;">${clientName}</div>
 							<button onclick="editVisit('${visit.ID}')" 
-									style="background: #007bff; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;"
-									title="ערוך טיפול">
-								✏️
+									style="margin-top: 5px; padding: 6px 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+								▶️ התחל טיפול
 							</button>
 						</div>
-					</div>
-				`;
-			}).join('');
+					`;
+				}).join('');
+				
+				html += `</div>`;
+			}
 			
-			container.innerHTML = treatmentsHtml;
+			container.innerHTML = html;
 		}
 
 		// Refresh today's treatments - called by refresh button
@@ -12516,6 +12032,12 @@
 					filterLocationsTable();
 				}
 			}
+		}
+
+		// ✅ TEMPORARY: Placeholder for future CSV import feature
+		function handleImportFile(event) {
+			showToast('⚠️ תכונה זו בפיתוח - בינתיים השתמש בייבוא דרך טבלת העזר', 'info', 3000);
+			event.target.value = ''; // Reset file input
 		}
 
    </script>
