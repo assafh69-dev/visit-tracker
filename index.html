@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -5458,27 +5458,28 @@
 	   
 	   
 		// יצירת טבלת עזר לייבוא
-		async function clearAllDataBeforeImport() {
-			if (confirm('האם אתה בטוח שברצונך למחוק את כל הנתונים הקיימים לפני הייבוא החדש?\n\nפעולה זו תמחק:\n- את כל המיקומים\n- את כל הביקורים\n- את כל הקבלות\n- את כל התשלומים\n- את כל הקישורים בין תשלומים לביקורים\n\nהנתונים בגוגל שיטס לא יימחקו.')) {
-				locations = [];
-				visits = [];
-				receipts = [];
-				payments = [];  // ✅ Clear payments array if exists
-				paymentVisitLinks = [];  // ✅ Clear payment links if exists
-				
-				saveToLocalStorage();
-				
-				// Update displays
-				if (typeof loadLocationsTable === 'function') loadLocationsTable();
-				if (typeof filterVisits === 'function') filterVisits();
-				if (typeof loadReceiptsTable === 'function') loadReceiptsTable();
-				if (typeof displayDebts === 'function') displayDebts();
-				if (typeof displayPayments === 'function') displayPayments();
-				
-				showToast('✅ כל הנתונים נוקו בהצלחה', 'success');
-				return true;
+		function clearAllDataBeforeImport() {
+			if (!confirm('האם אתה בטוח שברצונך למחוק את כל הנתונים המקומיים?\n\nפעולה זו לא תשפיע על הנתונים בענן.')) {
+				return;
 			}
-			return false;
+			
+			// ניקוי כל המערכים
+			locations = [];
+			visits = [];
+			receipts = [];
+			if (typeof payments !== 'undefined') payments = [];
+			if (typeof paymentVisitLinks !== 'undefined') paymentVisitLinks = [];
+			
+			// שמירה מקומית
+			saveToLocalStorage();
+			
+			// ✅ עדכון רק הטאבים הרלוונטיים - ללא קריאה ל-filterVisits
+			loadLocationsTable();
+			loadLocationsForSelect();
+			
+			// הודעה למשתמש
+			showToast('כל הנתונים המקומיים נוקו בהצלחה', 'success');
+			console.log('✅ All local data cleared');
 		}
 		
 		
