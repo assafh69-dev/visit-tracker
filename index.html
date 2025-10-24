@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -8335,10 +8335,14 @@
 			}
 			
 			const importTableId = localStorage.getItem('importTableId');
+			console.log('🔍 Import Table ID:', importTableId);  // ✅ הוסף את זה
+
 			if (!importTableId) {
 				showToast('לא נמצא ID של טבלת העזר', 'warning');
 				return;
 			}
+
+console.log('✅ Import table ID exists, proceeding with import...');  // ✅ הוסף את זה
 			
 			try {
 				showLoading('מייבא נתונים מהר מטבלת העזר...');
@@ -8356,6 +8360,8 @@
 				const newReceipts = [];
 				const payments = [];
 				const paymentVisitLinks = [];
+				
+				console.log('📊 About to load data from helper table:', importTableId);  // ✅ הוסף את זה
 				
 				// ======== STEP 1: Import Locations ========
 				try {
