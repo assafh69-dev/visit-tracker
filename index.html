@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -5458,28 +5458,56 @@
 	   
 	   
 		// יצירת טבלת עזר לייבוא
-		function clearAllDataBeforeImport() {
-			if (!confirm('האם אתה בטוח שברצונך למחוק את כל הנתונים המקומיים?\n\nפעולה זו לא תשפיע על הנתונים בענן.')) {
-				return;
+		async function clearAllDataBeforeImport() {
+			if (!confirm('האם אתה בטוח שברצונך למחוק את כל הנתונים הקיימים לפני הייבוא החדש?\n\nפעולה זו תמחק:\n- את כל המיקומים\n- את כל הביקורים\n- את כל הקבלות\n- את כל התשלומים\n- את כל הקישורים בין תשלומים לביקורים\n- את כל ההכנסות\n\nהנתונים בגוגל שיטס לא יימחקו.')) {
+				return false;
 			}
 			
-			// ניקוי כל המערכים
-			locations = [];
-			visits = [];
-			receipts = [];
-			if (typeof payments !== 'undefined') payments = [];
-			if (typeof paymentVisitLinks !== 'undefined') paymentVisitLinks = [];
-			
-			// שמירה מקומית
-			saveToLocalStorage();
-			
-			// ✅ עדכון רק הטאבים הרלוונטיים - ללא קריאה ל-filterVisits
-			loadLocationsTable();
-			loadLocationsForSelect();
-			
-			// הודעה למשתמש
-			showToast('כל הנתונים המקומיים נוקו בהצלחה', 'success');
-			console.log('✅ All local data cleared');
+			try {
+				console.log('🗑️ Starting complete data cleanup...');
+				
+				// Clear all arrays
+				locations = [];
+				visits = [];
+				receipts = [];
+				payments = [];
+				paymentVisitLinks = [];
+				incomes = [];  // ✅ ADDED: Clear incomes too
+				
+				console.log('✅ All arrays cleared');
+				
+				// Save empty arrays to localStorage
+				saveToLocalStorage();
+				console.log('✅ Empty data saved to localStorage');
+				
+				// Clear localStorage keys explicitly (belt and suspenders approach)
+				localStorage.removeItem('locations_data');
+				localStorage.removeItem('visits_data');
+				localStorage.removeItem('receipts_data');
+				localStorage.removeItem('payments_data');
+				localStorage.removeItem('payment_links_data');
+				localStorage.removeItem('incomes_data');
+				console.log('✅ localStorage keys removed');
+				
+				// Update UI displays
+				if (typeof loadLocationsTable === 'function') {
+					loadLocationsTable();
+					console.log('✅ Locations table refreshed');
+				}
+				if (typeof loadLocationsForSelect === 'function') {
+					loadLocationsForSelect();
+					console.log('✅ Location selectors refreshed');
+				}
+				
+				showToast('✅ כל הנתונים המקומיים נוקו בהצלחה', 'success');
+				console.log('✅ Complete cleanup finished successfully');
+				return true;
+				
+			} catch (error) {
+				console.error('❌ Error during cleanup:', error);
+				showToast('❌ שגיאה בניקוי נתונים', 'error');
+				return false;
+			}
 		}
 		
 		
@@ -6258,20 +6286,21 @@
 				if (rowToUpdate > 0) {
 					// עדכון השורה
 					const updatedRow = [
-						updatedVisit.ID,
-						updatedVisit.date,
-						updatedVisit.location_id,
-						updatedVisit.location_name || '',
-						updatedVisit.visit_type,
-						updatedVisit.work_done,
-						updatedVisit.duration_minutes,
-						updatedVisit.num_workers || 1,
-						updatedVisit.start_time,
-						updatedVisit.end_time || '',
-						updatedVisit.amount,
-						updatedVisit.expense,
-						updatedVisit.notes
-					];
+					updatedVisit.ID,
+					updatedVisit.date,
+					updatedVisit.location_id,
+					updatedVisit.location_name || '',
+					updatedVisit.visit_type,
+					updatedVisit.work_done,
+					updatedVisit.duration_minutes,
+					updatedVisit.num_workers || 1,
+					updatedVisit.start_time || '',
+					updatedVisit.end_time || '',
+					updatedVisit.amount,
+					updatedVisit.paid || '0',  
+					updatedVisit.expense,
+					updatedVisit.notes
+				];
 					
 					await gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: SPREADSHEET_ID,
@@ -8638,6 +8667,11 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 					savePromises.push(saveVisitsBatch(newVisits));
 				}
 				
+				if (newReceipts.length > 0) {
+					console.log('🔵 saveReceiptsBatch called with', newReceipts.length, 'receipts');
+					savePromises.push(saveReceiptsBatch(newReceipts));
+				}
+				
 				const saveResults = await Promise.all(savePromises);
 				const allSaved = saveResults.every(result => result === true);
 				
@@ -10406,7 +10440,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 							
 							<div class="form-group">
 								<label for="modalExpense">הוצאה:</label>
-								<input type="number" id="modalExpense" step="0.01" min="0" value="0" placeholder="0">
+								<input type="number" id="modalExpense" step="0.01" min="0" value="0" placeholder="0" onchange="calculateModalTreatmentCost()">
 							</div>
 							
 							<div class="form-group">
