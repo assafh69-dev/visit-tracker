@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4129,7 +4129,7 @@
 				const row = document.createElement('tr');
 				
 				// Find last treatment date for this client
-				const clientVisits = visits.filter(visit => visit.location_id === location.ID);
+				const clientVisits = visits.filter(visit => String(visit.location_id) === String(location.ID));
 				const lastTreatmentDate = clientVisits.length > 0 
 					? clientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
 					: '';
