@@ -5932,7 +5932,7 @@
 					<td>${formatDate(visit.date)}</td>
 					<td><strong>${locationName}</strong></td>
 					<td><span class="visit-type-badge visit-type-${visit.visit_type || 'other'}">${visit.visit_type || '-'}</span></td>
-					<td style="color: #666;">-</td>
+					<td>${visit.work_done}</td>
 					<td><span class="duration-badge">${hours}ש</span></td>
 					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${visit.amount || 0} ₪</td>
 					<td>
