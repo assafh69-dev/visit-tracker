@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2027,7 +2027,10 @@
 			<!-- History Section -->
 			<section id="history" class="section">
 				<h2>📋 טיפולים</h2>
-				<button onclick="showAddTreatmentForm()" class="add-btn">הוסף טיפול חדש</button>
+					<div style="display: flex; gap: 10px; margin-bottom: 20px;">
+						<button onclick="showAddTreatmentForm()" class="add-btn">➕ הוסף טיפול חדש</button>
+						<button onclick="showAddPaymentModal()" class="add-btn" style="background: linear-gradient(45deg, #f39c12, #e67e22);">💰 תשלום חדש</button>
+					</div>
 				<!-- Filter Panel -->
 				<div class="filter-panel-unified">
 					<div class="filter-panel-header">
@@ -2405,12 +2408,15 @@
 			<section id="payments" class="section">
 				<h2>💳 ניהול תשלומים</h2>
 				
-				<div class="section-actions" style="margin-bottom: 20px;">
-					<button onclick="showSection('history')" class="btn-primary">
-						📋 עבור לטיפולים
+				<div class="section-actions" style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+					<button onclick="showAddPaymentModal()" class="btn" style="background: #27ae60; color: white; padding: 12px 25px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);">
+						➕ הוסף תשלום חדש
 					</button>
-					<p style="color: #666; font-size: 14px; margin-top: 10px;">
-						💡 לעדכן תשלום: עבור לטאב טיפולים ושנה את סטטוס התשלום
+					<button onclick="showSection('debts')" class="btn" style="background: #e74c3c; color: white; padding: 12px 25px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer;">
+						💰 עבור לחובות
+					</button>
+					<p style="color: #666; font-size: 13px; margin: 0; flex: 1; min-width: 200px;">
+						💡 הוסף תשלום חדש או עבור לחובות לניהול
 					</p>
 				</div>
 				
@@ -2896,33 +2902,27 @@
 				// טען תשלומים
 				const paymentsResponse = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Payments!A2:J1000'
+					range: 'Payments!A2:I1000'
 				});
 				
 				if (paymentsResponse.result.values) {
 					payments = paymentsResponse.result.values.map(row => ({
 						ID: row[0] || '',
 						date: row[1] || '',
-						time: row[2] || '',
-						amount: parseFloat(row[3]) || 0,
-						payment_method: row[4] || '',
-						source_type: row[5] || '',
-						client_id: row[6] || '',
-						client_name: row[7] || '',
-						notes: row[8] || '',
-						status: row[9] || 'completed',
-						created_at: row[10] || '',
-						reference: row[11] || '',        // שדה חדש
-						check_date: row[12] || '',       // שדה חדש
-						bank_account: row[13] || '',     // שדה חדש
-						payment_details: row[14] || ''   // שדה חדש
+						client_id: row[2] || '',
+						client_name: row[3] || '',
+						amount: parseFloat(row[4]) || 0,
+						payment_method: row[5] || '',
+						notes: row[6] || '',
+						reference: row[7] || '',
+						check_date: row[8] || ''
 					}));
 				}
 				
 				// טען קישורים
 				const linksResponse = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'PaymentVisitLink!A2:F1000'
+					range: 'PaymentVisitLink!A2:D1000'
 				});
 				
 				if (linksResponse.result.values) {
@@ -2930,9 +2930,7 @@
 						ID: row[0] || '',
 						payment_id: row[1] || '',
 						visit_id: row[2] || '',
-						amount_allocated: parseFloat(row[3]) || 0,
-						link_type: row[4] || '',
-						created_at: row[5] || ''
+						amount_allocated: parseFloat(row[3]) || 0
 					}));
 				}
 				
@@ -4810,47 +4808,102 @@
 				}
 				
 			} else if (tabName === 'payments') {
-				// Payments tab - show all paid visits
-				const paidVisits = visits
-					.filter(v => v.location_id === clientId)
-					.filter(v => {
-						const paidInfo = parsePaidField(v.paid);
-						return paidInfo.status === 'paid' || paidInfo.status === 'partial';
-					})
+				// Payments tab - show actual payments from payments array
+				const clientPayments = payments
+					.filter(p => p.client_id === clientId)
 					.sort((a, b) => b.date.localeCompare(a.date));
 				
-				if (paidVisits.length === 0) {
-					html = '<div style="text-align: center; padding: 40px; color: #666;">עדיין אין תשלומים ללקוח זה</div>';
+				html = `
+					<div style="margin-bottom: 15px; text-align: center;">
+						<button onclick="showAddPaymentModal('${clientId}')" 
+								style="padding: 12px 24px; background: #27ae60; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);">
+							➕ הוסף תשלום
+						</button>
+					</div>
+				`;
+				
+				if (clientPayments.length === 0) {
+					html += '<div style="text-align: center; padding: 40px; color: #666;">עדיין אין תשלומים ללקוח זה</div>';
 				} else {
-					html = `
+					const totalPaid = clientPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+					
+					html += `
+						<div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #27ae60;">
+							<div style="display: flex; justify-content: space-between; align-items: center;">
+								<span style="font-size: 14px; color: #27ae60; font-weight: bold;">סך הכל תשלומים:</span>
+								<span style="font-size: 24px; font-weight: bold; color: #27ae60;">₪${totalPaid.toFixed(2)}</span>
+							</div>
+						</div>
+						
 						<div style="max-height: 400px; overflow-y: auto;">
-							<table style="width: 100%; border-collapse: collapse;">
-								<thead style="position: sticky; top: 0; background: #f8f9fa;">
-									<tr style="border-bottom: 2px solid #dee2e6;">
-										<th style="padding: 10px; text-align: right;">תאריך טיפול</th>
-										<th style="padding: 10px; text-align: right;">תאריך תשלום</th>
-										<th style="padding: 10px; text-align: right;">סכום</th>
-										<th style="padding: 10px; text-align: right;">סטטוס</th>
-									</tr>
-								</thead>
-								<tbody>
-									${paidVisits.map(visit => {
-										const paidInfo = parsePaidField(visit.paid);
-										const paidDate = paidInfo.date ? formatDate(paidInfo.date) : '-';
-										const amount = paidInfo.status === 'partial' ? paidInfo.amount : visit.amount;
-										const statusText = paidInfo.status === 'partial' ? 'תשלום חלקי' : 'שולם במלואו';
+							${clientPayments.map(payment => {
+								// מצא טיפולים מקושרים
+								const relatedLinks = paymentVisitLinks.filter(link => link.payment_id === payment.ID);
+								const linkedVisitsCount = relatedLinks.length;
+								const totalLinked = relatedLinks.reduce((sum, link) => sum + (link.amount_allocated || 0), 0);
+								
+								// טקסט אמצעי תשלום
+								let methodText = '';
+								switch(payment.payment_method) {
+									case 'cash': methodText = '💵 מזומן'; break;
+									case 'check': methodText = '📝 צ\'ק'; break;
+									case 'transfer': methodText = '🏦 העברה'; break;
+									case 'app': methodText = '📱 אפליקציה'; break;
+									default: methodText = payment.payment_method || '';
+								}
+								
+								return `
+									<div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 12px; background: white;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+											<div>
+												<div style="font-size: 16px; font-weight: bold; color: #2c3e50;">${formatDate(payment.date)}</div>
+												<div style="font-size: 13px; color: #666; margin-top: 3px;">${methodText}</div>
+											</div>
+											<div style="text-align: left;">
+												<div style="font-size: 24px; font-weight: bold; color: #27ae60;">₪${payment.amount.toFixed(2)}</div>
+												${linkedVisitsCount > 0 ? 
+													`<div style="font-size: 11px; color: #666; margin-top: 2px;">מקושר: ₪${totalLinked.toFixed(2)}</div>` 
+													: ''}
+											</div>
+										</div>
 										
-										return `
-											<tr style="border-bottom: 1px solid #dee2e6;">
-												<td style="padding: 10px;">${formatDate(visit.date)}</td>
-												<td style="padding: 10px;">${paidDate}</td>
-												<td style="padding: 10px; font-weight: bold; color: #27ae60;">${amount}₪</td>
-												<td style="padding: 10px; color: #666; font-size: 13px;">${statusText}</td>
-											</tr>
-										`;
-									}).join('')}
-								</tbody>
-							</table>
+										${payment.reference ? 
+											`<div style="font-size: 12px; color: #666; margin-bottom: 5px;">
+												<strong>אסמכתא:</strong> ${payment.reference}
+											</div>` 
+											: ''}
+										
+										${payment.check_date ? 
+											`<div style="font-size: 12px; color: #666; margin-bottom: 5px;">
+												<strong>תאריך פירעון:</strong> ${formatDate(payment.check_date)}
+											</div>` 
+											: ''}
+										
+										${payment.notes ? 
+											`<div style="font-size: 13px; color: #555; background: #f8f9fa; padding: 8px; border-radius: 4px; margin-top: 8px;">
+												💬 ${payment.notes}
+											</div>` 
+											: ''}
+										
+										${linkedVisitsCount > 0 ? 
+											`<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #dee2e6;">
+												<div style="font-size: 12px; color: #666; font-weight: bold; margin-bottom: 5px;">
+													🔗 מקושר ל-${linkedVisitsCount} טיפולים
+												</div>
+											</div>` 
+											: `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #dee2e6; font-size: 12px; color: #f39c12;">
+												⚠️ לא מקושר לטיפולים
+											</div>`}
+										
+										<div style="text-align: center; margin-top: 10px;">
+											<button onclick="showPaymentDetails('${payment.ID}')" 
+													style="padding: 6px 16px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px;">
+												🔍 פרטים מלאים
+											</button>
+										</div>
+									</div>
+								`;
+							}).join('')}
 						</div>
 					`;
 				}
@@ -5890,6 +5943,7 @@
 						</select>
 					</td>
 					<td>
+						<button onclick="addPaymentForVisit('${visit.ID}')" class="icon-btn" title="הוסף תשלום" style="background: #27ae60; color: white;">💰</button>
 						<button onclick="editVisit('${visit.ID}')" class="icon-btn" title="ערוך">✏️</button>
 						<button onclick="deleteVisit('${visit.ID}')" class="icon-btn" title="מחק">🗑️</button>
 						<button onclick="toggleVisitDetails('${visit.ID}')" class="icon-btn" title="פרטים">ℹ️</button>
@@ -6630,8 +6684,8 @@
 				'Receipts': ['ID', 'book_number', 'receipt_number', 'date', 'location_id', 'location_name', 'amount', 'payment_type', 'notes'],
 				'TelegramVisits': ['message_id', 'date', 'text', 'processed', 'location_id', 'visit_id'],
 				'TelegramIncomes': ['message_id', 'date', 'text', 'processed', 'receipt_id'],
-				'Payments': ['ID', 'date', 'location_id', 'location_name', 'amount', 'payment_method', 'reference', 'check_date', 'bank_account', 'notes'],
-				'PaymentVisitLink': ['ID', 'payment_id', 'visit_id', 'amount_allocated', 'created_at']
+				'Payments': ['ID', 'date', 'client_id', 'client_name', 'amount', 'payment_method', 'notes', 'reference', 'check_date'],	
+				'PaymentVisitLink': ['ID', 'payment_id', 'visit_id', 'amount_allocated']
 			};
 			
 			const headers = headersMap[sheetName];
@@ -7487,15 +7541,18 @@
 			try {
 				await checkAndFixTableStructure();
 				
-				// ✅ SIMPLIFIED: Only save the 3 main tables now (removed payments & links)
+				// שמירת כל הטבלאות
 				const locationSuccess = locations.length > 0 ? await saveLocationsBatch(locations) : true;
 				const visitSuccess = visits.length > 0 ? await saveVisitsBatch(visits) : true;
 				const receiptSuccess = receipts.length > 0 ? await saveReceiptsBatch(receipts) : true;
 				const incomeSuccess = incomes.length > 0 ? await saveIncomesBatch(incomes) : true;
-				
-				const allSaved = locationSuccess && visitSuccess && receiptSuccess && incomeSuccess;
-				
-				if (allSaved) {
+				const paymentSuccess = payments.length > 0 ? await savePaymentsBatch(payments) : true;
+				const linkSuccess = paymentVisitLinks.length > 0 ? await savePaymentVisitLinksBatch(paymentVisitLinks) : true;
+
+				const allSaved = locationSuccess && visitSuccess && receiptSuccess && incomeSuccess && paymentSuccess && linkSuccess;
+							
+
+			if (allSaved) {
 					showToast('✅ כל הנתונים נשמרו בהצלחה', 'success');
 				} else {
 					showToast('⚠️ חלק מהנתונים לא נשמרו', 'warning');
@@ -7623,10 +7680,13 @@
 						`).join('')}
 					</div>
 					<div class="debt-actions">
-						<button onclick="markClientDebtsPaid('${debt.clientId}')" class="btn-pay">
-							💰 סמן הכל כשולם
+						<button onclick="showAddPaymentModal('${debt.clientId}')" class="btn" style="background: #27ae60; color: white; flex: 1;">
+							➕ הוסף תשלום
 						</button>
-						<button onclick="showClientTreatments('${debt.clientId}')" class="btn-payment">
+						<button onclick="markClientDebtsPaid('${debt.clientId}')" class="btn-pay" style="flex: 1;">
+							✓ סמן הכל כשולם
+						</button>
+						<button onclick="showClientTreatments('${debt.clientId}')" class="btn-payment" style="flex: 1;">
 							📋 עבור לטיפולים
 						</button>
 					</div>
@@ -8157,6 +8217,543 @@
 				return false;
 			}
 		}
+		
+		
+		// שמירה מקבצית של תשלומים
+		async function savePaymentsBatch(paymentsArray) {
+			if (!await validateToken()) return false;
+			
+			try {
+				console.log('💳 savePaymentsBatch called with', paymentsArray.length, 'payments');
+				
+				const values = paymentsArray.map(payment => [
+					payment.ID || '',
+					payment.date || '',
+					payment.client_id || '',
+					payment.client_name || '',
+					payment.amount || 0,
+					payment.payment_method || '',
+					payment.notes || '',
+					payment.reference || '',
+					payment.check_date || ''
+				]);
+				
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Payments!A:I',
+					valueInputOption: 'USER_ENTERED',
+					resource: { values }
+				});
+				
+				console.log(`✅ Saved ${paymentsArray.length} payments to cloud`);
+				return true;
+				
+			} catch (error) {
+				console.error('Error saving payments batch:', error);
+				return false;
+			}
+		}
+
+		// שמירה מקבצית של קישורי תשלומים
+		async function savePaymentVisitLinksBatch(linksArray) {
+			if (!await validateToken()) return false;
+			
+			try {
+				console.log('🔗 savePaymentVisitLinksBatch called with', linksArray.length, 'links');
+				
+				const values = linksArray.map(link => [
+					link.ID || '',
+					link.payment_id || '',
+					link.visit_id || '',
+					link.amount_allocated || 0
+				]);
+				
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'PaymentVisitLink!A:D',
+					valueInputOption: 'USER_ENTERED',
+					resource: { values }
+				});
+				
+				console.log(`✅ Saved ${linksArray.length} payment links to cloud`);
+				return true;
+				
+			} catch (error) {
+				console.error('Error saving payment links batch:', error);
+				return false;
+			}
+		}
+		
+	   
+	   // ===== מנגנון תשלומים חדש ===== 
+
+		// פתיחת מודל להוספת תשלום חדש
+		function showAddPaymentModal(clientId = null) {
+			let selectedClientId = clientId;
+			let selectedClientName = '';
+			
+			// אם יש לקוח נבחר, קח את השם שלו
+			if (clientId) {
+				const client = locations.find(loc => loc.ID === clientId);
+				if (client) {
+					selectedClientName = client.name;
+				}
+			}
+			
+			const modalHTML = `
+				<div style="background: white; padding: 30px; border-radius: 12px; max-width: 700px; width: 90vw; max-height: 80vh; overflow-y: auto; direction: rtl;">
+					<h3 style="margin-bottom: 25px; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+						💰 הוספת תשלום חדש
+					</h3>
+					
+					<!-- בחירת לקוח -->
+					<div class="form-group" style="margin-bottom: 20px;">
+						<label style="display: block; margin-bottom: 8px; font-weight: bold;">לקוח:</label>
+						${clientId ? 
+							`<input type="text" value="${selectedClientName}" disabled style="width: 100%; padding: 10px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px;">` :
+							`<input type="text" 
+								id="paymentClientSearch" 
+								placeholder="התחל להקליד שם לקוח..."
+								oninput="searchClientForPayment(this.value)"
+								autocomplete="off"
+								style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+							<input type="hidden" id="selectedPaymentClientId">
+							<div id="paymentClientResults" style="border: 1px solid #ddd; border-top: none; max-height: 150px; overflow-y: auto; display: none;"></div>`
+						}
+					</div>
+					
+					<!-- תאריך ושעה -->
+					<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 20px;">
+						<div class="form-group">
+							<label style="display: block; margin-bottom: 8px; font-weight: bold;">תאריך:</label>
+							<input type="date" id="paymentDate" value="${new Date().toISOString().split('T')[0]}" 
+								style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+						</div>
+						<div class="form-group">
+							<label style="display: block; margin-bottom: 8px; font-weight: bold;">שעה:</label>
+							<input type="time" id="paymentTime" value="${new Date().toTimeString().slice(0,5)}"
+								style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+						</div>
+					</div>
+					
+					<!-- סכום ואמצעי תשלום -->
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+						<div class="form-group">
+							<label style="display: block; margin-bottom: 8px; font-weight: bold;">סכום (₪):</label>
+							<input type="number" id="paymentAmount" placeholder="0" step="0.01"
+								style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+						</div>
+						<div class="form-group">
+							<label style="display: block; margin-bottom: 8px; font-weight: bold;">אמצעי תשלום:</label>
+							<select id="paymentMethod" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+								<option value="cash">מזומן</option>
+								<option value="check">צ'ק</option>
+								<option value="transfer">העברה בנקאית</option>
+								<option value="app">אפליקציה (ביט/פייבוקס)</option>
+							</select>
+						</div>
+					</div>
+					
+					<!-- פרטי צ'ק (מוצג רק אם בחרו צ'ק) -->
+					<div id="checkDetailsSection" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+							<div class="form-group">
+								<label style="display: block; margin-bottom: 8px; font-weight: bold;">מספר צ'ק:</label>
+								<input type="text" id="checkReference" placeholder="מספר צ'ק"
+									style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+							</div>
+							<div class="form-group">
+								<label style="display: block; margin-bottom: 8px; font-weight: bold;">תאריך פירעון:</label>
+								<input type="date" id="checkDate"
+									style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+							</div>
+						</div>
+					</div>
+					
+					<!-- הערות -->
+					<div class="form-group" style="margin-bottom: 20px;">
+						<label style="display: block; margin-bottom: 8px; font-weight: bold;">הערות:</label>
+						<textarea id="paymentNotes" rows="3" placeholder="הערות נוספות..."
+							style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
+					</div>
+					
+					<!-- רשימת טיפולים פתוחים -->
+					<div id="openVisitsSection" style="display: none; background: #fff3cd; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 2px solid #ffc107;">
+						<h4 style="margin: 0 0 15px 0; color: #856404;">בחר טיפולים לסגירה:</h4>
+						<div id="openVisitsList" style="max-height: 200px; overflow-y: auto;"></div>
+						<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 14px; color: #666;">
+							<strong>סכום נבחר:</strong> <span id="selectedVisitsTotal">0</span> ₪
+						</div>
+					</div>
+					
+					<!-- כפתורים -->
+					<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px;">
+						<button onclick="closeModal()" class="btn" style="background: #95a5a6; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer;">
+							ביטול
+						</button>
+						<button onclick="saveNewPayment()" class="btn" style="background: #27ae60; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+							💾 שמור תשלום
+						</button>
+					</div>
+				</div>
+			`;
+			
+			showModal(modalHTML);
+			
+			// שמירת הלקוח הנבחר אם יש
+			if (clientId) {
+				window.selectedPaymentClientId = clientId;
+				loadOpenVisitsForPayment(clientId);
+			}
+			
+			// הוספת event listener לשינוי אמצעי תשלום
+			setTimeout(() => {
+				const methodSelect = document.getElementById('paymentMethod');
+				if (methodSelect) {
+					methodSelect.addEventListener('change', toggleCheckDetails);
+				}
+			}, 100);
+		}
+
+
+		// פונקציה חדשה: פתיחת מודל תשלום עבור טיפול ספציפי
+		function addPaymentForVisit(visitId) {
+			const visit = visits.find(v => v.ID === visitId);
+			if (!visit) {
+				showToast('טיפול לא נמצא', 'error');
+				return;
+			}
+			
+			// פתיחת המודל עם הלקוח של הטיפול
+			showAddPaymentModal(visit.location_id);
+			
+			// המתנה קצרה לטעינת המודל ואז בחירת הטיפול הספציפי
+			setTimeout(() => {
+				const checkbox = document.querySelector(`input[type="checkbox"][data-visit-id="${visitId}"]`);
+				if (checkbox) {
+					checkbox.checked = true;
+					updateSelectedVisitsTotal();
+				}
+			}, 300);
+		}
+
+
+		// הצגה/הסתרה של פרטי צ'ק
+		function toggleCheckDetails() {
+			const method = document.getElementById('paymentMethod').value;
+			const checkSection = document.getElementById('checkDetailsSection');
+			if (checkSection) {
+				checkSection.style.display = (method === 'check') ? 'block' : 'none';
+			}
+		}
+
+		// חיפוש לקוח להוספת תשלום
+		function searchClientForPayment(searchTerm) {
+			const resultsDiv = document.getElementById('paymentClientResults');
+			
+			if (!searchTerm || searchTerm.trim().length < 2) {
+				resultsDiv.style.display = 'none';
+				return;
+			}
+			
+			const matchingClients = searchClientsAdvanced(searchTerm);
+			
+			if (matchingClients.length === 0) {
+				resultsDiv.innerHTML = '<div style="padding: 10px; color: #999;">לא נמצאו לקוחות</div>';
+				resultsDiv.style.display = 'block';
+				return;
+			}
+			
+			resultsDiv.innerHTML = matchingClients.slice(0, 10).map(client => {
+				const safeName = client.name.replace(/'/g, '&#39;');
+				return `
+					<div onclick="selectClientForPayment('${client.ID}', '${safeName}')" 
+						 style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; background: white;"
+						 onmouseover="this.style.background='#f0f0f0'" 
+						 onmouseout="this.style.background='white'">
+						<strong>${client.name}</strong>
+						${client.full_address ? `<br><small style="color: #666;">${client.full_address}</small>` : ''}
+					</div>
+				`;
+			}).join('');
+			
+			resultsDiv.style.display = 'block';
+		}
+
+		// בחירת לקוח להוספת תשלום
+		function selectClientForPayment(clientId, clientName) {
+			document.getElementById('paymentClientSearch').value = clientName;
+			document.getElementById('selectedPaymentClientId').value = clientId;
+			document.getElementById('paymentClientResults').style.display = 'none';
+			
+			window.selectedPaymentClientId = clientId;
+			
+			// טען טיפולים פתוחים של הלקוח
+			loadOpenVisitsForPayment(clientId);
+		}
+	   
+	   
+	   // טעינת טיפולים פתוחים של לקוח
+		function loadOpenVisitsForPayment(clientId) {
+			const openVisitsSection = document.getElementById('openVisitsSection');
+			const openVisitsList = document.getElementById('openVisitsList');
+			
+			if (!openVisitsSection || !openVisitsList) return;
+			
+			// מצא את כל הטיפולים הפתוחים (לא שולמו במלואם) של הלקוח
+			const clientVisits = visits.filter(visit => {
+				if (visit.location_id !== clientId) return false;
+				if (!visit.amount || visit.amount <= 0) return false;
+				
+				// בדוק אם יש חוב
+				const paidAmount = getVisitPaidAmount(visit.ID);
+				const debt = parseFloat(visit.amount) - paidAmount;
+				
+				return debt > 0.01; // יש חוב
+			});
+			
+			if (clientVisits.length === 0) {
+				openVisitsSection.style.display = 'none';
+				return;
+			}
+			
+			// מיין לפי תאריך
+			clientVisits.sort((a, b) => new Date(a.date) - new Date(b.date));
+			
+			// הצג את הטיפולים
+			openVisitsList.innerHTML = clientVisits.map(visit => {
+				const paidAmount = getVisitPaidAmount(visit.ID);
+				const debt = parseFloat(visit.amount) - paidAmount;
+				
+				return `
+					<div style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px; background: white;">
+						<label style="display: flex; align-items: center; cursor: pointer;">
+							<input type="checkbox" 
+								   class="visit-checkbox" 
+								   data-visit-id="${visit.ID}"
+								   data-visit-amount="${visit.amount}"
+								   data-visit-debt="${debt.toFixed(2)}"
+								   onchange="updateSelectedVisitsTotal()"
+								   style="margin-left: 10px; transform: scale(1.3);">
+							<div style="flex: 1;">
+								<div style="display: flex; justify-content: space-between; align-items: center;">
+									<span style="font-weight: bold;">${formatDate(visit.date)}</span>
+									<span style="color: #e74c3c; font-weight: bold;">${debt.toFixed(2)} ₪</span>
+								</div>
+								<div style="font-size: 13px; color: #666; margin-top: 4px;">
+									${visit.work_done || 'טיפול'}
+									${paidAmount > 0 ? `<span style="color: #f39c12;"> (שולם: ${paidAmount}₪)</span>` : ''}
+								</div>
+							</div>
+						</label>
+					</div>
+				`;
+			}).join('');
+			
+			openVisitsSection.style.display = 'block';
+			updateSelectedVisitsTotal();
+		}
+
+		// עדכון סכום הטיפולים הנבחרים
+		function updateSelectedVisitsTotal() {
+			const checkboxes = document.querySelectorAll('.visit-checkbox:checked');
+			let total = 0;
+			
+			checkboxes.forEach(cb => {
+				const debt = parseFloat(cb.getAttribute('data-visit-debt')) || 0;
+				total += debt;
+			});
+			
+			const totalSpan = document.getElementById('selectedVisitsTotal');
+			if (totalSpan) {
+				totalSpan.textContent = total.toFixed(2);
+			}
+		}
+
+		// שמירת תשלום חדש
+		async function saveNewPayment() {
+			// קבל נתונים מהטופס
+			const clientId = window.selectedPaymentClientId || document.getElementById('selectedPaymentClientId')?.value;
+			const date = document.getElementById('paymentDate')?.value;
+			const amount = parseFloat(document.getElementById('paymentAmount')?.value) || 0;
+			const method = document.getElementById('paymentMethod')?.value;
+			const notes = document.getElementById('paymentNotes')?.value || '';
+			const reference = document.getElementById('checkReference')?.value || '';
+			const checkDate = document.getElementById('checkDate')?.value || '';
+			
+			// בדיקות תקינות
+			if (!clientId) {
+				showToast('יש לבחור לקוח', 'error');
+				return;
+			}
+			
+			if (!date) {
+				showToast('יש להזין תאריך', 'error');
+				return;
+			}
+			
+			if (amount <= 0) {
+				showToast('יש להזין סכום תקין', 'error');
+				return;
+			}
+			
+			// מצא את הלקוח
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			// קבל את הטיפולים הנבחרים
+			const selectedCheckboxes = document.querySelectorAll('.visit-checkbox:checked');
+			const selectedVisits = Array.from(selectedCheckboxes).map(cb => ({
+				visitId: cb.getAttribute('data-visit-id'),
+				debt: parseFloat(cb.getAttribute('data-visit-debt'))
+			}));
+			
+			// בדוק שיש טיפולים נבחרים
+			if (selectedVisits.length === 0) {
+				if (!confirm('לא נבחרו טיפולים לסגירה. האם להמשיך בכל זאת?')) {
+					return;
+				}
+			}
+			
+			try {
+				showLoading('שומר תשלום...');
+				
+				// צור את התשלום
+				const payment = {
+					ID: generateID(),
+					date: date,
+					client_id: clientId,
+					client_name: client.name,
+					amount: amount,
+					payment_method: method,
+					notes: notes,
+					reference: reference,
+					check_date: checkDate
+				};
+				
+				// הוסף לרשימת התשלומים
+				payments.push(payment);
+				
+				// צור קישורים לטיפולים
+				let remainingAmount = amount;
+				
+				selectedVisits.forEach(selectedVisit => {
+					if (remainingAmount <= 0) return;
+					
+					const visit = visits.find(v => v.ID === selectedVisit.visitId);
+					if (!visit) return;
+					
+					const debt = selectedVisit.debt;
+					const amountToAllocate = Math.min(remainingAmount, debt);
+					
+					// צור קישור
+					const link = {
+						ID: generateID(),
+						payment_id: payment.ID,
+						visit_id: visit.ID,
+						amount_allocated: amountToAllocate
+					};
+					
+					paymentVisitLinks.push(link);
+					
+					// עדכן את הטיפול
+					const currentPaid = getVisitPaidAmount(visit.ID);
+					const newPaidAmount = currentPaid + amountToAllocate;
+					const visitAmount = parseFloat(visit.amount);
+					
+					if (newPaidAmount >= visitAmount - 0.01) {
+						// שולם במלואו
+						visit.paid = `paid:${date}`;
+					} else {
+						// שולם חלקית
+						visit.paid = `partial:${newPaidAmount.toFixed(2)}`;
+					}
+					
+					remainingAmount -= amountToAllocate;
+				});
+				
+				// שמור מקומית
+				saveToLocalStorage();
+				
+				// שמור לענן
+				if (access_token && SPREADSHEET_ID) {
+					await saveAllToSheetsOptimized();
+					showToast('✅ תשלום נוסף בהצלחה ונשמר לענן!', 'success');
+				} else {
+					showToast('💾 תשלום נוסף בהצלחה (מקומית)', 'info');
+				}
+				
+				hideLoading();
+				closeModal();
+				
+				// רענן תצוגות
+				if (typeof displayDebts === 'function') {
+					displayDebts();
+				}
+				if (typeof applyPaymentFilters === 'function') {
+					applyPaymentFilters();
+				}
+				if (typeof filterVisits === 'function') {
+					filterVisits();
+				}
+				
+			} catch (error) {
+				console.error('Error saving payment:', error);
+				hideLoading();
+				showToast('שגיאה בשמירת התשלום', 'error');
+			}
+		}
+
+
+		// פונקציית עזר למחיקת תשלום (לעתיד)
+		function deletePayment(paymentId) {
+			if (!confirm('האם למחוק את התשלום? פעולה זו תבטל את הקישורים לטיפולים.')) {
+				return;
+			}
+			
+			// מחק קישורים
+			const linksToRemove = paymentVisitLinks.filter(link => link.payment_id === paymentId);
+			linksToRemove.forEach(link => {
+				const visit = visits.find(v => v.ID === link.visit_id);
+				if (visit) {
+					// החזר את הטיפול למצב לא שולם
+					visit.paid = 'unpaid';
+				}
+				
+				// מחק את הקישור
+				const linkIndex = paymentVisitLinks.findIndex(l => l.ID === link.ID);
+				if (linkIndex > -1) {
+					paymentVisitLinks.splice(linkIndex, 1);
+				}
+			});
+			
+			// מחק את התשלום
+			const paymentIndex = payments.findIndex(p => p.ID === paymentId);
+			if (paymentIndex > -1) {
+				payments.splice(paymentIndex, 1);
+			}
+			
+			// שמור
+			saveToLocalStorage();
+			
+			if (access_token && SPREADSHEET_ID) {
+				saveAllToSheetsOptimized();
+			}
+			
+			showToast('תשלום נמחק בהצלחה', 'success');
+			
+			// רענן תצוגות
+			if (typeof applyPaymentFilters === 'function') {
+				applyPaymentFilters();
+			}
+			if (typeof displayDebts === 'function') {
+				displayDebts();
+			}
+		}
+
 	   
 	   // פונקציה לחישוב ועדכון תאריכי טיפול אחרון וטיפול הבא
 		// פונקציה לחישוב ועדכון תאריכי טיפול אחרון וטיפול הבא - גרסה מתקנת
@@ -9567,7 +10164,15 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			const visit = visits.find(v => v.ID === visitId);
 			if (!visit) return 0;
 			
-			// ✅ UPDATED: Parse paid field to handle partial payments
+			// שיטה 1: חישוב מתוך PaymentVisitLinks (המדויק ביותר)
+			const relatedLinks = paymentVisitLinks.filter(link => link.visit_id === visitId);
+			if (relatedLinks.length > 0) {
+				// יש קישורי תשלום - חשב לפי הקישורים
+				const totalFromLinks = relatedLinks.reduce((sum, link) => sum + (parseFloat(link.amount_allocated) || 0), 0);
+				return totalFromLinks;
+			}
+			
+			// שיטה 2: חישוב מתוך visit.paid (backwards compatibility)
 			const paidInfo = parsePaidField(visit.paid);
 			const visitAmount = parseFloat(visit.amount) || 0;
 			
@@ -10953,36 +11558,105 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				return null;
 			}).filter(visit => visit);
 			
+			// חישוב סכום מקושר
+			const totalAllocated = relatedLinks.reduce((sum, link) => sum + (link.amount_allocated || 0), 0);
+			const unallocated = payment.amount - totalAllocated;
+			
+			// טקסט אמצעי תשלום
+			let methodText = '';
+			switch(payment.payment_method) {
+				case 'cash': methodText = 'מזומן'; break;
+				case 'check': methodText = 'צ\'ק'; break;
+				case 'transfer': methodText = 'העברה בנקאית'; break;
+				case 'app': methodText = 'אפליקציה (ביט/פייבוקס)'; break;
+				default: methodText = payment.payment_method || 'לא צויין';
+			}
+			
 			const modalContent = `
-				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 90vw; max-height: 70vh; overflow-y: auto;">
-					<h3 style="margin-bottom: 20px; color: #2c3e50;">💳 פירוט תשלום</h3>
+				<div style="background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 90vw; max-height: 80vh; overflow-y: auto; direction: rtl;">
+					<h3 style="margin-bottom: 25px; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+						💳 פרטי תשלום
+					</h3>
 					
-					<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-						<p><strong>📅 תאריך:</strong> ${formatDate(payment.date)}</p>
-						<p><strong>👤 לקוח:</strong> ${payment.client_name || payment.client_id || 'לא ידוע'}</p>
-						<p><strong>💰 סכום:</strong> ₪${Math.round(payment.amount).toLocaleString()}</p>
-						<p><strong>💳 אמצעי תשלום:</strong> ${getPaymentMethodText(payment.payment_method) || 'לא צוין'}</p>
-						${payment.notes ? `<p><strong>הערות:</strong> ${payment.notes}</p>` : ''}
-						${payment.reference ? `<p><strong>אסמכתא:</strong> ${payment.reference}</p>` : ''}
-						${payment.check_date ? `<p><strong>תאריך צ'ק:</strong> ${formatDate(payment.check_date)}</p>` : ''}
-						${payment.bank_account ? `<p><strong>פרטי חשבון:</strong> ${payment.bank_account}</p>` : ''}
+					<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; margin-bottom: 20px; color: white;">
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+							<span style="font-size: 14px; opacity: 0.9;">סכום התשלום:</span>
+							<span style="font-size: 28px; font-weight: bold;">₪${Math.round(payment.amount).toLocaleString()}</span>
+						</div>
+						<div style="font-size: 13px; opacity: 0.8;">
+							📅 ${formatDate(payment.date)}
+						</div>
 					</div>
 					
-					<h4>🔗 טיפולים מקושרים:</h4>
-					<div style="background: #e8f5e8; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+					<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+						<div style="margin-bottom: 15px;">
+							<strong style="color: #666; font-size: 12px; display: block; margin-bottom: 5px;">👤 לקוח:</strong>
+							<div style="font-size: 16px; color: #2c3e50;">${payment.client_name || 'לא ידוע'}</div>
+						</div>
+						
+						<div style="margin-bottom: 15px;">
+							<strong style="color: #666; font-size: 12px; display: block; margin-bottom: 5px;">💳 אמצעי תשלום:</strong>
+							<div style="font-size: 16px; color: #2c3e50;">${methodText}</div>
+						</div>
+						
+						${payment.reference ? `
+							<div style="margin-bottom: 15px;">
+								<strong style="color: #666; font-size: 12px; display: block; margin-bottom: 5px;">🔢 אסמכתא:</strong>
+								<div style="font-size: 16px; color: #2c3e50;">${payment.reference}</div>
+							</div>
+						` : ''}
+						
+						${payment.check_date ? `
+							<div style="margin-bottom: 15px;">
+								<strong style="color: #666; font-size: 12px; display: block; margin-bottom: 5px;">📆 תאריך פירעון צ'ק:</strong>
+								<div style="font-size: 16px; color: #2c3e50;">${formatDate(payment.check_date)}</div>
+							</div>
+						` : ''}
+						
+						${payment.notes ? `
+							<div>
+								<strong style="color: #666; font-size: 12px; display: block; margin-bottom: 5px;">📝 הערות:</strong>
+								<div style="font-size: 14px; color: #555; line-height: 1.6;">${payment.notes}</div>
+							</div>
+						` : ''}
+					</div>
+					
+					<div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #27ae60;">
+						<h4 style="margin: 0 0 15px 0; color: #27ae60; font-size: 16px;">🔗 טיפולים מקושרים:</h4>
+						
 						${relatedVisits.length > 0 ? 
 							relatedVisits.map(visit => `
-								<div style="padding: 5px 0; border-bottom: 1px solid #ddd;">
-									<strong>${formatDate(visit.date)}</strong> - ${visit.work_done || 'ללא תיאור'}
-									<span style="float: right; color: #28a745;">₪${visit.allocated_amount}</span>
+								<div style="padding: 12px; background: white; border-radius: 6px; margin-bottom: 10px; border-right: 4px solid #27ae60;">
+									<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+										<strong style="color: #2c3e50;">${formatDate(visit.date)}</strong>
+										<span style="background: #27ae60; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+											₪${visit.allocated_amount.toFixed(2)}
+										</span>
+									</div>
+									<div style="font-size: 13px; color: #666;">
+										${visit.work_done || 'ללא תיאור'}
+									</div>
 								</div>
 							`).join('') 
-							: '<div style="color: #666; font-style: italic;">אין טיפולים קשורים</div>'
+							: '<div style="color: #666; font-style: italic; text-align: center; padding: 20px;">אין טיפולים מקושרים לתשלום זה</div>'
 						}
+						
+						${relatedVisits.length > 0 ? `
+							<div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #27ae60; display: flex; justify-content: space-between; font-size: 14px;">
+								<span><strong>סכום מקושר:</strong></span>
+								<span style="color: #27ae60; font-weight: bold;">₪${totalAllocated.toFixed(2)}</span>
+							</div>
+							${unallocated > 0.01 ? `
+								<div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: 5px;">
+									<span><strong>סכום לא מקושר:</strong></span>
+									<span style="color: #f39c12; font-weight: bold;">₪${unallocated.toFixed(2)}</span>
+								</div>
+							` : ''}
+						` : ''}
 					</div>
 					
 					<div style="text-align: center;">
-						<button onclick="closeModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+						<button onclick="closeModal()" style="background: #95a5a6; color: white; border: none; padding: 12px 30px; border-radius: 6px; cursor: pointer; font-size: 15px;">
 							סגור
 						</button>
 					</div>
