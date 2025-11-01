@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -9103,7 +9103,12 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 										location_name: customerName,
 										visit_type: row[5] || 'regular',
 										work_done: workDone,
-										duration_minutes: (parseFloat(row[8]) || 0) * 60,  // row[8] is hours
+										duration_minutes: (() => {
+											const val = parseFloat(row[8]) || 0;
+											// If value < 24, assume it's hours and convert to minutes
+											// If value >= 24, assume it's already in minutes
+											return val < 24 ? val * 60 : val;
+										})(),
 										num_workers: 1,
 										start_time: '',
 										end_time: '',
