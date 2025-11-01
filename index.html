@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3432,7 +3432,7 @@
 		function filterClientsByView(clients) {
 			const today = new Date();
 			const todayDay = today.getDay(); // 0=ראשון, 1=שני וכו'
-			const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
+			const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 			
 			switch (currentPlanningView) {
 				case 'daily':
@@ -7423,7 +7423,7 @@
 							city: '',
 							contact_person: '',
 							phone: '',
-							allowed_day: 'יום ראשון',
+							allowed_day: 'א',
 							interval_weeks: 4,
 							temp_addition: false,
 							base_amount: 0,
@@ -8779,7 +8779,7 @@
 					// חישוב יום מועדף לפי הביקור האחרון
 					if (!location.allowed_day || location.allowed_day === '') {
 						const lastDate = new Date(lastVisitDate);
-						const dayNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
+						const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 						location.allowed_day = dayNames[lastDate.getDay()];
 						/// console.log(`📅 ${location.name}: יום מועדף חושב כ-${location.allowed_day} (לפי ביקור מ-${lastVisitDate})`);
 					}
@@ -9024,7 +9024,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 										city: city,
 										contact_person: row[5] || '',
 										phone: '',
-										allowed_day: 'יום ראשון',
+										allowed_day: 'א',
 										interval_weeks: parseInt(row[4]) || 4,
 										temp_addition: false,
 										base_amount: parseFloat(row[6]) || 0,
