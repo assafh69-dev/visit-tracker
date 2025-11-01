@@ -1594,6 +1594,14 @@
 			line-height: 1.4;
 		}
 
+		.work-done-column {
+		  width: 350px; /* רוחב קבוע */
+		  max-width: 350px; /* לוודא שלא עובר את הרוחב הזה */
+		  overflow: hidden; /* הסתרת טקסט חורג */
+		  text-overflow: ellipsis; /* הוספת '...' בסוף אם הטקסט נחתך */
+		  white-space: nowrap; /* למנוע שבירת שורות */
+		}
+
 		.work-done-section {
 			background: #e3f2fd;
 			padding: 8px 12px;
@@ -1946,7 +1954,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.7</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.8</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2114,7 +2122,7 @@
 							<tr>
 								<th>תאריך</th>
 								<th>לקוח</th>
-								<th>סוג טיפול</th>
+								<th class="work-done-column">סוג טיפול</th>
 								<th>מה בוצע</th>
 								<th>משך</th>
 								<th>סכום</th>
@@ -5932,7 +5940,7 @@
 					<td>${formatDate(visit.date)}</td>
 					<td><strong>${locationName}</strong></td>
 					<td><span class="visit-type-badge visit-type-${visit.visit_type || 'other'}">${visit.visit_type || '-'}</span></td>
-					<td>${visit.work_done}</td>
+					<td class="work-done-column">${visit.work_done}</td>
 					<td><span class="duration-badge">${hours}ש</span></td>
 					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${visit.amount || 0} ₪</td>
 					<td>
@@ -12872,4 +12880,3 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
    </script>
 </body>
 </html>
-
