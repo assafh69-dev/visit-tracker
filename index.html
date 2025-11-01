@@ -1946,7 +1946,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -5624,7 +5624,7 @@
 
 			try {
 				// כל הכותרות באנגלית
-				const locationHeaders = [['customer_name', 'street', 'house_number', 'city', 'frequency', 'contact_person', 'base_amount']];
+				const locationHeaders = [['customer_name', 'street', 'house_number', 'city', 'frequency', 'contact_person', 'base_amount', 'allowed_day', 'active']];
 				const visitHeaders = [['year', 'month', 'day', 'customer', 'contact_person', 'treatment', 'date', 'work_done', 'duration', 'amount', 'paid', 'expense', 'notes']];
 				const receiptHeaders = [['code_x', 'booklet', 'receipt', 'year', 'month', 'day', 'address', 'amount', 'type', 'notes', 'details']];
 				
@@ -8997,7 +8997,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 					console.log('📊 Starting locations import...');
 					const locationsResponse = await gapi.client.sheets.spreadsheets.values.get({
 						spreadsheetId: importTableId,
-						range: 'Locations!A2:G1000'
+						range: 'Locations!A2:I1000'
 					});
 					
 					if (locationsResponse.result.values?.length > 0) {
@@ -9025,11 +9025,11 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 										city: city,
 										contact_person: row[5] || '',
 										phone: '',
-										allowed_day: 'א',
+										allowed_day: row[7] || 'א',
 										interval_weeks: parseInt(row[4]) || 4,
 										temp_addition: false,
 										base_amount: parseFloat(row[6]) || 0,
-										active: '1',
+										active: row[8] || '1',
 										notes: 'יובא מטבלת עזר',
 										last_visit: '',
 										next_visit: '',
