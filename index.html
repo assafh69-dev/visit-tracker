@@ -1954,7 +1954,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -9312,8 +9312,8 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 
 
 		// saveEditedVisit
-		async function saveEditedVisit() {
-			const visitId = document.getElementById('editVisitId').value;
+		async function saveEditedVisit(visitId) {
+			//const visitId = document.getElementById('editVisitId').value;
 			const visitIndex = visits.findIndex(v => v.ID === visitId);
 			
 			if (visitIndex === -1) {
