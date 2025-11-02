@@ -1954,7 +1954,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -11192,13 +11192,21 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				
 				// Update treatment dates
 				await updateSingleLocationTreatmentDates(newVisit.location_id);
-				
+
 				// Close modal
 				closeEditModal();
-				
+
 				// Refresh displays
 				loadPlanningData();
-				filterVisits();
+
+				// Refresh visits table only if we're on the history tab
+				const visitsTable = document.getElementById('visitsTableBody');
+				if (visitsTable && visitsTable.offsetParent !== null) {
+					// We're on the history tab, safe to call filterVisits
+					if (typeof filterVisits === 'function') {
+						filterVisits();
+					}
+				}
 				
 				// Success message
 				if (access_token && SPREADSHEET_ID) {
