@@ -1954,7 +1954,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.9</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4988,7 +4988,7 @@
 						
 						<div class="form-group">
 							<label>מרווח בשבועות:</label>
-							<input type="number" id="editLocationInterval" value="${location.interval_weeks || 4}" min="1" required>
+							<input type="number" id="editLocationInterval" value="${location.interval_weeks || 4}" min="1" required onchange="updateNextVisitFromInterval()">
 						</div>
 						
 						<div class="form-group">
@@ -5004,6 +5004,11 @@
 							</select>
 						</div>
 						
+						<div class="form-group">
+							<label>טיפול אחרון:</label>
+							<input type="date" id="editLocationLastVisit" value="${location.last_visit || ''}" readonly style="background: #f8f9fa;">
+						</div>
+
 						<div class="form-group">
 							<label>טיפול הבא:</label>
 							<input type="date" id="editLocationNextVisit" value="${location.next_visit || ''}">
@@ -9350,6 +9355,20 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				console.error('Error updating location:', error);
 				updateCloudStatus('❌ שגיאה במערכת', 'שגיאה');
 				showToast('שגיאה בעדכון הלקוח', 'error');
+			}
+		}
+
+		// חישוב אוטומטי של תאריך טיפול הבא כשמשנים מרווח
+		function updateNextVisitFromInterval() {
+			const lastVisit = document.getElementById('editLocationLastVisit').value;
+			const intervalWeeks = parseInt(document.getElementById('editLocationInterval').value) || 4;
+			
+			if (lastVisit) {
+				const lastDate = new Date(lastVisit);
+				const nextDate = new Date(lastDate);
+				nextDate.setDate(lastDate.getDate() + (intervalWeeks * 7));
+				
+				document.getElementById('editLocationNextVisit').value = nextDate.toISOString().split('T')[0];
 			}
 		}
 
