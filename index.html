@@ -1954,7 +1954,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4727,7 +4727,7 @@
 										
 										if (paidInfo.status === 'paid') {
 											paymentBadge = `<span style="background: #d4edda; color: #155724; padding: 3px 8px; border-radius: 4px; font-size: 12px;">✓ שולם</span>`;
-										} else if (paidInfo.status === 'partial') {
+										} else if (paidInfo.status === '3') {
 											paymentBadge = `<span style="background: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 4px; font-size: 12px;">⚠ חלקי</span>`;
 										} else if (paidInfo.status === 'no_payment') {
 											paymentBadge = `<span style="background: #e2e3e5; color: #383d41; padding: 3px 8px; border-radius: 4px; font-size: 12px;">🚫 ללא</span>`;
@@ -5783,7 +5783,7 @@
 							${paidInfo.date ? `<div style="font-size: 11px; color: #666;">${formatDate(paidInfo.date)}</div>` : ''}
 						</div>
 					`;
-				} else if (paidInfo.status === 'partial') {
+				} else if (paidInfo.status === '3') {
 					const debt = (parseFloat(visit.amount) || 0) - paidInfo.amount;
 					paymentDisplay = `
 						<div style="color: #f39c12; font-weight: bold;">
@@ -5809,7 +5809,7 @@
 						<select class="payment-status-select" onchange="updatePaymentStatus('${visit.ID}', this.value)" style="margin-top: 5px; font-size: 12px;">
 							<option value="">-- שנה סטטוס --</option>
 							<option value="paid">✅ סמן כשולם</option>
-							<option value="partial">⚠️ תשלום חלקי</option>
+							<option value="3">⚠️ תשלום חלקי</option>
 							<option value="unpaid">❌ לא שולם</option>
 							<option value="no_payment">🚫 ללא תשלום</option>
 						</select>
@@ -5906,114 +5906,107 @@
 			
 			// צור חלון עריכה
 			const editModalHTML = `
-				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90vw; max-height: 80vh; overflow-y: auto;">
-					<h3 style="margin-bottom: 20px; color: #2c3e50;">✏️ עריכת ביקור - ${locationName}</h3>
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 650px; width: 90vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+					<h3 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 22px; border-bottom: 2px solid #e67e22; padding-bottom: 10px;">✏️ עריכת טיפול - ${locationName}</h3>
 					
-					<form id="editVisitForm">
-						<div class="form-group">
-							<label>תאריך:</label>
-							<input type="date" id="editVisitDate" value="${visit.date}" required>
+					<form id="editVisitForm" style="display: flex; flex-direction: column; gap: 18px;">
+						
+						<!-- תאריך -->
+						<div class="form-group" style="margin: 0;">
+							<label for="editVisitDate" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">תאריך:</label>
+							<input type="date" id="editVisitDate" value="${visit.date}" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
 						</div>
 						
-						<div class="form-group">
-							<label>סוג טיפול:</label>
-							<select id="editVisitType">
-								<option value="מלא" ${visit.visit_type === 'מלא' ? 'selected' : ''}>מלא</option>
-								<option value="חלקי" ${visit.visit_type === 'חלקי' ? 'selected' : ''}>חלקי</option>
-								<option value="ביקורת" ${visit.visit_type === 'ביקורת' ? 'selected' : ''}>ביקורת</option>
-							</select>
+						<!-- סוג טיפול - כפתורי רדיו -->
+						<div class="form-group" style="margin: 0;">
+							<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">סוג טיפול:</label>
+							<div style="display: flex; gap: 15px;">
+								<label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 15px; border: 2px solid #ddd; border-radius: 6px; transition: all 0.2s;">
+									<input type="radio" name="editVisitType" value="מלא" ${visit.visit_type === 'מלא' ? 'checked' : ''} onchange="document.getElementById('editVisitTypeHidden').value=this.value" style="margin: 0;">
+									<span style="font-size: 14px;">מלא</span>
+								</label>
+								<label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 15px; border: 2px solid #ddd; border-radius: 6px; transition: all 0.2s;">
+									<input type="radio" name="editVisitType" value="חלקי" ${visit.visit_type === 'חלקי' ? 'checked' : ''} onchange="document.getElementById('editVisitTypeHidden').value=this.value" style="margin: 0;">
+									<span style="font-size: 14px;">חלקי</span>
+								</label>
+								<label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 15px; border: 2px solid #ddd; border-radius: 6px; transition: all 0.2s;">
+									<input type="radio" name="editVisitType" value="ביקורת" ${visit.visit_type === 'ביקורת' ? 'checked' : ''} onchange="document.getElementById('editVisitTypeHidden').value=this.value" style="margin: 0;">
+									<span style="font-size: 14px;">ביקורת</span>
+								</label>
+								<input type="hidden" id="editVisitTypeHidden" value="${visit.visit_type || 'מלא'}">
+							</div>
 						</div>
 						
-						<div class="form-group">
-							<label>עבודה שבוצעה:</label>
-							<textarea id="editWorkDone" rows="3">${visit.work_done || ''}</textarea>
+						<!-- עבודה שבוצעה -->
+						<div class="form-group" style="margin: 0;">
+							<label for="editWorkDone" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">עבודה שבוצעה:</label>
+							<textarea id="editWorkDone" rows="2" placeholder="תיאור העבודה..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical;">${visit.work_done || ''}</textarea>
 						</div>
 						
-						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-							<div class="form-group">
-								<label>שעת התחלה:</label>
-								<div style="display: flex; gap: 5px; align-items: center;">
-									<input type="time" id="editStartTime" value="${visit.start_time || ''}" style="flex: 1;" onchange="calculateEditDuration()">
-									<button type="button" onclick="setCurrentTime('editStartTime')" title="קבע שעה נוכחית"
-											style="background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 36px; height: 36px;">🕐</button>
+						<!-- משך טיפול - התחלה/סיום -->
+						<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
+							<label style="display: block; margin-bottom: 10px; font-weight: 600; color: #555;">⏱️ משך הטיפול:</label>
+							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+								<div>
+									<label for="editStartTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת התחלה:</label>
+									<div style="display: flex; gap: 6px;">
+										<input type="time" id="editStartTime" value="${visit.start_time || ''}" onchange="calculateEditDuration()" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+										<button type="button" onclick="setCurrentTime('editStartTime')" style="padding: 8px 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">עכשיו</button>
+									</div>
+								</div>
+								<div>
+									<label for="editEndTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת סיום:</label>
+									<div style="display: flex; gap: 6px;">
+										<input type="time" id="editEndTime" value="${visit.end_time || ''}" onchange="calculateEditDuration()" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+										<button type="button" onclick="setCurrentTime('editEndTime')" style="padding: 8px 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">עכשיו</button>
+									</div>
 								</div>
 							</div>
-							
-							<div class="form-group">
-								<label>שעת סיום:</label>
-								<div style="display: flex; gap: 5px; align-items: center;">
-									<input type="time" id="editEndTime" value="${visit.end_time || ''}" style="flex: 1;" onchange="calculateEditDuration()">
-									<button type="button" onclick="setCurrentTime('editEndTime')" title="קבע שעה נוכחית"
-											style="background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 36px; height: 36px;">🕐</button>
-								</div>
+							<div id="editDurationDisplay" style="text-align: center; padding: 8px; background: white; border-radius: 6px; font-weight: 600; color: #e67e22; font-size: 15px;">
+								משך: <strong>${visit.duration_minutes || 0}</strong> דקות (<strong>${((visit.duration_minutes || 0) / 60).toFixed(1)}</strong> שעות)
 							</div>
+							<input type="hidden" id="editManualDurationMinutes" value="${visit.duration_minutes || 0}">
+							<input type="hidden" id="editCalculatedHours" value="${((visit.duration_minutes || 0) / 60).toFixed(2)}">
 						</div>
 						
-						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-							<div class="form-group">
-								<label>שעות:</label>
-								<input type="number" id="editDurationHours" min="0" max="24" value="${Math.floor((visit.duration_minutes || 0) / 60)}" onchange="updateEditManualDuration()">
+						<!-- עלות ועובדים -->
+						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+							<div class="form-group" style="margin: 0;">
+								<label for="editAmount" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💰 סכום:</label>
+								<input type="number" id="editAmount" step="0.01" min="0" value="${visit.amount || 0}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
 							</div>
 							
-							<div class="form-group">
-								<label>דקות:</label>
-								<input type="number" id="editDurationMinutes" min="0" max="59" value="${(visit.duration_minutes || 0) % 60}" onchange="updateEditManualDuration()">
+							<div class="form-group" style="margin: 0;">
+								<label for="editNumWorkers" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">👷 עובדים:</label>
+								<input type="number" id="editNumWorkers" min="1" value="${visit.num_workers || 1}" onchange="calculateEditTreatmentCost()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
 							</div>
 							
-							<div class="form-group">
-								<label>סה"כ דקות:</label>
-								<input type="number" id="editDuration" min="0" value="${visit.duration_minutes || 0}" onchange="updateEditFromTotalMinutes()">
+							<div class="form-group" style="margin: 0;">
+								<label for="editExpense" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💸 הוצאה:</label>
+								<input type="number" id="editExpense" step="0.01" min="0" value="${visit.expense || 0}" onchange="calculateEditTreatmentCost()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
 							</div>
 						</div>
 						
-						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-							<div class="form-group">
-								<label>שעות עשרוניות:</label>
-								<input type="number" id="editCalculatedHours" step="0.1" value="${((visit.duration_minutes || 0) / 60).toFixed(1)}" readonly style="background: #f8f9fa;">
-							</div>
-							
-							<div class="form-group">
-								<label>מספר עובדים:</label>
-								<input type="number" id="editNumWorkers" min="1" value="${visit.num_workers || 1}" onchange="calculateEditTreatmentCost()">
-							</div>
+						<!-- הערות -->
+						<div class="form-group" style="margin: 0;">
+							<label for="editNotes" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">📝 הערות:</label>
+							<textarea id="editNotes" rows="2" placeholder="הערות נוספות..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical;">${visit.notes || ''}</textarea>
 						</div>
 						
-						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-							<div class="form-group">
-								<label>סכום (₪):</label>
-								<input type="number" step="0.01" id="editAmount" value="${visit.amount || 0}">
-							</div>
-
-							<div class="form-group">
-								<label>הוצאות (₪):</label>
-								<input type="number" step="0.01" id="editExpense" value="${visit.expense || 0}" onchange="calculateEditTreatmentCost()">
-							</div>
-						</div>
-						
-						<div class="form-group">
-							<label>סטטוס תשלום:</label>
-							<select id="editPaid">
-								<option value="לא שולם" ${(visit.paid === 'לא שולם' || visit.paid === '0') ? 'selected' : ''}>לא שולם</option>
-								<option value="שולם" ${(visit.paid === 'שולם' || visit.paid === '1') ? 'selected' : ''}>שולם</option>
-								<option value="שולם חלקית" ${(visit.paid === 'שולם חלקית' || visit.paid === '2') ? 'selected' : ''}>שולם חלקית</option>
-							</select>
-						</div>
-						
-						<div class="form-group">
-							<label>הערות:</label>
-							<textarea id="editNotes" rows="3">${visit.notes || ''}</textarea>
-						</div>
-						
-						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
-							<button type="button" onclick="saveEditedVisit('${visitId}')" class="btn btn-success">
-								💾 שמור שינויים
-							</button>
-							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">
-								❌ ביטול
-							</button>
+						<!-- כפתורי פעולה -->
+						<div style="display: flex; gap: 12px; justify-content: center; margin-top: 10px; padding-top: 15px; border-top: 1px solid #e9ecef;">
+							<button type="button" onclick="saveEditedVisit('${visitId}')" style="background: #e67e22; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s; box-shadow: 0 2px 8px rgba(230,126,34,0.3);">💾 שמור שינויים</button>
+							<button type="button" onclick="closeEditModal()" style="background: #95a5a6; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s;">✖ ביטול</button>
 						</div>
 					</form>
 				</div>
+				
+				<style>
+					label:has(input[type="radio"]:checked) {
+						border-color: #e67e22 !important;
+						background: #fff3e0 !important;
+					}
+				</style>
 			`;
 			
 			// הצג את המודל
@@ -6101,8 +6094,7 @@
 			const startTime = document.getElementById('editStartTime').value;
 			const endTime = document.getElementById('editEndTime').value;
 			
-			// ✅ בדיקה משופרת לערכים תקינים
-			if (!startTime || !endTime || startTime === '00:00' || endTime === '00:00') {
+			if (!startTime || !endTime) {
 				return;
 			}
 			
@@ -6116,30 +6108,29 @@
 					return;
 				}
 				
-				if (end <= start) {
-					showToast('שעת סיום חייבת להיות אחרי שעת התחלה', 'warning');
-					return;
+				let diffMinutes = (end - start) / (1000 * 60);
+				
+				// אם הסיום לפני ההתחלה, זה כנראה למחרת
+				if (diffMinutes < 0) {
+					diffMinutes += 24 * 60;
 				}
 				
-				const diffMs = end - start;
-				const totalMinutes = Math.round(diffMs / (1000 * 60));
-				const hours = Math.floor(totalMinutes / 60);
-				const minutes = totalMinutes % 60;
-				const decimalHours = (totalMinutes / 60).toFixed(1);
+				// עדכון התצוגה
+				const displayDiv = document.getElementById('editDurationDisplay');
+				if (displayDiv) {
+					displayDiv.innerHTML = `משך: <strong>${diffMinutes}</strong> דקות (<strong>${(diffMinutes / 60).toFixed(1)}</strong> שעות)`;
+				}
 				
-				// עדכון השדות
-				const durationHoursEl = document.getElementById('editDurationHours');
-				const durationMinutesEl = document.getElementById('editDurationMinutes');
-				const durationEl = document.getElementById('editDuration');
-				const calculatedHoursEl = document.getElementById('editCalculatedHours');
+				// עדכון השדות המוסתרים
+				const manualField = document.getElementById('editManualDurationMinutes');
+				const calcField = document.getElementById('editCalculatedHours');
+				if (manualField) manualField.value = diffMinutes;
+				if (calcField) calcField.value = (diffMinutes / 60).toFixed(2);
 				
-				if (durationHoursEl) durationHoursEl.value = hours;
-				if (durationMinutesEl) durationMinutesEl.value = minutes;
-				if (durationEl) durationEl.value = totalMinutes;
-				if (calculatedHoursEl) calculatedHoursEl.value = decimalHours;
-				
-				// חישוב עלות אוטומטי
-				calculateEditTreatmentCost();
+				// חישוב עלות
+				if (typeof calculateEditTreatmentCost === 'function') {
+					calculateEditTreatmentCost();
+				}
 				
 			} catch (error) {
 				console.error('Error calculating duration:', error);
@@ -7538,7 +7529,7 @@
 								<span class="debt-work">${v.workDone}</span>
 								<span class="debt-amount">
 									${v.amount} ₪
-									${v.paymentStatus === 'partial' ? 
+									${v.paymentStatus === '3' ? 
 										`<span style="color: #f39c12; font-size: 11px;">(שולם: ${v.paidAmount}₪)</span>` : 
 										''}
 								</span>
@@ -9313,7 +9304,19 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 
 		// saveEditedVisit
 		async function saveEditedVisit(visitId) {
-			//const visitId = document.getElementById('editVisitId').value;
+			// אם לא קיבלנו visitId כפרמטר, נסה לקרוא מהשדה
+			if (!visitId) {
+				const editVisitIdElement = document.getElementById('editVisitId');
+				if (editVisitIdElement) {
+					visitId = editVisitIdElement.value;
+				}
+			}
+			
+			if (!visitId) {
+				showToast('❌ לא נמצא מזהה טיפול', 'error');
+				return;
+			}
+			
 			const visitIndex = visits.findIndex(v => v.ID === visitId);
 			
 			if (visitIndex === -1) {
@@ -9321,40 +9324,60 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				return;
 			}
 			
-			// Update visit object
-			visits[visitIndex] = {
-				ID: visitId,
-				date: document.getElementById('editVisitDate').value,
-				location_id: visits[visitIndex].location_id,
-				location_name: visits[visitIndex].location_name,
-				visit_type: document.getElementById('editVisitType').value,
-				work_done: document.getElementById('editWorkDone').value,
-				duration_minutes: parseInt(document.getElementById('editManualDurationMinutes').value) || 0,
-				num_workers: parseInt(document.getElementById('editNumWorkers').value) || 1,
-				start_time: document.getElementById('editStartTime').value || '',
-				end_time: document.getElementById('editEndTime').value || '',
-				amount: parseFloat(document.getElementById('editAmount').value) || 0,
-				paid: visits[visitIndex].paid || 'no',  // ✅ PRESERVE: keep existing paid status
-				expense: parseFloat(document.getElementById('editExpense').value) || 0,
-				notes: document.getElementById('editNotes').value || ''
-			};
-			
-			// Save locally
-			saveToLocalStorage();
-			
-			// Save to cloud if connected
-			if (access_token && SPREADSHEET_ID) {
-				await saveAllToSheetsOptimized();
+			// 🛡️ הגנה מפני לחיצות כפולות
+			if (isSubmittingVisit) {
+				console.log('⚠️ Already saving, ignoring duplicate click');
+				return;
 			}
 			
-			// Update treatment dates
-			await updateSingleLocationTreatmentDates(visits[visitIndex].location_id);
+			isSubmittingVisit = true;
 			
-			// Refresh display
-			filterVisits();
-			closeEditModal();
-			
-			showToast('✅ הטיפול עודכן בהצלחה', 'success');
+			try {
+				// Update visit object
+				visits[visitIndex] = {
+					ID: visitId,
+					date: document.getElementById('editVisitDate').value,
+					location_id: visits[visitIndex].location_id,
+					location_name: visits[visitIndex].location_name,
+					visit_type: document.getElementById('editVisitType').value,
+					work_done: document.getElementById('editWorkDone').value,
+					duration_minutes: parseInt(document.getElementById('editManualDurationMinutes').value) || 0,
+					num_workers: parseInt(document.getElementById('editNumWorkers').value) || 1,
+					start_time: document.getElementById('editStartTime').value || '',
+					end_time: document.getElementById('editEndTime').value || '',
+					amount: parseFloat(document.getElementById('editAmount').value) || 0,
+					paid: visits[visitIndex].paid || 'unpaid',
+					expense: parseFloat(document.getElementById('editExpense').value) || 0,
+					notes: document.getElementById('editNotes').value || ''
+				};
+				
+				// Save locally
+				saveToLocalStorage();
+				
+				// Save to cloud if connected
+				if (access_token && SPREADSHEET_ID) {
+					await saveAllToSheetsOptimized();
+				}
+				
+				// Update treatment dates
+				await updateSingleLocationTreatmentDates(visits[visitIndex].location_id);
+				
+				// Close modal
+				closeEditModal();
+				
+				// Refresh display
+				filterVisits();
+				loadPlanningData();
+				
+				showToast('✅ הטיפול עודכן בהצלחה', 'success');
+				
+			} catch (error) {
+				console.error('Error saving visit:', error);
+				showToast('❌ שגיאה בשמירת הטיפול', 'error');
+			} finally {
+				// 🔓 שחרר את הנעילה
+				isSubmittingVisit = false;
+			}
 		}
 
 	
@@ -9381,6 +9404,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			// המרה פשוטה לפי הערכים שיכולים להגיע מהייבוא
 			if (normalized === "כן" || normalized === "true" || normalized === "1") return "1";
 			if (normalized === "ללא תשלום" || normalized === "ללא") return "2";
+			if (normalized === "חלקי" || normalized === "שולם חלקית") return "3";  // ✅ הוסף את זה
 			return "0"; // כל השאר = לא שולם
 		}
    
@@ -9525,8 +9549,12 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				const visitDate = formatDate(visit.date);
 				const amount = visit.amount || 0;
 				const workDone = visit.work_done || 'טיפול';
-				const paidStatus = visit.paid === 'כן' ? '✅ שולם' : '❌ לא שולם';
-				const paidColor = visit.paid === 'כן' ? '#28a745' : '#dc3545';
+				const paidInfo = parsePaidField(visit.paid);
+				const paidStatus = paidInfo.text;
+				let paidColor = '#dc3545'; // לא שולם
+				if (paidInfo.status === '1') paidColor = '#28a745'; // שולם
+				else if (paidInfo.status === '2') paidColor = '#6c757d'; // ללא תשלום
+				else if (paidInfo.status === '3') paidColor = '#ffc107'; // חלקי
 				
 				historyHtml += `
 					<div style="border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: ${index === 0 ? '#f8f9ff' : '#fafafa'};">
@@ -9971,35 +9999,43 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			return paidInfo.status;
 		}
 
-		// ✅ NEW: Parse the paid field to get detailed payment info
+
+		// ✅ Parse the paid field to get detailed payment info
 		function parsePaidField(paidValue) {
-			if (!paidValue || paidValue === 'unpaid') {
-				return { status: 'unpaid', date: null, amount: 0 };
+			// טיפול בערך ריק
+			if (!paidValue || paidValue === '0') {
+				return { status: '0', text: 'לא שולם', date: null, amount: 0 };
 			}
 			
-			if (paidValue === 'no_payment') {
-				return { status: 'no_payment', date: null, amount: 0 };
+			// שולם מלא
+			if (paidValue === '1') {
+				return { status: '1', text: 'שולם', date: null, amount: null };
 			}
 			
-			// Check for paid with date: "paid:2024-10-23"
-			if (paidValue.startsWith('paid:')) {
-				const date = paidValue.substring(5);
-				return { status: 'paid', date: date, amount: null };
+			// ללא תשלום
+			if (paidValue === '2') {
+				return { status: '2', text: 'ללא תשלום', date: null, amount: 0 };
 			}
 			
-			// Check for partial payment: "partial:500"
-			if (paidValue.startsWith('partial:')) {
-				const amount = parseFloat(paidValue.substring(8)) || 0;
-				return { status: 'partial', date: null, amount: amount };
+			// שולם חלקית
+			if (paidValue === '3') {
+				return { status: '3', text: 'שולם חלקית', date: null, amount: 0 };
 			}
 			
-			// Old format compatibility: just "paid" without date
-			if (paidValue === 'paid') {
-				return { status: 'paid', date: null, amount: null };
+			// שולם עם תאריך: "1:2024-10-23"
+			if (paidValue.startsWith('1:')) {
+				const date = paidValue.substring(2);
+				return { status: '1', text: 'שולם', date: date, amount: null };
+			}
+			
+			// שולם חלקית עם סכום: "3:500"
+			if (paidValue.startsWith('3:')) {
+				const amount = parseFloat(paidValue.substring(2)) || 0;
+				return { status: '3', text: 'שולם חלקית', date: null, amount: amount };
 			}
 			
 			// Default fallback
-			return { status: 'unpaid', date: null, amount: 0 };
+			return { status: '0', text: 'לא שולם', date: null, amount: 0 };
 		}
 
 		
@@ -10007,11 +10043,12 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 
 		// טקסט סטטוס תשלום מעודכן
 		function getPaymentStatusText(status) {
+						
 			switch (status) {
-				case 'paid': return 'שולם';
-				case 'unpaid': return 'לא שולם';
-				case 'no_payment': return 'ללא תשלום';
-				case 'partial': return 'שולם חלקית';
+				case '1': return 'שולם';
+				case '0': return 'לא שולם';
+				case '2': return 'ללא תשלום';
+				case '3': return 'שולם חלקית';
 				default: return 'לא ידוע';
 			}
 		}
@@ -10038,7 +10075,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				return visitAmount;
 			}
 			
-			if (paidInfo.status === 'partial') {
+			if (paidInfo.status === '3') {
 				// Partially paid - return the partial amount
 				return paidInfo.amount;
 			}
@@ -10258,33 +10295,33 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			const startTime = document.getElementById('modalStartTime').value;
 			const endTime = document.getElementById('modalEndTime').value;
 			
-			if (!startTime || !endTime) return;
-			
-			const start = new Date(`2000-01-01T${startTime}`);
-			const end = new Date(`2000-01-01T${endTime}`);
-			
-			if (end <= start) {
-				showToast('שעת סיום חייבת להיות אחרי שעת התחלה', 'warning');
-				return;
+			if (startTime && endTime) {
+				const start = new Date(`2000-01-01T${startTime}`);
+				const end = new Date(`2000-01-01T${endTime}`);
+				
+				let diffMinutes = (end - start) / (1000 * 60);
+				
+				// אם הסיום לפני ההתחלה, זה כנראה למחרת
+				if (diffMinutes < 0) {
+					diffMinutes += 24 * 60;
+				}
+				
+				const hours = Math.floor(diffMinutes / 60);
+				const minutes = diffMinutes % 60;
+				
+				// עדכון התצוגה
+				const displayDiv = document.getElementById('modalDurationDisplay');
+				if (displayDiv) {
+					displayDiv.innerHTML = `משך: <strong>${diffMinutes}</strong> דקות (<strong>${(diffMinutes / 60).toFixed(1)}</strong> שעות)`;
+				}
+				
+				// עדכון השדות המוסתרים
+				document.getElementById('modalManualDurationMinutes').value = diffMinutes;
+				document.getElementById('modalCalculatedHours').value = (diffMinutes / 60).toFixed(2);
+				
+				// חישוב עלות
+				calculateModalTreatmentCost();
 			}
-			
-			const diffMs = end - start;
-			const totalMinutes = Math.round(diffMs / (1000 * 60));
-			const hours = Math.floor(totalMinutes / 60);
-			const minutes = totalMinutes % 60;
-			const decimalHours = (totalMinutes / 60).toFixed(1);
-			
-			// עדכון השדות
-			document.getElementById('modalDurationHours').value = hours;
-			document.getElementById('modalDurationMinutes').value = minutes;
-			document.getElementById('modalManualDurationMinutes').value = totalMinutes;
-			document.getElementById('modalCalculatedHours').value = decimalHours;
-			
-			// עדכון שעת הביקור לתצוגה
-			document.getElementById('modalVisitTime').value = startTime;
-			
-			// חישוב עלות אוטומטי
-			calculateModalTreatmentCost();
 		}
 
 		function updateModalManualDuration() {
@@ -10810,126 +10847,121 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			updateTreatmentsStats(visits);
 		}
 
+
+
 		function showAddTreatmentForm() {
-		
+
 			const modalContent = `
-				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 800px; width: 90vw; max-height: 85vh; overflow-y: auto;">
-					<h3 style="margin-bottom: 20px; color: #2c3e50;">🔧 הוספת טיפול חדש</h3>
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 650px; width: 90vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+					<h3 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 22px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">🔧 טיפול חדש</h3>
 					
-					<form id="modalVisitForm" onsubmit="handleModalVisitSubmit(event)">
-						<div class="form-group">
-							<label for="modalVisitDate">תאריך:</label>
-							<input type="date" id="modalVisitDate" required>
+					<form id="modalVisitForm" onsubmit="handleModalVisitSubmit(event)" style="display: flex; flex-direction: column; gap: 18px;">
+						
+						<!-- תאריך ולקוח -->
+						<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px;">
+							<div class="form-group" style="margin: 0;">
+								<label for="modalVisitDate" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">תאריך:</label>
+								<input type="date" id="modalVisitDate" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+							</div>
+							
+							<div class="form-group" style="margin: 0; position: relative;">
+								<label for="modalClientSearchInput" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">לקוח:</label>
+								<input type="text" id="modalClientSearchInput" placeholder="🔍 חיפוש לקוח..." onkeyup="filterClientOptions('modalClientSearchInput', 'modalClientOptions')" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+								<div id="modalClientOptions" class="client-options" style="display: none;"></div>
+								<input type="hidden" id="modalSelectedClientId">
+							</div>
 						</div>
 						
-						<div class="form-group">
-							<label for="modalClientSearchInput">לקוח:</label>
-							<input type="text" id="modalClientSearchInput" placeholder="חפש לקוח..." onkeyup="filterClientOptions('modalClientSearchInput', 'modalClientOptions')" required>
-							<div id="modalClientOptions" class="client-options" style="display: none;"></div>
-							<input type="hidden" id="modalSelectedClientId">
+						<!-- סוג טיפול - כפתורי רדיו -->
+						<div class="form-group" style="margin: 0;">
+							<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">סוג טיפול:</label>
+							<div style="display: flex; gap: 15px;">
+								<label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 15px; border: 2px solid #ddd; border-radius: 6px; transition: all 0.2s;">
+									<input type="radio" name="modalVisitType" value="מלא" checked onchange="document.getElementById('modalVisitTypeHidden').value=this.value" style="margin: 0;">
+									<span style="font-size: 14px;">מלא</span>
+								</label>
+								<label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 15px; border: 2px solid #ddd; border-radius: 6px; transition: all 0.2s;">
+									<input type="radio" name="modalVisitType" value="חלקי" onchange="document.getElementById('modalVisitTypeHidden').value=this.value" style="margin: 0;">
+									<span style="font-size: 14px;">חלקי</span>
+								</label>
+								<label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 15px; border: 2px solid #ddd; border-radius: 6px; transition: all 0.2s;">
+									<input type="radio" name="modalVisitType" value="ביקורת" onchange="document.getElementById('modalVisitTypeHidden').value=this.value" style="margin: 0;">
+									<span style="font-size: 14px;">ביקורת</span>
+								</label>
+								<input type="hidden" id="modalVisitTypeHidden" value="מלא">
+							</div>
 						</div>
 						
-						<div class="form-group">
-							<label for="modalVisitType">סוג טיפול:</label>
-							<select id="modalVisitType" required>
-								<option value="">בחר סוג טיפול</option>
-								<option value="מלא">מלא</option>
-								<option value="חלקי">חלקי</option>
-								<option value="ביקורת">ביקורת</option>
-							</select>
+						<!-- עבודה שבוצעה -->
+						<div class="form-group" style="margin: 0;">
+							<label for="modalWorkDone" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">עבודה שבוצעה:</label>
+							<textarea id="modalWorkDone" rows="2" placeholder="תיאור העבודה..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical;"></textarea>
 						</div>
 						
-						<div class="form-group">
-							<label for="modalWorkDone">עבודה שבוצעה:</label>
-							<textarea id="modalWorkDone" rows="3" placeholder="תיאור העבודה שבוצעה"></textarea>
-						</div>
-						
-						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-							<div class="form-group">
-								<label for="modalStartTime">שעת התחלה:</label>
-								<div style="display: flex; gap: 5px; align-items: center;">
-									<input type="time" id="modalStartTime" style="flex: 1;" onchange="calculateModalDuration()">
-									<button type="button" onclick="setCurrentTime('modalStartTime')" 
-											style="padding: 8px 12px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">עכשיו</button>
+						<!-- משך טיפול - התחלה/סיום -->
+						<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
+							<label style="display: block; margin-bottom: 10px; font-weight: 600; color: #555;">⏱️ משך הטיפול:</label>
+							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+								<div>
+									<label for="modalStartTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת התחלה:</label>
+									<div style="display: flex; gap: 6px;">
+										<input type="time" id="modalStartTime" onchange="calculateModalDuration()" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+										<button type="button" onclick="setCurrentTime('modalStartTime')" style="padding: 8px 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">עכשיו</button>
+									</div>
+								</div>
+								<div>
+									<label for="modalEndTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת סיום:</label>
+									<div style="display: flex; gap: 6px;">
+										<input type="time" id="modalEndTime" onchange="calculateModalDuration()" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+										<button type="button" onclick="setCurrentTime('modalEndTime')" style="padding: 8px 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">עכשיו</button>
+									</div>
 								</div>
 							</div>
+							<div id="modalDurationDisplay" style="text-align: center; padding: 8px; background: white; border-radius: 6px; font-weight: 600; color: #3498db; font-size: 15px;">
+								משך: -- דקות (-- שעות)
+							</div>
+							<input type="hidden" id="modalManualDurationMinutes" value="0">
+							<input type="hidden" id="modalCalculatedHours" value="0">
+						</div>
+						
+						<!-- עלות ועובדים -->
+						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+							<div class="form-group" style="margin: 0;">
+								<label for="modalAmount" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💰 סכום לגבייה:</label>
+								<input type="number" id="modalAmount" step="0.01" min="0" placeholder="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+							</div>
 							
-							<div class="form-group">
-								<label for="modalEndTime">שעת סיום:</label>
-								<div style="display: flex; gap: 5px; align-items: center;">
-									<input type="time" id="modalEndTime" style="flex: 1;" onchange="calculateModalDuration()">
-									<button type="button" onclick="setCurrentTime('modalEndTime')" 
-											style="padding: 8px 12px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">עכשיו</button>
-								</div>
+							<div class="form-group" style="margin: 0;">
+								<label for="modalNumWorkers" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">👷 עובדים:</label>
+								<input type="number" id="modalNumWorkers" min="1" value="1" onchange="calculateModalTreatmentCost()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+							</div>
+							
+							<div class="form-group" style="margin: 0;">
+								<label for="modalExpense" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💸 הוצאה:</label>
+								<input type="number" id="modalExpense" step="0.01" min="0" value="0" placeholder="0" onchange="calculateModalTreatmentCost()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
 							</div>
 						</div>
 						
-						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-							<div class="form-group">
-								<label for="modalDurationHours">שעות:</label>
-								<input type="number" id="modalDurationHours" min="0" max="24" value="0" onchange="updateModalManualDuration()">
-							</div>
-							
-							<div class="form-group">
-								<label for="modalDurationMinutes">דקות:</label>
-								<input type="number" id="modalDurationMinutes" min="0" max="59" value="0" onchange="updateModalManualDuration()">
-							</div>
-							
-							<div class="form-group">
-								<label for="modalManualDurationMinutes">סה"כ דקות:</label>
-								<input type="number" id="modalManualDurationMinutes" min="0" value="0" placeholder="0" onchange="updateModalFromTotalMinutes()">
-							</div>
+						<!-- הערות -->
+						<div class="form-group" style="margin: 0;">
+							<label for="modalNotes" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">📝 הערות:</label>
+							<textarea id="modalNotes" rows="2" placeholder="הערות נוספות..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical;"></textarea>
 						</div>
 						
-						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-							<div class="form-group">
-								<label for="modalCalculatedHours">שעות עשרוניות:</label>
-								<input type="number" id="modalCalculatedHours" step="0.1" readonly style="background: #f8f9fa;">
-							</div>
-							
-							<div class="form-group">
-								<label for="modalNumWorkers">מספר עובדים:</label>
-								<input type="number" id="modalNumWorkers" min="1" value="1" onchange="calculateModalTreatmentCost()">
-							</div>
-						</div>
-						
-						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-							<div class="form-group">
-								<label for="modalAmount">סכום לגביה:</label>
-								<input type="number" id="modalAmount" step="0.01" min="0" placeholder="0">
-							</div>
-							
-							<div class="form-group">
-								<label for="modalExpense">הוצאה:</label>
-								<input type="number" id="modalExpense" step="0.01" min="0" value="0" placeholder="0" onchange="calculateModalTreatmentCost()">
-							</div>
-							
-							<div class="form-group">
-								<label for="modalPaymentStatus">סטטוס תשלום:</label>
-								<select id="modalPaymentStatus">
-									<option value="לא שולם">לא שולם</option>
-									<option value="שולם">שולם</option>
-									<option value="שולם חלקית">שולם חלקית</option>
-								</select>
-							</div>
-						</div>
-						
-						<div class="form-group">
-							<label for="modalNotes">הערות:</label>
-							<textarea id="modalNotes" rows="2" placeholder="הערות נוספות"></textarea>
-						</div>
-						
-						<div class="form-group">
-							<label for="modalVisitTime">שעת ביקור (רק לתצוגה):</label>
-							<input type="time" id="modalVisitTime" style="background: #f8f9fa;" readonly>
-						</div>
-						
-						<div class="form-group" style="text-align: center; margin-top: 25px;">
-							<button type="submit" style="background: #27ae60; color: white; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-left: 10px;">💾 שמור טיפול</button>
-							<button type="button" onclick="closeModal()" style="background: #95a5a6; color: white; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">❌ ביטול</button>
+						<!-- כפתורי פעולה -->
+						<div style="display: flex; gap: 12px; justify-content: center; margin-top: 10px; padding-top: 15px; border-top: 1px solid #e9ecef;">
+							<button type="submit" style="background: #27ae60; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s; box-shadow: 0 2px 8px rgba(39,174,96,0.3);">💾 שמור טיפול</button>
+							<button type="button" onclick="closeEditModal()" style="background: #95a5a6; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s;">✖ ביטול</button>
 						</div>
 					</form>
 				</div>
+				
+				<style>
+					label:has(input[type="radio"]:checked) {
+						border-color: #3498db !important;
+						background: #e3f2fd !important;
+					}
+				</style>
 			`;
 			
 			showModal(modalContent);
@@ -11091,7 +11123,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				// איסוף נתונים מהטופס
 				const visitDate = document.getElementById('modalVisitDate').value;
 				const selectedClientId = document.getElementById('modalSelectedClientId').value;
-				const visitType = document.getElementById('modalVisitType').value;
+				const visitType = document.getElementById('modalVisitTypeHidden').value;
 				const workDone = document.getElementById('modalWorkDone').value;
 				const startTime = document.getElementById('modalStartTime').value;
 				const endTime = document.getElementById('modalEndTime').value;
@@ -11137,7 +11169,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 					start_time: startTime || '',
 					end_time: endTime || '',
 					amount: amount,
-					paid: 'unpaid',
+					paid: '0', 
 					expense: expense,
 					notes: notes
 				};
@@ -11211,14 +11243,17 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			
 			let optionsHTML = '';
 			activeLocations.slice(0, 10).forEach(location => {
+				const safeName = (location.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+				const safeAddress = (location.full_address || 'ללא כתובת').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+				
 				optionsHTML += `
-					<div class="client-option" onclick="selectModalClient('${location.ID}', '${location.name.replace(/'/g, "\\'")}')">
-						<strong>${location.name}</strong>
-						<div style="font-size: 12px; color: #666;">${location.full_address || 'ללא כתובת'}</div>
+					<div class="client-option" onclick="selectModalClient('${location.ID}', '${safeName}')">
+						<strong>${safeName}</strong>
+						<div style="font-size: 12px; color: #666;">${safeAddress}</div>
 					</div>
 				`;
 			});
-			
+
 			optionsDiv.innerHTML = optionsHTML;
 			optionsDiv.style.display = 'block';
 		}
@@ -11226,82 +11261,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 
 		///>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-		// הוסף פונקציה חדשה:
-		async function handlePaymentStatusChange(visitId, newStatus, oldStatus) {
-			const visit = visits.find(v => v.ID === visitId);
-			if (!visit) return;
-			
-			console.log(`Payment status change: ${oldStatus} → ${newStatus} for visit ${visitId}`);
-			
-			// אם משנים ל"שולם" ולא היה שולם לפני
-			if (newStatus === '1' && oldStatus !== '1') {
-				// יצור תשלום חדש
-				const payment = {
-					ID: generateID(),
-					date: new Date().toISOString().split('T')[0],
-					time: new Date().toTimeString().substr(0, 5),
-					amount: visit.amount || 0,
-					payment_method: 'cash',
-					source_type: 'status_change_payment',
-					client_id: visit.location_id,
-					client_name: location ? location.name : 'לקוח לא ידוע',
-					notes: `תשלום עבור טיפול מ-${formatDate(visit.date)}`,
-					status: 'completed',
-					created_at: new Date().toISOString()
-				};
-				
-				payments.push(payment);
-				
-				const link = {
-					ID: generateID(),
-					payment_id: payment.ID,
-					visit_id: visitId,
-					amount_allocated: visit.amount || 0,
-					link_type: 'full_payment',
-					created_at: new Date().toISOString()
-				};
-				
-				paymentVisitLinks.push(link);
-				
-				// שמירה בענן
-				if (access_token) {
-					await saveAllToSheetsOptimized();
-				}
-				
-				showToast('נוצר תשלום עבור הטיפול', 'success');
-			}
-			
-			// אם משנים מ"שולם" למשהו אחר
-			if (oldStatus === '1' && newStatus !== '1') {
-				// מצא ומחק קישורי תשלום לטיפול הזה
-				const linksToRemove = paymentVisitLinks.filter(link => link.visit_id === visitId);
-				
-				linksToRemove.forEach(link => {
-					// הסר את הקישור
-					const linkIndex = paymentVisitLinks.findIndex(l => l.ID === link.ID);
-					if (linkIndex > -1) {
-						paymentVisitLinks.splice(linkIndex, 1);
-					}
-					
-					// בדוק אם התשלום קשור לטיפולים נוספים
-					const otherLinks = paymentVisitLinks.filter(l => l.payment_id === link.payment_id);
-					
-					// אם אין קישורים נוספים לתשלום, הסר גם את התשלום
-					if (otherLinks.length === 0) {
-						const paymentIndex = payments.findIndex(p => p.ID === link.payment_id);
-						if (paymentIndex > -1) {
-							payments.splice(paymentIndex, 1);
-						}
-					}
-				});
-				
-				showToast('הוסרו תשלומים קשורים לטיפול', 'info');
-			}
-			
-			// שמור שינויים
-			saveToLocalStorage();
-		}
-
+		
 	///   פונקציות תשלומים   //////////
 	
 		// טעינת אפשרויות סינון תשלומים
@@ -11708,9 +11668,14 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				return;
 			}
 			
-			// ✅ UPDATED: Handle different payment statuses with date selection
-			if (newStatus === 'paid') {
-				// Ask user for payment date with today as default
+			// המרת פורמט ישן לחדש אם נדרש
+			if (newStatus === 'paid') newStatus = '1';
+			if (newStatus === 'unpaid') newStatus = '0';
+			if (newStatus === 'no_payment') newStatus = '2';
+			if (newStatus === 'partial') newStatus = '3';
+			
+			// אם מסמנים כ"שולם"
+			if (newStatus === '1') {
 				const today = new Date();
 				const defaultDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
 				
@@ -11721,10 +11686,8 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				let paymentDate;
 				
 				if (!dateInput || dateInput.trim() === '') {
-					// Empty input - use today
 					paymentDate = today.toISOString().split('T')[0];
 				} else {
-					// Parse user input
 					const parts = dateInput.trim().split('/');
 					if (parts.length !== 3) {
 						showToast('פורמט תאריך לא תקין. השתמש ב: DD/MM/YYYY', 'error');
@@ -11735,7 +11698,6 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 					const month = parts[1].padStart(2, '0');
 					const year = parts[2];
 					
-					// Validate date
 					const dateObj = new Date(`${year}-${month}-${day}`);
 					if (isNaN(dateObj.getTime())) {
 						showToast('תאריך לא תקין', 'error');
@@ -11745,14 +11707,14 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 					paymentDate = `${year}-${month}-${day}`;
 				}
 				
-				visit.paid = `paid:${paymentDate}`;
+				visit.paid = `1:${paymentDate}`;
 				
-			} else if (newStatus === 'partial') {
-				// Ask user for partial amount
+			} else if (newStatus === '3') {
+				// תשלום חלקי
 				const visitAmount = parseFloat(visit.amount) || 0;
 				const partialAmount = prompt(`כמה שולם? (מתוך ${visitAmount}₪)`, '');
 				
-				if (partialAmount === null) return; // User cancelled
+				if (partialAmount === null) return;
 				
 				const amount = parseFloat(partialAmount);
 				if (isNaN(amount) || amount <= 0) {
@@ -11761,39 +11723,18 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				}
 				
 				if (amount >= visitAmount) {
-					// If paid full or more, ask for date and mark as fully paid
-					const today = new Date();
-					const defaultDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-					
-					const dateInput = prompt('תאריך תשלום (DD/MM/YYYY):', defaultDate);
-					
-					if (dateInput === null) return;
-					
-					let paymentDate;
-					if (!dateInput || dateInput.trim() === '') {
-						paymentDate = today.toISOString().split('T')[0];
-					} else {
-						const parts = dateInput.trim().split('/');
-						if (parts.length === 3) {
-							const day = parts[0].padStart(2, '0');
-							const month = parts[1].padStart(2, '0');
-							const year = parts[2];
-							paymentDate = `${year}-${month}-${day}`;
-						} else {
-							paymentDate = today.toISOString().split('T')[0];
-						}
-					}
-					
-					visit.paid = `paid:${paymentDate}`;
+					// שולם מלא - עבור לסטטוס "שולם"
+					const today = new Date().toISOString().split('T')[0];
+					visit.paid = `1:${today}`;
 				} else {
-					visit.paid = `partial:${amount}`;
+					visit.paid = `3:${amount}`;
 				}
 				
-			} else if (newStatus === 'no_payment') {
-				visit.paid = 'no_payment';
+			} else if (newStatus === '2') {
+				visit.paid = '2';
 				
-			} else if (newStatus === 'unpaid') {
-				visit.paid = 'unpaid';
+			} else if (newStatus === '0') {
+				visit.paid = '0';
 			}
 			
 			// Save locally
@@ -11811,11 +11752,8 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				showToast('💾 עודכן מקומית', 'info', 2000);
 			}
 			
-			// Refresh displays
+			// Refresh display
 			filterVisits();
-			if (typeof displayDebts === 'function') {
-				displayDebts();
-			}
 		}
 
 		// מחיקת תשלומים הקשורים לטיפול
