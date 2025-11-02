@@ -1954,7 +1954,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3725,30 +3725,6 @@
 		}
 	
 		
-		// עדכון פונקציית החלפת סטטוס פעיל/לא פעיל
-		function toggleClientActive(clientId, newStatus) {
-			const client = locations.find(loc => loc.ID === clientId);
-			if (!client) return;
-			
-			const oldStatus = client.active;
-			client.active = newStatus;
-			
-			// שמירה מקומית
-			saveToLocalStorage();
-			
-			// שמירה בענן אם מחובר
-			if (access_token && SPREADSHEET_ID) {
-				updateLocationInCloud(client);
-			}
-			
-			const statusText = newStatus === "1" ? "פעיל" : "לא פעיל";
-			showToast(`${client.name} הוגדר כ${statusText}`, 'info');
-			
-			// רענון התצוגה רק אם הלקוח הפך ללא פעיל
-			if (newStatus === "0") {
-				loadPlanningDataAdvanced();
-			}
-		}
 	
 		// עדכון שעה מתוכננת ללקוח
 		function updateClientScheduledTime(clientId, newTime) {
@@ -5040,67 +5016,6 @@
 			showEditModal(editModalHTML);
 		}
 
-		// פונקציה לעדכון הלקוח בענן (אופציונלית)
-		async function updateLocationInCloud(updatedLocation) {
-			if (!await validateToken()) return;
-			
-			try {
-				// קריאת כל הנתונים מהענן
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:P' // ✅ שונה מ-A:O ל-A:P
-				});
-				
-				const rows = response.result.values || [];
-				
-				// מציאת השורה לעדכון
-				let rowToUpdate = -1;
-				for (let i = 1; i < rows.length; i++) {
-					if (rows[i][0] == updatedLocation.ID) {
-						rowToUpdate = i + 1; // +1 כי Google Sheets מתחיל מ-1
-						break;
-					}
-				}
-				
-				if (rowToUpdate > 0) {
-					// עדכון השורה
-					const updatedRow = [
-						updatedLocation.ID,
-						updatedLocation.name,
-						updatedLocation.full_address,
-						updatedLocation.neighborhood,
-						updatedLocation.city,
-						updatedLocation.contact_person,
-						updatedLocation.phone,
-						updatedLocation.allowed_day,
-						updatedLocation.interval_weeks,
-						updatedLocation.temp_addition || 0,
-						updatedLocation.base_amount,
-						updatedLocation.active,
-						updatedLocation.notes,
-						updatedLocation.last_visit || '',
-						updatedLocation.next_visit || '',
-						updatedLocation.client_requests || '' // ✅ הוסף שדה client_requests
-					];
-					
-					await gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: SPREADSHEET_ID,
-						range: `Locations!A${rowToUpdate}:P${rowToUpdate}`, // ✅ שונה מ-O ל-P
-						valueInputOption: 'USER_ENTERED',
-						resource: {
-							values: [updatedRow]
-						}
-					});
-					
-					console.log(`✅ Updated location ${updatedLocation.ID} in cloud`);
-				}
-				
-			} catch (error) {
-				console.error('Error updating location in cloud:', error);
-				throw error;
-			}
-		}
-        
 
        function deleteLocation(locationId) {
            if (confirm('האם אתה בטוח שברצונך למחוק את הלקוח?')) {
@@ -5828,26 +5743,7 @@
 			updateTreatmentsStats(filteredVisits);
 		}
 
-		function clearVisitFilters() {
-			document.getElementById('filterLocation').value = '';
-			document.getElementById('filterPayment').value = '';
-			document.getElementById('filterDateFrom').value = '';
-			document.getElementById('filterDateTo').value = '';
-			document.getElementById('maxResults').value = '200';
-			document.getElementById('filterActiveClients').value = '1'; // Reset to active only
-			
-			// ניקוי החיפוש החכם
-			if (document.getElementById('visitSmartSearch')) {
-				document.getElementById('visitSmartSearch').value = '';
-			}
-			
-			// הסרת active מכפתורים מהירים
-			document.querySelectorAll('.filter-quick-btn').forEach(btn => btn.classList.remove('active'));
-			
-			displayFilteredVisits(visits);
-			updateTreatmentsStats(visits);
-		}
-
+		
 		// תוספה - הצגת טיפולים מסוננים
 		function displayFilteredVisits(filteredVisits) {
 			const tbody = document.getElementById('visitsHistoryTableBody');
@@ -6395,12 +6291,6 @@
 			}
 		}, 300000); // בדיקה כל 5 דקות
 	   
-	   // תוספה - חישוב שעות מדקות
-		function updateHoursDisplay() {
-			const minutes = parseFloat(document.getElementById('manualDurationMinutes').value) || 0;
-			const hours = (minutes / 60).toFixed(2);
-			document.getElementById('calculatedHours').value = hours > 0 ? hours : '';
-		}
 	   
 	    // חישוב עלות טיפול מעודכן
 		function calculateTreatmentCost() {
@@ -6655,7 +6545,7 @@
 		// פונקציה חדשה להוספת כותרות לגיליון ספציפי
 		async function addHeadersToSheet(sheetName) {
 			const headersMap = {
-				'Locations': ['ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 'base_amount', 'active', 'notes', 'last_visit', 'next_visit'],
+				'Locations': ['ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 'client_requests'],
 				'Visits': ['ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 'duration_minutes', 'num_workers', 'start_time', 'end_time', 'amount', 'paid', 'expense', 'notes'],  // ✅ ADDED: 'paid' field
 				'Receipts': ['ID', 'book_number', 'receipt_number', 'date', 'location_id', 'location_name', 'amount', 'payment_type', 'notes'],
 				'TelegramVisits': ['message_id', 'date', 'text', 'processed', 'location_id', 'visit_id'],
@@ -7462,7 +7352,7 @@
 		
 
 
-		function showModal(content) {
+		function showtelegramModal(content) {
 			// הסר מודל קיים אם יש
 			const existingModal = document.getElementById('telegramModal');
 			if (existingModal) {
@@ -7496,7 +7386,7 @@
 			});
 		}
 
-		function closeModal() {
+		function closeTelegramModal() {
 			const modal = document.getElementById('telegramModal');
 			if (modal) {
 				modal.remove();
@@ -8056,14 +7946,7 @@
 			return errors;
 		}
 
-		function showValidationErrors(errors) {
-			if (errors.length > 0) {
-				alert('בעיות בטופס:\n' + errors.join('\n'));
-				return true; // יש שגיאות
-			}
-			return false; // אין שגיאות
-		}
-	   
+
 	   // שמירה מקבצית של לקוחות
 		async function saveLocationsBatch(locationsArray) {
 			if (!await validateToken() || locationsArray.length === 0) return false;
@@ -8883,17 +8766,6 @@
 			}
 		}
 	   
-	   // פונקציה לחידוש נתוני התכנון לאחר עדכון תאריכים
-		function refreshPlanningAfterTreatmentUpdate() {
-			// רענן את נתוני התכנון אם הטאב פתוח
-			const currentSection = document.querySelector('.section.active');
-			if (currentSection && currentSection.id === 'planning') {
-				loadPlanningData();
-			}
-			
-			// רענן גם את רשימת הלקוחות בטופס הביקור
-			loadLocationsForSelect();
-		}
 	   
 	   // פונקציה לבדיקת מצב נתוני התכנון - לדיבוג
 		function debugPlanningData() {
@@ -9511,17 +9383,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			if (normalized === "ללא תשלום" || normalized === "ללא") return "2";
 			return "0"; // כל השאר = לא שולם
 		}
-
-		// פונקציה להצגת טקסט ידידותי
-		function getPaymentStatusText(status) {
-			switch(status) {
-				case "0": return "לא שולם";
-				case "1": return "שולם"; 
-				case "2": return "ללא תשלום";
-				default: return "לא שולם";
-			}
-		}
-	   
+   
 	   
 	   function parseAddressForImport(customerName) {
 			if (!customerName) return { name: '', fullAddress: '', neighborhood: '', city: '' };
@@ -9645,7 +9507,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				.slice(0, 3);
 			
 			if (clientVisits.length === 0) {
-				alert(`${client.name}\nאין עדיין היסטוריית טיפולים`);
+				showToast(`${client.name} - אין עדיין היסטוריית טיפולים`, 'info');
 				return;
 			}
 			
@@ -12073,77 +11935,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			return filtered;
 		}
 
-		// חיפוש חכם בקבלות
-		// Check if handleReceiptSmartSearch function exists, if not, add it:
-		function handleReceiptSmartSearch(searchTerm) {
-			if (!searchTerm.trim()) {
-				applyReceiptFilters();
-				return;
-			}
-			
-			// Find matching clients
-			const matchingClients = searchClientsAdvanced(searchTerm);
-			const clientNames = matchingClients.map(client => client.name);
-			
-			if (clientNames.length === 0) {
-				displayFilteredReceipts([]);
-				updateReceiptsStats([]);
-				return;
-			}
-			
-			// Filter receipts by found clients
-			let filteredReceipts = receipts.filter(receipt => 
-				clientNames.some(name => 
-					receipt.location_name && receipt.location_name.toLowerCase().includes(name.toLowerCase())
-				)
-			);
-			
-			// Apply additional filters
-			filteredReceipts = applyAdditionalReceiptFilters(filteredReceipts);
-			
-			displayFilteredReceipts(filteredReceipts);
-			updateReceiptsStats(filteredReceipts);
-		}
-
-		// ניקוי חיפוש חכם בקבלות
-		function clearReceiptSmartSearch() {
-			const searchInput = document.getElementById('receiptSmartSearch');
-			if (searchInput) {
-				searchInput.value = '';
-			}
-			applyReceiptFilters();
-		}
-
-		// פונקציה להחלת סינונים נוספים על קבלות
-		function applyAdditionalReceiptFilters(receiptsArray) {
-			let filtered = [...receiptsArray];
-			
-			// סינון לפי פנקס
-			const bookFilter = document.getElementById('filterReceiptBook')?.value;
-			if (bookFilter) {
-				filtered = filtered.filter(r => r.book_number === bookFilter);
-			}
-			
-			// סינון לפי סוג תשלום
-			const paymentFilter = document.getElementById('filterPaymentType')?.value;
-			if (paymentFilter) {
-				filtered = filtered.filter(r => r.payment_type === paymentFilter);
-			}
-			
-			// סינון לפי תאריך
-			const dateFrom = document.getElementById('filterReceiptDateFrom')?.value;
-			const dateTo = document.getElementById('filterReceiptDateTo')?.value;
-			
-			if (dateFrom) {
-				filtered = filtered.filter(r => r.date >= dateFrom);
-			}
-			if (dateTo) {
-				filtered = filtered.filter(r => r.date <= dateTo);
-			}
-			
-			return filtered;
-		}
-
+		
 		// חיפוש חכם בתשלומים
 		function handlePaymentSmartSearch(searchTerm) {
 			if (!searchTerm.trim()) {
@@ -12338,39 +12130,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			console.log('App initialization complete');
 		});
 
-		// Add this function - it's missing from the code:
-		function showClientHistory(clientId) {
-			const client = locations.find(loc => loc.ID === clientId);
-			if (!client) {
-				showToast('לקוח לא נמצא', 'error');
-				return;
-			}
-			
-			// Jump to treatments tab
-			showSection('history');
-			
-			// Wait for tab to load, then apply client filter
-			setTimeout(() => {
-				// Clear existing filters first
-				if (typeof clearVisitFilters === 'function') {
-					clearVisitFilters();
-				}
-				
-				// Set smart search to client name
-				const smartSearchInput = document.getElementById('visitSmartSearch');
-				if (smartSearchInput) {
-					smartSearchInput.value = client.name;
-					// Trigger the search
-					if (typeof handleVisitSmartSearch === 'function') {
-						handleVisitSmartSearch(client.name);
-					}
-				}
-				
-				showToast(`מציג היסטוריית טיפולים עבור ${client.name}`, 'info', 2000);
-			}, 200);
-		}
-
-		
+	
 		
 		async function validateToken() {
 			if (!access_token || !gapi.client) {
