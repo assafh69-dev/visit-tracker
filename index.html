@@ -1954,7 +1954,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -11073,95 +11073,118 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 		// הפונקציה filterClientOptions כבר קיימת ותעבוד עם ה-IDs החדשים
 
 		// טיפול בשליחת הטופס מהמודל
+		// משתנה גלובלי למניעת לחיצות כפולות
+		let isSubmittingVisit = false;
+
 		async function handleModalVisitSubmit(event) {
 			event.preventDefault();
 			
-			// איסוף נתונים מהטופס
-			const visitDate = document.getElementById('modalVisitDate').value;
-			const selectedClientId = document.getElementById('modalSelectedClientId').value;
-			const visitType = document.getElementById('modalVisitType').value;
-			const workDone = document.getElementById('modalWorkDone').value;
-			const startTime = document.getElementById('modalStartTime').value;
-			const endTime = document.getElementById('modalEndTime').value;
-			const durationMinutes = parseInt(document.getElementById('modalManualDurationMinutes').value) || 0;
-			const numWorkers = parseInt(document.getElementById('modalNumWorkers').value) || 1;
-			const amount = parseFloat(document.getElementById('modalAmount').value) || 0;
-			const expense = parseFloat(document.getElementById('modalExpense').value) || 0;
-			const notes = document.getElementById('modalNotes').value;
-			
-			// בדיקות בסיסיות
-			if (!selectedClientId) {
-				showToast('❌ אנא בחר לקוח', 'error');
+			// 🛡️ הגנה מפני לחיצות כפולות
+			if (isSubmittingVisit) {
+				console.log('⚠️ Already submitting, ignoring duplicate click');
 				return;
 			}
 			
-			if (!visitDate) {
-				showToast('❌ נדרש תאריך טיפול', 'error');
-				return;
-			}
+			isSubmittingVisit = true;
 			
-			if (!visitType) {
-				showToast('❌ נדרש סוג טיפול', 'error');
-				return;
-			}
-			
-			// Get client info
-			const client = locations.find(loc => loc.ID === selectedClientId);
-			const clientName = client ? client.name : 'לקוח לא ידוע';
-			
-			// Create new visit
-			const newVisit = {
-				ID: generateID(),
-				date: visitDate,
-				location_id: selectedClientId,
-				location_name: clientName,
-				visit_type: visitType,
-				work_done: workDone,
-				duration_minutes: durationMinutes,
-				num_workers: numWorkers,
-				start_time: startTime || '',
-				end_time: endTime || '',
-				amount: amount,
-				paid: 'unpaid',  // ✅ NEW: Default to unpaid
-				expense: expense,
-				notes: notes
-			};
-			
-			// Add to visits array
-			visits.push(newVisit);
-			
-			// Save locally
-			saveToLocalStorage();
-			
-			// Save to cloud if connected
-			let cloudSaved = false;
-			if (access_token && SPREADSHEET_ID) {
-				try {
-					cloudSaved = await saveVisitsBatch([newVisit]);
-				} catch (error) {
-					console.error('Cloud save failed:', error);
+			try {
+				// איסוף נתונים מהטופס
+				const visitDate = document.getElementById('modalVisitDate').value;
+				const selectedClientId = document.getElementById('modalSelectedClientId').value;
+				const visitType = document.getElementById('modalVisitType').value;
+				const workDone = document.getElementById('modalWorkDone').value;
+				const startTime = document.getElementById('modalStartTime').value;
+				const endTime = document.getElementById('modalEndTime').value;
+				const durationMinutes = parseInt(document.getElementById('modalManualDurationMinutes').value) || 0;
+				const numWorkers = parseInt(document.getElementById('modalNumWorkers').value) || 1;
+				const amount = parseFloat(document.getElementById('modalAmount').value) || 0;
+				const expense = parseFloat(document.getElementById('modalExpense').value) || 0;
+				const notes = document.getElementById('modalNotes').value;
+				
+				// בדיקות בסיסיות
+				if (!selectedClientId) {
+					showToast('❌ אנא בחר לקוח', 'error');
+					isSubmittingVisit = false;
+					return;
 				}
-			}
-			
-			// Update treatment dates
-			await updateSingleLocationTreatmentDates(newVisit.location_id);
-			
-			// Close modal
-			closeEditModal();
-			
-			// Refresh displays
-			loadPlanningData();
-			filterVisits();
-			
-			// Success message
-			if (access_token && SPREADSHEET_ID) {
-				if (cloudSaved) {
-					showToast('✅ הטיפול נשמר בהצלחה במערכת ובענן!', 'success');
+				
+				if (!visitDate) {
+					showToast('❌ נדרש תאריך טיפול', 'error');
+					isSubmittingVisit = false;
+					return;
+				}
+				
+				if (!visitType) {
+					showToast('❌ נדרש סוג טיפול', 'error');
+					isSubmittingVisit = false;
+					return;
+				}
+				
+				// Get client info
+				const client = locations.find(loc => loc.ID === selectedClientId);
+				const clientName = client ? client.name : 'לקוח לא ידוע';
+				
+				// Create new visit
+				const newVisit = {
+					ID: generateID(),
+					date: visitDate,
+					location_id: selectedClientId,
+					location_name: clientName,
+					visit_type: visitType,
+					work_done: workDone,
+					duration_minutes: durationMinutes,
+					num_workers: numWorkers,
+					start_time: startTime || '',
+					end_time: endTime || '',
+					amount: amount,
+					paid: 'unpaid',
+					expense: expense,
+					notes: notes
+				};
+				
+				// Add to visits array
+				visits.push(newVisit);
+				
+				// Save locally
+				saveToLocalStorage();
+				
+				// Save to cloud if connected
+				let cloudSaved = false;
+				if (access_token && SPREADSHEET_ID) {
+					try {
+						cloudSaved = await saveVisitsBatch([newVisit]);
+					} catch (error) {
+						console.error('Cloud save failed:', error);
+					}
+				}
+				
+				// Update treatment dates
+				await updateSingleLocationTreatmentDates(newVisit.location_id);
+				
+				// Close modal
+				closeEditModal();
+				
+				// Refresh displays
+				loadPlanningData();
+				filterVisits();
+				
+				// Success message
+				if (access_token && SPREADSHEET_ID) {
+					if (cloudSaved) {
+						showToast('✅ הטיפול נשמר בהצלחה במערכת ובענן!', 'success');
+					} else {
+						showToast('⚠️ הטיפול נשמר מקומית בלבד - בעיה בחיבור לענן', 'warning');
+					}
 				} else {
-					showToast('⚠️ הטיפול נשמר מקומית בלבד - בעיה בחיבור לענן', 'warning');
+					showToast('💾 הטיפול נשמר מקומית - התחבר לענן לשמירה מלאה', 'info');
 				}
-			} else {
-				showToast('💾 הטיפול נשמר מקומית - התחבר לענן לשמירה מלאה', 'info');
+				
+			} catch (error) {
+				console.error('Error submitting visit:', error);
+				showToast('❌ שגיאה בשמירת הטיפול', 'error');
+			} finally {
+				// 🔓 שחרר את הנעילה
+				isSubmittingVisit = false;
 			}
 		}
 
