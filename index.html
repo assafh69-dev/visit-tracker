@@ -1954,7 +1954,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.8</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.9</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4679,46 +4679,6 @@
 			
 			// Show treatments tab by default
 			setTimeout(() => switchClientProfileTab('treatments', clientId), 100);
-		}
-
-
-		// ✅ NEW: Start treatment from client profile
-		function startTreatment(clientId) {
-			// Close the profile modal
-			closeEditModal();
-			
-			// Switch to visits tab
-			showSection('visit');
-			
-			// Pre-select the client in the visit form
-			const clientSearchInput = document.getElementById('clientSearchInput');
-			const selectedClientIdInput = document.getElementById('selectedClientId');
-			
-			if (selectedClientIdInput) {
-				selectedClientIdInput.value = clientId;
-			}
-			
-			// Find the client and set the search input display
-			const client = locations.find(loc => loc.ID === clientId);
-			if (client && clientSearchInput) {
-				clientSearchInput.value = `${client.name} - ${client.full_address}`;
-			}
-			
-			// Set today's date
-			const visitDateInput = document.getElementById('visitDate');
-			if (visitDateInput) {
-				visitDateInput.value = new Date().toISOString().split('T')[0];
-			}
-			
-			// Focus on work done field
-			setTimeout(() => {
-				const workDoneInput = document.getElementById('workDone');
-				if (workDoneInput) {
-					workDoneInput.focus();
-				}
-			}, 100);
-			
-			showToast(`מוכן לתעד טיפול עבור ${client.name}`, 'success');
 		}
 
 
@@ -10649,7 +10609,6 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			
 			loadLocationsTable();
 		}
-
 
 
 		function startTreatment(clientId) {
