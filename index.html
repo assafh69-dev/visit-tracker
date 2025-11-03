@@ -1954,7 +1954,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4467,7 +4467,7 @@
 						
 						<div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
 							<button type="submit" class="btn btn-success">שמור לקוח</button>
-							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">ביטול</button>
+							<button type="button" onclick="closeAnyModal()" class="btn btn-secondary">ביטול</button>
 						</div>
 					</form>
 				</div>
@@ -4539,7 +4539,7 @@
 				showToast('🔓 לקוח נשמר מקומית - התחבר לענן לשמירה', 'warning');
 			}
 
-			closeEditModal();
+			closeAnyModal();
 			loadLocationsTable();
 			loadLocationsForSelect();
 			saveToLocalStorage();
@@ -4643,7 +4643,7 @@
 					
 					<!-- Close Button -->
 					<div style="text-align: center; margin-top: 20px;">
-						<button onclick="closeEditModal()" 
+						<button onclick="closeAnyModal()" 
 								style="padding: 10px 30px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
 							סגור
 						</button>
@@ -5004,7 +5004,7 @@
 							<button type="button" onclick="saveEditedLocation('${locationId}')" class="btn btn-success">
 								💾 שמור שינויים
 							</button>
-							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+							<button type="button" onclick="closeAnyModal()" class="btn btn-secondary">
 								❌ ביטול
 							</button>
 						</div>
@@ -5081,7 +5081,7 @@
 							<button type="submit" class="btn btn-success">
 								💾 שמור קבלה
 							</button>
-							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+							<button type="button" onclick="closeAnyModal()" class="btn btn-secondary">
 								❌ ביטול
 							</button>
 						</div>
@@ -5169,7 +5169,7 @@
 				}
 
 				// סגירת המודל ורענון
-				closeEditModal();
+				closeAnyModal();
 				loadReceiptsTable();
 				loadReceiptFilterOptions();
 				
@@ -5274,7 +5274,7 @@
 							<button type="button" onclick="saveEditedReceipt('${receiptId}')" class="btn btn-success">
 								💾 שמור שינויים
 							</button>
-							<button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+							<button type="button" onclick="closeAnyModal()" class="btn btn-secondary">
 								❌ ביטול
 							</button>
 						</div>
@@ -5996,7 +5996,7 @@
 						<!-- כפתורי פעולה -->
 						<div style="display: flex; gap: 12px; justify-content: center; margin-top: 10px; padding-top: 15px; border-top: 1px solid #e9ecef;">
 							<button type="button" onclick="saveEditedVisit('${visitId}')" style="background: #e67e22; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s; box-shadow: 0 2px 8px rgba(230,126,34,0.3);">💾 שמור שינויים</button>
-							<button type="button" onclick="closeEditModal()" style="background: #95a5a6; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s;">✖ ביטול</button>
+							<button type="button" onclick="closeAnyModal()" style="background: #95a5a6; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s;">✖ ביטול</button>
 						</div>
 					</form>
 				</div>
@@ -6061,7 +6061,7 @@
 			// סגירה בלחיצה על הרקע
 			modal.addEventListener('click', function(e) {
 				if (e.target === modal) {
-					closeEditModal();
+					closeAnyModal();
 				}
 			});
 			
@@ -6180,18 +6180,32 @@
 		}
 
 		function calculateEditTreatmentCost() {
-			const totalMinutes = parseInt(document.getElementById('editDuration').value) || 0;
-			const numWorkers = parseInt(document.getElementById('editNumWorkers').value) || 1;
-			const expense = parseFloat(document.getElementById('editExpense').value) || 0;
+			// Try to get duration from multiple possible field names
+			let totalMinutes = 0;
+			
+			const manualField = document.getElementById('editManualDurationMinutes');
+			const durationField = document.getElementById('editDuration');
+			
+			if (manualField && manualField.value) {
+				totalMinutes = parseInt(manualField.value) || 0;
+			} else if (durationField && durationField.value) {
+				totalMinutes = parseInt(durationField.value) || 0;
+			}
+			
+			const numWorkers = parseInt(document.getElementById('editNumWorkers')?.value) || 1;
+			const expense = parseFloat(document.getElementById('editExpense')?.value) || 0;
 			
 			if (totalMinutes > 0 && costSettings && costSettings.hourlyRate) {
 				const hours = totalMinutes / 60;
 				const baseCost = costSettings.hourlyRate * hours;
 				const workersCost = (numWorkers - 1) * costSettings.workerCost * hours;
 				const laborCost = baseCost + workersCost;
-				const totalCost = laborCost + expense; // ✅ עכשיו כולל גם הוצאות!
+				const totalCost = laborCost + expense;
 				
-				document.getElementById('editAmount').value = Math.round(totalCost);
+				const amountField = document.getElementById('editAmount');
+				if (amountField) {
+					amountField.value = Math.round(totalCost);
+				}
 			}
 		}
 		
@@ -7341,7 +7355,7 @@
 				await saveAllToSheetsOptimized();
 				
 				hideLoading();
-				closeModal();
+				closeAnyModal();
 				
 				showToast(`🎉 ייבוא טלגרם הושלם!
 		📱 ${importedCount} ביקורים יובאו
@@ -7389,7 +7403,7 @@
 			// סגירה בלחיצה על הרקע
 			modal.addEventListener('click', (e) => {
 				if (e.target === modal) {
-					closeModal();
+					closeAnyModal();
 				}
 			});
 		}
@@ -7738,10 +7752,10 @@
 					</div>
 					
 					<div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-						<button type="button" onclick="markDebtAsPaid(${locationId}); closeEditModal();" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+						<button type="button" onclick="markDebtAsPaid(${locationId}); closeAnyModal();" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
 							✅ סמן כמסולק
 						</button>
-						<button type="button" onclick="closeEditModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+						<button type="button" onclick="closeAnyModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
 							❌ סגור
 						</button>
 					</div>
@@ -7890,7 +7904,7 @@
 						<div><strong>ממוצע לשעה:</strong> ₪${Math.round(report.paidRevenue / parseFloat(report.totalHours) || 0)}</div>
 					</div>
 					
-					<button onclick="closeModal()" style="margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; width: 100%;">
+					<button onclick="closeAnyModal()" style="margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; width: 100%;">
 						סגור
 					</button>
 				</div>
@@ -8255,7 +8269,7 @@
 					
 					<!-- כפתורים -->
 					<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px;">
-						<button onclick="closeModal()" class="btn" style="background: #95a5a6; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer;">
+						<button onclick="closeAnyModal()" class="btn" style="background: #95a5a6; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer;">
 							ביטול
 						</button>
 						<button onclick="saveNewPayment()" class="btn" style="background: #27ae60; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
@@ -8554,7 +8568,7 @@
 				}
 				
 				hideLoading();
-				closeModal();
+				closeAnyModal();
 				
 				// רענן תצוגות
 				if (typeof displayDebts === 'function') {
@@ -9229,7 +9243,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				// עדכן תצוגה
 				loadLocationsTable();
 				loadLocationsForSelect();
-				closeEditModal();
+				closeAnyModal();
 				
 			} catch (error) {
 				console.error('Error updating location:', error);
@@ -9308,7 +9322,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				// עדכן תצוגה
 				loadReceiptsTable();
 				loadReceiptFilterOptions();
-				closeEditModal();
+				closeAnyModal();
 				
 			} catch (error) {
 				console.error('Error updating receipt:', error);
@@ -9380,7 +9394,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				await updateSingleLocationTreatmentDates(visits[visitIndex].location_id);
 				
 				// Close modal
-				closeEditModal();
+				closeAnyModal();
 				
 				// Refresh display
 				filterVisits();
@@ -9594,7 +9608,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			historyHtml += `
 					</div>
 					<div style="text-align: center; margin-top: 20px;">
-						<button onclick="closeModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+						<button onclick="closeAnyModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
 							סגור
 						</button>
 					</div>
@@ -10367,29 +10381,21 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 		}
 
 		function calculateModalTreatmentCost() {
-			// console.log('calculateModalTreatmentCost called!');
-			
-			const totalMinutes = parseInt(document.getElementById('modalManualDurationMinutes').value) || 0;
-			const numWorkers = parseInt(document.getElementById('modalNumWorkers').value) || 1;
-			const expense = parseFloat(document.getElementById('modalExpense').value) || 0;
-			
-			// console.log('Calculation params:', { totalMinutes, numWorkers, expense, costSettings });
+			const totalMinutes = parseInt(document.getElementById('modalManualDurationMinutes')?.value) || 0;
+			const numWorkers = parseInt(document.getElementById('modalNumWorkers')?.value) || 1;
+			const expense = parseFloat(document.getElementById('modalExpense')?.value) || 0;
 			
 			if (totalMinutes > 0 && costSettings && costSettings.hourlyRate) {
 				const hours = totalMinutes / 60;
 				const baseCost = costSettings.hourlyRate * hours;
 				const workersCost = (numWorkers - 1) * costSettings.workerCost * hours;
 				const laborCost = baseCost + workersCost;
-				const totalCost = laborCost + expense; // הוספת ההוצאות!
+				const totalCost = laborCost + expense;
 				
-				document.getElementById('modalAmount').value = Math.round(totalCost);
-				
-				// console.log('Calculated cost:', Math.round(totalCost));
-				
-				const message = `מחושב: ${hours.toFixed(1)} שעות × ${costSettings.hourlyRate}₪ = ${Math.round(totalCost)}₪`;
-				// console.log(message);
-			} else {
-				// console.log('Missing data for calculation:', { totalMinutes, costSettings });
+				const amountField = document.getElementById('modalAmount');
+				if (amountField) {
+					amountField.value = Math.round(totalCost);
+				}
 			}
 		}
 
@@ -10968,7 +10974,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 						<!-- כפתורי פעולה -->
 						<div style="display: flex; gap: 12px; justify-content: center; margin-top: 10px; padding-top: 15px; border-top: 1px solid #e9ecef;">
 							<button type="submit" style="background: #27ae60; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s; box-shadow: 0 2px 8px rgba(39,174,96,0.3);">💾 שמור טיפול</button>
-							<button type="button" onclick="closeAddTreatmentModal()" style="background: #95a5a6; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s;">✖ ביטול</button>
+							<button type="button" onclick="closeAnyModal()" style="background: #95a5a6; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s;">✖ ביטול</button>
 						</div>
 					</form>
 				</div>
@@ -11211,7 +11217,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				await updateSingleLocationTreatmentDates(newVisit.location_id);
 
 				// Close modal
-				closeAddTreatmentModal();
+				closeAnyModal();
 
 				// Refresh displays
 				loadPlanningData();
@@ -11520,7 +11526,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 					</div>
 					
 					<div style="text-align: center;">
-						<button onclick="closeModal()" style="background: #95a5a6; color: white; border: none; padding: 12px 30px; border-radius: 6px; cursor: pointer; font-size: 15px;">
+						<button onclick="closeAnyModal()" style="background: #95a5a6; color: white; border: none; padding: 12px 30px; border-radius: 6px; cursor: pointer; font-size: 15px;">
 							סגור
 						</button>
 					</div>
@@ -11847,7 +11853,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			// סגירה בלחיצה על הרקע
 			modal.addEventListener('click', (e) => {
 				if (e.target === modal) {
-					closeModal();
+					closeAnyModal();
 				}
 			});
 		}
@@ -12600,6 +12606,33 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			showToast('⚠️ תכונה זו בפיתוח - בינתיים השתמש בייבוא דרך טבלת העזר', 'info', 3000);
 			event.target.value = ''; // Reset file input
 		}
+
+		function closeAnyModal() {
+			// List of all possible modal IDs
+			const modalIds = ['editModal', 'telegramModal', 'clientModal', 'addTreatmentModal'];
+			
+			// Try to close by ID
+			for (const id of modalIds) {
+				const modal = document.getElementById(id);
+				if (modal) {
+					modal.remove();
+					console.log(`✅ Closed modal: ${id}`);
+					return true;
+				}
+			}
+			
+			// Fallback: find and remove any modal-like element
+			const modalElements = document.querySelectorAll('[style*="position: fixed"][style*="background"]');
+			if (modalElements.length > 0) {
+				modalElements.forEach(el => el.remove());
+				console.log(`✅ Closed ${modalElements.length} modal(s) by style`);
+				return true;
+			}
+			
+			console.warn('⚠️ No modal found to close');
+			return false;
+		}
+
 
    </script>
 </body>
