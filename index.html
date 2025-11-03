@@ -6088,6 +6088,23 @@
 			}
 		}
 
+		function closeAddTreatmentModal() {
+			// Try multiple possible modal IDs
+			const possibleIds = ['editModal', 'telegramModal', 'clientModal'];
+			
+			for (const id of possibleIds) {
+				const modal = document.getElementById(id);
+				if (modal) {
+					modal.remove();
+					return;
+				}
+			}
+			
+			// Fallback: remove any modal-like div
+			const modals = document.querySelectorAll('[style*="position: fixed"][style*="z-index"]');
+			modals.forEach(m => m.remove());
+		}
+
 		// Add these functions after the editVisit function
 
 		function calculateEditDuration() {
@@ -10951,7 +10968,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 						<!-- כפתורי פעולה -->
 						<div style="display: flex; gap: 12px; justify-content: center; margin-top: 10px; padding-top: 15px; border-top: 1px solid #e9ecef;">
 							<button type="submit" style="background: #27ae60; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s; box-shadow: 0 2px 8px rgba(39,174,96,0.3);">💾 שמור טיפול</button>
-							<button type="button" onclick="closeEditModal()" style="background: #95a5a6; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s;">✖ ביטול</button>
+							<button type="button" onclick="closeAddTreatmentModal()" style="background: #95a5a6; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s;">✖ ביטול</button>
 						</div>
 					</form>
 				</div>
@@ -11194,7 +11211,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				await updateSingleLocationTreatmentDates(newVisit.location_id);
 
 				// Close modal
-				closeEditModal();
+				closeAddTreatmentModal();
 
 				// Refresh displays
 				loadPlanningData();
