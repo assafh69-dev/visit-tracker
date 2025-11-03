@@ -2111,26 +2111,7 @@
 			}
 		}
 
-		/* ===== עיצוב למסכים גדולים (מחשב) ===== */
-		@media (min-width: 769px) {
-			
-			/* הסתרת אלמנטים שייעודיים למובייל */
-			.planning-client-header,
-			.planning-dates-section,
-			.planning-actions-row,
-			.planning-date-row,
-			.planning-amount-small {
-				display: none;
-			}
-			
-			/* הצגת העיצוב המקורי */
-			.planning-client-info,
-			.planning-client-price,
-			.planning-client-actions {
-				display: flex;
-			}
-		}
-
+	
 
 	</style>
    
@@ -2161,7 +2142,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
