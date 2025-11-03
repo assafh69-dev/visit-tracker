@@ -1157,20 +1157,6 @@
 			background: #5a6268;
 		}
 
-		/* תגובה למובייל */
-		@media (max-width: 768px) {
-			.planning-client-actions {
-				justify-content: center;
-				gap: 3px;
-			}
-			
-			.planning-date-input,
-			.planning-active-toggle {
-				font-size: 10px;
-				width: auto;
-				min-width: 60px;
-			}
-		}
 		
 		/* טאבי ימים */
 		.days-tabs-container {
@@ -1922,8 +1908,229 @@
 			box-shadow: none !important;
 		}
 
-	
-		
+		/* ===== עיצוב משופר לכרטיסיות תכנון במובייל ===== */
+		@media (max-width: 768px) {
+			
+			/* הכרטיסייה הראשית */
+			.planning-client-row {
+				padding: 15px;
+				margin-bottom: 12px;
+				border-radius: 10px;
+				background: white;
+				box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+			}
+			
+			/* שם הלקוח - גדול ובולט */
+			.planning-client-header {
+				margin-bottom: 12px;
+				padding-bottom: 10px;
+				border-bottom: 1px solid #e0e0e0;
+			}
+			
+			.planning-client-name-large {
+				font-size: 18px;
+				font-weight: 600;
+				color: #2c3e50;
+				line-height: 1.3;
+			}
+			
+			/* הסתרת שדות ישנים */
+			.planning-client-info,
+			.planning-client-price,
+			.planning-client-actions {
+				display: none;
+			}
+			
+			/* קטע התאריכים */
+			.planning-dates-section {
+				margin-bottom: 12px;
+				padding: 10px;
+				background: #f8f9fa;
+				border-radius: 8px;
+			}
+			
+			.planning-date-item {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 8px;
+				padding: 5px 0;
+			}
+			
+			.planning-date-item:last-child {
+				margin-bottom: 0;
+			}
+			
+			.date-label {
+				font-size: 14px;
+				color: #666;
+				font-weight: 500;
+			}
+			
+			.date-value {
+				font-size: 16px;
+				font-weight: 600;
+				color: #2c3e50;
+			}
+			
+			/* סכום - קטן ואפור */
+			.planning-amount-small {
+				font-size: 13px;
+				color: #999;
+				text-align: center;
+				margin-top: 5px;
+				padding-top: 8px;
+				border-top: 1px solid #e9ecef;
+			}
+			
+			/* שורת כפתורי פעולה */
+			.planning-actions-row {
+				display: flex;
+				gap: 8px;
+				margin-bottom: 12px;
+				flex-wrap: wrap;
+			}
+			
+			.week-btn-mobile {
+				flex: 1;
+				min-width: 60px;
+				padding: 10px 12px;
+				background: #28a745;
+				color: white;
+				border: none;
+				border-radius: 6px;
+				font-size: 14px;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all 0.2s;
+			}
+			
+			.week-btn-mobile:active {
+				transform: scale(0.95);
+				background: #218838;
+			}
+			
+			.profile-btn-mobile {
+				flex: 1;
+				min-width: 80px;
+				padding: 10px 12px;
+				background: #007bff;
+				color: white;
+				border: none;
+				border-radius: 6px;
+				font-size: 14px;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all 0.2s;
+			}
+			
+			.profile-btn-mobile:active {
+				transform: scale(0.95);
+				background: #0056b3;
+			}
+			
+			.active-checkbox-mobile {
+				display: flex;
+				align-items: center;
+				gap: 6px;
+				padding: 10px 12px;
+				background: #f8f9fa;
+				border: 1px solid #ddd;
+				border-radius: 6px;
+				font-size: 14px;
+				cursor: pointer;
+				user-select: none;
+			}
+			
+			.active-checkbox-mobile input[type="checkbox"] {
+				width: 18px;
+				height: 18px;
+				cursor: pointer;
+			}
+			
+			.active-checkbox-mobile span {
+				font-weight: 500;
+				color: #495057;
+			}
+			
+			/* שורת בחירת תאריך והתחלה */
+			.planning-date-row {
+				display: flex;
+				gap: 8px;
+				align-items: center;
+			}
+			
+			.planning-date-input-mobile {
+				flex: 1;
+				padding: 10px;
+				border: 1px solid #ddd;
+				border-radius: 6px;
+				font-size: 14px;
+				background: white;
+			}
+			
+			.start-treatment-btn-mobile {
+				padding: 10px 16px;
+				background: #ff9800;
+				color: white;
+				border: none;
+				border-radius: 6px;
+				font-size: 15px;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all 0.2s;
+				white-space: nowrap;
+			}
+			
+			.start-treatment-btn-mobile:active {
+				transform: scale(0.95);
+				background: #e68900;
+			}
+			
+			/* הערות ובקשות */
+			.planning-row-details {
+				margin-top: 12px;
+				padding-top: 12px;
+				border-top: 1px solid #e0e0e0;
+			}
+			
+			.client-requests,
+			.client-notes {
+				padding: 8px;
+				margin-bottom: 6px;
+				background: #fff3cd;
+				border-left: 3px solid #ffc107;
+				border-radius: 4px;
+				font-size: 13px;
+				line-height: 1.4;
+			}
+			
+			.client-notes {
+				background: #d1ecf1;
+				border-left-color: #17a2b8;
+			}
+		}
+
+		/* ===== עיצוב למסכים גדולים (מחשב) ===== */
+		@media (min-width: 769px) {
+			
+			/* הסתרת אלמנטים שייעודיים למובייל */
+			.planning-client-header,
+			.planning-dates-section,
+			.planning-actions-row,
+			.planning-date-row,
+			.planning-amount-small {
+				display: none;
+			}
+			
+			/* הצגת העיצוב המקורי */
+			.planning-client-info,
+			.planning-client-price,
+			.planning-client-actions {
+				display: flex;
+			}
+		}
+
 
 	</style>
    
@@ -3655,6 +3862,14 @@
 				? clientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
 				: '';
 			
+			// צבע לתאריך הבא לפי סטטוס
+			let nextDateColor = '#2196F3'; // כחול - ברירת מחדל
+			if (currentPlanningView === 'overdue') {
+				nextDateColor = '#f44336'; // אדום - מאחר
+			} else if (currentPlanningView === 'daily') {
+				nextDateColor = '#4CAF50'; // ירוק - היום
+			}
+			
 			let statusText = '';
 			
 			// טקסט סטטוס לפי תצוגה
@@ -3678,36 +3893,64 @@
 			return `
 				<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
 					<div class="planning-row-main">
-						<div class="planning-client-info">
-							<div class="planning-client-name">${client.name}</div>
-							<div class="planning-client-address">${client.full_address}</div>
-							<div class="planning-client-date">
-								📅 הבא: ${nextVisitFormatted} (${statusText})
-								${lastTreatmentDate ? `<br><small style="color: #666;">📋 אחרון: ${formatDate(lastTreatmentDate)}</small>` : '<br><small style="color: #999;">📋 ללא טיפולים קודמים</small>'}
-							</div>
+						<!-- שם הלקוח - גדול ובולט -->
+						<div class="planning-client-header">
+							<div class="planning-client-name-large">👤 ${client.name}</div>
 						</div>
-						<div class="planning-client-price">₪${client.base_amount || 0}</div>
-						<div class="planning-client-actions">
-							<button class="planning-action-btn planning-complete" title="התחל טיפול" onclick="startTreatment('${client.ID}')">
-								▶
+						
+						<!-- תאריכים - גדולים ובולטים -->
+						<div class="planning-dates-section">
+							${lastTreatmentDate ? 
+								`<div class="planning-date-item">
+									<span class="date-label">📅 טיפול קודם:</span>
+									<span class="date-value">${formatDate(lastTreatmentDate)}</span>
+								</div>` 
+								: 
+								`<div class="planning-date-item">
+									<span class="date-label">📅 טיפול קודם:</span>
+									<span class="date-value" style="color: #999;">אין עדיין</span>
+								</div>`
+							}
+							<div class="planning-date-item">
+								<span class="date-label">🎯 טיפול הבא:</span>
+								<span class="date-value" style="color: ${nextDateColor}; font-weight: 600;">${nextVisitFormatted}</span>
+							</div>
+							${client.base_amount > 0 ? 
+								`<div class="planning-amount-small">💰 ${client.base_amount} ₪</div>` 
+								: ''
+							}
+						</div>
+						
+						<!-- כפתורי פעולה -->
+						<div class="planning-actions-row">
+							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
+								1W+
 							</button>
-							<input type="date" class="planning-date-input" value="" onchange="updateClientNextVisit('${client.ID}', this.value)" title="תאריך טיפול הבא" id="dateInput_${client.ID}">
-							<button class="week-btn" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
-								+1W
+							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 2)" title="שבועיים">
+								2W+
 							</button>
-							<button class="week-btn week-btn-double" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 2)" title="שבועיים">
-								+2W
+							<button class="profile-btn-mobile" onclick="showClientProfile('${client.ID}')" title="פרופיל לקוח">
+								פרופיל
 							</button>
-							<select class="planning-active-toggle" onchange="toggleClientActive('${client.ID}', this.value)" title="סטטוס לקוח">
-								<option value="1" selected>פעיל</option>
-								<option value="0">לא פעיל</option>
-							</select>
-							<button class="planning-history-btn" onclick="showClientProfile('${client.ID}')" title="פרופיל לקוח מלא">👤</button>
+							<label class="active-checkbox-mobile">
+								<input type="checkbox" ${client.active === '1' ? 'checked' : ''} onchange="toggleClientActive('${client.ID}', this.checked ? '1' : '0')">
+								<span>פעיל</span>
+							</label>
+						</div>
+						
+						<!-- בחירת תאריך והתחלה -->
+						<div class="planning-date-row">
+							<input type="date" class="planning-date-input-mobile" value="" onchange="updateClientNextVisit('${client.ID}', this.value)" placeholder="תאריך" id="dateInput_${client.ID}">
+							<button class="start-treatment-btn-mobile" onclick="startTreatment('${client.ID}')" title="התחל טיפול">
+								▶️ התחל
+							</button>
 						</div>
 					</div>
+					
+					<!-- הערות ובקשות -->
 					${(client.notes || client.client_requests) ? `
 						<div class="planning-row-details">
-							${client.client_requests ? `<div class="client-requests">🔔 בקשות: ${client.client_requests}</div>` : ''}
+							${client.client_requests ? `<div class="client-requests">📢 בקשות: ${client.client_requests}</div>` : ''}
 							${client.notes ? `<div class="client-notes">💭 הערות: ${client.notes}</div>` : ''}
 						</div>
 					` : ''}
