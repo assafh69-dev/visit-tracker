@@ -1954,7 +1954,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6167,16 +6167,9 @@
 		}
 
 		function updateEditFromTotalMinutes() {
-			const totalMinutes = parseInt(document.getElementById('editDuration').value) || 0;
-			const hours = Math.floor(totalMinutes / 60);
-			const minutes = totalMinutes % 60;
-			const decimalHours = (totalMinutes / 60).toFixed(1);
-			
-			document.getElementById('editDurationHours').value = hours;
-			document.getElementById('editDurationMinutes').value = minutes;
-			document.getElementById('editCalculatedHours').value = decimalHours;
-			
-			calculateEditTreatmentCost();
+			// This function is no longer needed with the new form design
+			// The duration is now calculated automatically from start/end times
+			console.log('updateEditFromTotalMinutes called - skipping (deprecated)');
 		}
 
 		function calculateEditTreatmentCost() {
@@ -9367,19 +9360,19 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				// Update visit object
 				visits[visitIndex] = {
 					ID: visitId,
-					date: document.getElementById('editVisitDate').value,
+					date: document.getElementById('editVisitDate')?.value || visits[visitIndex].date,
 					location_id: visits[visitIndex].location_id,
 					location_name: visits[visitIndex].location_name,
-					visit_type: document.getElementById('editVisitType').value,
-					work_done: document.getElementById('editWorkDone').value,
-					duration_minutes: parseInt(document.getElementById('editManualDurationMinutes').value) || 0,
-					num_workers: parseInt(document.getElementById('editNumWorkers').value) || 1,
-					start_time: document.getElementById('editStartTime').value || '',
-					end_time: document.getElementById('editEndTime').value || '',
-					amount: parseFloat(document.getElementById('editAmount').value) || 0,
-					paid: visits[visitIndex].paid || 'unpaid',
-					expense: parseFloat(document.getElementById('editExpense').value) || 0,
-					notes: document.getElementById('editNotes').value || ''
+					visit_type: document.getElementById('editVisitTypeHidden')?.value || visits[visitIndex].visit_type,
+					work_done: document.getElementById('editWorkDone')?.value || '',
+					duration_minutes: parseInt(document.getElementById('editManualDurationMinutes')?.value) || 0,
+					num_workers: parseInt(document.getElementById('editNumWorkers')?.value) || 1,
+					start_time: document.getElementById('editStartTime')?.value || '',
+					end_time: document.getElementById('editEndTime')?.value || '',
+					amount: parseFloat(document.getElementById('editAmount')?.value) || 0,
+					paid: visits[visitIndex].paid || '0',
+					expense: parseFloat(document.getElementById('editExpense')?.value) || 0,
+					notes: document.getElementById('editNotes')?.value || ''
 				};
 				
 				// Save locally
@@ -9397,7 +9390,13 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				closeAnyModal();
 				
 				// Refresh display
-				filterVisits();
+				const visitsTable = document.getElementById('visitsTableBody');
+				if (visitsTable && visitsTable.offsetParent !== null) {
+					if (typeof filterVisits === 'function') {
+						filterVisits();
+					}
+				}
+				
 				loadPlanningData();
 				
 				showToast('✅ הטיפול עודכן בהצלחה', 'success');
