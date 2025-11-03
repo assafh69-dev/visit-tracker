@@ -1909,29 +1909,30 @@
 		}
 
 		/* ===== עיצוב משופר לכרטיסיות תכנון במובייל ===== */
+		/* ===== עיצוב דחוס למובייל ===== */
 		@media (max-width: 768px) {
 			
-			/* הכרטיסייה הראשית */
+			/* הכרטיסייה הראשית - דחוסה */
 			.planning-client-row {
-				padding: 15px;
-				margin-bottom: 12px;
-				border-radius: 10px;
+				padding: 10px;
+				margin-bottom: 8px;
+				border-radius: 8px;
 				background: white;
-				box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+				box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 			}
 			
-			/* שם הלקוח - גדול ובולט */
+			/* שם הלקוח - קטן יותר */
 			.planning-client-header {
-				margin-bottom: 12px;
-				padding-bottom: 10px;
+				margin-bottom: 8px;
+				padding-bottom: 6px;
 				border-bottom: 1px solid #e0e0e0;
 			}
 			
 			.planning-client-name-large {
-				font-size: 18px;
+				font-size: 15px;
 				font-weight: 600;
 				color: #2c3e50;
-				line-height: 1.3;
+				line-height: 1.2;
 			}
 			
 			/* הסתרת שדות ישנים */
@@ -1941,20 +1942,20 @@
 				display: none;
 			}
 			
-			/* קטע התאריכים */
+			/* קטע התאריכים - דחוס */
 			.planning-dates-section {
-				margin-bottom: 12px;
-				padding: 10px;
+				margin-bottom: 8px;
+				padding: 6px 8px;
 				background: #f8f9fa;
-				border-radius: 8px;
+				border-radius: 6px;
 			}
 			
 			.planning-date-item {
 				display: flex;
 				justify-content: space-between;
 				align-items: center;
-				margin-bottom: 8px;
-				padding: 5px 0;
+				margin-bottom: 4px;
+				padding: 2px 0;
 			}
 			
 			.planning-date-item:last-child {
@@ -1962,147 +1963,131 @@
 			}
 			
 			.date-label {
-				font-size: 14px;
+				font-size: 13px;
 				color: #666;
 				font-weight: 500;
 			}
 			
 			.date-value {
-				font-size: 16px;
+				font-size: 14px;
 				font-weight: 600;
 				color: #2c3e50;
 			}
 			
-			/* סכום - קטן ואפור */
+			/* סכום - קטן */
 			.planning-amount-small {
-				font-size: 13px;
+				font-size: 12px;
 				color: #999;
 				text-align: center;
-				margin-top: 5px;
-				padding-top: 8px;
+				margin-top: 4px;
+				padding-top: 4px;
 				border-top: 1px solid #e9ecef;
 			}
 			
-			/* שורת כפתורי פעולה */
+			/* שורת כפתורים - דחוסה */
 			.planning-actions-row {
 				display: flex;
-				gap: 8px;
-				margin-bottom: 12px;
-				flex-wrap: wrap;
+				gap: 6px;
+				margin-bottom: 8px;
 			}
 			
 			.week-btn-mobile {
 				flex: 1;
-				min-width: 60px;
-				padding: 10px 12px;
+				padding: 8px 10px;
 				background: #28a745;
 				color: white;
 				border: none;
-				border-radius: 6px;
-				font-size: 14px;
+				border-radius: 5px;
+				font-size: 13px;
 				font-weight: 600;
 				cursor: pointer;
-				transition: all 0.2s;
 			}
 			
 			.week-btn-mobile:active {
 				transform: scale(0.95);
-				background: #218838;
 			}
 			
 			.profile-btn-mobile {
-				flex: 1;
-				min-width: 80px;
-				padding: 10px 12px;
+				padding: 8px 12px;
 				background: #007bff;
 				color: white;
 				border: none;
-				border-radius: 6px;
-				font-size: 14px;
-				font-weight: 600;
+				border-radius: 5px;
+				font-size: 16px;
 				cursor: pointer;
-				transition: all 0.2s;
 			}
 			
 			.profile-btn-mobile:active {
 				transform: scale(0.95);
-				background: #0056b3;
 			}
 			
 			.active-checkbox-mobile {
 				display: flex;
 				align-items: center;
-				gap: 6px;
-				padding: 10px 12px;
+				justify-content: center;
+				padding: 8px;
 				background: #f8f9fa;
 				border: 1px solid #ddd;
-				border-radius: 6px;
-				font-size: 14px;
+				border-radius: 5px;
 				cursor: pointer;
-				user-select: none;
 			}
 			
 			.active-checkbox-mobile input[type="checkbox"] {
-				width: 18px;
-				height: 18px;
+				width: 20px;
+				height: 20px;
+				margin: 0;
 				cursor: pointer;
 			}
 			
 			.active-checkbox-mobile span {
-				font-weight: 500;
-				color: #495057;
+				display: none; /* הסתרת הטקסט */
 			}
 			
-			/* שורת בחירת תאריך והתחלה */
+			/* שורת תאריך והתחלה */
 			.planning-date-row {
 				display: flex;
-				gap: 8px;
+				gap: 6px;
 				align-items: center;
 			}
 			
 			.planning-date-input-mobile {
 				flex: 1;
-				padding: 10px;
+				padding: 8px;
 				border: 1px solid #ddd;
-				border-radius: 6px;
-				font-size: 14px;
-				background: white;
+				border-radius: 5px;
+				font-size: 13px;
 			}
 			
 			.start-treatment-btn-mobile {
-				padding: 10px 16px;
+				padding: 8px 14px;
 				background: #ff9800;
 				color: white;
 				border: none;
-				border-radius: 6px;
-				font-size: 15px;
-				font-weight: 600;
+				border-radius: 5px;
+				font-size: 18px;
 				cursor: pointer;
-				transition: all 0.2s;
-				white-space: nowrap;
 			}
 			
 			.start-treatment-btn-mobile:active {
 				transform: scale(0.95);
-				background: #e68900;
 			}
 			
-			/* הערות ובקשות */
+			/* הערות - קטנות */
 			.planning-row-details {
-				margin-top: 12px;
-				padding-top: 12px;
+				margin-top: 8px;
+				padding-top: 8px;
 				border-top: 1px solid #e0e0e0;
 			}
 			
 			.client-requests,
 			.client-notes {
-				padding: 8px;
-				margin-bottom: 6px;
+				padding: 6px;
+				margin-bottom: 4px;
 				background: #fff3cd;
 				border-left: 3px solid #ffc107;
 				border-radius: 4px;
-				font-size: 13px;
-				line-height: 1.4;
+				font-size: 12px;
+				line-height: 1.3;
 			}
 			
 			.client-notes {
@@ -2142,7 +2127,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3883,17 +3868,17 @@
 						<div class="planning-dates-section">
 							${lastTreatmentDate ? 
 								`<div class="planning-date-item">
-									<span class="date-label">📅 טיפול קודם:</span>
+									<span class="date-label">קודם:</span>
 									<span class="date-value">${formatDate(lastTreatmentDate)}</span>
 								</div>` 
 								: 
 								`<div class="planning-date-item">
-									<span class="date-label">📅 טיפול קודם:</span>
-									<span class="date-value" style="color: #999;">אין עדיין</span>
+									<span class="date-label">קודם:</span>
+									<span class="date-value" style="color: #999;">---</span>
 								</div>`
 							}
 							<div class="planning-date-item">
-								<span class="date-label">🎯 טיפול הבא:</span>
+								<span class="date-label">הבא:</span>
 								<span class="date-value" style="color: ${nextDateColor}; font-weight: 600;">${nextVisitFormatted}</span>
 							</div>
 							${client.base_amount > 0 ? 
@@ -3901,7 +3886,7 @@
 								: ''
 							}
 						</div>
-						
+
 						<!-- כפתורי פעולה -->
 						<div class="planning-actions-row">
 							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
@@ -3910,20 +3895,19 @@
 							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 2)" title="שבועיים">
 								2W+
 							</button>
-							<button class="profile-btn-mobile" onclick="showClientProfile('${client.ID}')" title="פרופיל לקוח">
-								פרופיל
+							<button class="profile-btn-mobile" onclick="showClientProfile('${client.ID}')" title="פרופיל">
+								👤
 							</button>
-							<label class="active-checkbox-mobile">
+							<label class="active-checkbox-mobile" title="פעיל">
 								<input type="checkbox" ${client.active === '1' ? 'checked' : ''} onchange="toggleClientActive('${client.ID}', this.checked ? '1' : '0')">
-								<span>פעיל</span>
 							</label>
 						</div>
-						
+
 						<!-- בחירת תאריך והתחלה -->
 						<div class="planning-date-row">
-							<input type="date" class="planning-date-input-mobile" value="" onchange="updateClientNextVisit('${client.ID}', this.value)" placeholder="תאריך" id="dateInput_${client.ID}">
+							<input type="date" class="planning-date-input-mobile" value="" onchange="updateClientNextVisit('${client.ID}', this.value)" id="dateInput_${client.ID}">
 							<button class="start-treatment-btn-mobile" onclick="startTreatment('${client.ID}')" title="התחל טיפול">
-								▶️ התחל
+								▶️
 							</button>
 						</div>
 					</div>
