@@ -2132,7 +2132,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4250,33 +4250,40 @@
 		}
 
         function displayPlanningTable(locationsToShow) {
-            const tbody = document.getElementById('planningTableBody');
-            tbody.innerHTML = '';
-            
-            if (locationsToShow.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">אין גינות לטיפול</td></tr>';
-                return;
-            }
-            
-            locationsToShow.forEach(location => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${location.name}</td>
-                    <td>${location.full_address}</td>
-                    <td>${location.allowed_day}</td>
-                    <td>${formatDate(location.next_visit)}</td>
-                    <td>
-                        <button class="action-btn start-visit-btn" onclick="startVisitForlocation(${location.ID})">
-                            התחל טיפול
-                        </button>
-                        <button class="action-btn edit-btn" onclick="postponeVisit(${location.ID})">
-                            דחה
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
+			const tbody = document.getElementById('planningTableBody');
+			
+			// בדיקה אם האלמנט קיים
+			if (!tbody) {
+				console.log('⚠️ planningTableBody not found, skipping display');
+				return;
+			}
+			
+			tbody.innerHTML = '';
+			
+			if (locationsToShow.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">אין בינות לטיפול</td></tr>';
+				return;
+			}
+			
+			locationsToShow.forEach(location => {
+				const row = document.createElement('tr');
+				row.innerHTML = `
+					<td>${location.name}</td>
+					<td>${location.full_address}</td>
+					<td>${location.allowed_day}</td>
+					<td>${formatDate(location.next_visit)}</td>
+					<td>
+						<button class="action-btn start-visit-btn" onclick="startVisitForlocation(${location.ID})">
+							התחל טיפול
+						</button>
+						<button class="action-btn edit-btn" onclick="postponeVisit(${location.ID})">
+							דחה
+						</button>
+					</td>
+				`;
+				tbody.appendChild(row);
+			});
+		}
 
        function calculateDurationFromTimes() {
 			const startTime = document.getElementById('visitTime').value;
@@ -8415,18 +8422,24 @@
 				const values = paymentsArray.map(payment => [
 					payment.ID || '',
 					payment.date || '',
-					payment.client_id || '',
-					payment.client_name || '',
+					payment.time || '',
 					payment.amount || 0,
 					payment.payment_method || '',
+					payment.source_type || '',
+					payment.client_id || '',
+					payment.client_name || '',
 					payment.notes || '',
+					payment.status || 'completed',
+					payment.created_at || new Date().toISOString(),
 					payment.reference || '',
-					payment.check_date || ''
+					payment.check_date || '',
+					payment.bank_account || '',
+					payment.payment_details || ''
 				]);
-				
+
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Payments!A:I',
+					range: 'Payments!A:O',  // ✅ עודכן ל-15 עמודות
 					valueInputOption: 'USER_ENTERED',
 					resource: { values }
 				});
@@ -8811,13 +8824,19 @@
 				const payment = {
 					ID: generateID(),
 					date: date,
-					client_id: clientId,
-					client_name: client.name,
+					time: new Date().toTimeString().split(' ')[0].substring(0, 5), // HH:MM
 					amount: amount,
 					payment_method: method,
-					notes: notes,
-					reference: reference,
-					check_date: checkDate
+					source_type: 'manual_payment',
+					client_id: clientId,
+					client_name: client.name,
+					notes: notes || '',
+					status: 'completed',
+					created_at: new Date().toISOString(),
+					reference: reference || '',
+					check_date: checkDate || '',
+					bank_account: '',
+					payment_details: ''
 				};
 				
 				// הוסף לרשימת התשלומים
