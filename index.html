@@ -2132,7 +2132,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -7829,12 +7829,24 @@
 			// Save locally
 			saveToLocalStorage();
 			
-			// Save to cloud if connected
+			// Update only changed visits in cloud
 			if (access_token && SPREADSHEET_ID) {
-				const success = await saveAllToSheetsOptimized();
-				if (success) {
-					showToast(`✅ ${updatedCount} טיפולים סומנו כשולמו ונשמרו בענן`, 'success');
-				} else {
+				try {
+					const visitsToUpdate = visits.filter(v => 
+						v.location_id === clientId && 
+						v.paid && 
+						v.paid.startsWith('paid:')
+					);
+					
+					const success = await updateMultipleVisitsInSheets(visitsToUpdate);
+					
+					if (success) {
+						showToast(`✅ ${updatedCount} טיפולים סומנו כשולמו ונשמרו בענן`, 'success');
+					} else {
+						showToast(`⚠️ ${updatedCount} טיפולים סומנו כשולמו מקומית בלבד`, 'warning');
+					}
+				} catch (error) {
+					console.error('Error updating visits:', error);
 					showToast(`⚠️ ${updatedCount} טיפולים סומנו כשולמו מקומית בלבד`, 'warning');
 				}
 			} else {
@@ -8260,6 +8272,86 @@
 				return false;
 			}
 		}
+
+		// עדכון טיפול בודד ב-Sheets (במקום לשמור הכל מחדש)
+		async function updateSingleVisitInSheets(visit) {
+			if (!await validateToken()) return false;
+			
+			try {
+				console.log(`🔵 updateSingleVisitInSheets: Updating visit ${visit.ID}`);
+				
+				// 1. קריאת כל ה-IDs כדי למצוא את מספר השורה
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Visits!A:A'
+				});
+				
+				const rows = response.result.values || [];
+				let rowIndex = -1;
+				
+				// מציאת השורה עם ה-ID הזה (דילוג על כותרת)
+				for (let i = 1; i < rows.length; i++) {
+					if (rows[i][0] === visit.ID) {
+						rowIndex = i + 1; // +1 כי Sheets מתחיל מ-1
+						break;
+					}
+				}
+				
+				if (rowIndex === -1) {
+					console.warn(`⚠️ Visit ${visit.ID} not found in Sheets, cannot update`);
+					return false;
+				}
+				
+				// 2. עדכון רק השורה הזו
+				const values = [[
+					visit.ID || '',
+					visit.date || '',
+					visit.location_id || '',
+					visit.location_name || '',
+					visit.visit_type || '',
+					visit.work_done || '',
+					visit.duration_minutes || 0,
+					visit.num_workers || 1,
+					visit.start_time || '',
+					visit.end_time || '',
+					visit.amount || 0,
+					visit.paid || '0',
+					visit.expense || 0,
+					visit.notes || ''
+				]];
+				
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `Visits!A${rowIndex}:N${rowIndex}`,
+					valueInputOption: 'USER_ENTERED',
+					resource: { values }
+				});
+				
+				console.log(`✅ Updated visit ${visit.ID} in row ${rowIndex}`);
+				return true;
+				
+			} catch (error) {
+				console.error('❌ Error updating single visit:', error);
+				return false;
+			}
+		}
+
+
+		// עדכון מספר טיפולים ב-Sheets
+		async function updateMultipleVisitsInSheets(visitsToUpdate) {
+			if (!await validateToken()) return false;
+			
+			let successCount = 0;
+			
+			for (const visit of visitsToUpdate) {
+				const success = await updateSingleVisitInSheets(visit);
+				if (success) successCount++;
+			}
+			
+			console.log(`✅ Updated ${successCount} out of ${visitsToUpdate.length} visits in Sheets`);
+			return successCount === visitsToUpdate.length;
+		}
+
 
 		// שמירה מקבצית של קבלות
 		async function saveReceiptsBatch(receiptsArray) {
@@ -9598,9 +9690,14 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				// Save locally
 				saveToLocalStorage();
 				
-				// Save to cloud if connected
+				// Update only this visit in cloud
 				if (access_token && SPREADSHEET_ID) {
-					await saveAllToSheetsOptimized();
+					try {
+						await updateSingleVisitInSheets(visits[visitIndex]);
+						console.log('✅ Visit updated in cloud');
+					} catch (error) {
+						console.error('⚠️ Error updating visit in cloud:', error);
+					}
 				}
 				
 				// Update treatment dates
@@ -11989,13 +12086,18 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			
 			// Save locally
 			saveToLocalStorage();
-			
-			// Save to cloud if connected
+
+			// Update only this visit in cloud
 			if (access_token && SPREADSHEET_ID) {
-				const success = await saveAllToSheetsOptimized();
-				if (success) {
-					showToast('✅ סטטוס תשלום עודכן', 'success', 2000);
-				} else {
+				try {
+					const success = await updateSingleVisitInSheets(visit);
+					if (success) {
+						showToast('✅ סטטוס תשלום עודכן', 'success', 2000);
+					} else {
+						showToast('⚠️ עודכן מקומית בלבד', 'warning', 2000);
+					}
+				} catch (error) {
+					console.error('Error updating payment status:', error);
 					showToast('⚠️ עודכן מקומית בלבד', 'warning', 2000);
 				}
 			} else {
