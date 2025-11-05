@@ -10354,10 +10354,6 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 
 		// ===== פונקציות לוגיקת תשלומים חדשה =====
 
-		// משתני גלובליים לתשלומים
-		let payments = [];
-		let paymentVisitLinks = [];
-
 		// בדיקת סטטוס תשלום של ביקור
 		function getVisitPaymentStatus(visitId) {
 			const visit = visits.find(v => v.ID === visitId);
