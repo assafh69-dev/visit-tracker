@@ -2132,7 +2132,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2214,7 +2214,7 @@
 			<section id="history" class="section">
 				<h2>📋 טיפולים</h2>
 					<div style="display: flex; gap: 10px; margin-bottom: 20px;">
-						<button onclick="showAddTreatmentForm()" class="add-btn">➕ הוסף טיפול חדש</button>
+						<button onclick="showVisitForm()" class="add-btn">➕ הוסף טיפול חדש</button>
 						<button onclick="showAddPaymentModal()" class="add-btn" style="background: linear-gradient(45deg, #f39c12, #e67e22);">💰 תשלום חדש</button>
 					</div>
 				<!-- Filter Panel -->
@@ -6046,7 +6046,7 @@
 					</td>
 					<td>
 						<button onclick="addPaymentForVisit('${visit.ID}')" class="icon-btn" title="הוסף תשלום" style="background: #27ae60; color: white;">💰</button>
-						<button onclick="editVisit('${visit.ID}')" class="icon-btn" title="ערוך">✏️</button>
+						<button onclick="showVisitForm('${visit.ID}')" class="icon-btn" title="ערוך">✏️</button>
 						<button onclick="deleteVisit('${visit.ID}')" class="icon-btn" title="מחק">🗑️</button>
 						<button onclick="toggleVisitDetails('${visit.ID}')" class="icon-btn" title="פרטים">ℹ️</button>
 					</td>
@@ -10903,13 +10903,13 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			if (existingTodayVisit) {
 				// יש כבר טיפול היום - פתח עריכה
 				showToast(`נמצא טיפול קיים היום עבור ${client.name} - פותח לעריכה`, 'info');
-				editVisit(existingTodayVisit.ID);
+				showVisitForm(existingTodayVisit.ID);
 			} else {
 				// אין טיפול היום - צור חדש
 				showToast(`פותח טיפול חדש עבור ${client.name}`, 'success');
 				
 				// פתח טופס טיפול חדש עם הלקוח מוכן מראש
-				showAddTreatmentForm();
+				showVisitForm();
 				
 				// אחרי פתיחת הטופס, מלא את פרטי הלקוח
 				setTimeout(() => {
@@ -11331,6 +11331,416 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 		}
 		
 		
+		// ========================================
+		// 🆕 UNIFIED VISIT FORM - יצירה ועריכה
+		// ========================================
+
+		function showVisitForm(visitId = null) {
+			const isEdit = visitId !== null;
+			let visitData = null;
+			let locationName = '';
+			
+			// אם זה עריכה - טען את הנתונים
+			if (isEdit) {
+				visitData = visits.find(v => v.ID === visitId);
+				if (!visitData) {
+					showToast('טיפול לא נמצא', 'error');
+					return;
+				}
+				
+				const location = locations.find(loc => loc.ID === visitData.location_id);
+				locationName = location ? location.name : 'לקוח לא נמצא';
+			}
+			
+			// כותרת דינמית
+			const title = isEdit ? `✏️ עריכת טיפול - ${locationName}` : '🔧 טיפול חדש';
+			const titleColor = isEdit ? '#e67e22' : '#3498db';
+			const buttonText = isEdit ? '💾 שמור שינויים' : '💾 שמור טיפול';
+			const buttonColor = isEdit ? '#e67e22' : '#27ae60';
+			
+			// בניית HTML
+			const modalHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 650px; width: 90vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+					<h3 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 22px; border-bottom: 2px solid ${titleColor}; padding-bottom: 10px;">${title}</h3>
+					
+					<form id="visitForm" onsubmit="handleVisitFormSubmit(event, ${isEdit ? `'${visitId}'` : 'null'})" style="display: flex; flex-direction: column; gap: 18px;">
+						
+						<!-- תאריך ${isEdit ? '' : 'ולקוח'} -->
+						<div style="display: grid; grid-template-columns: ${isEdit ? '1fr' : '1fr 2fr'}; gap: 15px;">
+							<div class="form-group" style="margin: 0;">
+								<label for="visitFormDate" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">תאריך:</label>
+								<input type="date" id="visitFormDate" value="${isEdit ? visitData.date : ''}" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+							</div>
+							
+							${!isEdit ? `
+							<div class="form-group" style="margin: 0; position: relative;">
+								<label for="visitFormClientSearch" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">לקוח:</label>
+								<input type="text" id="visitFormClientSearch" placeholder="🔍 חיפוש לקוח..." onkeyup="filterClientOptions('visitFormClientSearch', 'visitFormClientOptions')" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+								<div id="visitFormClientOptions" class="client-options" style="display: none;"></div>
+								<input type="hidden" id="visitFormClientId">
+							</div>
+							` : ''}
+						</div>
+						
+						<!-- סוג טיפול -->
+						<div class="form-group" style="margin: 0;">
+							<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">סוג טיפול:</label>
+							<div style="display: flex; gap: 15px;">
+								<label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 15px; border: 2px solid #ddd; border-radius: 6px; transition: all 0.2s;">
+									<input type="radio" name="visitFormType" value="מלא" ${!isEdit || visitData.visit_type === 'מלא' ? 'checked' : ''} onchange="document.getElementById('visitFormTypeHidden').value=this.value" style="margin: 0;">
+									<span style="font-size: 14px;">מלא</span>
+								</label>
+								<label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 15px; border: 2px solid #ddd; border-radius: 6px; transition: all 0.2s;">
+									<input type="radio" name="visitFormType" value="חלקי" ${isEdit && visitData.visit_type === 'חלקי' ? 'checked' : ''} onchange="document.getElementById('visitFormTypeHidden').value=this.value" style="margin: 0;">
+									<span style="font-size: 14px;">חלקי</span>
+								</label>
+								<label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 15px; border: 2px solid #ddd; border-radius: 6px; transition: all 0.2s;">
+									<input type="radio" name="visitFormType" value="ביקורת" ${isEdit && visitData.visit_type === 'ביקורת' ? 'checked' : ''} onchange="document.getElementById('visitFormTypeHidden').value=this.value" style="margin: 0;">
+									<span style="font-size: 14px;">ביקורת</span>
+								</label>
+								<input type="hidden" id="visitFormTypeHidden" value="${isEdit ? (visitData.visit_type || 'מלא') : 'מלא'}">
+							</div>
+						</div>
+						
+						<!-- עבודה שבוצעה -->
+						<div class="form-group" style="margin: 0;">
+							<label for="visitFormWorkDone" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">עבודה שבוצעה:</label>
+							<textarea id="visitFormWorkDone" rows="2" placeholder="תיאור העבודה..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical;">${isEdit ? (visitData.work_done || '') : ''}</textarea>
+						</div>
+						
+						<!-- משך טיפול -->
+						<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
+							<label style="display: block; margin-bottom: 10px; font-weight: 600; color: #555;">⏱️ משך הטיפול:</label>
+							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+								<div>
+									<label for="visitFormStartTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת התחלה:</label>
+									<div style="display: flex; gap: 6px;">
+										<input type="time" id="visitFormStartTime" value="${isEdit ? (visitData.start_time || '') : ''}" onchange="calculateVisitFormDuration()" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+										<button type="button" onclick="setCurrentTime('visitFormStartTime')" style="padding: 8px 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">עכשיו</button>
+									</div>
+								</div>
+								<div>
+									<label for="visitFormEndTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת סיום:</label>
+									<div style="display: flex; gap: 6px;">
+										<input type="time" id="visitFormEndTime" value="${isEdit ? (visitData.end_time || '') : ''}" onchange="calculateVisitFormDuration()" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+										<button type="button" onclick="setCurrentTime('visitFormEndTime')" style="padding: 8px 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">עכשיו</button>
+									</div>
+								</div>
+							</div>
+							<div id="visitFormDurationDisplay" style="text-align: center; padding: 8px; background: white; border-radius: 6px; font-weight: 600; color: ${titleColor}; font-size: 15px;">
+								${isEdit ? `משך: <strong>${visitData.duration_minutes || 0}</strong> דקות (<strong>${((visitData.duration_minutes || 0) / 60).toFixed(1)}</strong> שעות)` : 'משך: -- דקות (-- שעות)'}
+							</div>
+							<input type="hidden" id="visitFormDurationMinutes" value="${isEdit ? (visitData.duration_minutes || 0) : 0}">
+							<input type="hidden" id="visitFormCalculatedHours" value="${isEdit ? (((visitData.duration_minutes || 0) / 60).toFixed(2)) : 0}">
+						</div>
+						
+						<!-- עלות ועובדים -->
+						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+							<div class="form-group" style="margin: 0;">
+								<label for="visitFormAmount" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💰 סכום לגבייה:</label>
+								<input type="number" id="visitFormAmount" step="0.01" min="0" value="${isEdit ? (visitData.amount || 0) : ''}" placeholder="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+							</div>
+							
+							<div class="form-group" style="margin: 0;">
+								<label for="visitFormNumWorkers" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">👷 עובדים:</label>
+								<input type="number" id="visitFormNumWorkers" min="1" value="${isEdit ? (visitData.num_workers || 1) : 1}" onchange="calculateVisitFormCost()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+							</div>
+							
+							<div class="form-group" style="margin: 0;">
+								<label for="visitFormExpense" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💸 הוצאה:</label>
+								<input type="number" id="visitFormExpense" step="0.01" min="0" value="${isEdit ? (visitData.expense || 0) : 0}" placeholder="0" onchange="calculateVisitFormCost()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+							</div>
+						</div>
+						
+						<!-- הערות -->
+						<div class="form-group" style="margin: 0;">
+							<label for="visitFormNotes" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">📝 הערות:</label>
+							<textarea id="visitFormNotes" rows="2" placeholder="הערות נוספות..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical;">${isEdit ? (visitData.notes || '') : ''}</textarea>
+						</div>
+						
+						<!-- כפתורי פעולה -->
+						<div style="display: flex; gap: 12px; justify-content: center; margin-top: 10px; padding-top: 15px; border-top: 1px solid #e9ecef;">
+							<button type="submit" style="background: ${buttonColor}; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s; box-shadow: 0 2px 8px rgba(39,174,96,0.3);">${buttonText}</button>
+							<button type="button" onclick="closeAnyModal()" style="background: #95a5a6; color: white; padding: 12px 35px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s;">✖ ביטול</button>
+						</div>
+					</form>
+				</div>
+				
+				<style>
+					label:has(input[type="radio"]:checked) {
+						border-color: ${titleColor} !important;
+						background: ${isEdit ? '#fff3e0' : '#e3f2fd'} !important;
+					}
+				</style>
+			`;
+			
+			// הצגת המודאל
+			showModal(modalHTML);
+			
+			// אתחול
+			setTimeout(() => {
+				if (!isEdit) {
+					// מצב יצירה - הגדר תאריך היום
+					document.getElementById('visitFormDate').value = new Date().toISOString().split('T')[0];
+					loadVisitFormClientOptions();
+				} else {
+					// מצב עריכה - חישוב ערכים
+					calculateVisitFormDuration();
+					calculateVisitFormCost();
+				}
+			}, 100);
+		}
+		
+		
+		// פונקציות עזר לטופס המאוחד
+
+		function loadVisitFormClientOptions() {
+			const searchInput = document.getElementById('visitFormClientSearch');
+			if (!searchInput) return;
+			
+			// טען את כל הלקוחות הפעילים
+			const activeLocations = locations.filter(loc => 
+				loc.active === "1" || loc.active === true || loc.active === "כן"
+			);
+			
+			console.log(`📋 ${activeLocations.length} לקוחות פעילים זמינים לבחירה`);
+		}
+
+		function selectVisitFormClient(clientId, clientName) {
+			document.getElementById('visitFormClientSearch').value = clientName;
+			document.getElementById('visitFormClientId').value = clientId;
+			document.getElementById('visitFormClientOptions').style.display = 'none';
+		}
+
+		function calculateVisitFormDuration() {
+			const startTime = document.getElementById('visitFormStartTime')?.value;
+			const endTime = document.getElementById('visitFormEndTime')?.value;
+			const durationDisplay = document.getElementById('visitFormDurationDisplay');
+			const durationMinutesInput = document.getElementById('visitFormDurationMinutes');
+			
+			if (!startTime || !endTime || !durationDisplay) return;
+			
+			const start = new Date(`2000-01-01 ${startTime}`);
+			const end = new Date(`2000-01-01 ${endTime}`);
+			const diffMs = end - start;
+			
+			if (diffMs > 0) {
+				const minutes = Math.round(diffMs / (1000 * 60));
+				const hours = (minutes / 60).toFixed(1);
+				
+				durationDisplay.innerHTML = `משך: <strong>${minutes}</strong> דקות (<strong>${hours}</strong> שעות)`;
+				
+				if (durationMinutesInput) {
+					durationMinutesInput.value = minutes;
+				}
+			} else {
+				durationDisplay.innerHTML = 'משך: -- דקות (-- שעות)';
+				if (durationMinutesInput) {
+					durationMinutesInput.value = 0;
+				}
+			}
+		}
+
+		function calculateVisitFormCost() {
+			// פונקציה להרחבה עתידית - חישובי עלות
+			console.log('💰 חישוב עלות טיפול');
+		}
+		
+
+		// פונקציית שמירה מאוחדת
+
+		async function handleVisitFormSubmit(event, visitId = null) {
+			event.preventDefault();
+			
+			const isEdit = visitId !== null;
+			
+			// הגנה מפני לחיצות כפולות
+			if (isSubmittingVisit) {
+				console.log('⚠️ Already submitting, ignoring duplicate click');
+				return;
+			}
+			
+			isSubmittingVisit = true;
+			
+			try {
+				// איסוף נתונים מהטופס
+				const visitDate = document.getElementById('visitFormDate').value;
+				const visitType = document.getElementById('visitFormTypeHidden').value;
+				const workDone = document.getElementById('visitFormWorkDone').value;
+				const startTime = document.getElementById('visitFormStartTime').value;
+				const endTime = document.getElementById('visitFormEndTime').value;
+				const durationMinutes = parseInt(document.getElementById('visitFormDurationMinutes').value) || 0;
+				const numWorkers = parseInt(document.getElementById('visitFormNumWorkers').value) || 1;
+				const amount = parseFloat(document.getElementById('visitFormAmount').value) || 0;
+				const expense = parseFloat(document.getElementById('visitFormExpense').value) || 0;
+				const notes = document.getElementById('visitFormNotes').value;
+				
+				let locationId, locationName;
+				
+				if (isEdit) {
+					// מצב עריכה - קח מהטיפול הקיים
+					const visit = visits.find(v => v.ID === visitId);
+					if (!visit) {
+						showToast('❌ טיפול לא נמצא', 'error');
+						return;
+					}
+					locationId = visit.location_id;
+					locationName = visit.location_name;
+				} else {
+					// מצב יצירה - קח מהשדה
+					locationId = document.getElementById('visitFormClientId').value;
+					if (!locationId) {
+						showToast('❌ אנא בחר לקוח', 'error');
+						isSubmittingVisit = false;
+						return;
+					}
+					
+					const location = locations.find(loc => loc.ID === locationId);
+					locationName = location ? location.name : 'לקוח לא ידוע';
+				}
+				
+				// בדיקות בסיסיות
+				if (!visitDate) {
+					showToast('❌ נדרש תאריך טיפול', 'error');
+					isSubmittingVisit = false;
+					return;
+				}
+				
+				if (!visitType) {
+					showToast('❌ נדרש סוג טיפול', 'error');
+					isSubmittingVisit = false;
+					return;
+				}
+				
+				if (isEdit) {
+					// ===== מצב עריכה =====
+					const visitIndex = visits.findIndex(v => v.ID === visitId);
+					if (visitIndex === -1) {
+						showToast('❌ טיפול לא נמצא', 'error');
+						return;
+					}
+					
+					// עדכון הטיפול
+					visits[visitIndex] = {
+						ID: visitId,
+						date: visitDate,
+						location_id: locationId,
+						location_name: locationName,
+						visit_type: visitType,
+						work_done: workDone,
+						duration_minutes: durationMinutes,
+						num_workers: numWorkers,
+						start_time: startTime || '',
+						end_time: endTime || '',
+						amount: amount,
+						paid: visits[visitIndex].paid || '0',
+						expense: expense,
+						notes: notes
+					};
+					
+					// שמירה מקומית
+					saveToLocalStorage();
+					
+					// עדכון בענן
+					if (access_token && SPREADSHEET_ID) {
+						try {
+							await updateSingleVisitInSheets(visits[visitIndex]);
+							console.log('✅ Visit updated in cloud');
+						} catch (error) {
+							console.error('⚠️ Error updating visit in cloud:', error);
+						}
+					}
+					
+					// עדכון תאריכי טיפול
+					await updateSingleLocationTreatmentDates(locationId);
+					
+					showToast('✅ הטיפול עודכן בהצלחה', 'success');
+					
+				} else {
+					// ===== מצב יצירה =====
+					
+					// בדיקת כפילויות
+					const duplicateVisit = checkDuplicateVisit(locationId, visitDate);
+					if (duplicateVisit) {
+						const confirmMessage = `כבר קיים טיפול ללקוח "${locationName}" ביום (${formatDate(visitDate)}).\n\nהאם להוסיף טיפול נוסף בכל זאת?`;
+						if (!confirm(confirmMessage)) {
+							isSubmittingVisit = false;
+							return;
+						}
+					}
+					
+					// יצירת טיפול חדש
+					const newVisit = {
+						ID: generateID(),
+						date: visitDate,
+						location_id: locationId,
+						location_name: locationName,
+						visit_type: visitType,
+						work_done: workDone,
+						duration_minutes: durationMinutes,
+						num_workers: numWorkers,
+						start_time: startTime || '',
+						end_time: endTime || '',
+						amount: amount,
+						paid: '0',
+						expense: expense,
+						notes: notes
+					};
+					
+					// הוספה למערך
+					visits.push(newVisit);
+					
+					// שמירה מקומית
+					saveToLocalStorage();
+					
+					// שמירה בענן
+					let cloudSaved = false;
+					if (access_token && SPREADSHEET_ID) {
+						try {
+							cloudSaved = await saveVisitsBatch([newVisit]);
+						} catch (error) {
+							console.error('Cloud save failed:', error);
+						}
+					}
+					
+					// עדכון תאריכי טיפול
+					await updateSingleLocationTreatmentDates(locationId);
+					
+					// הודעת הצלחה
+					if (access_token && SPREADSHEET_ID) {
+						if (cloudSaved) {
+							showToast('✅ הטיפול נשמר בהצלחה במערכת ובענן!', 'success');
+						} else {
+							showToast('⚠️ הטיפול נשמר מקומית בלבד - בעיה בחיבור לענן', 'warning');
+						}
+					} else {
+						showToast('💾 הטיפול נשמר מקומית - התחבר לענן לשמירה מלאה', 'info');
+					}
+				}
+				
+				// סגירת המודאל
+				closeAnyModal();
+				
+				// רענון תצוגות
+				loadPlanningData();
+				if (typeof applyVisitFilters === 'function') {
+					applyVisitFilters();
+				}
+				
+			} catch (error) {
+				console.error('Error saving visit:', error);
+				showToast('❌ שגיאה בשמירת הטיפול', 'error');
+			} finally {
+				isSubmittingVisit = false;
+			}
+		}
+
+
+		
+		////<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+		
+		
+		
 		// פונקציה לעדכון הערות חוב
 		async function updateDebtNotes(locationId, notes) {
 			const location = locations.find(loc => loc.ID === locationId);
@@ -11606,13 +12016,20 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				return;
 			}
 			
+			// זיהוי איזה טופס קורא (לפי ה-ID)
+			let selectFunction = 'selectModalClient'; // ברירת מחדל - טופס ישן
+			
+			if (inputId === 'visitFormClientSearch') {
+				selectFunction = 'selectVisitFormClient'; // טופס חדש מאוחד
+			}
+			
 			let optionsHTML = '';
 			activeLocations.slice(0, 10).forEach(location => {
 				const safeName = (location.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 				const safeAddress = (location.full_address || 'ללא כתובת').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 				
 				optionsHTML += `
-					<div class="client-option" onclick="selectModalClient('${location.ID}', '${safeName}')">
+					<div class="client-option" onclick="${selectFunction}('${location.ID}', '${safeName}')">
 						<strong>${safeName}</strong>
 						<div style="font-size: 12px; color: #666;">${safeAddress}</div>
 					</div>
@@ -12118,14 +12535,16 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 					}
 					
 					// רענון תצוגות
+					loadPlanningData();
 					if (typeof applyVisitFilters === 'function') {
 						applyVisitFilters();
 					}
 					if (typeof loadPayments === 'function') {
 						loadPayments();
 					}
-					
+
 					return; // סיום - לא ממשיכים לקוד הישן
+					
 					
 				} catch (error) {
 					console.error('Error creating immediate payment:', error);
@@ -12773,7 +13192,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 									<div style="font-size: 12px; color: #666;">${workDone}</div>
 									<div style="font-size: 11px; color: #856404; margin-top: 3px;">⏱️ התחלה: ${startTime}</div>
 								</div>
-								<button onclick="editVisit('${visit.ID}')" 
+								<button onclick="showVisitForm('${visit.ID}')"
 										style="padding: 8px 16px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px;">
 									✅ סיים טיפול
 								</button>
