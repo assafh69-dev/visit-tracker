@@ -2132,7 +2132,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2792,7 +2792,10 @@
         let locations = [];
         let visits = [];
         let receipts = [];
+		let payments = [];
+		let paymentVisitLinks = [];
         let currentFilter = 'today';
+		
 		// הגדרות עלות
 		let costSettings = {
 			hourlyRate: 150,
@@ -6033,9 +6036,9 @@
 					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${visit.amount || 0} ₪</td>
 					<td>
 						${paymentDisplay}
-						<select class="payment-status-select" onchange="updatePaymentStatus('${visit.ID}', this.value)" style="margin-top: 5px; font-size: 12px;">
-							<option value="">-- שנה סטטוס --</option>
-							<option value="paid">✅ סמן כשולם</option>
+						<select class="payment-status-select" onchange="updatePaymentStatus('${visit.ID}', this.value)">
+							<option value="">-- פעולה --</option>
+							<option value="immediate">💳 תשלום מיידי</option>
 							<option value="3">⚠️ תשלום חלקי</option>
 							<option value="unpaid">❌ לא שולם</option>
 							<option value="no_payment">🚫 ללא תשלום</option>
@@ -12039,6 +12042,99 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			if (newStatus === 'unpaid') newStatus = '0';
 			if (newStatus === 'no_payment') newStatus = '2';
 			if (newStatus === 'partial') newStatus = '3';
+			
+			// ⭐ NEW: תשלום מיידי - יצירת payment אוטומטית
+			if (newStatus === 'immediate') {
+				const visitAmount = parseFloat(visit.amount) || 0;
+				
+				if (visitAmount <= 0) {
+					showToast('❌ לא ניתן ליצור תשלום לטיפול ללא סכום', 'error');
+					return;
+				}
+				
+				// בקש אישור
+				const confirmMsg = `💳 ליצור תשלום מיידי עבור ${visitAmount}₪?\n\n` +
+					`לקוח: ${visit.location_name}\n` +
+					`תאריך טיפול: ${formatDate(visit.date)}`;
+				
+				if (!confirm(confirmMsg)) {
+					return;
+				}
+				
+				try {
+					// יצירת תשלום חדש
+					const newPayment = {
+						ID: generateID(),
+						date: new Date().toISOString().split('T')[0], // תאריך היום
+						client_id: visit.location_id,
+						client_name: visit.location_name,
+						amount: visitAmount,
+						payment_method: 'cash', // ברירת מחדל: מזומן
+						reference: `מיידי-${visit.date}`,
+						notes: `תשלום מיידי עבור טיפול מ-${formatDate(visit.date)}`,
+						invoice_number: '',
+						receipt_number: '',
+						bank_name: '',
+						check_number: '',
+						transfer_reference: '',
+						app_name: '',
+						vat_amount: 0,
+						total_with_vat: visitAmount,
+						status: 'completed'
+					};
+					
+					// הוספת התשלום למערך
+					payments.push(newPayment);
+					
+					// יצירת קישור בין תשלום לטיפול
+					const newLink = {
+						ID: generateID(),
+						payment_id: newPayment.ID,
+						visit_id: visit.ID,
+						amount: visitAmount
+					};
+					paymentVisitLinks.push(newLink);
+					
+					// עדכון סטטוס הטיפול ל"שולם"
+					const today = new Date().toISOString().split('T')[0];
+					visit.paid = `1:${today}`;
+					
+					// שמירה מקומית
+					saveToLocalStorage();
+					
+					// שמירה בענן
+					if (access_token && SPREADSHEET_ID) {
+						try {
+							// שמירת התשלום
+							await savePaymentsBatch([newPayment]);
+							// שמירת הקישור
+							await savePaymentVisitLinksBatch([newLink]);
+							// עדכון הטיפול
+							await updateSingleVisitInSheets(visit);
+							
+							showToast('✅ תשלום מיידי נוצר בהצלחה!', 'success');
+						} catch (error) {
+							console.error('Error saving to cloud:', error);
+							showToast('⚠️ התשלום נוצר מקומית - בעיה בחיבור לענן', 'warning');
+						}
+					} else {
+						showToast('💾 התשלום נוצר מקומית - התחבר לענן לשמירה מלאה', 'info');
+					}
+					
+					// רענון תצוגות
+					filterVisits();
+					if (typeof loadPayments === 'function') {
+						loadPayments();
+					}
+					
+					return; // סיום - לא ממשיכים לקוד הישן
+					
+				} catch (error) {
+					console.error('Error creating immediate payment:', error);
+					showToast('❌ שגיאה ביצירת תשלום מיידי', 'error');
+					return;
+				}
+			}
 			
 			// אם מסמנים כ"שולם"
 			if (newStatus === '1') {
