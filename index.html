@@ -2102,7 +2102,6 @@
 		}
 
 	
-
 	</style>
    
 </head>
@@ -2132,7 +2131,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -8888,7 +8887,12 @@
 				
 				// שמור לענן
 				if (access_token && SPREADSHEET_ID) {
-					await saveAllToSheetsOptimized();
+					if (newPayment) {
+						await savePaymentsBatch([newPayment]);
+					}
+					if (linksToSave && linksToSave.length > 0) {
+						await savePaymentVisitLinksBatch(linksToSave);
+					}
 					showToast('✅ תשלום נוסף בהצלחה ונשמר לענן!', 'success');
 				} else {
 					showToast('💾 תשלום נוסף בהצלחה (מקומית)', 'info');
