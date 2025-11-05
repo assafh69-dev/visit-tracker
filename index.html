@@ -2132,7 +2132,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -11415,14 +11415,14 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 								<div>
 									<label for="visitFormStartTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת התחלה:</label>
 									<div style="display: flex; gap: 6px;">
-										<input type="time" id="visitFormStartTime" value="${isEdit ? (visitData.start_time || '') : ''}" onchange="calculateVisitFormDuration()" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+										<input type="time" id="visitFormStartTime" value="${isEdit ? (visitData.start_time || '') : ''}" onchange="calculateVisitFormDuration(); calculateVisitFormCost();" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
 										<button type="button" onclick="setCurrentTime('visitFormStartTime')" style="padding: 8px 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">עכשיו</button>
 									</div>
 								</div>
 								<div>
 									<label for="visitFormEndTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת סיום:</label>
 									<div style="display: flex; gap: 6px;">
-										<input type="time" id="visitFormEndTime" value="${isEdit ? (visitData.end_time || '') : ''}" onchange="calculateVisitFormDuration()" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+										<input type="time" id="visitFormEndTime" value="${isEdit ? (visitData.end_time || '') : ''}" onchange="calculateVisitFormDuration(); calculateVisitFormCost();" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
 										<button type="button" onclick="setCurrentTime('visitFormEndTime')" style="padding: 8px 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">עכשיו</button>
 									</div>
 								</div>
@@ -11542,8 +11542,31 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 		}
 
 		function calculateVisitFormCost() {
-			// פונקציה להרחבה עתידית - חישובי עלות
-			console.log('💰 חישוב עלות טיפול');
+			// קריאת משך זמן
+			let totalMinutes = 0;
+			const manualField = document.getElementById('visitFormDurationMinutes');
+			
+			if (manualField && manualField.value) {
+				totalMinutes = parseInt(manualField.value) || 0;
+			}
+			
+			const numWorkers = parseInt(document.getElementById('visitFormNumWorkers')?.value) || 1;
+			const expense = parseFloat(document.getElementById('visitFormExpense')?.value) || 0;
+			
+			if (totalMinutes > 0 && costSettings && costSettings.hourlyRate) {
+				const hours = totalMinutes / 60;
+				const baseCost = costSettings.hourlyRate * hours;
+				const workersCost = (numWorkers - 1) * costSettings.workerCost * hours;
+				const laborCost = baseCost + workersCost;
+				const totalCost = laborCost + expense;
+				
+				const amountField = document.getElementById('visitFormAmount');
+				if (amountField) {
+					amountField.value = Math.round(totalCost);
+				}
+				
+				console.log(`💰 עלות מחושבת: ${Math.round(totalCost)}₪ (${hours.toFixed(2)} שעות × ${numWorkers} עובדים + ${expense}₪ הוצאות)`);
+			}
 		}
 		
 
