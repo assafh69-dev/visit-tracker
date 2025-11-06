@@ -2131,7 +2131,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6794,7 +6794,7 @@
 				'Receipts': ['ID', 'book_number', 'receipt_number', 'date', 'location_id', 'location_name', 'amount', 'payment_type', 'notes'],
 				'TelegramVisits': ['message_id', 'date', 'text', 'processed', 'location_id', 'visit_id'],
 				'TelegramIncomes': ['message_id', 'date', 'text', 'processed', 'receipt_id'],
-				'Payments': ['ID', 'date', 'client_id', 'client_name', 'amount', 'payment_method', 'notes', 'reference', 'check_date'],	
+				'Payments': ['ID', 'date', 'time', 'amount', 'payment_method', 'source_type', 'client_id', 'client_name', 'notes', 'status', 'created_at', 'reference', 'check_date', 'bank_account', 'payment_details'],
 				'PaymentVisitLink': ['ID', 'payment_id', 'visit_id', 'amount_allocated']
 			};
 			
@@ -10378,7 +10378,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			
 			// שולם מלא
 			if (paidValue === '1') {
-				return { status: '1', text: 'שולם', date: null, amount: null };
+				return { status: 'paid', text: 'שולם', date: null, amount: null };
 			}
 			
 			// ללא תשלום
@@ -10394,7 +10394,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			// שולם עם תאריך: "1:2024-10-23"
 			if (paidValue.startsWith('1:')) {
 				const date = paidValue.substring(2);
-				return { status: '1', text: 'שולם', date: date, amount: null };
+				return { status: 'paid', text: 'שולם', date: date, amount: null };
 			}
 			
 			// שולם חלקית עם סכום: "3:500"
