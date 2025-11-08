@@ -2131,7 +2131,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3630,10 +3630,16 @@
 					return clients.filter(client => client.daysDiff === 0);
 					
 				case 'weekly':
-					// רק תאריכים מדויקים (לא מאחרים) - מהשבוע הקרוב
-					return clients.filter(client => 
-						client.daysDiff >= 0 && client.daysDiff <= 7
-					);
+					// השבוע הנוכחי (א'-ש')
+					const today = new Date();
+					const todayDay = today.getDay(); // 0=ראשון, 6=שבת
+					const daysUntilSaturday = 6 - todayDay; // כמה ימים עד שבת
+					const daysSinceSunday = todayDay; // כמה ימים מראשון
+					
+					return clients.filter(client => {
+						// מראשון השבוע (כולל מאחרים מהשבוע) עד שבת השבוע
+						return client.daysDiff >= -daysSinceSunday && client.daysDiff <= daysUntilSaturday;
+					});
 					
 				case 'overdue':
 					// רק מאחרים
