@@ -2131,7 +2131,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6119,6 +6119,11 @@
 			}
 		}
 
+
+		// ⛔ OLD CODE - REPLACED BY showVisitForm()
+		// TODO: Delete after testing
+		/*
+
 		async function editVisit(visitId) {
 			console.log(`✅ editVisit ('${visitId}') `);
 			const visit = visits.find(v => v.ID == visitId);
@@ -6257,6 +6262,9 @@
 			}, 100);
 		}
 
+		*/
+
+
 		// הצגת מודל עריכה (אם לא קיימת)
 		function showEditModal(content) {
 			// הסר מודל קיים אם יש
@@ -6336,7 +6344,7 @@
 
 		// Add these functions after the editVisit function
 
-		function calculateEditDuration() {
+		/* function calculateEditDuration() {
 			const startTime = document.getElementById('editStartTime').value;
 			const endTime = document.getElementById('editEndTime').value;
 			
@@ -6381,7 +6389,7 @@
 			} catch (error) {
 				console.error('Error calculating duration:', error);
 			}
-		}
+		} */
 
 		function updateEditManualDuration() {
 			const hours = parseInt(document.getElementById('editDurationHours').value) || 0;
@@ -6395,13 +6403,13 @@
 			calculateEditTreatmentCost();
 		}
 
-		function updateEditFromTotalMinutes() {
+		/* function updateEditFromTotalMinutes() {
 			// This function is no longer needed with the new form design
 			// The duration is now calculated automatically from start/end times
 			console.log('updateEditFromTotalMinutes called - skipping (deprecated)');
-		}
+		} */
 
-		function calculateEditTreatmentCost() {
+		/* function calculateEditTreatmentCost() {
 			// Try to get duration from multiple possible field names
 			let totalMinutes = 0;
 			
@@ -6429,7 +6437,7 @@
 					amountField.value = Math.round(totalCost);
 				}
 			}
-		}
+		} */
 		
 		// פונקציה לעדכון הביקור בענן
 		async function updateVisitInCloud(updatedVisit) {
@@ -9665,6 +9673,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 
 
 		// saveEditedVisit
+		/*
 		async function saveEditedVisit(visitId) {
 			// אם לא קיבלנו visitId כפרמטר, נסה לקרוא מהשדה
 			if (!visitId) {
@@ -9752,7 +9761,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				isSubmittingVisit = false;
 			}
 		}
-
+		*/
 	
 
 	   
@@ -10660,7 +10669,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			showToast(`שעה נוכחית: ${currentTime}`, 'info');
 		}
 
-		function calculateModalDuration() {
+		/* function calculateModalDuration() {
 			const startTime = document.getElementById('modalStartTime').value;
 			const endTime = document.getElementById('modalEndTime').value;
 			
@@ -10691,7 +10700,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				// חישוב עלות
 				calculateModalTreatmentCost();
 			}
-		}
+		} */
 
 		function updateModalManualDuration() {
 			const hours = parseInt(document.getElementById('modalDurationHours').value) || 0;
@@ -10718,7 +10727,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			calculateModalTreatmentCost();
 		}
 
-		function calculateModalTreatmentCost() {
+		/* function calculateModalTreatmentCost() {
 			const totalMinutes = parseInt(document.getElementById('modalManualDurationMinutes')?.value) || 0;
 			const numWorkers = parseInt(document.getElementById('modalNumWorkers')?.value) || 1;
 			const expense = parseFloat(document.getElementById('modalExpense')?.value) || 0;
@@ -10735,9 +10744,9 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 					amountField.value = Math.round(totalCost);
 				}
 			}
-		}
+		} */
 
-		function loadModalClientOptions() {
+		/* function loadModalClientOptions() {
 			const activeLocations = locations.filter(loc => loc.active === "1" || loc.active === true || loc.active === "כן");
 			
 			// מיון לפי שם
@@ -10754,16 +10763,16 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			searchInput.addEventListener('input', function() {
 				filterClientOptions('modalClientSearchInput', 'modalClientOptions');
 			});
-		}
+		} */
 
-		function selectModalClient(clientId, clientName) {
+		/* function selectModalClient(clientId, clientName) {
 			document.getElementById('modalSelectedClientId').value = clientId;
 			document.getElementById('modalClientSearchInput').value = clientName;
 			document.getElementById('modalClientOptions').style.display = 'none';
 			
 			// חישוב עלות אוטומטי כשמבחרים לקוח
 			calculateModalTreatmentCost();
-		}
+		} */
 
 
 
@@ -11209,8 +11218,8 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 		}
 
 
-
-		function showAddTreatmentForm() {
+		/*
+ 		function showAddTreatmentForm() {
 
 			const modalContent = `
 				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 650px; width: 90vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
@@ -11332,7 +11341,8 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			
 			// טעינת רשימת לקוחות
 			loadModalClientOptions();
-		}
+		} 
+		*/
 		
 		
 		// ========================================
@@ -11902,7 +11912,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 		// משתנה גלובלי למניעת לחיצות כפולות
 		let isSubmittingVisit = false;
 
-		async function handleModalVisitSubmit(event) {
+		/* async function handleModalVisitSubmit(event) {
 			event.preventDefault();
 			
 			// 🛡️ הגנה מפני לחיצות כפולות
@@ -12020,7 +12030,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				// 🔓 שחרר את הנעילה
 				isSubmittingVisit = false;
 			}
-		}
+		} */
 
 		function filterClientOptions(inputId, optionsId) {
 			const searchInput = document.getElementById(inputId);
@@ -12489,6 +12499,13 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				
 				if (visitAmount <= 0) {
 					showToast('❌ לא ניתן ליצור תשלום לטיפול ללא סכום', 'error');
+					return;
+				}
+				
+				// בדיקה אם כבר יש תשלום
+				const existingLinks = paymentVisitLinks.filter(link => link.visit_id === visitId);
+				if (existingLinks.length > 0) {
+					showToast('⚠️ כבר קיים תשלום עבור טיפול זה', 'warning');
 					return;
 				}
 				
