@@ -2192,7 +2192,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -11378,7 +11378,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 						<!-- עלות ועובדים -->
 						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
 							<div class="form-group" style="margin: 0;">
-								<label for="modalAmount" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💰 סכום לגבייה:</label>
+								<label for="modalAmount" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💰 סכום:</label>
 								<input type="number" id="modalAmount" step="0.01" min="0" placeholder="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
 							</div>
 							
@@ -11511,14 +11511,14 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 									<label for="visitFormStartTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת התחלה:</label>
 									<div style="display: flex; gap: 6px;">
 										<input type="time" id="visitFormStartTime" value="${isEdit ? (visitData.start_time || '') : ''}" onchange="calculateVisitFormDuration(); calculateVisitFormCost();" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-										<button type="button" onclick="setCurrentTime('visitFormStartTime')" style="padding: 8px 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">עכשיו</button>
+										<button type="button" onclick="setCurrentTime('visitFormStartTime')" title="שעה נוכחית" style="padding: 8px 10px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; line-height: 1;">🕐</button>
 									</div>
 								</div>
 								<div>
 									<label for="visitFormEndTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת סיום:</label>
 									<div style="display: flex; gap: 6px;">
 										<input type="time" id="visitFormEndTime" value="${isEdit ? (visitData.end_time || '') : ''}" onchange="calculateVisitFormDuration(); calculateVisitFormCost();" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-										<button type="button" onclick="setCurrentTime('visitFormEndTime')" style="padding: 8px 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">עכשיו</button>
+										<button type="button" onclick="setCurrentTime('visitFormEndTime')" title="שעה נוכחית" style="padding: 8px 10px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; line-height: 1;">🕐</button>
 									</div>
 								</div>
 							</div>
