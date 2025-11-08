@@ -2216,7 +2216,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2899,10 +2899,10 @@
 		// Initialize Google APIs
 		function initializeGoogleAPIs() {
 			gapi.load('client', initializeGapiClient);
-			google.accounts.id.initialize({
-				client_id: CLIENT_ID,
-				callback: handleCredentialResponse,
-			});
+			//google.accounts.id.initialize({
+			//	client_id: CLIENT_ID,
+			//	callback: handleCredentialResponse,
+			//});
 		}
 		
 		async function initializeGapiClient() {
@@ -2919,11 +2919,11 @@
 			}
 		}
 
-		function handleCredentialResponse(response) {
+/* 		function handleCredentialResponse(response) {
 			access_token = response.credential;
 			showSuccess('התחברת בהצלחה ל-Google!');
 		}
-
+ */
 
 		// Add this function if it's missing or not accessible:
 		async function connectToGoogleSheets() {
@@ -3052,6 +3052,25 @@
 				// Token תקין - שחזור
 				access_token = tokenData.token;
 				console.log('✅ Token restored from localStorage');
+
+				// וידוא ש-gapi.client מוכן
+				if (!gapi.client) {
+					console.log('⏳ Waiting for gapi.client...');
+					await new Promise(resolve => {
+						const checkGapi = setInterval(() => {
+							if (gapi.client) {
+								clearInterval(checkGapi);
+								resolve();
+							}
+						}, 100);
+					});
+				}
+
+				// הגדרת headers עם ה-Token
+				gapi.client.setToken({
+					access_token: access_token
+				});
+				console.log('✅ Token set in gapi.client');
 				
 				// עדכון UI
 				updateCloudStatus('✅ מחובר וממסונכרן', 'התחבר');
