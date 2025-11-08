@@ -2101,6 +2101,55 @@
 			}
 		}
 
+		/* Loading Overlay */
+		.loading-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.6);
+			backdrop-filter: blur(3px);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 10000;
+			transition: opacity 0.2s ease;
+		}
+
+		.loading-overlay.hidden {
+			display: none;
+		}
+
+		.loading-content {
+			background: white;
+			padding: 30px 50px;
+			border-radius: 12px;
+			text-align: center;
+			box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+		}
+
+		.spinner {
+			width: 50px;
+			height: 50px;
+			border: 5px solid #f3f3f3;
+			border-top: 5px solid #3498db;
+			border-radius: 50%;
+			margin: 0 auto 15px;
+			animation: spin 1s linear infinite;
+		}
+
+		@keyframes spin {
+			0% { transform: rotate(0deg); }
+			100% { transform: rotate(360deg); }
+		}
+
+		.loading-text {
+			font-size: 18px;
+			font-weight: 600;
+			color: #2c3e50;
+			margin-top: 10px;
+		}
 	
 	</style>
    
@@ -2131,7 +2180,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.6</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2757,6 +2806,14 @@
 
     <!-- Modal Container -->
     <div id="modalContainer"></div>
+
+	<!-- Loading Overlay -->
+	<div id="loadingOverlay" class="loading-overlay hidden">
+		<div class="loading-content">
+			<div class="spinner"></div>
+			<div id="loadingText" class="loading-text">בתהליך...</div>
+		</div>
+	</div>
 
     <script>
 		// Google Sheets API Configuration
@@ -3716,8 +3773,9 @@
 			
 			// Set active button
 			const buttonTexts = {
-				'daily': 'יומי',
-				'weekly': 'שבועי', 
+				'daily': 'היום',
+				'weekly': 'השבוע',
+				'next_week': 'שבוע הבא',
 				'overdue': 'מאחרות',
 				'future': 'עתידיים'
 			};
@@ -5440,15 +5498,23 @@
            return date.toLocaleDateString('he-IL');
        }
 
-       function showLoading(message) {
-           // Could implement loading spinner
-           console.log('Loading:', message);
-       }
+       function showLoading(message = 'בתהליך...') {
+			const overlay = document.getElementById('loadingOverlay');
+			const text = document.getElementById('loadingText');
+			if (overlay && text) {
+				text.textContent = message;
+				overlay.classList.remove('hidden');
+			}
+			console.log('Loading:', message);
+		}
 
-       function hideLoading() {
-           // Hide loading spinner
-           console.log('Loading complete');
-       }
+		function hideLoading() {
+			const overlay = document.getElementById('loadingOverlay');
+			if (overlay) {
+				overlay.classList.add('hidden');
+			}
+			console.log('Loading complete');
+		}
 
        
        // Click outside modal to close
