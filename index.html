@@ -2192,7 +2192,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.9</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -11430,7 +11430,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 		// 🆕 UNIFIED VISIT FORM - יצירה ועריכה
 		// ========================================
 
-		function showVisitForm(visitId = null) {
+		function showVisitForm(visitId = null, preSelectedClientId = null) {
 			const isEdit = visitId !== null;
 			let visitData = null;
 			let locationName = '';
@@ -11578,6 +11578,22 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 					// מצב יצירה - הגדר תאריך היום
 					document.getElementById('visitFormDate').value = new Date().toISOString().split('T')[0];
 					loadVisitFormClientOptions();
+					
+					// אם יש לקוח נבחר מראש - מלא אותו
+					if (preSelectedClientId) {
+						const client = locations.find(loc => loc.ID === preSelectedClientId);
+						if (client) {
+							const searchInput = document.getElementById('visitFormClientSearch');
+							const clientIdInput = document.getElementById('visitFormClientId');
+							if (searchInput && clientIdInput) {
+								searchInput.value = `${client.name} - ${client.full_address}`;
+								clientIdInput.value = preSelectedClientId;
+								
+								// חישוב עלות אוטומטי
+								calculateVisitFormCost();
+							}
+						}
+					}
 				} else {
 					// מצב עריכה - חישוב ערכים
 					calculateVisitFormDuration();
