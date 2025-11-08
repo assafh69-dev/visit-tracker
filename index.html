@@ -2131,7 +2131,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3625,6 +3625,12 @@
 			const todayDay = today.getDay(); // 0=ראשון, 1=שני וכו'
 			const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 			
+			// חישוב גבולות שבועות - פעם אחת
+			const daysSinceSunday = todayDay; // כמה ימים מראשון
+			const daysUntilSaturday = 6 - todayDay; // כמה ימים עד שבת השבוע
+			const daysUntilNextSunday = 7 - todayDay; // ימים עד ראשון הבא
+			const daysUntilNextSaturday = daysUntilNextSunday + 6; // ימים עד שבת הבא
+			
 			switch (currentPlanningView) {
 				case 'daily':
 					// רק לקוחות שהיום בדיוק התאריך שלהם (בלי מאחרים)
@@ -3632,11 +3638,6 @@
 					
 				case 'weekly':
 					// השבוע הנוכחי (א'-ש')
-					const today = new Date();
-					const todayDay = today.getDay(); // 0=ראשון, 6=שבת
-					const daysUntilSaturday = 6 - todayDay; // כמה ימים עד שבת
-					const daysSinceSunday = todayDay; // כמה ימים מראשון
-					
 					return clients.filter(client => {
 						// מראשון השבוע (כולל מאחרים מהשבוע) עד שבת השבוע
 						return client.daysDiff >= -daysSinceSunday && client.daysDiff <= daysUntilSaturday;
@@ -3644,14 +3645,10 @@
 					
 				case 'next_week':
 					// שבוע הבא (א'-ש')
-					const todayDayNext = today.getDay(); // 0=ראשון, 6=שבת
-					const daysUntilNextSunday = 7 - todayDayNext; // ימים עד ראשון הבא
-					const daysUntilNextSaturday = daysUntilNextSunday + 6; // ימים עד שבת הבא
-					
 					return clients.filter(client => {
 						// מראשון הבא עד שבת הבא
 						return client.daysDiff >= daysUntilNextSunday && client.daysDiff <= daysUntilNextSaturday;
-					});	
+					});
 					
 				case 'overdue':
 					// רק מאחרים
@@ -3659,8 +3656,6 @@
 					
 				case 'future':
 					// רק לקוחות מעבר לשבוע הבא (יותר מ-14 ימים)
-					const todayDayFuture = today.getDay();
-					const daysUntilNextSaturday = (7 - todayDayFuture) + 6;
 					return clients.filter(client => client.daysDiff > daysUntilNextSaturday);
 					
 				default:
