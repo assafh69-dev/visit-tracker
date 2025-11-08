@@ -1207,6 +1207,16 @@
 			display: block;
 		}
 		
+		.day-content-header {
+			padding: 10px 15px;
+			background: #f8f9fa;
+			border-radius: 8px;
+			margin-bottom: 15px;
+			text-align: center;
+			font-weight: 600;
+			color: #2c3e50;
+			border: 2px solid #e9ecef;
+		}
 		
 		/* תגובה למובייל לטאבי ימים */
 		@media (max-width: 768px) {
@@ -2182,7 +2192,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.8</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.9</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3881,7 +3891,7 @@
 							return `<button class="day-tab-btn ${isActive ? 'active' : ''}" 
 											 onclick="switchDayTab('${day.dayName}')" 
 											 data-day="${day.dayName}">
-										${day.dayName} (${day.clients.length})
+										${day.dayName}
 									</button>`;
 						}).join('')}
 					</div>
@@ -3889,6 +3899,9 @@
 						${activeDays.map((day, index) => {
 							const isActive = selectedDayTab ? (day.dayName === selectedDayTab) : (index === 0);
 							return `<div class="day-content ${isActive ? 'active' : ''}" data-day="${day.dayName}">
+										<div class="day-content-header">
+											${day.clients.length} טיפולים ליום ${day.dayName}'
+										</div>
 										${day.clients.map(client => renderClientRow(client)).join('')}
 									</div>`;
 						}).join('')}
