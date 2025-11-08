@@ -751,6 +751,30 @@
 			box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
 		}
 
+		#statusText.connecting {
+			background: linear-gradient(45deg, #3498db, #5dade2);
+			color: white;
+			box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+			animation: pulse 1.5s ease-in-out infinite;
+		}
+
+		#statusText.disconnected {
+			background: linear-gradient(45deg, #e74c3c, #ec7063);
+			color: white;
+			box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+		}
+
+		#statusText.warning {
+			background: linear-gradient(45deg, #f39c12, #f8b739);
+			color: white;
+			box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
+		}
+
+		@keyframes pulse {
+			0%, 100% { opacity: 1; }
+			50% { opacity: 0.7; }
+		}
+
 
 		/* תצוגת תכנון - שורות כפולות */
 			.planning-cards-container {
@@ -2192,7 +2216,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2913,6 +2937,18 @@
 					scope: SCOPES,
 					callback: async (response) => {
 						access_token = response.access_token;
+
+						// שמירת Token ב-localStorage
+						const tokenData = {
+							token: access_token,
+							timestamp: Date.now(),
+							expiresIn: response.expires_in || 3600 // 1 hour default
+						};
+						localStorage.setItem('google_token', JSON.stringify(tokenData));
+						console.log('✅ Token saved to localStorage');
+
+						// הגדרת רענון אוטומטי (50 דקות)
+						setupTokenRefresh();
 						
 						// עדכון סטטוס
 						updateCloudStatus('✅ מחובר ומסונכרן', 'התחבר');
@@ -2948,6 +2984,102 @@
 			}
 		}
 
+		// רענון אוטומטי של Token
+		let tokenRefreshInterval = null;
+
+		function setupTokenRefresh() {
+			// ניקוי interval קודם אם קיים
+			if (tokenRefreshInterval) {
+				clearInterval(tokenRefreshInterval);
+			}
+			
+			// רענון כל 50 דקות (לפני שה-token פג)
+			tokenRefreshInterval = setInterval(async () => {
+				console.log('🔄 מרענן Token...');
+				
+				try {
+					const tokenClient = google.accounts.oauth2.initTokenClient({
+						client_id: CLIENT_ID,
+						scope: SCOPES,
+						callback: (response) => {
+							access_token = response.access_token;
+							
+							// שמירה מחדש ב-localStorage
+							const tokenData = {
+								token: access_token,
+								timestamp: Date.now(),
+								expiresIn: response.expires_in || 3600
+							};
+							localStorage.setItem('google_token', JSON.stringify(tokenData));
+							
+							console.log('✅ Token refreshed successfully');
+							showToast('חיבור Google רוענן', 'success');
+						}
+					});
+					
+					// בקשה שקטה (prompt: 'none')
+					tokenClient.requestAccessToken({ prompt: '' });
+					
+				} catch (error) {
+					console.error('❌ שגיאה ברענון Token:', error);
+				}
+			}, 50 * 60 * 1000); // 50 minutes
+			
+			console.log('✅ Token refresh scheduled every 50 minutes');
+		}
+
+		
+		// ניסיון שחזור Token מ-localStorage
+		async function tryRestoreToken() {
+			try {
+				const savedTokenData = localStorage.getItem('google_token');
+				
+				if (!savedTokenData) {
+					console.log('ℹ️ אין Token שמור - נדרש חיבור ידני');
+					return false;
+				}
+				
+				const tokenData = JSON.parse(savedTokenData);
+				const tokenAge = Date.now() - tokenData.timestamp;
+				const tokenExpired = tokenAge > (tokenData.expiresIn * 1000);
+				
+				if (tokenExpired) {
+					console.log('⏰ Token פג תוקף - נדרש חיבור מחדש');
+					localStorage.removeItem('google_token');
+					return false;
+				}
+				
+				// Token תקין - שחזור
+				access_token = tokenData.token;
+				console.log('✅ Token restored from localStorage');
+				
+				// עדכון UI
+				updateCloudStatus('✅ מחובר וממסונכרן', 'התחבר');
+				document.getElementById('statusText').classList.add('connected');
+				document.getElementById('saveBtn').disabled = false;
+				document.getElementById('loadBtn').disabled = false;
+				
+				// הגדרת רענון אוטומטי
+				setupTokenRefresh();
+				
+				// טעינת נתונים
+				await findOrCreateMainSpreadsheet();
+				await checkAndFixTableStructure();
+				
+				if (SPREADSHEET_ID) {
+					await loadAllFromSheets();
+				}
+				
+				showToast('חיבור Google שוחזר בהצלחה', 'success');
+				return true;
+				
+			} catch (error) {
+				console.error('❌ שגיאה בשחזור Token:', error);
+				localStorage.removeItem('google_token');
+				return false;
+			}
+		}
+		
 
 		// Single comprehensive loading function
 		async function loadAllFromSheets() {
@@ -13104,14 +13236,10 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				if (hourlyRateEl) hourlyRateEl.value = costSettings.hourlyRate;
 			}
 			
-			// Auto-connect to Google Sheets if credentials exist
-			if (localStorage.getItem('google_access_token')) {
-				setTimeout(() => {
-					if (typeof connectToGoogleSheets === 'function') {
-						connectToGoogleSheets();
-					}
-				}, 1000);
-			}
+			// ניסיון שחזור Token מ-localStorage
+			setTimeout(() => {
+				tryRestoreToken();
+			}, 1000);
 			
 			console.log('App initialization complete');
 		});
@@ -13132,14 +13260,27 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				return true;
 			} catch (error) {
 				if (error.status === 401) {
-					console.log('Google token expired');
+					console.log('🔴 Google token expired - attempting auto-reconnect');
 					access_token = null;
-					updateCloudStatus('🔐 נדרש חיבור מחדש', 'נותק');
-					document.getElementById('statusText').classList.remove('connected');
-					document.getElementById('saveBtn').disabled = true;
-					document.getElementById('loadBtn').disabled = true;
-					showToast('⚠️ החיבור לגוגל פג - התחבר מחדש', 'warning');
-					return false;
+					localStorage.removeItem('google_token');
+					
+					// ניסיון חיבור מחדש אוטומטי
+					updateCloudStatus('🔄 מתחבר מחדש...', 'מתחבר');
+					showToast('החיבור פג - מנסה להתחבר מחדש...', 'info');
+					
+					try {
+						// חיבור שקט מחדש
+						await connectToGoogleSheets();
+						return true;
+					} catch (reconnectError) {
+						console.error('❌ Failed to auto-reconnect:', reconnectError);
+						updateCloudStatus('🔐 נדרש חיבור ידני', 'נותק');
+						document.getElementById('statusText').classList.remove('connected');
+						document.getElementById('saveBtn').disabled = true;
+						document.getElementById('loadBtn').disabled = true;
+						showToast('⚠️ החיבור פג - לחץ על "התחבר לגוגל"', 'warning');
+						return false;
+					}
 				}
 				updateCloudStatus('⚠️ בעיית חיבור לענן', 'שגיאה');
 				return false;
@@ -13154,30 +13295,26 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			if (statusElement) {
 				statusElement.textContent = status;
 				
-				// עדכון צבעים לפי סטטוס
+				// הסרת כל ה-classes
+				statusElement.classList.remove('connected', 'connecting', 'disconnected', 'warning');
+				statusElement.style.background = '';
+				statusElement.style.color = '';
+				
+				// הוספת class מתאים
 				if (status.includes('מחובר') || status.includes('מסונכרן')) {
-					statusElement.style.color = '#28a745'; // ירוק
-					statusElement.style.fontWeight = 'bold';
-					statusElement.style.background = 'transparent'; // הסר רקע
 					statusElement.classList.add('connected');
-				} else if (status.includes('שומר') || status.includes('מעדכן')) {
-					statusElement.style.color = '#ffc107'; // צהוב
-					statusElement.style.fontWeight = 'bold';
-				} else if (status.includes('שגיאה')) {
-					statusElement.style.color = '#dc3545'; // אדום
-					statusElement.style.fontWeight = 'bold';
-					statusElement.classList.remove('connected');
-				} else if (status.includes('נדרש חיבור')) {
-					statusElement.style.color = '#fd7e14'; // כתום
-					statusElement.style.fontWeight = 'bold';
-					statusElement.classList.remove('connected');
+				} else if (status.includes('מתחבר') || status.includes('מרענן')) {
+					statusElement.classList.add('connecting');
+				} else if (status.includes('שגיאה') || status.includes('נותק')) {
+					statusElement.classList.add('disconnected');
+				} else if (status.includes('נדרש') || status.includes('פג')) {
+					statusElement.classList.add('warning');
 				}
 			}
 			
 			// עדכון זמן פעולה אחרונה
 			if (lastSavedElement && lastAction) {
 				lastSavedElement.textContent = `${lastAction}: ${new Date().toLocaleTimeString('he-IL')}`;
-				//lastSavedElement.style.color = //'#333'; // צבע כהה יותר
 			}
 		}
 		
