@@ -964,7 +964,8 @@
 			}
 
 			.planning-tab-btn {
-				padding: 10px 20px;
+				padding: 8px 12px;
+				font-size: 13px;
 				border: 2px solid #ddd;
 				background: white;
 				border-radius: 25px;
@@ -2180,7 +2181,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.6</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.7</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2219,9 +2220,9 @@
             <div class="planning-view-tabs">
 				<button class="planning-tab-btn active" onclick="switchPlanningView('daily')">היום</button>
 				<button class="planning-tab-btn" onclick="switchPlanningView('weekly')">השבוע</button>
-				<button class="planning-tab-btn" onclick="switchPlanningView('next_week')">שבוע הבא</button>
-				<button class="planning-tab-btn" onclick="switchPlanningView('overdue')">מאחרות</button>
-				<button class="planning-tab-btn" onclick="switchPlanningView('future')">עתידיים</button>	
+				<button class="planning-tab-btn" onclick="switchPlanningView('next_week')">הבא</button>
+				<button class="planning-tab-btn" onclick="switchPlanningView('overdue')">איחור</button>
+				<button class="planning-tab-btn" onclick="switchPlanningView('future')">עתידי</button>
 			</div>
 
             <!-- כרטיסי לקוחות -->
@@ -3775,9 +3776,9 @@
 			const buttonTexts = {
 				'daily': 'היום',
 				'weekly': 'השבוע',
-				'next_week': 'שבוע הבא',
-				'overdue': 'מאחרות',
-				'future': 'עתידיים'
+				'next_week': 'הבא',
+				'overdue': 'איחור',
+				'future': 'עתידי'
 			};
 			
 			document.querySelectorAll('.planning-tab-btn').forEach(btn => {
@@ -6135,7 +6136,6 @@
 						<button onclick="addPaymentForVisit('${visit.ID}')" class="icon-btn" title="הוסף תשלום" style="background: #27ae60; color: white;">💰</button>
 						<button onclick="showVisitForm('${visit.ID}')" class="icon-btn" title="ערוך">✏️</button>
 						<button onclick="deleteVisit('${visit.ID}')" class="icon-btn" title="מחק">🗑️</button>
-						<button onclick="toggleVisitDetails('${visit.ID}')" class="icon-btn" title="פרטים">ℹ️</button>
 					</td>
 				`;
 				fragment.appendChild(mainRow);
@@ -11009,29 +11009,8 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				// אין טיפול היום - צור חדש
 				showToast(`פותח טיפול חדש עבור ${client.name}`, 'success');
 				
-				// פתח טופס טיפול חדש עם הלקוח מוכן מראש
-				showVisitForm();
-				
-				// אחרי פתיחת הטופס, מלא את פרטי הלקוח
-				setTimeout(() => {
-					const clientSearchInput = document.getElementById('modalClientSearchInput');
-					const selectedClientId = document.getElementById('modalSelectedClientId');
-					const modalDate = document.getElementById('modalVisitDate');
-					
-					if (clientSearchInput && selectedClientId) {
-						clientSearchInput.value = `${client.name} - ${client.full_address}`;
-						selectedClientId.value = clientId;
-					}
-					
-					if (modalDate) {
-						modalDate.value = today;
-					}
-					
-					// חישוב עלות אוטומטי
-					if (typeof calculateModalTreatmentCost === 'function') {
-						calculateModalTreatmentCost();
-					}
-				}, 100);
+				// פתח טופס טיפול חדש עם הלקוח נבחר מראש
+				showVisitForm(null, clientId);
 			}
 		}
 
