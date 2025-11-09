@@ -6486,11 +6486,11 @@
 				mainRow.innerHTML = `
 					<td>${formatDate(visit.date)}</td>
 					<td><strong>${locationName}</strong></td>
-					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${visit.amount || 0} â‚ª</td>
+					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${visit.amount || 0} ₪</td>
 					<td>
-						<button onclick="event.stopPropagation(); addPaymentForVisit('${visit.ID}')" class="action-btn" style="background: #27ae60; color: white; padding: 6px 10px;">ðŸ'°</button>
-						<button onclick="event.stopPropagation(); showVisitForm('${visit.ID}')" class="action-btn edit-btn">âœï¸</button>
-						<button onclick="event.stopPropagation(); deleteVisit('${visit.ID}')" class="action-btn delete-btn">ðŸ—'ï¸</button>
+						<button onclick="event.stopPropagation(); addPaymentForVisit('${visit.ID}')" class="action-btn" style="background: #27ae60; color: white; padding: 6px 10px;">💰</button>
+						<button onclick="event.stopPropagation(); showVisitForm('${visit.ID}')" class="action-btn edit-btn">✏️</button>
+						<button onclick="event.stopPropagation(); deleteVisit('${visit.ID}')" class="action-btn delete-btn">🗑️</button>
 					</td>
 				`;
 				fragment.appendChild(mainRow);
