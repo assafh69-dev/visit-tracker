@@ -2387,7 +2387,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6501,7 +6501,7 @@
 				detailsRow.innerHTML = `
 					<td colspan="4" style="padding: 15px; background: #f8f9fa;">
 						<div style="display: flex; gap: 20px; margin-bottom: 10px; font-size: 14px;">
-							<div><strong style="color: #666;">סוג:</strong> ${visit.visit_type || '-'}</div>
+							<div><strong style="color: #666;">טיפול:</strong> ${visit.visit_type || '-'}</div>
 							<div><strong style="color: #666;">משך:</strong> ${hours}ש</div>
 							<div><strong style="color: #666;">שעות:</strong> ${visit.start_time || '-'} - ${visit.end_time || '-'}</div>
 						</div>
@@ -6518,7 +6518,7 @@
 							<div style="font-size: 14px;">
 								<strong style="color: #666;">שולם:</strong> ${paymentDisplay}
 							</div>
-							<div style="flex: 1; min-width: 200px;">
+							<div style="flex: 1; min-width: 150px;">
 								<select class="payment-status-select" onchange="updatePaymentStatus('${visit.ID}', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
 									<option value="">-- שינוי סטטוס תשלום --</option>
 									<option value="immediate">💳 תשלום מיידי</option>
