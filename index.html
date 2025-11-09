@@ -1601,6 +1601,37 @@
 			border-top: none !important;
 		}
 
+		.details-row td {
+			padding: 15px !important;
+			border-top: 1px solid #e0e0e0 !important;
+		}
+
+		.visit-details-content {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 12px;
+			font-size: 13px;
+			line-height: 1.6;
+		}
+
+		.visit-details-content > div {
+			padding: 5px 0;
+		}
+
+		.visit-details-content strong {
+			color: #666;
+			font-size: 12px;
+			display: block;
+			margin-bottom: 3px;
+		}
+
+		@media (max-width: 768px) {
+			.visit-details-content {
+				grid-template-columns: 1fr;
+				gap: 8px;
+			}
+		}
+
 		.details-row:hover {
 			background-color: #f1f3f4 !important;
 		}
@@ -2187,6 +2218,146 @@
 			margin-top: 10px;
 		}
 	
+		/* Filter Panel Collapse */
+		.filter-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 12px 15px;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			border-radius: 8px 8px 0 0;
+			cursor: pointer;
+			user-select: none;
+			margin-bottom: 0;
+		}
+
+		.filter-header h3 {
+			color: white;
+			font-size: 16px;
+			margin: 0;
+			font-weight: bold;
+		}
+
+		.filter-toggle-btn {
+			background: rgba(255, 255, 255, 0.2);
+			border: 1px solid rgba(255, 255, 255, 0.3);
+			color: white;
+			padding: 5px 12px;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 14px;
+			transition: all 0.3s ease;
+		}
+
+		.filter-toggle-btn:hover {
+			background: rgba(255, 255, 255, 0.3);
+			transform: scale(1.05);
+		}
+
+		.filter-content {
+			max-height: 1000px;
+			overflow: hidden;
+			transition: max-height 0.3s ease, opacity 0.3s ease;
+			opacity: 1;
+		}
+
+		.filter-content.collapsed {
+			max-height: 0;
+			opacity: 0;
+			margin: 0;
+			padding: 0;
+		}
+
+		.filters-container {
+			border: 2px solid #667eea;
+			border-radius: 8px;
+			margin-bottom: 20px;
+			overflow: hidden;
+		}
+	
+	
+		/* Mobile Expandable Rows */
+		.mobile-optimized tbody tr {
+			cursor: pointer;
+			transition: background-color 0.2s;
+		}
+
+		.mobile-optimized tbody tr:hover {
+			background-color: #f8f9fa;
+		}
+
+		.mobile-optimized .details-row {
+			display: none;
+			background-color: #f8f9fa !important;
+		}
+
+		.mobile-optimized .details-row.expanded {
+			display: table-row;
+		}
+
+		.mobile-optimized .details-row td {
+			padding: 12px 15px;
+			border-top: none !important;
+		}
+
+		.mobile-optimized .details-content {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 10px;
+			font-size: 13px;
+		}
+
+		.mobile-optimized .detail-item {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.mobile-optimized .detail-label {
+			font-weight: bold;
+			color: #666;
+			font-size: 11px;
+			margin-bottom: 3px;
+		}
+
+		.mobile-optimized .detail-value {
+			color: #2c3e50;
+		}
+
+		/* Mobile specific adjustments */
+		@media (max-width: 768px) {
+			.mobile-optimized th,
+			.mobile-optimized .main-row td {
+				padding: 10px 8px;
+				font-size: 13px;
+			}
+			
+			.mobile-optimized .action-btn {
+				padding: 6px 10px;
+				font-size: 11px;
+				margin: 2px;
+			}
+			
+			.mobile-optimized .details-content {
+				grid-template-columns: 1fr;
+				gap: 8px;
+			}
+		}
+
+		/* Expand indicator */
+		.mobile-optimized .main-row td:first-child::before {
+			content: '▶';
+			display: inline-block;
+			margin-left: 5px;
+			font-size: 10px;
+			color: #3498db;
+			transition: transform 0.3s;
+		}
+
+		.mobile-optimized .main-row.expanded td:first-child::before {
+			transform: rotate(90deg);
+		}
+	
+	
 	</style>
    
 </head>
@@ -2216,7 +2387,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2302,63 +2473,71 @@
 						<button onclick="showVisitForm()" class="add-btn">➕ הוסף טיפול חדש</button>
 						<button onclick="showAddPaymentModal()" class="add-btn" style="background: linear-gradient(45deg, #f39c12, #e67e22);">💰 תשלום חדש</button>
 					</div>
+					
 				<!-- Filter Panel -->
-				<div class="filter-panel-unified">
-					<div class="filter-panel-header">
-						<h4 class="filter-panel-title">🔍 סינון טיפולים</h4>
-						<div style="display: flex; gap: 8px;">
-							<button onclick="setQuickDateFilter('today')" class="filter-quick-btn">היום</button>
-							<button onclick="setQuickDateFilter('week')" class="filter-quick-btn">השבוע</button>
-							<button onclick="setQuickDateFilter('month')" class="filter-quick-btn active">החודש</button>
-							<button onclick="clearVisitFilters()" class="filter-clear-btn">נקה סינון</button>
-						</div>
+				<div class="filters-container">
+					<div class="filter-header" onclick="toggleFilterPanel('visitsFilterContent')">
+						<h3>🔍 סינון טיפולים</h3>
+						<button type="button" class="filter-toggle-btn" onclick="event.stopPropagation(); toggleFilterPanel('visitsFilterContent')">🔼 כווץ</button>
 					</div>
-					
-					<div class="filter-row-unified">
-						<div class="filter-group-unified">
-							<label>חיפוש חכם:</label>
-							<input type="text" id="visitSmartSearch" placeholder="חפש לקוח לפי שם, כתובת, עיר..." 
-								   oninput="handleVisitSmartSearch(this.value)">
-						</div>
-						<div class="filter-group-unified small">
-							<button type="button" onclick="clearVisitSmartSearch()" class="filter-clear-btn">נקה חיפוש</button>
-						</div>
-						<div class="filter-group-unified medium">
-							<label>סטטוס תשלום:</label>
-							<select id="filterPayment">
-								<option value="">הכל</option>
-								<option value="כן">שולם</option>
-								<option value="לא">לא שולם</option>
-								<option value="ללא">ללא תשלום</option>
-							</select>
-						</div>
-						<div class="filter-group-unified small">
-							<label>מקסימום תוצאות:</label>
-							<select id="maxResults" onchange="applyVisitFilters()">
-								<option value="50">50</option>
-								<option value="100">100</option>
-								<option value="200" selected>200</option>
-								<option value="500">500</option>
-							</select>
-						</div>
-					</div>
-					
-					<div class="filter-row-unified">
-						<div class="filter-group-unified compact">
-							<label>מתאריך:</label>
-							<input type="date" id="filterDateFrom" onchange="applyVisitFilters()">
-						</div>
-						<div class="filter-group-unified compact">
-							<label>עד תאריך:</label>
-							<input type="date" id="filterDateTo" onchange="applyVisitFilters()">
-						</div>
-						<div class="filter-group-unified small">
-							<label>הצג לקוחות:</label>
-							<select id="filterActiveClients" onchange="applyVisitFilters()">
-								<option value="1" selected>פעילים בלבד</option>
-								<option value="">כל הלקוחות</option>
-								<option value="0">לא פעילים</option>
-							</select>
+					<div id="visitsFilterContent" class="filter-content">
+						<div class="filter-panel-unified" style="border: none; margin: 0;">
+							<div class="filter-panel-header" style="background: transparent; border: none; padding-top: 0;">
+								<div style="display: flex; gap: 8px; width: 100%;">
+									<button onclick="setQuickDateFilter('today')" class="filter-quick-btn">היום</button>
+									<button onclick="setQuickDateFilter('week')" class="filter-quick-btn">השבוע</button>
+									<button onclick="setQuickDateFilter('month')" class="filter-quick-btn active">החודש</button>
+									<button onclick="clearVisitFilters()" class="filter-clear-btn">נקה סינון</button>
+								</div>
+							</div>
+							
+							<div class="filter-row-unified">
+								<div class="filter-group-unified">
+									<label>חיפוש חכם:</label>
+									<input type="text" id="visitSmartSearch" placeholder="חפש לקוח לפי שם, כתובת, עיר..." 
+										   oninput="handleVisitSmartSearch(this.value)">
+								</div>
+								<div class="filter-group-unified small">
+									<button type="button" onclick="clearVisitSmartSearch()" class="filter-clear-btn">נקה חיפוש</button>
+								</div>
+								<div class="filter-group-unified medium">
+									<label>סטטוס תשלום:</label>
+									<select id="filterPayment">
+										<option value="">הכל</option>
+										<option value="כן">שולם</option>
+										<option value="לא">לא שולם</option>
+										<option value="ללא">ללא תשלום</option>
+									</select>
+								</div>
+								<div class="filter-group-unified small">
+									<label>מקסימום תוצאות:</label>
+									<select id="maxResults" onchange="applyVisitFilters()">
+										<option value="50">50</option>
+										<option value="100">100</option>
+										<option value="200" selected>200</option>
+										<option value="500">500</option>
+									</select>
+								</div>
+							</div>
+							
+							<div class="filter-row-unified">
+								<div class="filter-group-unified compact">
+									<label>מתאריך:</label>
+									<input type="date" id="filterDateFrom" onchange="applyVisitFilters()">
+								</div>
+								<div class="filter-group-unified compact">
+									<label>עד תאריך:</label>
+									<input type="date" id="filterDateTo" onchange="applyVisitFilters()">
+								</div>
+								<div class="filter-group-unified small">
+									<label>הצג לקוחות:</label>
+									<select id="filterActiveClients" onchange="applyVisitFilters()">
+										<option value="1" selected>פעילים בלבד</option>
+										<option value="">כל הלקוחות</option>
+										<option value="0">לא פעילים</option>
+									</select>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -2385,11 +2564,7 @@
 							<tr>
 								<th>תאריך</th>
 								<th>לקוח</th>
-								<th class="work-done-column">סוג טיפול</th>
-								<th>מה בוצע</th>
-								<th>משך</th>
 								<th>סכום</th>
-								<th>שולם</th>
 								<th>פעולות</th>
 							</tr>
 						</thead>
@@ -2403,58 +2578,65 @@
             <section id="locations" class="section">
                 <h2>ניהול לקוחות</h2>
 				<!-- פאנל סינון -->
-				<div class="filter-panel-compact" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-					<div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-						<div style="flex: 1; min-width: 150px;">
-							<label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">שם לקוח:</label>
-							<input type="text" id="filterClientName" placeholder="חפש לקוח..." onkeyup="filterLocationsTable()" 
-								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-						</div>
-						
-						<div style="flex: 0 0 120px;">
-							<label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">יום מועדף:</label>
-							<select id="filterDay" onchange="filterLocationsTable()" 
-									style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-								<option value="">כל הימים</option>
-								<option value="כל יום">כל יום</option>
-								<option value="א">א (ראשון)</option>
-								<option value="ב">ב (שני)</option>
-								<option value="ג">ג (שלישי)</option>
-								<option value="ד">ד (רביעי)</option>
-								<option value="ה">ה (חמישי)</option>
-								<option value="ו">ו (שישי)</option>
-								<option value="ש">ש (שבת)</option>
-							</select>
-						</div>
-						
-						<div style="flex: 0 0 100px;">
-							<label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">מרווח שבועות:</label>
-							<select id="filterInterval" onchange="filterLocationsTable()" 
-									style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-								<option value="">הכל</option>
-								<option value="1">1</option>
-								<option value="2">2</option>
-								<option value="4">4</option>
-								<option value="8">8</option>
-								<option value="12">12</option>
-								<option value="52">52</option>
-							</select>
-						</div>
-						
-						<div style="flex: 0 0 100px;">
-							<label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">סטטוס:</label>
-							<select id="filterActive" onchange="filterLocationsTable()" 
-									style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-								<option value="">הכל</option>
-								<option value="1" selected>פעיל</option>
-								<option value="0">לא פעיל</option>
-							</select>
-						</div>
-						
-						<div style="flex: 0 0 80px;">
-							<button onclick="clearLocationFilters()" style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 20px;">
-								נקה סינון
-							</button>
+				<div class="filters-container">
+					<div class="filter-header" onclick="toggleFilterPanel('locationsFilterContent')">
+						<h3>🔍 סינון לקוחות</h3>
+						<button type="button" class="filter-toggle-btn" onclick="event.stopPropagation(); toggleFilterPanel('locationsFilterContent')">🔼 כווץ</button>
+					</div>
+					<div id="locationsFilterContent" class="filter-content">
+						<div class="filter-panel-compact" style="background: #f8f9fa; padding: 15px; border-radius: 0 0 8px 8px;">
+						<div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+							<div style="flex: 1; min-width: 150px;">
+								<label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">שם לקוח:</label>
+								<input type="text" id="filterClientName" placeholder="חפש לקוח..." onkeyup="filterLocationsTable()" 
+									   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+							</div>
+							
+							<div style="flex: 0 0 120px;">
+								<label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">יום מועדף:</label>
+								<select id="filterDay" onchange="filterLocationsTable()" 
+										style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+									<option value="">כל הימים</option>
+									<option value="כל יום">כל יום</option>
+									<option value="א">א (ראשון)</option>
+									<option value="ב">ב (שני)</option>
+									<option value="ג">ג (שלישי)</option>
+									<option value="ד">ד (רביעי)</option>
+									<option value="ה">ה (חמישי)</option>
+									<option value="ו">ו (שישי)</option>
+									<option value="ש">ש (שבת)</option>
+								</select>
+							</div>
+							
+							<div style="flex: 0 0 100px;">
+								<label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">מרווח שבועות:</label>
+								<select id="filterInterval" onchange="filterLocationsTable()" 
+										style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+									<option value="">הכל</option>
+									<option value="1">1</option>
+									<option value="2">2</option>
+									<option value="4">4</option>
+									<option value="8">8</option>
+									<option value="12">12</option>
+									<option value="52">52</option>
+								</select>
+							</div>
+							
+							<div style="flex: 0 0 100px;">
+								<label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">סטטוס:</label>
+								<select id="filterActive" onchange="filterLocationsTable()" 
+										style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+									<option value="">הכל</option>
+									<option value="1" selected>פעיל</option>
+									<option value="0">לא פעיל</option>
+								</select>
+							</div>
+							
+							<div style="flex: 0 0 80px;">
+								<button onclick="clearLocationFilters()" style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 20px;">
+									נקה סינון
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -2495,65 +2677,73 @@
             <section id="receipts" class="section">
                 <h2>ניהול קבלות</h2>
                 <button onclick="showAddReceiptForm()" class="add-btn">הוסף קבלה חדשה</button>
-				<!-- Filter Panel for Receipts -->
 				<!-- Unified Filter Panel for Receipts -->
-				<div class="filter-panel-unified">
-					<div class="filter-panel-header">
-						<h4 class="filter-panel-title">🔍 סינון קבלות</h4>
-						<button onclick="clearReceiptFilters()" class="filter-clear-btn">נקה סינון</button>
+				<div class="filters-container">
+					<div class="filter-header" onclick="toggleFilterPanel('receiptsFilterContent')">
+						<h3>🔍 סינון קבלות</h3>
+						<button type="button" class="filter-toggle-btn" onclick="event.stopPropagation(); toggleFilterPanel('receiptsFilterContent')">🔼 כווץ</button>
 					</div>
+					<div id="receiptsFilterContent" class="filter-content">
+						<div class="filter-panel-unified" style="border-radius: 0 0 8px 8px; border-top: none;">
+							<div class="filter-panel-header" style="display: none;">
+								<h4 class="filter-panel-title">🔍 סינון קבלות</h4>
+								<button onclick="clearReceiptFilters()" class="filter-clear-btn">נקה סינון</button>
+							</div>
 					
-					<div class="filter-row-unified">
-						<div class="filter-group-unified">
-							<label>חיפוש חכם:</label>
-							<input type="text" id="receiptSmartSearch" placeholder="חפש לקוח לפי שם, כתובת, עיר..." 
-								   oninput="handleReceiptSmartSearch(this.value)">
-						</div>
-						<div class="filter-group-unified small">
-							<button type="button" onclick="clearReceiptSmartSearch()" class="filter-clear-btn">נקה חיפוש</button>
-						</div>
-					</div>
+							<div class="filter-row-unified">
+								<div class="filter-group-unified">
+									<label>חיפוש חכם:</label>
+									<input type="text" id="receiptSmartSearch" placeholder="חפש לקוח לפי שם, כתובת, עיר..." 
+										   oninput="handleReceiptSmartSearch(this.value)">
+								</div>
+								<div class="filter-group-unified small">
+									<button type="button" onclick="clearReceiptSmartSearch()" class="filter-clear-btn">נקה חיפוש</button>
+								</div>
+							</div>
 
-					<div class="filter-row-unified">
-						<div class="filter-group-unified medium">
-							<label>פנקס קבלות:</label>
-							<select id="filterReceiptBook" onchange="applyReceiptFilters()">
-								<option value="">כל הפנקסים</option>
-							</select>
+							<div class="filter-row-unified">
+								<div class="filter-group-unified medium">
+									<label>פנקס קבלות:</label>
+									<select id="filterReceiptBook" onchange="applyReceiptFilters()">
+										<option value="">כל הפנקסים</option>
+									</select>
+								</div>
+								<div class="filter-group-unified medium">
+									<label>סוג תשלום:</label>
+									<select id="filterPaymentType" onchange="applyReceiptFilters()">
+										<option value="">כל הסוגים</option>
+										<option value="מזומן">מזומן</option>
+										<option value="העברה">העברה</option>
+										<option value="צ'ק">צ'ק</option>
+										<option value="כרטיס אשראי">כרטיס אשראי</option>
+									</select>
+								</div>
+							</div>
+							
+							<div class="filter-row-unified">
+								<div class="filter-group-unified compact">
+									<label>מתאריך:</label>
+									<input type="date" id="filterReceiptDateFrom" onchange="applyReceiptFilters()">
+								</div>
+								<div class="filter-group-unified compact">
+									<label>עד תאריך:</label>
+									<input type="date" id="filterReceiptDateTo" onchange="applyReceiptFilters()">
+								</div>
+								<div class="filter-group-unified medium">
+									<label>מיון:</label>
+									<select id="receiptSortBy" onchange="applyReceiptFilters()">
+										<option value="date_desc">תאריך (חדש לישן)</option>
+										<option value="date_asc">תאריך (ישן לחדש)</option>
+										<option value="amount_desc">סכום (גבוה לנמוך)</option>
+										<option value="amount_asc">סכום (נמוך לגבוה)</option>
+										<option value="book_asc">פנקס (לפי סדר)</option>
+									</select>
+								</div>
+							</div>
 						</div>
-						<div class="filter-group-unified medium">
-							<label>סוג תשלום:</label>
-							<select id="filterPaymentType" onchange="applyReceiptFilters()">
-								<option value="">כל הסוגים</option>
-								<option value="מזומן">מזומן</option>
-								<option value="העברה">העברה</option>
-								<option value="צ'ק">צ'ק</option>
-								<option value="כרטיס אשראי">כרטיס אשראי</option>
-							</select>
-						</div>
-					</div>
-					
-					<div class="filter-row-unified">
-						<div class="filter-group-unified compact">
-							<label>מתאריך:</label>
-							<input type="date" id="filterReceiptDateFrom" onchange="applyReceiptFilters()">
-						</div>
-						<div class="filter-group-unified compact">
-							<label>עד תאריך:</label>
-							<input type="date" id="filterReceiptDateTo" onchange="applyReceiptFilters()">
-						</div>
-						<div class="filter-group-unified medium">
-							<label>מיון:</label>
-							<select id="receiptSortBy" onchange="applyReceiptFilters()">
-								<option value="date_desc">תאריך (חדש לישן)</option>
-								<option value="date_asc">תאריך (ישן לחדש)</option>
-								<option value="amount_desc">סכום (גבוה לנמוך)</option>
-								<option value="amount_asc">סכום (נמוך לגבוה)</option>
-								<option value="book_asc">פנקס (לפי סדר)</option>
-							</select>
-						</div>
-					</div>
+					</div>			
 				</div>
+				
 				<!-- Receipt Stats Box -->
 				<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
 					<div id="receiptsStatsBox" style="background: #e8f4fd; border: 1px solid #3498db; border-radius: 6px; padding: 8px 12px; font-size: 13px; color: #2c3e50;">
@@ -2587,65 +2777,73 @@
 			<section id="debts" class="section">
 				<h2>💰 ניהול חובות</h2>
 				
-				<!-- רשימת חובות -->
-				<div class="filter-panel-unified">
-					<div class="filter-panel-header">
-						<h4 class="filter-panel-title">🔍 חובות פתוחים</h4>
-						<button onclick="clearDebtFilters()" class="filter-clear-btn">נקה סינון</button>
+				<!-- Filters Section -->
+				<div class="filters-container">
+					<div class="filter-header" onclick="toggleFilterPanel('debtsFilterContent')">
+						<h3>🔍 סינון חובות</h3>
+						<button type="button" class="filter-toggle-btn" onclick="event.stopPropagation(); toggleFilterPanel('debtsFilterContent')">🔼 כווץ</button>
 					</div>
+					<div id="debtsFilterContent" class="filter-content">
+						<div class="filter-panel-unified" style="border-radius: 0 0 8px 8px; border-top: none;">
+							<div class="filter-panel-header" style="display: none;">
+								<h4 class="filter-panel-title">🔍 סינון חובות</h4>
+								<button onclick="clearDebtFilters()" class="filter-clear-btn">נקה סינון</button>
+							</div>
 					
-					<div class="filter-row-unified">
-						<div class="filter-group-unified medium">
-							<label>מיון לפי:</label>
-							<select id="debtSortBy" onchange="displayDebts()">
-								<option value="amount_desc">סכום (גבוה לנמוך)</option>
-								<option value="amount_asc">סכום (נמוך לגבוה)</option>
-								<option value="date_old">תאריך (הכי ישן)</option>
-								<option value="date_new">תאריך (הכי חדש)</option>
-								<option value="location">לקוח (א-ת)</option>
-							</select>
-						</div>
-						<div class="filter-group-unified compact">
-							<label>סכום מינימלי:</label>
-							<input type="number" id="minDebtAmount" placeholder="0" onchange="displayDebts()">
-						</div>
-					</div>
+							<div class="filter-row-unified">
+								<div class="filter-group-unified medium">
+									<label>מיון לפי:</label>
+									<select id="debtSortBy" onchange="displayDebts()">
+										<option value="amount_desc">סכום (גבוה לנמוך)</option>
+										<option value="amount_asc">סכום (נמוך לגבוה)</option>
+										<option value="date_old">תאריך (הכי ישן)</option>
+										<option value="date_new">תאריך (הכי חדש)</option>
+										<option value="location">לקוח (א-ת)</option>
+									</select>
+								</div>
+								<div class="filter-group-unified compact">
+									<label>סכום מינימלי:</label>
+									<input type="number" id="minDebtAmount" placeholder="0" onchange="displayDebts()">
+								</div>
+							</div>
 					
-					<div class="filter-row-unified">
-						<div class="filter-group-unified">
-							<label>חיפוש/בחירת לקוח:</label>
-							<input type="text" 
-								   id="debtClientSearch" 
-								   list="debtClientOptions"
-								   placeholder="הקלד שם לקוח או בחר מהרשימה..."
-								   onchange="handleDebtClientSelection(this.value)"
-								   oninput="filterDebtClientOptions(this.value)"
-								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-							<datalist id="debtClientOptions">
-								<!-- Options will be populated by JavaScript -->
-							</datalist>
-							<button type="button" 
-									onclick="clearDebtClientSearch()" 
-									style="margin-top: 5px; padding: 4px 8px; background: #e74c3c; color: white; border: none; border-radius: 3px; font-size: 11px; cursor: pointer;">
-								נקה בחירה
-							</button>
+							<div class="filter-row-unified">
+								<div class="filter-group-unified">
+									<label>חיפוש/בחירת לקוח:</label>
+									<input type="text" 
+										   id="debtClientSearch" 
+										   list="debtClientOptions"
+										   placeholder="הקלד שם לקוח או בחר מהרשימה..."
+										   onchange="handleDebtClientSelection(this.value)"
+										   oninput="filterDebtClientOptions(this.value)"
+										   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+									<datalist id="debtClientOptions">
+										<!-- Options will be populated by JavaScript -->
+									</datalist>
+									<button type="button" 
+											onclick="clearDebtClientSearch()" 
+											style="margin-top: 5px; padding: 4px 8px; background: #e74c3c; color: white; border: none; border-radius: 3px; font-size: 11px; cursor: pointer;">
+										נקה בחירה
+									</button>
+								</div>
+								
+								<div class="filter-group-unified compact">
+									<label>יום מועדף:</label>
+									<select id="debtDayFilter" onchange="displayDebts()">
+										<option value="">כל הימים</option>
+										<option value="כל יום">כל יום</option>
+										<option value="א">א (ראשון)</option>
+										<option value="ב">ב (שני)</option>
+										<option value="ג">ג (שלישי)</option>
+										<option value="ד">ד (רביעי)</option>
+										<option value="ה">ה (חמישי)</option>
+										<option value="ו">ו (שישי)</option>
+										<option value="ש">ש (שבת)</option>
+									</select>
+								</div>
+							</div>
 						</div>
-						
-						<div class="filter-group-unified compact">
-							<label>יום מועדף:</label>
-							<select id="debtDayFilter" onchange="displayDebts()">
-								<option value="">כל הימים</option>
-								<option value="כל יום">כל יום</option>
-								<option value="א">א (ראשון)</option>
-								<option value="ב">ב (שני)</option>
-								<option value="ג">ג (שלישי)</option>
-								<option value="ד">ד (רביעי)</option>
-								<option value="ה">ה (חמישי)</option>
-								<option value="ו">ו (שישי)</option>
-								<option value="ש">ש (שבת)</option>
-							</select>
-						</div>
-					</div>
+					</div>		
 				</div>
 				
 				<!-- Debts Stats Box -->
@@ -2693,36 +2891,41 @@
 				</div>
 				
 				<!-- פאנל סינון -->
-				<!-- שורה 1: חיפוש -->
-				<div class="filter-row-unified">
-					<div class="filter-group-unified">
-						<label>חיפוש חכם:</label>
-						<input type="text" 
-							   id="paymentSmartSearch" 
-							   placeholder="הקלד שם לקוח לחיפוש..."
-							   oninput="handlePaymentSmartSearch(this.value)"
-							   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+				<div class="filters-container">
+					<div class="filter-header" onclick="toggleFilterPanel('paymentsFilterContent')">
+						<h3>🔍 סינון תשלומים</h3>
+						<button type="button" class="filter-toggle-btn" onclick="event.stopPropagation(); toggleFilterPanel('paymentsFilterContent')">🔼 כווץ</button>
 					</div>
-					<div class="filter-group-unified small">
-						<button type="button" 
-								onclick="clearPaymentSmartSearch()" 
-								class="filter-clear-btn">
-							נקה חיפוש
-						</button>
+					<div id="paymentsFilterContent" class="filter-content" style="padding: 15px; background: #f8f9fa; border-radius: 0 0 8px 8px;">
+						<div class="filter-group-unified">
+							<label>חיפוש חכם:</label>
+							<input type="text" 
+								   id="paymentSmartSearch" 
+								   placeholder="הקלד שם לקוח לחיפוש..."
+								   oninput="handlePaymentSmartSearch(this.value)"
+								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+						</div>
+						<div class="filter-group-unified small">
+							<button type="button" 
+									onclick="clearPaymentSmartSearch()" 
+									class="filter-clear-btn">
+								נקה חיפוש
+							</button>
+						</div>
 					</div>
-				</div>
 
-				<!-- שורה 2: תאריכים -->
-				<div class="filter-row-unified">
-					<div class="filter-group-unified compact">
-						<label>מתאריך:</label>
-						<input type="date" id="filterPaymentDateFrom"...>
+					<!-- שורה 2: תאריכים -->
+					<div class="filter-row-unified">
+						<div class="filter-group-unified compact">
+							<label>מתאריך:</label>
+							<input type="date" id="filterPaymentDateFrom"...>
+						</div>
+						<div class="filter-group-unified compact">
+							<label>עד תאריך:</label>
+							<input type="date" id="filterPaymentDateTo"...>
+						</div>
 					</div>
-					<div class="filter-group-unified compact">
-						<label>עד תאריך:</label>
-						<input type="date" id="filterPaymentDateTo"...>
-					</div>
-				</div>
+				</div>	
 				
 				<!-- סטטיסטיקות -->
 				<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
@@ -6283,41 +6486,54 @@
 				mainRow.innerHTML = `
 					<td>${formatDate(visit.date)}</td>
 					<td><strong>${locationName}</strong></td>
-					<td><span class="visit-type-badge visit-type-${visit.visit_type || 'other'}">${visit.visit_type || '-'}</span></td>
-					<td class="work-done-column">${visit.work_done}</td>
-					<td><span class="duration-badge">${hours}ש</span></td>
-					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${visit.amount || 0} ₪</td>
+					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${visit.amount || 0} â‚ª</td>
 					<td>
-						${paymentDisplay}
-						<select class="payment-status-select" onchange="updatePaymentStatus('${visit.ID}', this.value)">
-							<option value="">-- פעולה --</option>
-							<option value="immediate">💳 תשלום מיידי</option>
-							<option value="3">⚠️ תשלום חלקי</option>
-							<option value="unpaid">❌ לא שולם</option>
-							<option value="no_payment">🚫 ללא תשלום</option>
-						</select>
-					</td>
-					<td>
-						<button onclick="addPaymentForVisit('${visit.ID}')" class="icon-btn" title="הוסף תשלום" style="background: #27ae60; color: white;">💰</button>
-						<button onclick="showVisitForm('${visit.ID}')" class="icon-btn" title="ערוך">✏️</button>
-						<button onclick="deleteVisit('${visit.ID}')" class="icon-btn" title="מחק">🗑️</button>
+						<button onclick="event.stopPropagation(); addPaymentForVisit('${visit.ID}')" class="action-btn" style="background: #27ae60; color: white; padding: 6px 10px;">ðŸ'°</button>
+						<button onclick="event.stopPropagation(); showVisitForm('${visit.ID}')" class="action-btn edit-btn">âœï¸</button>
+						<button onclick="event.stopPropagation(); deleteVisit('${visit.ID}')" class="action-btn delete-btn">ðŸ—'ï¸</button>
 					</td>
 				`;
 				fragment.appendChild(mainRow);
-				
+
 				// Details row (collapsed by default)
 				const detailsRow = document.createElement('tr');
-				detailsRow.id = `details-${visit.ID}`;
 				detailsRow.className = 'details-row';
-				detailsRow.style.display = 'none';
 				detailsRow.innerHTML = `
-					<td colspan="8">
-						<div class="visit-details-content">
-							<div><strong>עבודה שבוצעה:</strong> ${visit.work_done || 'לא צוין'}</div>
-							<div><strong>שעת התחלה:</strong> ${visit.start_time || '-'} | <strong>שעת סיום:</strong> ${visit.end_time || '-'}</div>
-							<div><strong>עובדים:</strong> ${visit.num_workers || 1}</div>
-							<div><strong>הוצאה:</strong> ${visit.expense || 0} ₪</div>
-							<div><strong>הערות:</strong> ${visit.notes || 'אין'}</div>
+					<td colspan="4">
+						<div class="details-content">
+							<div class="detail-item">
+								<span class="detail-label">סוג:</span>
+								<span class="detail-value">${visit.visit_type || '-'}</span>
+							</div>
+							<div class="detail-item">
+								<span class="detail-label">בוצע:</span>
+								<span class="detail-value">${visit.work_done || '-'}</span>
+							</div>
+							<div class="detail-item">
+								<span class="detail-label">משך:</span>
+								<span class="detail-value">${hours}ש</span>
+							</div>
+							<div class="detail-item">
+								<span class="detail-label">שעות:</span>
+								<span class="detail-value">${visit.start_time || '-'} - ${visit.end_time || '-'}</span>
+							</div>
+							<div class="detail-item">
+								<span class="detail-label">שולם:</span>
+								<span class="detail-value">${paymentDisplay}</span>
+							</div>
+							<div class="detail-item">
+								<span class="detail-label">הערות:</span>
+								<span class="detail-value">${visit.notes || 'אין'}</span>
+							</div>
+						</div>
+						<div style="margin-top: 10px;">
+							<select class="payment-status-select" onchange="updatePaymentStatus('${visit.ID}', this.value)" style="width: 100%;">
+								<option value="">-- שינוי סטטוס תשלום --</option>
+								<option value="immediate">ðŸ'³ תשלום מיידי</option>
+								<option value="3">âš ï¸ תשלום חלקי</option>
+								<option value="unpaid">âŒ לא שולם</option>
+								<option value="no_payment">ðŸš« ללא תשלום</option>
+							</select>
 						</div>
 					</td>
 				`;
@@ -6326,6 +6542,11 @@
 			
 			tbody.appendChild(fragment);
 			console.log(`📊 הוצגו ${filteredVisits.length} טיפולים`);
+
+			// Initialize expandable rows for mobile
+			setTimeout(() => {
+				initExpandableTable('visitsHistoryTable');
+			}, 100);
 		}
 
 		// הוסף פונקציה חדשה להצגת פירוט עלויות:
@@ -9357,23 +9578,28 @@
 				const lastVisit = locationVisits[0];
 				const lastVisitDate = lastVisit.date;
 				
-				// חישוב תאריך הטיפול הבא
-				const lastDate = new Date(lastVisitDate);
-				const intervalDays = (location.interval_weeks || 4) * 7; // ברירת מחדל 4 שבועות
-				const nextDate = new Date(lastDate);
-				nextDate.setDate(lastDate.getDate() + intervalDays);
-				
-				// פורמט התאריך ל-YYYY-MM-DD
-				const nextVisitDate = nextDate.toISOString().split('T')[0];
-				
-				// עדכון האובייקט המקומי
+				// ✅ עדכון last_visit תמיד
 				location.last_visit = lastVisitDate;
-				location.next_visit = nextVisitDate;
+				
+				// ✅ עדכון next_visit רק אם הטיפול האחרון היה "טיפול מלא"
+				if (lastVisit.visit_type === 'טיפול מלא') {
+					// חישוב תאריך הטיפול הבא
+					const lastDate = new Date(lastVisitDate);
+					const intervalDays = (location.interval_weeks || 4) * 7; // ברירת מחדל 4 שבועות
+					const nextDate = new Date(lastDate);
+					nextDate.setDate(lastDate.getDate() + intervalDays);
+					
+					// פורמט התאריך ל-YYYY-MM-DD
+					const nextVisitDate = nextDate.toISOString().split('T')[0];
+					location.next_visit = nextVisitDate;
+					
+					console.log(`📅 עודכן לקוח ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
+				} else {
+					console.log(`⏸️ תאריך הבא לא עודכן ללקוח ${location.name} - סוג טיפול: ${lastVisit.visit_type}`);
+				}
 				
 				// עדכון בגוגל שיטס
 				await updateTreatmentDatesInSheets([location]);
-				
-				console.log(`📅 עודכן לקוח ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
 				
 				// רענן נתוני תכנון
 				refreshPlanningAfterTreatmentUpdate();
@@ -13243,6 +13469,9 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			// Initialize Google APIs first
 			initializeGoogleAPIs();
 			
+			// Restore filter panel states
+			restoreFilterStates();
+			
 			// Initialize data from local storage
 			loadFromLocalStorage();
 			
@@ -13781,6 +14010,81 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			
 			console.warn('⚠️ No modal found to close');
 			return false;
+		}
+
+		// Toggle filter panel collapse/expand
+		function toggleFilterPanel(panelId) {
+			const panel = document.getElementById(panelId);
+			const button = document.querySelector(`[onclick="toggleFilterPanel('${panelId}')"]`);
+			
+			if (!panel || !button) return;
+			
+			panel.classList.toggle('collapsed');
+			
+			// Update button text
+			if (panel.classList.contains('collapsed')) {
+				button.textContent = '🔽 הרחב';
+			} else {
+				button.textContent = '🔼 כווץ';
+			}
+			
+			// Save state to localStorage
+			const isCollapsed = panel.classList.contains('collapsed');
+			localStorage.setItem(`filter_${panelId}_collapsed`, isCollapsed);
+		}
+
+		// Restore filter panel states on page load
+		function restoreFilterStates() {
+			const filterPanels = [
+				'visitsFilterContent',
+				'locationsFilterContent', 
+				'debtsFilterContent',
+				'receiptsFilterContent',
+				'paymentsFilterContent'
+			];
+			
+			filterPanels.forEach(panelId => {
+				const isCollapsed = localStorage.getItem(`filter_${panelId}_collapsed`) === 'true';
+				const panel = document.getElementById(panelId);
+				const button = document.querySelector(`[onclick="toggleFilterPanel('${panelId}')"]`);
+				
+				if (panel && isCollapsed) {
+					panel.classList.add('collapsed');
+					if (button) button.textContent = '🔽 הרחב';
+				}
+			});
+		}
+
+
+		// Toggle expandable table row
+		function toggleTableRow(rowElement) {
+			const mainRow = rowElement.closest('.main-row');
+			const detailsRow = mainRow.nextElementSibling;
+			
+			if (detailsRow && detailsRow.classList.contains('details-row')) {
+				mainRow.classList.toggle('expanded');
+				detailsRow.classList.toggle('expanded');
+			}
+		}
+
+		// Add click handlers to expandable table rows
+		function initExpandableTable(tableId) {
+			const table = document.getElementById(tableId);
+			if (!table) return;
+			
+			table.classList.add('mobile-optimized');
+			
+			// Add click handler to all main rows
+			const mainRows = table.querySelectorAll('.main-row');
+			mainRows.forEach(row => {
+				row.addEventListener('click', function(e) {
+					// Don't expand if clicking on buttons or links
+					if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.closest('button') || e.target.closest('a')) {
+						return;
+					}
+					toggleTableRow(this);
+				});
+			});
 		}
 
 
