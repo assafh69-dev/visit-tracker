@@ -2387,7 +2387,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -5036,7 +5036,24 @@
 				
 				// Refresh display
 				document.getElementById('visitForm')?.reset();
-				loadPlanningData();
+
+				// Force refresh planning view if we're in planning section
+				const planningSection = document.getElementById('planning');
+				if (planningSection && planningSection.classList.contains('active')) {
+					loadPlanningData();
+					// Also refresh the current planning tab view
+					const currentView = document.querySelector('.planning-tab-btn.active')?.textContent;
+					if (currentView) {
+						if (currentView.includes('איחור')) switchPlanningView('overdue');
+						else if (currentView.includes('היום')) switchPlanningView('daily');
+						else if (currentView.includes('השבוע')) switchPlanningView('weekly');
+						else if (currentView.includes('הבא')) switchPlanningView('next_week');
+						else if (currentView.includes('עתידי')) switchPlanningView('future');
+					}
+				} else {
+					// Still update data in background
+					loadPlanningData();
+				}
 				
 				// Success message based on actual result
 				if (access_token && SPREADSHEET_ID) {
