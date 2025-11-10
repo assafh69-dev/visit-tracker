@@ -2387,7 +2387,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4787,15 +4787,14 @@
 			}
 			
 			filteredData.forEach(location => {
-				const row = document.createElement('tr');
-				
-				// Find last treatment date for this client
+				// Find last treatment date for this client - ONCE!
 				const clientVisits = visits.filter(visit => String(visit.location_id) === String(location.ID));
 				const lastTreatmentDate = clientVisits.length > 0 
 					? clientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
 					: '';
 				
 				// Main row
+				const row = document.createElement('tr');
 				row.className = 'main-row';
 				row.innerHTML = `
 					<td>
@@ -4809,17 +4808,10 @@
 					</td>
 				`;
 				tbody.appendChild(row);
-
+				
 				// Details row
 				const detailsRow = document.createElement('tr');
 				detailsRow.className = 'details-row';
-
-				// Find last treatment date
-				const clientVisits = visits.filter(visit => String(visit.location_id) === String(location.ID));
-				const lastTreatmentDate = clientVisits.length > 0 
-					? clientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
-					: '';
-
 				detailsRow.innerHTML = `
 					<td colspan="3" style="padding: 15px; background: #f8f9fa;">
 						<div style="display: flex; gap: 20px; margin-bottom: 10px; font-size: 14px; flex-wrap: wrap;">
@@ -4854,11 +4846,10 @@
 					</td>
 				`;
 				tbody.appendChild(detailsRow);
-				tbody.appendChild(row);
 			});
 			
 			updateLocationsStats(filteredData);
-
+			
 			// Initialize expandable rows for mobile
 			setTimeout(() => {
 				initExpandableTable('locationsTable');
