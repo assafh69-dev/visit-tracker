@@ -2387,7 +2387,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.6</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -8301,6 +8301,17 @@
 			`).join('');
 			
 			container.innerHTML = html;
+		}
+
+		// עדכון סטטיסטיקות חובות
+		function updateDebtStats(debtsArray) {
+			const totalDebts = debtsArray.reduce((sum, debt) => sum + debt.totalDebt, 0);
+			const avgDebt = debtsArray.length > 0 ? totalDebts / debtsArray.length : 0;
+			const count = debtsArray.length;
+			
+			document.getElementById('debtsCount').textContent = count;
+			document.getElementById('debtsTotal').textContent = `₪${totalDebts.toFixed(0)}`;
+			document.getElementById('debtsAverage').textContent = `₪${avgDebt.toFixed(0)}`;
 		}
 
 
