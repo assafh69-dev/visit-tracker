@@ -2387,7 +2387,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2857,22 +2857,8 @@
 					</div>
 				</div>
 				
-				<div class="table-container">
-					<table id="debtsTable" class="data-table">
-						<thead>
-							<tr>
-								<th>לקוח</th>
-								<th>יום מועדף</th>
-								<th>סה"כ חוב</th>
-								<th>מס' טיפולים</th>
-								<th>הערות חוב</th>
-								<th>פעולות</th>
-							</tr>
-						</thead>
-						<tbody id="debtsTableBody">
-						</tbody>
-					</table>
-				</div>
+				<div id="debtsContainer"></div>
+				
 			</section>
 
 			<section id="payments" class="section">
