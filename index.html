@@ -2387,7 +2387,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -9592,7 +9592,7 @@
 				location.last_visit = lastVisitDate;
 				
 				// ✅ עדכון next_visit רק אם הטיפול האחרון היה "טיפול מלא"
-				if (lastVisit.visit_type === 'טיפול מלא') {
+				if (lastVisit.visit_type === 'מלא') {
 					// חישוב תאריך הטיפול הבא
 					const lastDate = new Date(lastVisitDate);
 					const intervalDays = (location.interval_weeks || 4) * 7; // ברירת מחדל 4 שבועות
