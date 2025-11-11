@@ -2387,7 +2387,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -11159,14 +11159,9 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			
 			document.getElementById(timeInputId).value = currentTime;
 			
-			// חישוב משך טיפול אם שני השדות מלאים
-			if (timeInputId.includes('modal')) {
-				calculateModalDuration();
-			} else if (timeInputId.includes('edit')) {
-				calculateEditDuration(); // ✅ הוספה לטופס העריכה
-			} else {
-				calculateDurationFromTimes();
-			}
+			// חישוב משך וסכום אוטומטי
+			calculateVisitFormDuration();
+			calculateVisitFormCost();
 			
 			showToast(`שעה נוכחית: ${currentTime}`, 'info');
 		}
