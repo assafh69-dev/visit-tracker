@@ -2387,7 +2387,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2753,16 +2753,12 @@
 					</div>
 				</div>
                 <div class="table-container">
-                    <table id="receiptsTable" class="data-table">
+                    <table id="receiptsTable" class="data-table mobile-optimized">
 						<thead>
 							<tr>
-								<th>פנקס</th>
-								<th>קבלה</th>
 								<th>תאריך</th>
 								<th>לקוח</th>
 								<th>סכום</th>
-								<th>סוג תשלום</th>
-								<th>קודX</th>
 								<th>פעולות</th>
 							</tr>
 						</thead>
@@ -2924,14 +2920,12 @@
 				
 				<!-- טבלת תשלומים -->
 				<div class="table-container">
-					<table id="paymentsTable" class="data-table">
+					<table id="paymentsTable" class="data-table mobile-optimized">
 						<thead>
 							<tr>
 								<th>תאריך</th>
 								<th>לקוח</th>
 								<th>סכום</th>
-								<th>אמצעי תשלום</th>
-								<th>הערות</th>
 								<th>פעולות</th>
 							</tr>
 						</thead>
@@ -11414,24 +11408,30 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				return;
 			}
 			
-			// בדיקה האם יש כבר טיפול היום ללקוח
-			const today = new Date().toISOString().split('T')[0];
-			const existingTodayVisit = visits.find(visit => 
-				visit.location_id === clientId && 
-				visit.date === today
-			);
+			// 🔥 סגור את המודל הנוכחי (פרופיל) לפני פתיחת טופס הטיפול
+			closeAnyModal();
 			
-			if (existingTodayVisit) {
-				// יש כבר טיפול היום - פתח עריכה
-				showToast(`נמצא טיפול קיים היום עבור ${client.name} - פותח לעריכה`, 'info');
-				showVisitForm(existingTodayVisit.ID);
-			} else {
-				// אין טיפול היום - צור חדש
-				showToast(`פותח טיפול חדש עבור ${client.name}`, 'success');
+			// המתן רגע קצר כדי לוודא שהמודל נסגר
+			setTimeout(() => {
+				// בדיקה האם יש כבר טיפול היום ללקוח
+				const today = new Date().toISOString().split('T')[0];
+				const existingTodayVisit = visits.find(visit => 
+					visit.location_id === clientId && 
+					visit.date === today
+				);
 				
-				// פתח טופס טיפול חדש עם הלקוח נבחר מראש
-				showVisitForm(null, clientId);
-			}
+				if (existingTodayVisit) {
+					// יש כבר טיפול היום - פתח עריכה
+					showToast(`נמצא טיפול קיים היום עבור ${client.name} - פותח לעריכה`, 'info');
+					showVisitForm(existingTodayVisit.ID);
+				} else {
+					// אין טיפול היום - צור חדש
+					showToast(`פותח טיפול חדש עבור ${client.name}`, 'success');
+					
+					// פתח טופס טיפול חדש עם הלקוח נבחר מראש
+					showVisitForm(null, clientId);
+				}
+			}, 100);
 		}
 
 
@@ -11542,42 +11542,66 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			tbody.innerHTML = '';
 			
 			if (filteredReceipts.length === 0) {
-				tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">אין קבלות מתאימות לסינון</td></tr>';
+				tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #666;">אין קבלות מתאימות לסינון</td></tr>';
+				updateReceiptsStats([]);
 				return;
 			}
 
 			filteredReceipts.forEach(receipt => {
-				const row = document.createElement('tr');
-				row.innerHTML = `
-					<td>${receipt.book_number || ''}</td>
-					<td>${receipt.receipt_number || ''}</td>
-					<td>${formatDate(receipt.date)}</td>
-					<td>${receipt.location_name || ''}</td>
-					<td>₪${receipt.amount || 0}</td>
-					<td>${receipt.payment_type || ''}</td>
-					<td>${receipt.codeX || ''}</td>
+				// Main row - visible always
+				const mainRow = document.createElement('tr');
+				mainRow.className = 'main-row';
+				mainRow.innerHTML = `
+					<td><strong>${formatDate(receipt.date)}</strong></td>
+					<td>${receipt.location_name || '-'}</td>
+					<td style="color: #27ae60; font-weight: bold;">₪${receipt.amount || 0}</td>
 					<td>
-						<button class="action-btn edit-btn" onclick="editReceipt('${receipt.ID}')">ערוך</button>
-						<button class="action-btn delete-btn" onclick="deleteReceipt('${receipt.ID}')">מחק</button>
+						<button class="action-btn edit-btn" onclick="event.stopPropagation(); editReceipt('${receipt.ID}')">✏️</button>
+						<button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteReceipt('${receipt.ID}')">🗑️</button>
 					</td>
 				`;
-				tbody.appendChild(row);
+				tbody.appendChild(mainRow);
 				
-				// הוספת שורת הערות אם קיימות
-				if (receipt.notes && receipt.notes.trim() !== '') {
-					const notesRow = document.createElement('tr');
-					notesRow.className = 'notes-row';
-					notesRow.innerHTML = `
-						<td colspan="8" class="notes-cell">
-							<div class="notes-content">
-								<strong>📝 הערות:</strong> ${receipt.notes}
+				// Details row - hidden by default
+				const detailsRow = document.createElement('tr');
+				detailsRow.className = 'details-row';
+				detailsRow.innerHTML = `
+					<td colspan="4">
+						<div class="details-content">
+							<div class="detail-item">
+								<span class="detail-label">פנקס:</span>
+								<span class="detail-value">${receipt.book_number || '-'}</span>
 							</div>
-						</td>
-					`;
-					tbody.appendChild(notesRow);
-				}
+							<div class="detail-item">
+								<span class="detail-label">מספר:</span>
+								<span class="detail-value">${receipt.receipt_number || '-'}</span>
+							</div>
+							<div class="detail-item">
+								<span class="detail-label">אופן:</span>
+								<span class="detail-value">${receipt.payment_type || '-'}</span>
+							</div>
+							<div class="detail-item">
+								<span class="detail-label">קוד:</span>
+								<span class="detail-value">${receipt.codeX || '-'}</span>
+							</div>
+							${receipt.notes && receipt.notes.trim() ? `
+							<div class="detail-item" style="grid-column: 1 / -1;">
+								<span class="detail-label">הערות:</span>
+								<span class="detail-value">${receipt.notes}</span>
+							</div>
+							` : ''}
+						</div>
+					</td>
+				`;
+				tbody.appendChild(detailsRow);
 			});
+			
 			updateReceiptsStats(filteredReceipts);
+			
+			// Initialize expandable rows
+			setTimeout(() => {
+				initExpandableTable('receiptsTable');
+			}, 100);
 		}
 
 		// Update stats functions for all tabs
@@ -12647,9 +12671,13 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			
 			tbody.innerHTML = '';
 			
+			if (paymentsToShow.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #666;">אין תשלומים להצגה</td></tr>';
+				updatePaymentsStats([]);
+				return;
+			}
+			
 			paymentsToShow.forEach(payment => {
-				const row = tbody.insertRow();
-				
 				// פירוט אמצעי תשלום משופר
 				let paymentMethodText = '';
 				switch(payment.payment_method) {
@@ -12660,22 +12688,52 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 					default: paymentMethodText = payment.payment_method || 'לא צוין';
 				}
 				
-				// הצגת אסמכתא אם קיימת
+				// הוספת אסמכתא אם קיימת
 				if (payment.reference) {
 					paymentMethodText += ` (${payment.reference})`;
 				}
 				
-				row.innerHTML = `
-					<td>${formatDate(payment.date)}</td>
+				// Main row
+				const mainRow = document.createElement('tr');
+				mainRow.className = 'main-row';
+				mainRow.innerHTML = `
+					<td><strong>${formatDate(payment.date)}</strong></td>
 					<td>${payment.client_name || 'לא ידוע'}</td>
-					<td>₪${payment.amount.toLocaleString()}</td>
-					<td>${paymentMethodText}</td>
-					<td title="${payment.notes || ''}">${(payment.notes || '').substring(0, 50)}${payment.notes && payment.notes.length > 50 ? '...' : ''}</td>
+					<td style="color: #27ae60; font-weight: bold;">₪${payment.amount.toLocaleString()}</td>
 					<td>
-						<button onclick="showPaymentDetails('${payment.ID}')" class="btn-info" title="פירוט מלא">🔍 פירוט</button>
+						<button onclick="event.stopPropagation(); showPaymentDetails('${payment.ID}')" class="action-btn" style="background: #3498db; color: white;" title="פירוט מלא">🔍</button>
 					</td>
 				`;
+				tbody.appendChild(mainRow);
+				
+				// Details row
+				const detailsRow = document.createElement('tr');
+				detailsRow.className = 'details-row';
+				detailsRow.innerHTML = `
+					<td colspan="4">
+						<div class="details-content">
+							<div class="detail-item">
+								<span class="detail-label">אופן:</span>
+								<span class="detail-value">${paymentMethodText}</span>
+							</div>
+							${payment.notes && payment.notes.trim() ? `
+							<div class="detail-item" style="grid-column: 1 / -1;">
+								<span class="detail-label">הערות:</span>
+								<span class="detail-value">${payment.notes}</span>
+							</div>
+							` : ''}
+						</div>
+					</td>
+				`;
+				tbody.appendChild(detailsRow);
 			});
+			
+			updatePaymentsStats(paymentsToShow);
+			
+			// Initialize expandable rows
+			setTimeout(() => {
+				initExpandableTable('paymentsTable');
+			}, 100);
 		}
 
 		// עדכון סטטיסטיקות תשלומים
