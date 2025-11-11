@@ -2387,7 +2387,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2892,20 +2892,20 @@
 								נקה חיפוש
 							</button>
 						</div>
-					</div>
-
-					<!-- שורה 2: תאריכים -->
-					<div class="filter-row-unified">
-						<div class="filter-group-unified compact">
-							<label>מתאריך:</label>
-							<input type="date" id="filterPaymentDateFrom"...>
+					
+						<!-- שורה 2: תאריכים -->
+						<div class="filter-row-unified">
+							<div class="filter-group-unified compact">
+								<label>מתאריך:</label>
+								<input type="date" id="filterPaymentDateFrom" onchange="applyPaymentFilters()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+							</div>
+							<div class="filter-group-unified compact">
+								<label>עד תאריך:</label>
+								<input type="date" id="filterPaymentDateTo" onchange="applyPaymentFilters()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+							</div>
 						</div>
-						<div class="filter-group-unified compact">
-							<label>עד תאריך:</label>
-							<input type="date" id="filterPaymentDateTo"...>
-						</div>
 					</div>
-				</div>	
+				</div>
 				
 				<!-- סטטיסטיקות -->
 				<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
@@ -8264,43 +8264,83 @@
 				return;
 			}
 			
-			// ✅ UPDATED: Show partial payments in display
-			const html = debtsArray.map(debt => `
-				<div class="debt-card">
-					<div class="debt-header">
-						<h3>${debt.clientName}</h3>
-						<div class="debt-total">${debt.totalDebt.toFixed(2)} ₪</div>
+			// ✅ UPDATED: Show debts with collapsible details
+			const html = debtsArray.map((debt, index) => `
+				<div class="debt-card" id="debtCard_${index}">
+					<div class="debt-header" onclick="toggleDebtDetails(${index})" style="cursor: pointer;">
+						<div style="display: flex; justify-content: space-between; align-items: center;">
+							<h3 style="margin: 0;">👤 ${debt.clientName}</h3>
+							<button onclick="event.stopPropagation(); showClientProfile('${debt.clientId}')" 
+									class="action-btn" 
+									style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 12px;"
+									title="פרופיל לקוח">
+								▶️
+							</button>
+						</div>
+						<div class="debt-total" style="margin-top: 10px;">💰 ${debt.totalDebt.toFixed(0)} ₪</div>
+						<button type="button" 
+								class="debt-toggle-btn" 
+								id="debtToggle_${index}"
+								onclick="event.stopPropagation(); toggleDebtDetails(${index})"
+								style="width: 100%; margin-top: 10px; padding: 8px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+							🔽 הצג פירוט (${debt.visits.length} טיפולים)
+						</button>
 					</div>
-					<div class="debt-visits">
+					<div class="debt-visits" id="debtDetails_${index}" style="display: none; margin-top: 15px;">
+						<div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+							<strong style="color: #666; font-size: 12px;">📋 פירוט טיפולים:</strong>
+						</div>
 						${debt.visits.map(v => `
-							<div class="debt-visit-item">
-								<span class="debt-date">${formatDate(v.date)}</span>
-								<span class="debt-work">${v.workDone}</span>
-								<span class="debt-amount">
-									${v.amount} ₪
-									${v.paymentStatus === '3' ? 
-										`<span style="color: #f39c12; font-size: 11px;">(שולם: ${v.paidAmount}₪)</span>` : 
-										''}
-								</span>
+							<div class="debt-visit-item" style="padding: 10px; background: white; border-right: 3px solid #e74c3c; border-radius: 4px; margin-bottom: 8px;">
+								<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+									<span class="debt-date" style="font-weight: bold; color: #2c3e50;">${formatDate(v.date)}</span>
+									<span class="debt-amount" style="color: #e74c3c; font-weight: bold;">
+										${v.amount} ₪
+										${v.paymentStatus === '3' ? 
+											`<span style="color: #f39c12; font-size: 11px;">(שולם: ${v.paidAmount}₪)</span>` : 
+											''}
+									</span>
+								</div>
+								<span class="debt-work" style="font-size: 13px; color: #666;">${v.workDone || 'ללא תיאור'}</span>
 							</div>
 						`).join('')}
-					</div>
-					<div class="debt-actions">
-						<button onclick="showAddPaymentModal('${debt.clientId}')" class="btn" style="background: #27ae60; color: white; flex: 1;">
-							➕ הוסף תשלום
-						</button>
-						<button onclick="markClientDebtsPaid('${debt.clientId}')" class="btn-pay" style="flex: 1;">
-							✓ סמן הכל כשולם
-						</button>
-						<button onclick="showClientTreatments('${debt.clientId}')" class="btn-payment" style="flex: 1;">
-							📋 עבור לטיפולים
-						</button>
+						<div class="debt-actions" style="display: flex; gap: 10px; margin-top: 15px;">
+							<button onclick="showAddPaymentModal('${debt.clientId}')" class="btn" style="background: #27ae60; color: white; flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">
+								➕ הוסף תשלום
+							</button>
+							<button onclick="markClientDebtsPaid('${debt.clientId}')" class="btn-pay" style="background: #3498db; color: white; flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">
+								✓ סמן הכל כשולם
+							</button>
+						</div>
 					</div>
 				</div>
 			`).join('');
 			
 			container.innerHTML = html;
 		}
+
+		
+
+		function toggleDebtDetails(index) {
+			const detailsDiv = document.getElementById(`debtDetails_${index}`);
+			const toggleBtn = document.getElementById(`debtToggle_${index}`);
+			
+			if (!detailsDiv || !toggleBtn) return;
+			
+			if (detailsDiv.style.display === 'none') {
+				// הרחב
+				detailsDiv.style.display = 'block';
+				toggleBtn.innerHTML = '🔼 הסתר פירוט';
+				toggleBtn.style.background = '#95a5a6';
+			} else {
+				// כווץ
+				detailsDiv.style.display = 'none';
+				const visitsCount = detailsDiv.querySelectorAll('.debt-visit-item').length;
+				toggleBtn.innerHTML = `🔽 הצג פירוט (${visitsCount} טיפולים)`;
+				toggleBtn.style.background = '#3498db';
+			}
+		}
+
 
 		// עדכון סטטיסטיקות חובות
 		function updateDebtStats(debtsArray) {
