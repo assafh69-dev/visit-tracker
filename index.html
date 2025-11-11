@@ -2387,7 +2387,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.6</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2574,9 +2574,13 @@
 				</div>
 			</section>
 
-            <!-- locations Section -->
+           <!-- locations Section -->
             <section id="locations" class="section">
                 <h2>ניהול לקוחות</h2>
+                
+                <!-- כפתור הוספה למעלה -->
+                <button onclick="showAddLocationForm()" class="add-btn">הוסף לקוח חדש</button>
+                
 				<!-- פאנל סינון -->
 				<div class="filters-container">
 					<div class="filter-header" onclick="toggleFilterPanel('locationsFilterContent')">
@@ -2640,9 +2644,9 @@
 						</div>
 					</div>
 				</div>
+				
+				<!-- סטטיסטיקה -->
 				<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-					<button onclick="showAddLocationForm()" class="add-btn">הוסף לקוח חדש</button>
-					
 					<div id="locationsStatsBox" style="background: #e8f4fd; border: 1px solid #3498db; border-radius: 6px; padding: 8px 12px; font-size: 13px; color: #2c3e50;">
 						<span id="locationsCount">0</span> לקוחות מוצגים
 						<span style="margin-right: 10px; color: #666;">|</span>
@@ -2651,19 +2655,13 @@
 						<span style="color: #e74c3c; font-weight: bold;" id="inactiveCount">0</span> לא פעילים
 					</div>
 				</div>
+				
                 <div class="table-container">
-                    <table id="locationsTable" class="data-table">
+                    <table id="locationsTable" class="data-table mobile-optimized">
                         <thead>
 							<tr>
 								<th>שם</th>
 								<th>כתובת</th>
-								<th>איש קשר</th>
-								<th>יום מותר</th>
-								<th>מרווח</th>
-								<th>פעיל</th>
-								<th>טיפול קודם</th>
-								<th>טיפול הבא</th>
-								<th>הערות</th>
 								<th>פעולות</th>
 							</tr>
 						</thead>
@@ -5270,7 +5268,13 @@
 			
 			// Build modal HTML
 			const modalHTML = `
-				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 900px; width: 95vw; max-height: 90vh; overflow-y: auto;">
+				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 900px; width: 95vw; max-height: 90vh; overflow-y: auto; position: relative;">
+					<!-- Close X Button -->
+					<button onclick="closeAnyModal()" 
+							style="position: absolute; top: 15px; left: 15px; background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; display: flex; align-items: center; justify-content: center; z-index: 10;">
+						×
+					</button>
+					
 					<!-- Header -->
 					<div style="border-bottom: 3px solid #3498db; padding-bottom: 15px; margin-bottom: 20px;">
 						<h2 style="margin: 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
@@ -5307,10 +5311,11 @@
 								<div style="font-size: 20px; font-weight: bold; color: #1b5e20;">${formatDate(client.next_visit)}</div>
 								<div style="font-size: 12px; color: #666; margin-top: 3px;">טיפול אחרון: ${lastVisit !== 'אין' ? formatDate(lastVisit) : 'אין'}</div>
 							</div>
-							<button onclick="startTreatment('${clientId}')" 
-									style="padding: 12px 24px; background: #4caf50; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold;">
-								🚀 התחל טיפול עכשיו
-							</button>
+								<button onclick="startTreatment('${clientId}')" 
+										title="התחל טיפול עכשיו"
+										style="padding: 10px 14px; background: #4caf50; color: white; border: none; border-radius: 8px; font-size: 20px; cursor: pointer;">
+									▶️
+								</button>
 						</div>
 					</div>
 					
@@ -11856,7 +11861,13 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			
 			// בניית HTML
 			const modalHTML = `
-				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 650px; width: 90vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 650px; width: 90vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15); position: relative;">
+					<!-- Close X Button -->
+					<button onclick="closeAnyModal()" 
+							style="position: absolute; top: 15px; left: 15px; background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; display: flex; align-items: center; justify-content: center; z-index: 10;">
+						×
+					</button>
+					
 					<h3 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 22px; border-bottom: 2px solid ${titleColor}; padding-bottom: 10px;">${title}</h3>
 					
 					<form id="visitForm" onsubmit="handleVisitFormSubmit(event, ${isEdit ? `'${visitId}'` : 'null'})" style="display: flex; flex-direction: column; gap: 18px;">
@@ -13239,7 +13250,7 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 				display: flex !important;
 				justify-content: center !important;
 				align-items: center !important;
-				z-index: 9999 !important;
+				z-index: 10001 !important;
 			`;
 			
 			modal.innerHTML = content;
