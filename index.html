@@ -8268,16 +8268,35 @@
 			const html = debtsArray.map((debt, index) => `
 				<div class="debt-card" id="debtCard_${index}">
 					<div class="debt-header" onclick="toggleDebtDetails(${index})" style="cursor: pointer;">
-						<div style="display: flex; justify-content: space-between; align-items: center;">
-							<h3 style="margin: 0;">👤 ${debt.clientName}</h3>
+						<!-- שורה 1: שם + פרופיל -->
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+							<h3 style="margin: 0; color: #2c3e50;">${debt.clientName}</h3>
 							<button onclick="event.stopPropagation(); showClientProfile('${debt.clientId}')" 
 									class="action-btn" 
-									style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 12px;"
+									style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 10px;"
 									title="פרופיל לקוח">
-								▶️
+								👤
 							</button>
 						</div>
-						<div class="debt-total" style="margin-top: 10px;">💰 ${debt.totalDebt.toFixed(0)} ₪</div>
+						
+						<!-- שורה 2: סכום + כפתורי פעולה -->
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+							<div class="debt-total" style="margin: 0;">💰 ${debt.totalDebt.toFixed(0)} ₪</div>
+							<div style="display: flex; gap: 8px;">
+								<button onclick="event.stopPropagation(); showAddPaymentModal('${debt.clientId}')" 
+										class="action-btn" 
+										style="background: #27ae60; color: white; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;"
+										title="הוסף תשלום">
+									➕ תשלום
+								</button>
+								<button onclick="event.stopPropagation(); markClientDebtsPaid('${debt.clientId}')" 
+										class="action-btn" 
+										style="background: #3498db; color: white; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;"
+										title="סמן הכל כשולם">
+									✓ סמן
+								</button>
+							</div>
+						</div>
 						<button type="button" 
 								class="debt-toggle-btn" 
 								id="debtToggle_${index}"
@@ -8304,14 +8323,6 @@
 								<span class="debt-work" style="font-size: 13px; color: #666;">${v.workDone || 'ללא תיאור'}</span>
 							</div>
 						`).join('')}
-						<div class="debt-actions" style="display: flex; gap: 10px; margin-top: 15px;">
-							<button onclick="showAddPaymentModal('${debt.clientId}')" class="btn" style="background: #27ae60; color: white; flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">
-								➕ הוסף תשלום
-							</button>
-							<button onclick="markClientDebtsPaid('${debt.clientId}')" class="btn-pay" style="background: #3498db; color: white; flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">
-								✓ סמן הכל כשולם
-							</button>
-						</div>
 					</div>
 				</div>
 			`).join('');
