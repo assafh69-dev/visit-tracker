@@ -12007,14 +12007,14 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 									<label for="visitFormStartTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת התחלה:</label>
 									<div style="display: flex; gap: 6px;">
 										<input type="time" id="visitFormStartTime" value="${isEdit ? (visitData.start_time || '') : ''}" onchange="calculateVisitFormDuration(); calculateVisitFormCost();" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-										<button type="button" onclick="setCurrentTime('visitFormStartTime')" title="שעה נוכחית" style="padding: 8px 10px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; line-height: 1;">🕐</button>
+										<button type="button" onclick="setCurrentTime('visitFormStartTime')" title="שעה נוכחית" style="padding: 8px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; line-height: 1; min-width: 40px; flex-shrink: 0;">🕐</button>								
 									</div>
 								</div>
 								<div>
 									<label for="visitFormEndTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת סיום:</label>
 									<div style="display: flex; gap: 6px;">
 										<input type="time" id="visitFormEndTime" value="${isEdit ? (visitData.end_time || '') : ''}" onchange="calculateVisitFormDuration(); calculateVisitFormCost();" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-										<button type="button" onclick="setCurrentTime('visitFormEndTime')" title="שעה נוכחית" style="padding: 8px 10px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; line-height: 1;">🕐</button>
+										<button type="button" onclick="setCurrentTime('visitFormEndTime')" title="שעה נוכחית" style="padding: 8px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; line-height: 1; min-width: 40px; flex-shrink: 0;">🕐</button>
 									</div>
 								</div>
 							</div>
