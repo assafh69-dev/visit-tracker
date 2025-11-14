@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2972,12 +2972,15 @@
 				<div class="form-section">
 					<h3>📥 ייבוא נתונים</h3>
 					
-					<div class="import-main-buttons" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;">
+					<div class="import-main-buttons" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
 						<button onclick="createImportTable()" class="btn">
 							📗 צור טבלת עזר לייבוא
 						</button>
 						<button onclick="importFromHelperTableFast()" class="btn" style="background: #27ae60; color: white;">
 							🚀 ייבוא מהיר וכולל
+						</button>
+						<button onclick="importPaymentsFromHelper()" class="btn" style="background: #9b59b6; color: white;">
+							💳 ייבוא תשלומים
 						</button>
 					</div>
 					
@@ -6207,11 +6210,13 @@
 							title: `import_table_${new Date().toISOString().split('T')[0]}`
 						},
 						sheets: [{
-							properties: { title: 'Locations' },
+						properties: { title: 'Locations' },
 						}, {
 							properties: { title: 'Visits' },
 						}, {
 							properties: { title: 'Receipts' }
+						}, {
+							properties: { title: 'PaymentsImport' }
 						}, {
 							properties: { title: 'SystemSettings' }
 						}]
@@ -6251,35 +6256,43 @@
 				const locationHeaders = [['customer_name', 'street', 'house_number', 'city', 'frequency', 'contact_person', 'base_amount', 'allowed_day', 'active']];
 				const visitHeaders = [['year', 'month', 'day', 'customer', 'contact_person', 'treatment', 'date', 'work_done', 'duration', 'amount', 'paid', 'expense', 'notes']];
 				const receiptHeaders = [['code_x', 'booklet', 'receipt', 'year', 'month', 'day', 'address', 'amount', 'type', 'notes', 'details']];
+				const paymentsImportHeaders = [['date', 'time', 'client_address', 'amount', 'payment_method', 'notes', 'original_text']];
+					
 				
 				await new Promise(resolve => setTimeout(resolve, 1000));
 				
 				await Promise.all([
-					gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: spreadsheetId,
-						range: 'Locations!A1:G1',
-						valueInputOption: 'RAW',
-						resource: { values: locationHeaders }
-					}),
-					gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: spreadsheetId,
-						range: 'Visits!A1:M1',
-						valueInputOption: 'RAW', 
-						resource: { values: visitHeaders }
-					}),
-					gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: spreadsheetId,
-						range: 'Receipts!A1:K1',
-						valueInputOption: 'RAW',
-						resource: { values: receiptHeaders }
-					}),
-					gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: spreadsheetId,
-						range: 'SystemSettings!A1:B1',
-						valueInputOption: 'RAW',
-						resource: { values: [['Setting', 'Value']] }
-					})
-				]);			
+				gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: spreadsheetId,
+					range: 'Locations!A1:I1',
+					valueInputOption: 'RAW',
+					resource: { values: locationHeaders }
+				}),
+				gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: spreadsheetId,
+					range: 'Visits!A1:M1',
+					valueInputOption: 'RAW', 
+					resource: { values: visitHeaders }
+				}),
+				gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: spreadsheetId,
+					range: 'Receipts!A1:K1',
+					valueInputOption: 'RAW',
+					resource: { values: receiptHeaders }
+				}),
+				gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: spreadsheetId,
+					range: 'PaymentsImport!A1:G1',
+					valueInputOption: 'RAW',
+					resource: { values: paymentsImportHeaders }
+				}),
+				gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: spreadsheetId,
+					range: 'SystemSettings!A1:B1',
+					valueInputOption: 'RAW',
+					resource: { values: [['Setting', 'Value']] }
+				})
+			]);	
 				
 				console.log('Headers added successfully to import table');
 				
@@ -9759,7 +9772,7 @@
 				return;
 			}
 
-console.log('✅ Import table ID exists, proceeding with import...');  // ✅ הוסף את זה
+			console.log('✅ Import table ID exists, proceeding with import...');  // ✅ הוסף את זה
 			
 			try {
 				showLoading('מייבא נתונים מהר מטבלת העזר...');
@@ -10098,6 +10111,121 @@ console.log('✅ Import table ID exists, proceeding with import...');  // ✅ ה
 			}
 		}
 		
+
+		// ✅ NEW: Import payments from PaymentsImport helper sheet
+		async function importPaymentsFromHelper() {
+			console.log('💳 Starting payments import from helper table...');
+			
+			const importTableId = localStorage.getItem('importTableId');
+			
+			if (!importTableId) {
+				showToast('⚠️ לא נמצא מזהה טבלת עזר. אנא הגדר תחילה.', 'warning');
+				return;
+			}
+			
+			try {
+				// Load data from PaymentsImport sheet
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: importTableId,
+					range: 'PaymentsImport!A2:G' // Skip header row
+				});
+				
+				const rows = response.result.values || [];
+				
+				if (rows.length === 0) {
+					showToast('ℹ️ אין נתונים בטבלת PaymentsImport', 'info');
+					return;
+				}
+				
+				let imported = 0;
+				let notFound = [];
+				
+				rows.forEach((row, index) => {
+					const [date, time, clientAddress, amount, paymentMethod, notes, originalText] = row;
+					
+					// Skip empty rows
+					if (!date || !amount) return;
+					
+					// Find matching client
+					const client = findClientByPartialAddress(clientAddress);
+					
+					if (!client) {
+						notFound.push({
+							row: index + 2,
+							address: clientAddress,
+							amount: amount,
+							originalText: originalText
+						});
+						return;
+					}
+					
+					// Create new payment
+					const newPayment = {
+						ID: generateUniqueID('PAY'),
+						location_id: client.ID,
+						date: date,
+						amount: parseFloat(amount) || 0,
+						payment_method: paymentMethod === 'לא צוין' ? 'מזומן' : paymentMethod,
+						notes: notes || '',
+						original_text: originalText || ''
+					};
+					
+					payments.push(newPayment);
+					imported++;
+				});
+				
+				// Save to localStorage
+				saveToLocalStorage();
+				
+				// Show results
+				let message = `✅ יובאו ${imported} תשלומים בהצלחה!`;
+				
+				if (notFound.length > 0) {
+					message += `\n⚠️ ${notFound.length} תשלומים לא זוהו:\n`;
+					notFound.forEach(item => {
+						message += `• ${item.address} (${item.amount} ₪)\n`;
+					});
+				}
+				
+				showToast(message, imported > 0 ? 'success' : 'warning');
+				
+				// Refresh displays
+				if (typeof displayPayments === 'function') displayPayments();
+				if (typeof displayDebts === 'function') displayDebts();
+				
+			} catch (error) {
+				console.error('Error importing payments:', error);
+				showToast('❌ שגיאה בייבוא תשלומים', 'error');
+			}
+		}
+		
+		// Helper function to find client by partial address
+		function findClientByPartialAddress(partialAddress) {
+			if (!partialAddress) return null;
+			
+			const normalized = partialAddress.trim().toLowerCase();
+			
+			// Try exact match first
+			let match = locations.find(loc => 
+				loc.name.toLowerCase() === normalized ||
+				loc.full_address?.toLowerCase() === normalized
+			);
+			
+			if (match) return match;
+			
+			// Try partial match
+			match = locations.find(loc => {
+				const locName = loc.name.toLowerCase();
+				const locAddress = (loc.full_address || '').toLowerCase();
+				
+				return locName.includes(normalized) || 
+					   normalized.includes(locName) ||
+					   locAddress.includes(normalized) ||
+					   normalized.includes(locAddress);
+			});
+			
+			return match;
+		}
 
 	   
 	   ////////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
