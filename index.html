@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6180,6 +6180,22 @@
 				if (typeof loadLocationsForSelect === 'function') {
 					loadLocationsForSelect();
 					console.log('✅ Location selectors refreshed');
+				}
+				if (typeof displayDebts === 'function') {
+					displayDebts();
+					console.log('✅ Debts display refreshed');
+				}
+				if (typeof displayPayments === 'function') {
+					displayPayments();
+					console.log('✅ Payments display refreshed');
+				}
+				if (typeof displayReceipts === 'function') {
+					displayReceipts();
+					console.log('✅ Receipts display refreshed');
+				}
+				if (typeof displayVisits === 'function') {
+					displayVisits();
+					console.log('✅ Visits display refreshed');
 				}
 				
 				showToast('✅ כל הנתונים המקומיים נוקו בהצלחה', 'success');
