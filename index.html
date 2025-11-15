@@ -13824,8 +13824,6 @@
 					default: paymentMethodText = payment.payment_method || 'לא צוין';
 				}
 				
-				console.log('❌ Payment not found. paymentId:', payment.ID);
-				
 				// הוספת אסמכתא אם קיימת
 				if (payment.reference) {
 					paymentMethodText += ` (${payment.reference})`;
