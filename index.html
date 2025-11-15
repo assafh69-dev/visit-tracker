@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -8351,7 +8351,7 @@
 										class="action-btn" 
 										style="background: #9b59b6; color: white; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;"
 										title="קשר תשלום קיים">
-									💳 קשר
+									💳 קישור
 								</button>
 								<button onclick="event.stopPropagation(); markClientDebtsPaid('${debt.clientId}')" 
 										class="action-btn" 
@@ -10594,6 +10594,8 @@
 			}
 			
 			try {
+				showLoading('טוען תשלומים מטבלת עזר...');
+				
 				// Load data from PaymentsImport sheet
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: importTableId,
@@ -10604,6 +10606,7 @@
 				
 				if (rows.length === 0) {
 					showToast('ℹ️ אין נתונים בטבלת PaymentsImport', 'info');
+					hideLoading();
 					return;
 				}
 				
@@ -10624,7 +10627,7 @@
 							row: index + 2,
 							address: clientAddress,
 							amount: amount,
-							originalText: originalText
+							originalText: originalText || clientAddress
 						});
 						return;
 					}
@@ -10633,11 +10636,12 @@
 					const newPayment = {
 						ID: generateID(),
 						location_id: client.ID,
+						client_name: client.name,  // ✅ ADDED
 						date: date,
 						amount: parseFloat(amount) || 0,
-						payment_method: paymentMethod === 'לא צוין' ? 'מזומן' : paymentMethod,
+						payment_method: (paymentMethod === 'לא צוין' || !paymentMethod) ? 'מזומן' : paymentMethod,
 						notes: notes || '',
-						original_text: originalText || ''
+						original_text: originalText || clientAddress
 					};
 					
 					payments.push(newPayment);
@@ -10647,14 +10651,30 @@
 				// Save to localStorage
 				saveToLocalStorage();
 				
+				// ✅ ADDED: Save to Google Sheets
+				if (access_token && SPREADSHEET_ID && imported > 0) {
+					try {
+						await savePaymentsToSheets();
+						console.log('✅ Payments saved to Google Sheets');
+					} catch (error) {
+						console.error('Error saving payments to sheets:', error);
+						showToast('⚠️ התשלומים נשמרו מקומית אבל לא בענן', 'warning');
+					}
+				}
+				
+				hideLoading();
+				
 				// Show results
 				let message = `✅ יובאו ${imported} תשלומים בהצלחה!`;
 				
 				if (notFound.length > 0) {
-					message += `\n⚠️ ${notFound.length} תשלומים לא זוהו:\n`;
-					notFound.forEach(item => {
-						message += `• ${item.address} (${item.amount} ₪)\n`;
+					message += `\n\n⚠️ ${notFound.length} תשלומים לא זוהו:`;
+					notFound.slice(0, 5).forEach(item => {
+						message += `\n• ${item.address} (${item.amount} ₪)`;
 					});
+					if (notFound.length > 5) {
+						message += `\n... ועוד ${notFound.length - 5}`;
+					}
 				}
 				
 				showToast(message, imported > 0 ? 'success' : 'warning');
@@ -10665,9 +10685,11 @@
 				
 			} catch (error) {
 				console.error('Error importing payments:', error);
-				showToast('❌ שגיאה בייבוא תשלומים', 'error');
+				showToast('❌ שגיאה בייבוא תשלומים: ' + error.message, 'error');
+				hideLoading();
 			}
 		}
+		
 		
 		// Helper function to find client by partial address
 		function findClientByPartialAddress(partialAddress) {
