@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -9906,12 +9906,21 @@
 					payment.payment_details || ''
 				]);
 
-				await gapi.client.sheets.spreadsheets.values.append({
+				// ✅ Clear existing data first
+				await gapi.client.sheets.spreadsheets.values.clear({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Payments!A:O',  // ✅ עודכן ל-15 עמודות
-					valueInputOption: 'USER_ENTERED',
-					resource: { values }
+					range: 'Payments!A2:O'
 				});
+				
+				// ✅ Then write new data
+				if (values.length > 0) {
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: 'Payments!A2',
+						valueInputOption: 'USER_ENTERED',
+						resource: { values }
+					});
+				}
 				
 				console.log(`✅ Saved ${paymentsArray.length} payments to cloud`);
 				return true;
@@ -9921,7 +9930,7 @@
 				return false;
 			}
 		}
-
+		
 		// שמירה מקבצית של קישורי תשלומים
 		async function savePaymentVisitLinksBatch(linksArray) {
 			if (!await validateToken()) return false;
@@ -9933,15 +9942,26 @@
 					link.ID || '',
 					link.payment_id || '',
 					link.visit_id || '',
-					link.amount_allocated || 0
+					link.amount_allocated || 0,
+					link.link_type || 'full_payment',
+					link.created_at || new Date().toISOString()
 				]);
 				
-				await gapi.client.sheets.spreadsheets.values.append({
+				// ✅ Clear existing data first
+				await gapi.client.sheets.spreadsheets.values.clear({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'PaymentVisitLink!A:D',
-					valueInputOption: 'USER_ENTERED',
-					resource: { values }
+					range: 'PaymentVisitLink!A2:F'
 				});
+				
+				// ✅ Then write new data
+				if (values.length > 0) {
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: 'PaymentVisitLink!A2',
+						valueInputOption: 'USER_ENTERED',
+						resource: { values }
+					});
+				}
 				
 				console.log(`✅ Saved ${linksArray.length} payment links to cloud`);
 				return true;
