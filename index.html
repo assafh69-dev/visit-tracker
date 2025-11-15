@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -14056,19 +14056,32 @@
 						<h4 style="margin: 0 0 15px 0; color: #27ae60; font-size: 16px;">🔗 טיפולים מקושרים:</h4>
 						
 						${relatedVisits.length > 0 ? 
-							relatedVisits.map(visit => `
-								<div style="padding: 12px; background: white; border-radius: 6px; margin-bottom: 10px; border-right: 4px solid #27ae60;">
+							relatedVisits.map(visit => {
+								const link = relatedLinks.find(l => l.visit_id === visit.ID);
+								return `
+								<div style="padding: 12px; background: white; border-radius: 6px; margin-bottom: 10px; border-right: 4px solid #27ae60; position: relative;">
 									<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
 										<strong style="color: #2c3e50;">${formatDate(visit.date)}</strong>
-										<span style="background: #27ae60; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
-											₪${visit.allocated_amount.toFixed(2)}
-										</span>
+										<div style="display: flex; align-items: center; gap: 8px;">
+											<span style="background: #27ae60; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+												₪${visit.allocated_amount.toFixed(0)}
+											</span>
+											<button onclick="unlinkPaymentFromVisit('${link.ID}', '${payment.ID}')" style="background: #e74c3c; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;" title="נתק קישור">
+												❌ נתק
+											</button>
+										</div>
 									</div>
 									<div style="font-size: 13px; color: #666;">
 										${visit.work_done || 'ללא תיאור'}
 									</div>
+									${visit.allocated_amount < visit.amount ? `
+										<div style="font-size: 11px; color: #f39c12; margin-top: 5px;">
+											⚠️ תשלום חלקי - חוב נותר: ₪${(visit.amount - visit.allocated_amount).toFixed(0)}
+										</div>
+									` : ''}
 								</div>
-							`).join('') 
+							`;
+							}).join('') 
 							: '<div style="color: #666; font-style: italic; text-align: center; padding: 20px;">אין טיפולים מקושרים לתשלום זה</div>'
 						}
 						
@@ -14086,8 +14099,23 @@
 						` : ''}
 					</div>
 					
-					<div style="text-align: center;">
-						<button onclick="closeAnyModal()" style="background: #95a5a6; color: white; border: none; padding: 12px 30px; border-radius: 6px; cursor: pointer; font-size: 15px;">
+					<!-- Action Buttons -->
+					<div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+						${payment.client_id ? `
+							<button onclick="closeAnyModal(); showLinkPaymentModalFromPayments('${payment.ID}')" style="flex: 1; min-width: 200px; background: #9b59b6; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+								💳 ${relatedVisits.length > 0 ? 'קשר עוד טיפולים' : 'קשר לטיפולים'}
+							</button>
+						` : ''}
+						<button onclick="editPaymentDetails('${payment.ID}')" style="flex: 1; min-width: 150px; background: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+							✏️ ערוך תשלום
+						</button>
+						<button onclick="deletePayment('${payment.ID}')" style="flex: 1; min-width: 150px; background: ${relatedVisits.length > 0 ? '#95a5a6' : '#e74c3c'}; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;" ${relatedVisits.length > 0 ? 'disabled title="לא ניתן למחוק תשלום מקושר"' : ''}>
+							🗑️ מחק תשלום
+						</button>
+					</div>
+					
+					<div style="text-align: center; margin-top: 15px;">
+						<button onclick="closeAnyModal()" style="background: #95a5a6; color: white; border: none; padding: 10px 30px; border-radius: 6px; cursor: pointer; font-size: 14px;">
 							סגור
 						</button>
 					</div>
@@ -14096,6 +14124,267 @@
 			
 			showModal(modalContent);
 		}
+
+		// ✅ Edit payment details
+		function editPaymentDetails(paymentId) {
+			const payment = payments.find(p => p.ID === paymentId);
+			if (!payment) {
+				showToast('❌ תשלום לא נמצא', 'error');
+				return;
+			}
+			
+			// Close current modal
+			closeAnyModal();
+			
+			// Show edit modal
+			const modalContent = `
+				<div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90vw; direction: rtl;">
+					<h3 style="margin-bottom: 25px; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+						✏️ עריכת תשלום
+					</h3>
+					
+					<div style="margin-bottom: 20px;">
+						<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">תאריך:</label>
+						<input type="date" id="editPaymentDate" value="${payment.date}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+					</div>
+					
+					<div style="margin-bottom: 20px;">
+						<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">סכום (₪):</label>
+						<input type="number" id="editPaymentAmount" value="${payment.amount}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+					</div>
+					
+					<div style="margin-bottom: 20px;">
+						<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">אמצעי תשלום:</label>
+						<select id="editPaymentMethod" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+							<option value="cash" ${payment.payment_method === 'cash' || payment.payment_method === 'מזומן' ? 'selected' : ''}>מזומן</option>
+							<option value="check" ${payment.payment_method === 'check' || payment.payment_method === 'צ\'ק' ? 'selected' : ''}>צ'ק</option>
+							<option value="transfer" ${payment.payment_method === 'transfer' || payment.payment_method === 'העברה' ? 'selected' : ''}>העברה בנקאית</option>
+							<option value="app" ${payment.payment_method === 'app' || payment.payment_method === 'אפליקציה' ? 'selected' : ''}>אפליקציה (ביט/פייבוקס)</option>
+						</select>
+					</div>
+					
+					<div style="margin-bottom: 20px;">
+						<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">אסמכתא (אופציונלי):</label>
+						<input type="text" id="editPaymentReference" value="${payment.reference || ''}" placeholder="מספר צ'ק / העברה" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+					</div>
+					
+					<div style="margin-bottom: 25px;">
+						<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">הערות (אופציונלי):</label>
+						<textarea id="editPaymentNotes" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical;">${payment.notes || ''}</textarea>
+					</div>
+					
+					<div style="display: flex; gap: 10px; justify-content: flex-end;">
+						<button onclick="closeAnyModal()" style="padding: 10px 20px; background: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+							ביטול
+						</button>
+						<button onclick="saveEditedPayment('${payment.ID}')" style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+							💾 שמור שינויים
+						</button>
+					</div>
+				</div>
+			`;
+			
+			showModal(modalContent);
+		}
+		
+		// ✅ Save edited payment
+		async function saveEditedPayment(paymentId) {
+			const payment = payments.find(p => p.ID === paymentId);
+			if (!payment) {
+				showToast('❌ תשלום לא נמצא', 'error');
+				return;
+			}
+			
+			// Get values
+			const date = document.getElementById('editPaymentDate').value;
+			const amount = parseFloat(document.getElementById('editPaymentAmount').value);
+			const paymentMethod = document.getElementById('editPaymentMethod').value;
+			const reference = document.getElementById('editPaymentReference').value;
+			const notes = document.getElementById('editPaymentNotes').value;
+			
+			// Validate
+			if (!date || !amount || amount <= 0) {
+				showToast('⚠️ נא למלא תאריך וסכום תקינים', 'warning');
+				return;
+			}
+			
+			// Check if reducing amount below allocated
+			const links = paymentVisitLinks.filter(link => link.payment_id === paymentId);
+			const totalAllocated = links.reduce((sum, link) => sum + (parseFloat(link.amount_allocated) || 0), 0);
+			
+			if (amount < totalAllocated) {
+				showToast(`⚠️ לא ניתן להקטין סכום מתחת ל-${totalAllocated.toFixed(0)} ₪ (סכום מקושר)`, 'warning');
+				return;
+			}
+			
+			try {
+				showLoading('שומר שינויים...');
+				
+				// Update payment
+				payment.date = date;
+				payment.amount = amount;
+				payment.payment_method = paymentMethod;
+				payment.reference = reference;
+				payment.notes = notes;
+				
+				// Save
+				saveToLocalStorage();
+				
+				if (access_token && SPREADSHEET_ID) {
+					await savePaymentsBatch([payment]);
+				}
+				
+				hideLoading();
+				showToast('✅ תשלום עודכן בהצלחה', 'success');
+				
+				closeAnyModal();
+				
+				// Refresh
+				if (typeof displayPayments === 'function') displayPayments();
+				if (typeof displayDebts === 'function') displayDebts();
+				
+			} catch (error) {
+				console.error('Error saving payment:', error);
+				showToast('❌ שגיאה בשמירת תשלום', 'error');
+				hideLoading();
+			}
+		}
+
+		// ✅ Unlink payment from visit
+		async function unlinkPaymentFromVisit(linkId, paymentId) {
+			const link = paymentVisitLinks.find(l => l.ID === linkId);
+			if (!link) {
+				showToast('❌ קישור לא נמצא', 'error');
+				return;
+			}
+			
+			const visit = visits.find(v => v.ID === link.visit_id);
+			const visitName = visit ? (visit.work_done || formatDate(visit.date)) : 'טיפול';
+			
+			if (!confirm(`האם לנתק את הקישור לטיפול:\n${visitName}\n(${link.amount_allocated} ₪)?`)) {
+				return;
+			}
+			
+			try {
+				showLoading('מנתק קישור...');
+				
+				// Remove link
+				const linkIndex = paymentVisitLinks.findIndex(l => l.ID === linkId);
+				if (linkIndex > -1) {
+					paymentVisitLinks.splice(linkIndex, 1);
+				}
+				
+				// Update visit paid status
+				if (visit) {
+					const totalPaid = getVisitPaidAmount(visit.ID);
+					const visitAmount = parseFloat(visit.amount);
+					
+					if (totalPaid <= 0) {
+						// No payment at all
+						visit.paid = 'no';
+					} else if (totalPaid >= visitAmount - 0.01) {
+						// Still fully paid (from other payments)
+						const otherLinks = paymentVisitLinks.filter(l => l.visit_id === visit.ID);
+						if (otherLinks.length > 0) {
+							const lastLink = otherLinks[otherLinks.length - 1];
+							const lastPayment = payments.find(p => p.ID === lastLink.payment_id);
+							visit.paid = `paid:${lastPayment ? lastPayment.date : ''}`;
+						} else {
+							visit.paid = 'no';
+						}
+					} else {
+						// Partial payment
+						visit.paid = `partial:${totalPaid.toFixed(2)}`;
+					}
+				}
+				
+				// Save
+				saveToLocalStorage();
+				
+				if (access_token && SPREADSHEET_ID) {
+					try {
+						await savePaymentVisitLinksBatch(paymentVisitLinks);
+						if (visit) {
+							await updateMultipleVisitsInSheets([visit]);
+						}
+					} catch (error) {
+						console.error('Error saving to cloud:', error);
+					}
+				}
+				
+				hideLoading();
+				showToast('✅ קישור נותק בהצלחה', 'success');
+				
+				// Close and reopen modal with updated data
+				closeAnyModal();
+				setTimeout(() => showPaymentDetails(paymentId), 300);
+				
+				// Refresh
+				if (typeof displayPayments === 'function') displayPayments();
+				if (typeof displayDebts === 'function') displayDebts();
+				if (typeof displayVisits === 'function') displayVisits();
+				
+			} catch (error) {
+				console.error('Error unlinking payment:', error);
+				showToast('❌ שגיאה בניתוק קישור', 'error');
+				hideLoading();
+			}
+		}
+		
+		// ✅ Delete payment
+		async function deletePayment(paymentId) {
+			const payment = payments.find(p => p.ID === paymentId);
+			if (!payment) {
+				showToast('❌ תשלום לא נמצא', 'error');
+				return;
+			}
+			
+			// Check if linked
+			const links = paymentVisitLinks.filter(link => link.payment_id === paymentId);
+			if (links.length > 0) {
+				showToast('⚠️ לא ניתן למחוק תשלום מקושר. נתק תחילה את כל הקישורים.', 'warning');
+				return;
+			}
+			
+			const clientName = payment.client_name || 'לא ידוע';
+			const confirmMsg = `האם למחוק את התשלום?\n\nלקוח: ${clientName}\nסכום: ${payment.amount} ₪\nתאריך: ${formatDate(payment.date)}\n\n⚠️ פעולה זו בלתי הפיכה!`;
+			
+			if (!confirm(confirmMsg)) {
+				return;
+			}
+			
+			try {
+				showLoading('מוחק תשלום...');
+				
+				// Remove payment
+				const paymentIndex = payments.findIndex(p => p.ID === paymentId);
+				if (paymentIndex > -1) {
+					payments.splice(paymentIndex, 1);
+				}
+				
+				// Save
+				saveToLocalStorage();
+				
+				if (access_token && SPREADSHEET_ID) {
+					await savePaymentsBatch(payments);
+				}
+				
+				hideLoading();
+				showToast('✅ תשלום נמחק בהצלחה', 'success');
+				
+				closeAnyModal();
+				
+				// Refresh
+				if (typeof displayPayments === 'function') displayPayments();
+				if (typeof displayDebts === 'function') displayDebts();
+				
+			} catch (error) {
+				console.error('Error deleting payment:', error);
+				showToast('❌ שגיאה במחיקת תשלום', 'error');
+				hideLoading();
+			}
+		}
+
 
 		// טעינת טאב תשלומים
 		function loadPayments() {
