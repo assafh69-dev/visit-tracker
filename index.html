@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3533,13 +3533,19 @@
 					payments = paymentsResponse.result.values.map(row => ({
 						ID: row[0] || '',
 						date: row[1] || '',
-						client_id: row[2] || '',
-						client_name: row[3] || '',
-						amount: parseFloat(row[4]) || 0,
-						payment_method: row[5] || '',
-						notes: row[6] || '',
-						reference: row[7] || '',
-						check_date: row[8] || ''
+						time: row[2] || '',
+						amount: parseFloat(row[3]) || 0,
+						payment_method: row[4] || '',
+						source_type: row[5] || '',
+						client_id: row[6] || '',
+						client_name: row[7] || '',
+						notes: row[8] || '',
+						status: row[9] || 'completed',
+						created_at: row[10] || '',
+						reference: row[11] || '',
+						check_date: row[12] || '',
+						bank_account: row[13] || '',
+						payment_details: row[14] || ''
 					}));
 				}
 				
@@ -13847,7 +13853,7 @@
 						</div>
 					</td>
 					<td>
-						<button onclick="event.stopPropagation(); showPaymentDetails('${payment.ID}')" class="action-btn" style="background: #3498db; color: white;" title="פירוט מלא">🔍</button>
+						<button onclick="showPaymentDetails('${payment.ID}')" class="action-btn" style="background: #3498db; color: white;" title="פירוט מלא">🔍</button>
 					</td>
 				`;
 				
