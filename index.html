@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -13970,6 +13970,8 @@
 			const payment = payments.find(p => p.ID === paymentId);
 			if (!payment) {
 				showToast('תשלום לא נמצא', 'error');
+				//console.error('Payment not found - paymentId:', paymentId);
+				console.log(`   Payment not found - paymentId: ${paymentId}`);
 				return;
 			}
 			
