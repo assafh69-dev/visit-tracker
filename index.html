@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -10337,6 +10337,17 @@
 			}
 		}
 
+		// תרגום אמצעי תשלום מאנגלית לעברית
+		function translatePaymentMethod(method) {
+			const translations = {
+				'cash': 'מזומן',
+				'check': 'צ\'ק',
+				'transfer': 'העברה בנקאית',
+				'app': 'אפליקציה'
+			};
+			return translations[method] || method;
+		}
+
 		// שמירת תשלום חדש
 		async function saveNewPayment() {
 			// קבל נתונים מהטופס
@@ -10394,7 +10405,7 @@
 					date: date,
 					time: new Date().toTimeString().split(' ')[0].substring(0, 5), // HH:MM
 					amount: amount,
-					payment_method: method,
+					payment_method: translatePaymentMethod(method),
 					source_type: 'manual_payment',
 					client_id: clientId,
 					client_name: client.name,
@@ -14322,7 +14333,7 @@
 				// Update payment in array
 				payment.date = date;
 				payment.amount = amount;
-				payment.payment_method = paymentMethod;
+				payment.payment_method = translatePaymentMethod(paymentMethod);
 				payment.reference = reference;
 				payment.notes = notes;
 				
