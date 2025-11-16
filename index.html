@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -9941,6 +9941,71 @@
 			}
 		}
 		
+		
+		// עדכון תשלום בודד ב-Sheets (במקום לשמור הכל מחדש)
+		async function updateSinglePaymentInSheets(payment) {
+			if (!await validateToken()) return false;
+			
+			try {
+				console.log(`🔵 updateSinglePaymentInSheets: Updating payment ${payment.ID}`);
+				
+				// 1. קריאת כל ה-IDs כדי למצוא את מספר השורה
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Payments!A:A'
+				});
+				
+				const rows = response.result.values || [];
+				let rowIndex = -1;
+				
+				// מציאת השורה עם ה-ID הזה (דילוג על כותרת)
+				for (let i = 1; i < rows.length; i++) {
+					if (rows[i][0] === payment.ID) {
+						rowIndex = i + 1; // +1 כי Sheets מתחיל מ-1
+						break;
+					}
+				}
+				
+				if (rowIndex === -1) {
+					console.warn(`⚠️ Payment ${payment.ID} not found in Sheets, cannot update`);
+					return false;
+				}
+				
+				// 2. עדכון רק השורה הזו
+				const values = [[
+					payment.ID || '',
+					payment.date || '',
+					payment.time || '',
+					payment.amount || 0,
+					payment.payment_method || '',
+					payment.source_type || '',
+					payment.client_id || '',
+					payment.client_name || '',
+					payment.notes || '',
+					payment.status || 'completed',
+					payment.created_at || new Date().toISOString(),
+					payment.reference || '',
+					payment.check_date || '',
+					payment.bank_account || '',
+					payment.payment_details || ''
+				]];
+				
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `Payments!A${rowIndex}:O${rowIndex}`,
+					valueInputOption: 'USER_ENTERED',
+					resource: { values }
+				});
+				
+				console.log(`✅ Updated payment ${payment.ID} in row ${rowIndex}`);
+				return true;
+				
+			} catch (error) {
+				console.error('❌ Error updating single payment:', error);
+				return false;
+			}
+		}
+		
 		// שמירה מקבצית של קישורי תשלומים
 		async function savePaymentVisitLinksBatch(linksArray) {
 			if (!await validateToken()) return false;
@@ -14254,18 +14319,19 @@
 			try {
 				showLoading('שומר שינויים...');
 				
-				// Update payment
+				// Update payment in array
 				payment.date = date;
 				payment.amount = amount;
 				payment.payment_method = paymentMethod;
 				payment.reference = reference;
 				payment.notes = notes;
 				
-				// Save
+				// Save locally
 				saveToLocalStorage();
 				
+				// ✅ FIXED: Use updateSinglePaymentInSheets instead of savePaymentsBatch
 				if (access_token && SPREADSHEET_ID) {
-					await savePaymentsBatch([payment]);
+					await updateSinglePaymentInSheets(payment);
 				}
 				
 				hideLoading();
@@ -14273,7 +14339,7 @@
 				
 				closeAnyModal();
 				
-				// Refresh
+				// Refresh displays
 				if (typeof displayPayments === 'function') displayPayments();
 				if (typeof displayDebts === 'function') displayDebts();
 				
