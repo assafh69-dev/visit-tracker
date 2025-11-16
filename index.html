@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3609,44 +3609,54 @@
 
 
 		async function saveAllToSheets() {
-			if (!await validateToken()) {
-				showToast('אין חיבור לגוגל - שמירה מקומית בלבד', 'warning');
-				return;
+		if (!await validateToken()) {
+			showToast('אין חיבור לגוגל - שמירה מקומית בלבד', 'warning');
+			return;
+		}
+		
+		try {
+			updateCloudStatus('שומר נתונים לענן...', 'מעדכן');
+			
+			// שמירה בבאצ'ים (לא לולאות!)
+			const savePromises = [];
+			
+			if (locations.length > 0) {
+				showToast(`שומר ${locations.length} לקוחות בבת אחת...`, 'info', 2000);
+				savePromises.push(saveLocationsBatch(locations));
 			}
 			
-			try {
-				updateCloudStatus('שומר נתונים לענן...', 'מעדכן');
-				
-				// שמירה בבאצ'ים (לא לולאות!)
-				const savePromises = [];
-				
-				if (locations.length > 0) {
-					showToast(`שומר ${locations.length} לקוחות בבת אחת...`, 'info', 2000);
-					savePromises.push(saveLocationsBatch(locations));
-				}
-				
-				if (visits.length > 0) {
-					showToast(`שומר ${visits.length} ביקורים בבת אחת...`, 'info', 2000);
-					savePromises.push(saveVisitsBatch(visits));
-				}
-				
-				if (receipts.length > 0) {
-					showToast(`שומר ${receipts.length} קבלות בבת אחת...`, 'info', 2000);
-					savePromises.push(saveReceiptsBatch(receipts));
-				}
-				
-				// המתן לכל השמירות במקביל
-				await Promise.all(savePromises);
-				
-				updateCloudStatus('מחובר ומסונכרן', 'נשמר');
-				showToast(`כל הנתונים נשמרו בענן בהצלחה!`, 'success', 3000);
-				
-			} catch (error) {
-				console.error('Error saving all data to cloud:', error);
-				updateCloudStatus('שגיאה בשמירה לענן', 'שגיאה');
-				showToast('שגיאה בשמירה לענן - הנתונים נשמרו מקומית', 'error');
+			if (visits.length > 0) {
+				showToast(`שומר ${visits.length} ביקורים בבת אחת...`, 'info', 2000);
+				savePromises.push(saveVisitsBatch(visits));
 			}
+			
+			if (receipts.length > 0) {
+				showToast(`שומר ${receipts.length} קבלות בבת אחת...`, 'info', 2000);
+				savePromises.push(saveReceiptsBatch(receipts));
+			}
+			
+			if (payments.length > 0) {
+				showToast(`שומר ${payments.length} תשלומים בבת אחת...`, 'info', 2000);
+				savePromises.push(savePaymentsBatch(payments));
+			}
+			
+			if (paymentVisitLinks.length > 0) {
+				showToast(`שומר ${paymentVisitLinks.length} קישורי תשלום בבת אחת...`, 'info', 2000);
+				savePromises.push(savePaymentVisitLinksBatch(paymentVisitLinks));
+			}
+			
+			// המתנה לכל השמירות במקביל
+			await Promise.all(savePromises);
+			
+			updateCloudStatus('מחובר ומסונכרן', 'נשמר');
+			showToast(`כל הנתונים נשמרו בענן בהצלחה!`, 'success', 3000);
+			
+		} catch (error) {
+			console.error('Error saving all data to cloud:', error);
+			updateCloudStatus('שגיאה בשמירה לענן', 'שגיאה');
+			showToast('שגיאה בשמירה לענן - הנתונים נשמרו מקומית', 'error');
 		}
+	}
 
 
 		async function saveLocationToSheets(locationData) {
@@ -9728,19 +9738,19 @@
 					visit.start_time || '',
 					visit.end_time || '',
 					visit.amount || 0,
-					visit.paid || 'no',  // ✅ ADDED: paid field in correct position
+					visit.paid || '0',
 					visit.expense || 0,
 					visit.notes || ''
 				]);
 				
-				await gapi.client.sheets.spreadsheets.values.append({
+				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Visits!A:N',  // ✅ UPDATED: Now 14 columns (A:N)
+					range: `Visits!A2:N${values.length + 1}`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values }
 				});
 				
-				console.log(`✅ Saved ${visitsToSave.length} visits to cloud`);
+				console.log(`✅ Saved ${visitsToSave.length} visits to cloud (no duplicates)`);
 				return true;
 				
 			} catch (error) {
@@ -10180,6 +10190,10 @@
 			loadOpenVisitsForPayment(clientId);
 		}
 	   
+
+//////<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//////>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 	   
 	   // טעינת טיפולים פתוחים של לקוח
 		function loadOpenVisitsForPayment(clientId) {
