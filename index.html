@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -10423,6 +10423,7 @@
 				
 				// צור קישורים לטיפולים
 				let remainingAmount = amount;
+				const linksToSave = [];
 				
 				selectedVisits.forEach(selectedVisit => {
 					if (remainingAmount <= 0) return;
@@ -10442,6 +10443,7 @@
 					};
 					
 					paymentVisitLinks.push(link);
+					linksToSave.push(link);
 					
 					// עדכן את הטיפול
 					const currentPaid = getVisitPaidAmount(visit.ID);
@@ -10450,26 +10452,60 @@
 					
 					if (newPaidAmount >= visitAmount - 0.01) {
 						// שולם במלואו
-						visit.paid = `paid:${date}`;
+						visit.paid = `1:${date}`;
 					} else {
 						// שולם חלקית
-						visit.paid = `partial:${newPaidAmount.toFixed(2)}`;
+						visit.paid = `3:${newPaidAmount.toFixed(2)}`;
 					}
 					
 					remainingAmount -= amountToAllocate;
 				});
 				
-				// שמור מקומית
+				// שמירה מקומית
 				saveToLocalStorage();
 				
 				// שמור לענן
 				if (access_token && SPREADSHEET_ID) {
-					if (newPayment) {
-						await savePaymentsBatch([newPayment]);
+					// שמור תשלום חדש לענן
+					await gapi.client.sheets.spreadsheets.values.append({
+						spreadsheetId: SPREADSHEET_ID,
+						range: 'Payments!A:O',
+						valueInputOption: 'USER_ENTERED',
+						resource: {
+							values: [[
+								payment.ID,
+								payment.date,
+								payment.time,
+								payment.amount,
+								payment.payment_method,
+								payment.source_type,
+								payment.client_id,
+								payment.client_name,
+								payment.notes,
+								payment.status,
+								payment.created_at,
+								payment.reference,
+								payment.check_date,
+								payment.bank_account,
+								payment.payment_details
+							]]
+						}
+					});
+					
+					// שמור קישורים אם יש
+					if (linksToSave.length > 0) {
+						await savePaymentVisitLinksBatch(paymentVisitLinks);
 					}
-					if (linksToSave && linksToSave.length > 0) {
-						await savePaymentVisitLinksBatch(linksToSave);
+					
+					// עדכן טיפולים שהשתנו
+					const visitsToUpdate = selectedVisits
+						.map(sv => visits.find(v => v.ID === sv.visitId))
+						.filter(v => v);
+					
+					if (visitsToUpdate.length > 0) {
+						await updateMultipleVisitsInSheets(visitsToUpdate);
 					}
+					
 					showToast('✅ תשלום נוסף בהצלחה ונשמר לענן!', 'success');
 				} else {
 					showToast('💾 תשלום נוסף בהצלחה (מקומית)', 'info');
@@ -10485,14 +10521,11 @@
 				if (typeof applyPaymentFilters === 'function') {
 					applyPaymentFilters();
 				}
-				if (typeof filterVisits === 'function') {
-					filterVisits();
-				}
 				
 			} catch (error) {
 				console.error('Error saving payment:', error);
+				showToast('❌ שגיאה בשמירת תשלום', 'error');
 				hideLoading();
-				showToast('שגיאה בשמירת התשלום', 'error');
 			}
 		}
 
