@@ -2535,6 +2535,7 @@
 										<option value="">הכל</option>
 										<option value="כן">שולם</option>
 										<option value="לא">לא שולם</option>
+										<option value="חלקי">חלקי</option>
 										<option value="ללא">ללא תשלום</option>
 									</select>
 								</div>
@@ -4736,7 +4737,7 @@
 			}
 			
 			displayPlanningTable(filteredlocations);
-			updateTreatmentsStats(filteredVisits);
+			updateTreatmentsStats(filteredlocations);
 		}
 
         function displayPlanningTable(locationsToShow) {
@@ -5484,12 +5485,12 @@
 									${clientVisits.map(visit => {
 										const paidInfo = parsePaidField(visit.paid);
 										let paymentBadge = '';
-										
-										if (paidInfo.status === 'paid') {
+
+										if (paidInfo.status === '1') {
 											paymentBadge = `<span style="background: #d4edda; color: #155724; padding: 3px 8px; border-radius: 4px; font-size: 12px;">✓ שולם</span>`;
 										} else if (paidInfo.status === '3') {
 											paymentBadge = `<span style="background: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 4px; font-size: 12px;">⚠ חלקי</span>`;
-										} else if (paidInfo.status === 'no_payment') {
+										} else if (paidInfo.status === '2') {
 											paymentBadge = `<span style="background: #e2e3e5; color: #383d41; padding: 3px 8px; border-radius: 4px; font-size: 12px;">🚫 ללא</span>`;
 										} else {
 											paymentBadge = `<span style="background: #f8d7da; color: #721c24; padding: 3px 8px; border-radius: 4px; font-size: 12px;">✗ לא שולם</span>`;
@@ -6596,7 +6597,7 @@
 					<td><strong>${locationName}</strong></td>
 					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${visit.amount || 0} ₪</td>
 					<td>
-						<button onclick="event.stopPropagation(); addPaymentForVisit('${visit.ID}')" class="action-btn" style="background: #27ae60; color: white; padding: 6px 10px;">💰</button>
+						<button onclick="event.stopPropagation(); ${visit.paid === '0' ? `addPaymentForVisit('${visit.ID}')` : 'return false'}" class="action-btn" style="background: ${visit.paid === '0' ? '#27ae60' : '#95a5a6'}; color: white; padding: 6px 10px; ${visit.paid === '0' ? '' : 'opacity: 0.5; cursor: not-allowed;'}" ${visit.paid === '0' ? '' : 'disabled'}>💰</button>
 						<button onclick="event.stopPropagation(); showVisitForm('${visit.ID}')" class="action-btn edit-btn">✏️</button>
 						<button onclick="event.stopPropagation(); deleteVisit('${visit.ID}')" class="action-btn delete-btn">🗑️</button>
 					</td>
@@ -6625,15 +6626,6 @@
 						<div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
 							<div style="font-size: 14px;">
 								<strong style="color: #666;">שולם:</strong> ${paymentDisplay}
-							</div>
-							<div style="flex: 1; min-width: 150px;">
-								<select class="payment-status-select" onchange="updatePaymentStatus('${visit.ID}', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-									<option value="">-- שינוי סטטוס תשלום --</option>
-									<option value="immediate">💳 תשלום מיידי</option>
-									<option value="3">⚠️ תשלום חלקי</option>
-									<option value="unpaid">❌ לא שולם</option>
-									<option value="no_payment">🚫 ללא תשלום</option>
-								</select>
 							</div>
 						</div>
 					</td>
@@ -10421,14 +10413,28 @@
 				return;
 			}
 			
-			// קבל את הטיפולים הנבחרים
-			const selectedCheckboxes = document.querySelectorAll('.visit-checkbox:checked');
-			const selectedVisits = Array.from(selectedCheckboxes).map(cb => ({
-				visitId: cb.getAttribute('data-visit-id'),
-				debt: parseFloat(cb.getAttribute('data-visit-debt'))
-			}));
-			
-			// בדוק שיש טיפולים נבחרים
+			// בדוק אם יש טיפול ספציפי (מהכפתור בטבלה)
+			const specificVisitId = document.getElementById('specificVisitId')?.value;
+			let selectedVisits = [];
+
+			if (specificVisitId) {
+				// מצב: טיפול ספציפי
+				const visit = visits.find(v => v.ID === specificVisitId);
+				if (visit) {
+					const paidAmount = getVisitPaidAmount(visit.ID);
+					const debt = parseFloat(visit.amount) - paidAmount;
+					selectedVisits = [{ visitId: visit.ID, debt: debt }];
+				}
+			} else {
+				// מצב: רשימת טיפולים עם checkboxes
+				const selectedCheckboxes = document.querySelectorAll('.visit-checkbox:checked');
+				selectedVisits = Array.from(selectedCheckboxes).map(cb => ({
+					visitId: cb.getAttribute('data-visit-id'),
+					debt: parseFloat(cb.getAttribute('data-visit-debt'))
+				}));
+			}
+
+			// בדוק שיש טיפולים
 			if (selectedVisits.length === 0) {
 				if (!confirm('לא נבחרו טיפולים לסגירה. האם להמשיך בכל זאת?')) {
 					return;
@@ -12170,7 +12176,7 @@
 			
 			// שולם מלא
 			if (paidValue === '1') {
-				return { status: 'paid', text: 'שולם', date: null, amount: null };
+				return { status: '1', text: 'שולם', date: null, amount: null };
 			}
 			
 			// ללא תשלום
@@ -12181,18 +12187,6 @@
 			// שולם חלקית
 			if (paidValue === '3') {
 				return { status: '3', text: 'שולם חלקית', date: null, amount: 0 };
-			}
-			
-			// שולם עם תאריך: "1:2024-10-23"
-			if (paidValue.startsWith('1:')) {
-				const date = paidValue.substring(2);
-				return { status: 'paid', text: 'שולם', date: date, amount: null };
-			}
-			
-			// שולם חלקית עם סכום: "3:500"
-			if (paidValue.startsWith('3:')) {
-				const amount = parseFloat(paidValue.substring(2)) || 0;
-				return { status: '3', text: 'שולם חלקית', date: null, amount: amount };
 			}
 			
 			// Default fallback
@@ -14732,211 +14726,6 @@
 		}
 
 
-
-		// עדכון סטטוס תשלום של טיפול
-		async function updatePaymentStatus(visitId, newStatus) {
-			const visit = visits.find(v => v.ID === visitId);
-			if (!visit) {
-				showToast('טיפול לא נמצא', 'error');
-				return;
-			}
-			
-			// המרת פורמט ישן לחדש אם נדרש
-			if (newStatus === 'paid') newStatus = '1';
-			if (newStatus === 'unpaid') newStatus = '0';
-			if (newStatus === 'no_payment') newStatus = '2';
-			if (newStatus === 'partial') newStatus = '3';
-			
-			// ⭐ NEW: תשלום מיידי - יצירת payment אוטומטית
-			if (newStatus === 'immediate') {
-				const visitAmount = parseFloat(visit.amount) || 0;
-				
-				if (visitAmount <= 0) {
-					showToast('❌ לא ניתן ליצור תשלום לטיפול ללא סכום', 'error');
-					return;
-				}
-				
-				// בדיקה אם כבר יש תשלום
-				const existingLinks = paymentVisitLinks.filter(link => link.visit_id === visitId);
-				if (existingLinks.length > 0) {
-					showToast('⚠️ כבר קיים תשלום עבור טיפול זה', 'warning');
-					return;
-				}
-				
-				// בקש אישור
-				const confirmMsg = `💳 ליצור תשלום מיידי עבור ${visitAmount}₪?\n\n` +
-					`לקוח: ${visit.location_name}\n` +
-					`תאריך טיפול: ${formatDate(visit.date)}`;
-				
-				if (!confirm(confirmMsg)) {
-					return;
-				}
-				
-				try {
-					// יצירת תשלום חדש
-					const newPayment = {
-						ID: generateID(),
-						date: new Date().toISOString().split('T')[0], // תאריך היום
-						client_id: visit.location_id,
-						client_name: visit.location_name,
-						amount: visitAmount,
-						payment_method: 'cash', // ברירת מחדל: מזומן
-						reference: `מיידי-${visit.date}`,
-						notes: `תשלום מיידי עבור טיפול מ-${formatDate(visit.date)}`,
-						invoice_number: '',
-						receipt_number: '',
-						bank_name: '',
-						check_number: '',
-						transfer_reference: '',
-						app_name: '',
-						vat_amount: 0,
-						total_with_vat: visitAmount,
-						status: 'completed'
-					};
-					
-					// הוספת התשלום למערך
-					payments.push(newPayment);
-					
-					// יצירת קישור בין תשלום לטיפול
-					const newLink = {
-						ID: generateID(),
-						payment_id: newPayment.ID,
-						visit_id: visit.ID,
-						amount: visitAmount
-					};
-					paymentVisitLinks.push(newLink);
-					
-					// עדכון סטטוס הטיפול ל"שולם"
-					const today = new Date().toISOString().split('T')[0];
-					visit.paid = `1:${today}`;
-					
-					// שמירה מקומית
-					saveToLocalStorage();
-					
-					// שמירה בענן
-					if (access_token && SPREADSHEET_ID) {
-						try {
-							// שמירת התשלום
-							await savePaymentsBatch([newPayment]);
-							// שמירת הקישור
-							await savePaymentVisitLinksBatch([newLink]);
-							// עדכון הטיפול
-							await updateSingleVisitInSheets(visit);
-							
-							showToast('✅ תשלום מיידי נוצר בהצלחה!', 'success');
-						} catch (error) {
-							console.error('Error saving to cloud:', error);
-							showToast('⚠️ התשלום נוצר מקומית - בעיה בחיבור לענן', 'warning');
-						}
-					} else {
-						showToast('💾 התשלום נוצר מקומית - התחבר לענן לשמירה מלאה', 'info');
-					}
-					
-					// רענון תצוגות
-					loadPlanningData();
-					if (typeof applyVisitFilters === 'function') {
-						applyVisitFilters();
-					}
-					if (typeof loadPayments === 'function') {
-						loadPayments();
-					}
-
-					return; // סיום - לא ממשיכים לקוד הישן
-					
-					
-				} catch (error) {
-					console.error('Error creating immediate payment:', error);
-					showToast('❌ שגיאה ביצירת תשלום מיידי', 'error');
-					return;
-				}
-			}
-			
-			// אם מסמנים כ"שולם"
-			if (newStatus === '1') {
-				const today = new Date();
-				const defaultDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-				
-				const dateInput = prompt('תאריך תשלום (DD/MM/YYYY):\n\nלחץ OK להיום, או הזן תאריך אחר:', defaultDate);
-				
-				if (dateInput === null) return; // User cancelled
-				
-				let paymentDate;
-				
-				if (!dateInput || dateInput.trim() === '') {
-					paymentDate = today.toISOString().split('T')[0];
-				} else {
-					const parts = dateInput.trim().split('/');
-					if (parts.length !== 3) {
-						showToast('פורמט תאריך לא תקין. השתמש ב: DD/MM/YYYY', 'error');
-						return;
-					}
-					
-					const day = parts[0].padStart(2, '0');
-					const month = parts[1].padStart(2, '0');
-					const year = parts[2];
-					
-					const dateObj = new Date(`${year}-${month}-${day}`);
-					if (isNaN(dateObj.getTime())) {
-						showToast('תאריך לא תקין', 'error');
-						return;
-					}
-					
-					paymentDate = `${year}-${month}-${day}`;
-				}
-				
-				visit.paid = `1:${paymentDate}`;
-				
-			} else if (newStatus === '3') {
-				// תשלום חלקי
-				const visitAmount = parseFloat(visit.amount) || 0;
-				const partialAmount = prompt(`כמה שולם? (מתוך ${visitAmount}₪)`, '');
-				
-				if (partialAmount === null) return;
-				
-				const amount = parseFloat(partialAmount);
-				if (isNaN(amount) || amount <= 0) {
-					showToast('סכום לא תקין', 'error');
-					return;
-				}
-				
-				if (amount >= visitAmount) {
-					// שולם מלא - עבור לסטטוס "שולם"
-					const today = new Date().toISOString().split('T')[0];
-					visit.paid = `1:${today}`;
-				} else {
-					visit.paid = `3:${amount}`;
-				}
-				
-			} else if (newStatus === '2') {
-				visit.paid = '2';
-				
-			} else if (newStatus === '0') {
-				visit.paid = '0';
-			}
-			
-			// Save locally
-			saveToLocalStorage();
-
-			// Update only this visit in cloud
-			if (access_token && SPREADSHEET_ID) {
-				try {
-					const success = await updateSingleVisitInSheets(visit);
-					if (success) {
-						showToast('✅ סטטוס תשלום עודכן', 'success', 2000);
-					} else {
-						showToast('⚠️ עודכן מקומית בלבד', 'warning', 2000);
-					}
-				} catch (error) {
-					console.error('Error updating payment status:', error);
-					showToast('⚠️ עודכן מקומית בלבד', 'warning', 2000);
-				}
-			} else {
-				showToast('💾 עודכן מקומית', 'info', 2000);
-			}
-			
-			// Refresh display
-			filterVisits();
-		}
 
 		// מחיקת תשלומים הקשורים לטיפול
 		function removePaymentsForVisit(visitId) {
