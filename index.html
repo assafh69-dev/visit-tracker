@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2906,23 +2906,26 @@
 						<button type="button" class="filter-toggle-btn" onclick="event.stopPropagation(); toggleFilterPanel('paymentsFilterContent')">🔼 כווץ</button>
 					</div>
 					<div id="paymentsFilterContent" class="filter-content" style="padding: 15px; background: #f8f9fa; border-radius: 0 0 8px 8px;">
-						<div class="filter-group-unified">
-							<label>חיפוש חכם:</label>
-							<input type="text" 
-								   id="paymentSmartSearch" 
-								   placeholder="הקלד שם לקוח לחיפוש..."
-								   oninput="handlePaymentSmartSearch(this.value)"
-								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+						<!-- שורה 1: חיפוש חכם -->
+						<div class="filter-row-unified">
+							<div class="filter-group-unified">
+								<label>חיפוש חכם:</label>
+								<input type="text" 
+									   id="paymentSmartSearch" 
+									   placeholder="הקלד שם לקוח לחיפוש..."
+									   oninput="handlePaymentSmartSearch(this.value)"
+									   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+							</div>
+							<div class="filter-group-unified small">
+								<button type="button" 
+										onclick="clearPaymentSmartSearch()" 
+										class="filter-clear-btn">
+									נקה חיפוש
+								</button>
+							</div>
 						</div>
-						<div class="filter-group-unified small">
-							<button type="button" 
-									onclick="clearPaymentSmartSearch()" 
-									class="filter-clear-btn">
-								נקה חיפוש
-							</button>
-						</div>
-					
-						<!-- שורה 2: תאריכים -->
+
+						<!-- שורה 2: תאריכים וסטטוס -->
 						<div class="filter-row-unified">
 							<div class="filter-group-unified compact">
 								<label>מתאריך:</label>
@@ -2931,6 +2934,15 @@
 							<div class="filter-group-unified compact">
 								<label>עד תאריך:</label>
 								<input type="date" id="filterPaymentDateTo" onchange="applyPaymentFilters()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+							</div>
+							<div class="filter-group-unified compact">
+								<label>סטטוס קישור:</label>
+								<select id="filterPaymentLinkStatus" onchange="applyPaymentFilters()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+									<option value="">הכל</option>
+									<option value="fully_linked">🟢 מקושר מלא</option>
+									<option value="partially_linked">🟡 מקושר חלקית</option>
+									<option value="unlinked">🔴 ממתין לקישור</option>
+								</select>
 							</div>
 						</div>
 					</div>
@@ -10051,12 +10063,24 @@
 	   // ===== מנגנון תשלומים חדש ===== 
 
 		// פתיחת מודל להוספת תשלום חדש
-		function showAddPaymentModal(clientId = null) {
+		function showAddPaymentModal(clientId = null, visitId = null) {
 			let selectedClientId = clientId;
 			let selectedClientName = '';
+			let specificVisit = null;
 			
-			// אם יש לקוח נבחר, קח את השם שלו
-			if (clientId) {
+			// אם יש טיפול ספציפי, טען אותו
+			if (visitId) {
+				specificVisit = visits.find(v => v.ID === visitId);
+				if (specificVisit) {
+					selectedClientId = specificVisit.location_id;
+					const client = locations.find(loc => loc.ID === specificVisit.location_id);
+					if (client) {
+						selectedClientName = client.name;
+					}
+				}
+			}
+			// אם יש לקוח נבחר (ללא טיפול ספציפי), קח את השם שלו
+			else if (clientId) {
 				const client = locations.find(loc => loc.ID === clientId);
 				if (client) {
 					selectedClientName = client.name;
@@ -10103,7 +10127,8 @@
 					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
 						<div class="form-group">
 							<label style="display: block; margin-bottom: 8px; font-weight: bold;">סכום (₪):</label>
-							<input type="number" id="paymentAmount" placeholder="0" step="0.01"
+							<input type="number" id="paymentAmount" placeholder="0" step="0.01" 
+								value="${specificVisit ? specificVisit.amount : ''}"
 								style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
 						</div>
 						<div class="form-group">
@@ -10140,14 +10165,37 @@
 							style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
 					</div>
 					
-					<!-- רשימת טיפולים פתוחים -->
-					<div id="openVisitsSection" style="display: none; background: #fff3cd; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 2px solid #ffc107;">
-						<h4 style="margin: 0 0 15px 0; color: #856404;">בחר טיפולים לסגירה:</h4>
-						<div id="openVisitsList" style="max-height: 200px; overflow-y: auto;"></div>
-						<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 14px; color: #666;">
-							<strong>סכום נבחר:</strong> <span id="selectedVisitsTotal">0</span> ₪
+					<!-- רשימת טיפולים פתוחים או טיפול ספציפי -->
+					${specificVisit ? `
+						<!-- מצב: טיפול ספציפי -->
+						<div style="background: #e8f5e9; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 2px solid #27ae60;">
+							<h4 style="margin: 0 0 10px 0; color: #27ae60;">✓ תשלום עבור טיפול:</h4>
+							<div style="background: white; padding: 12px; border-radius: 6px;">
+								<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+									<strong>תאריך:</strong>
+									<span>${formatDate(specificVisit.date)}</span>
+								</div>
+								<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+									<strong>עבודה:</strong>
+									<span>${specificVisit.work_done || 'טיפול'}</span>
+								</div>
+								<div style="display: flex; justify-content: space-between;">
+									<strong>סכום:</strong>
+									<span style="color: #27ae60; font-weight: bold;">₪${specificVisit.amount}</span>
+								</div>
+							</div>
+							<input type="hidden" id="specificVisitId" value="${specificVisit.ID}">
 						</div>
-					</div>
+					` : `
+						<!-- מצב: רשימת טיפולים פתוחים -->
+						<div id="openVisitsSection" style="display: none; background: #fff3cd; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 2px solid #ffc107;">
+							<h4 style="margin: 0 0 15px 0; color: #856404;">בחר טיפולים לסגירה:</h4>
+							<div id="openVisitsList" style="max-height: 200px; overflow-y: auto;"></div>
+							<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 14px; color: #666;">
+								<strong>סכום נבחר:</strong> <span id="selectedVisitsTotal">0</span> ₪
+							</div>
+						</div>
+					`}
 					
 					<!-- כפתורים -->
 					<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px;">
@@ -10179,7 +10227,7 @@
 		}
 
 
-		// פונקציה חדשה: פתיחת מודל תשלום עבור טיפול ספציפי
+		// פתיחת מודל תשלום עבור טיפול ספציפי
 		function addPaymentForVisit(visitId) {
 			const visit = visits.find(v => v.ID === visitId);
 			if (!visit) {
@@ -10187,17 +10235,8 @@
 				return;
 			}
 			
-			// פתיחת המודל עם הלקוח של הטיפול
-			showAddPaymentModal(visit.location_id);
-			
-			// המתנה קצרה לטעינת המודל ואז בחירת הטיפול הספציפי
-			setTimeout(() => {
-				const checkbox = document.querySelector(`input[type="checkbox"][data-visit-id="${visitId}"]`);
-				if (checkbox) {
-					checkbox.checked = true;
-					updateSelectedVisitsTotal();
-				}
-			}, 300);
+			// פתיחת המודל עם הלקוח והטיפול הספציפי
+			showAddPaymentModal(visit.location_id, visitId);
 		}
 
 
@@ -13881,6 +13920,7 @@
 			const clientFilter = document.getElementById('filterPaymentClient')?.value || '';
 			const dateFromFilter = document.getElementById('filterPaymentDateFrom')?.value || '';
 			const dateToFilter = document.getElementById('filterPaymentDateTo')?.value || '';
+			const linkStatusFilter = document.getElementById('filterPaymentLinkStatus')?.value || '';
 			
 			let filteredPayments = [...payments];
 			
@@ -13895,6 +13935,14 @@
 			}
 			if (dateToFilter) {
 				filteredPayments = filteredPayments.filter(p => p.date <= dateToFilter);
+			}
+			
+			// ✅ NEW: Filter by link status
+			if (linkStatusFilter) {
+				filteredPayments = filteredPayments.filter(payment => {
+					const linkStatus = getPaymentLinkStatus(payment.ID);
+					return linkStatus.status === linkStatusFilter;
+				});
 			}
 			
 			displayPayments(filteredPayments);
