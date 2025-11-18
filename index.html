@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v2.8</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.9</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3474,7 +3474,7 @@
 			try {
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.VISITS}!A:N` // ← שנה מ-A:L ל-A:N
+					range: `${SHEETS.VISITS}!A:N`
 				});
 				
 				const rows = response.result.values;
@@ -3491,8 +3491,9 @@
 						start_time: row[8] || '',
 						end_time: row[9] || '',
 						amount: row[10] || 0,
-						expense: row[11] || 0,
-						notes: row[12] || ''
+						paid: row[11] || '0',           // ✅ ADDED: עמודה 11 - paid
+						expense: row[12] || 0,          // ✅ FIXED: עבר מ-11 ל-12
+						notes: row[13] || ''            // ✅ FIXED: עבר מ-12 ל-13
 					}));
 				}
 				
