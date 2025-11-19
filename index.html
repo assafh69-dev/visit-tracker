@@ -10249,7 +10249,7 @@
 				showLoading('שומר תשלום...');
 				
 				// 🔒 נעל את הכפתור
-				const saveBtn = document.getElementById('savePaymentBtn');
+				let saveBtn = document.getElementById('savePaymentBtn');
 				if (saveBtn) saveBtn.disabled = true;
 				
 				// צור את התשלום
@@ -10367,7 +10367,7 @@
 				hideLoading();
 
 				// 🔓 שחרר את הכפתור
-				const saveBtn = document.getElementById('savePaymentBtn');
+				saveBtn = document.getElementById('savePaymentBtn');
 				if (saveBtn) saveBtn.disabled = false;
 
 				closeAnyModal();
@@ -10391,7 +10391,7 @@
 					hideLoading();
 					
 					// 🔓 שחרר את הכפתור
-					const saveBtn = document.getElementById('savePaymentBtn');
+					saveBtn = document.getElementById('savePaymentBtn');
 					if (saveBtn) saveBtn.disabled = false;
 				}
 		}
