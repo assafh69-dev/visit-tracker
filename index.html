@@ -2531,12 +2531,12 @@
 								</div>
 								<div class="filter-group-unified medium">
 									<label>סטטוס תשלום:</label>
-									<select id="filterPayment">
+									<select id="filterPayment" onchange="applyVisitFilters()">
 										<option value="">הכל</option>
-										<option value="כן">שולם</option>
-										<option value="לא">לא שולם</option>
-										<option value="חלקי">חלקי</option>
-										<option value="ללא">ללא תשלום</option>
+										<option value="1">שולם</option>
+										<option value="0">לא שולם</option>
+										<option value="3">חלקי</option>
+										<option value="2">ללא תשלום</option>
 									</select>
 								</div>
 								<div class="filter-group-unified small">
@@ -6502,12 +6502,7 @@
 			if (paymentFilter) {
 				filteredVisits = filteredVisits.filter(visit => {
 					const paymentStatus = getVisitPaymentStatus(visit.ID);
-					switch(paymentFilter) {
-						case 'כן': return paymentStatus === 'paid';
-						case 'לא': return paymentStatus === 'unpaid';
-						case 'ללא': return paymentStatus === 'no_payment';
-						default: return true;
-					}
+					return paymentStatus === paymentFilter;
 				});
 			}
 			
@@ -10003,7 +9998,7 @@
 						<button onclick="closeAnyModal()" class="btn" style="background: #95a5a6; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer;">
 							ביטול
 						</button>
-						<button onclick="saveNewPayment()" class="btn" style="background: #27ae60; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+						<button id="savePaymentBtn" onclick="saveNewPayment()" class="btn" style="background: #27ae60; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
 							💾 שמור תשלום
 						</button>
 					</div>
@@ -10253,6 +10248,10 @@
 			try {
 				showLoading('שומר תשלום...');
 				
+				// 🔒 נעל את הכפתור
+				const saveBtn = document.getElementById('savePaymentBtn');
+				if (saveBtn) saveBtn.disabled = true;
+				
 				// צור את התשלום
 				const payment = {
 					ID: generateID(),
@@ -10366,7 +10365,13 @@
 				}
 				
 				hideLoading();
+
+				// 🔓 שחרר את הכפתור
+				const saveBtn = document.getElementById('savePaymentBtn');
+				if (saveBtn) saveBtn.disabled = false;
+
 				closeAnyModal();
+				
 				// רענן את תצוגת הטיפולים
 				if (typeof filterVisits === 'function') {
 					filterVisits();
@@ -10380,11 +10385,15 @@
 					applyPaymentFilters();
 				}
 				
-			} catch (error) {
-				console.error('Error saving payment:', error);
-				showToast('❌ שגיאה בשמירת תשלום', 'error');
-				hideLoading();
-			}
+				} catch (error) {
+					console.error('Error saving payment:', error);
+					showToast('❌ שגיאה בשמירת תשלום', 'error');
+					hideLoading();
+					
+					// 🔓 שחרר את הכפתור
+					const saveBtn = document.getElementById('savePaymentBtn');
+					if (saveBtn) saveBtn.disabled = false;
+				}
 		}
 
 
@@ -12582,12 +12591,12 @@
 				const amount = parseFloat(treatment.amount) || 0;
 				return sum + amount;
 			}, 0);
-			const paidCount = filteredTreatments.filter(t => getVisitPaymentStatus(t.ID) === 'paid').length;
-			const unpaidCount = filteredTreatments.filter(t => getVisitPaymentStatus(t.ID) === 'unpaid').length;
+			const paidCount = filteredTreatments.filter(t => getVisitPaymentStatus(t.ID) === '1').length;
+			const unpaidCount = filteredTreatments.filter(t => getVisitPaymentStatus(t.ID) === '0').length;
 			
 			// חישוב חובות פתוחים
 			const openDebts = filteredTreatments
-				.filter(t => getVisitPaymentStatus(t.ID) === 'unpaid')
+				.filter(t => getVisitPaymentStatus(t.ID) === '0')
 				.reduce((sum, treatment) => {
 					const amount = parseFloat(treatment.amount) || 0;
 					const paidAmount = getVisitPaidAmount(treatment.ID);
