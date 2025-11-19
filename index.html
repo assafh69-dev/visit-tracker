@@ -6571,23 +6571,23 @@
 				// ✅ NEW: Parse paid field for better display
 				const paidInfo = parsePaidField(visit.paid);
 				let paymentDisplay = '';
-				
-				if (paidInfo.status === 'paid') {
+
+				if (paidInfo.status === '1') {
 					paymentDisplay = `
 						<div style="color: #27ae60; font-weight: bold;">
 							✅ שולם
-							${paidInfo.date ? `<div style="font-size: 11px; color: #666;">${formatDate(paidInfo.date)}</div>` : ''}
 						</div>
 					`;
 				} else if (paidInfo.status === '3') {
-					const debt = (parseFloat(visit.amount) || 0) - paidInfo.amount;
+					const paidAmount = getVisitPaidAmount(visit.ID);
+					const debt = (parseFloat(visit.amount) || 0) - paidAmount;
 					paymentDisplay = `
 						<div style="color: #f39c12; font-weight: bold;">
-							⚠️ חלקי: ${paidInfo.amount}₪
-							<div style="font-size: 11px; color: #666;">חוב: ${debt}₪</div>
+							⚠️ חלקי: ${paidAmount.toFixed(2)}₪
+							<div style="font-size: 11px; color: #666;">חוב: ${debt.toFixed(2)}₪</div>
 						</div>
 					`;
-				} else if (paidInfo.status === 'no_payment') {
+				} else if (paidInfo.status === '2') {
 					paymentDisplay = `<div style="color: #95a5a6;">🚫 ללא תשלום</div>`;
 				} else {
 					paymentDisplay = `<div style="color: #e74c3c; font-weight: bold;">❌ לא שולם</div>`;
