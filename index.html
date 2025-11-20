@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6574,7 +6574,7 @@
 				mainRow.innerHTML = `
 					<td>${formatDate(visit.date)}</td>
 					<td><strong>${locationName}</strong></td>
-					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${visit.amount || 0} ₪</td>
+					<td style="font-weight: bold; color: #27ae60; font-size: 15px;">${getPaymentStatusIcon(visit.ID)} ${visit.amount || 0} ₪</td>
 					<td>
 						<button onclick="event.stopPropagation(); ${visit.paid === '0' ? `addPaymentForVisit('${visit.ID}')` : 'return false'}" class="action-btn" style="background: ${visit.paid === '0' ? '#27ae60' : '#95a5a6'}; color: white; padding: 6px 10px; ${visit.paid === '0' ? '' : 'opacity: 0.5; cursor: not-allowed;'}" ${visit.paid === '0' ? '' : 'disabled'}>💰</button>
 						<button onclick="event.stopPropagation(); showVisitForm('${visit.ID}')" class="action-btn edit-btn">✏️</button>
@@ -15070,6 +15070,17 @@
 					toggleTableRow(this);
 				});
 			});
+		}
+
+		function getPaymentStatusIcon(visitId) {
+			const status = getVisitPaymentStatus(visitId);
+			
+			switch(status) {
+				case '1': return '✅'; // שולם מלא
+				case '3': return '½'; // חלקי
+				case '2': return '🚫'; // ללא תשלום
+				default: return '❌'; // לא שולם
+			}
 		}
 
 
