@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -12915,19 +12915,18 @@
 				const workersCost = (numWorkers - 1) * costSettings.workerCost * hours;
 				const laborCost = baseCost + workersCost;
 				const totalCost = laborCost + expense;
-				
-				const amountField = document.getElementById('visitFormAmount');
-				if (amountField) {
-					amountField.value = Math.round(totalCost);
-				}
-				
-				// ✅ NEW: עדכן תצוגת "מחושב"
 				const calculatedDiv = document.getElementById('visitFormCalculatedAmount');
 				if (calculatedDiv) {
 					calculatedDiv.textContent = `מחושב: ${Math.round(totalCost)}₪`;
 				}
 				
 				console.log(`💰 עלות מחושבת: ${Math.round(totalCost)}₪ (${hours.toFixed(2)} שעות × ${numWorkers} עובדים + ${expense}₪ הוצאות)`);
+			} else {
+				// אם אין משך זמן - נקה את התצוגה
+				const calculatedDiv = document.getElementById('visitFormCalculatedAmount');
+				if (calculatedDiv) {
+					calculatedDiv.textContent = '';
+				}
 			}
 		}
 		
