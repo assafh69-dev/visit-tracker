@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2892,12 +2892,6 @@
 					<button onclick="showAddPaymentModal()" class="btn" style="background: #27ae60; color: white; padding: 12px 25px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);">
 						➕ הוסף תשלום חדש
 					</button>
-					<button onclick="showSection('debts')" class="btn" style="background: #e74c3c; color: white; padding: 12px 25px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer;">
-						💰 עבור לחובות
-					</button>
-					<p style="color: #666; font-size: 13px; margin: 0; flex: 1; min-width: 200px;">
-						💡 הוסף תשלום חדש או עבור לחובות לניהול
-					</p>
 				</div>
 				
 				<!-- פאנל סינון -->
@@ -3001,17 +2995,6 @@
 					<div style="text-align: center; margin: 15px 0;">
 						<span style="color: #666;">או</span>
 					</div>
-					
-					<div style="text-align: center;">
-						<button class="btn btn-warning" onclick="document.getElementById('importFileInput').click()">
-							📁 ייבוא מהיר מקובץ
-						</button>
-						<input type="file" id="importFileInput" accept=".csv,.xlsx" style="display: none;" onchange="handleImportFile(event)">
-					</div>
-					
-					<p style="text-align: center; font-size: 12px; color: #666; margin-top: 15px;">
-						ייבוא לקוחות, ביקורים וקבלות מקובץ Excel או Google Sheets
-					</p>
 				</div>
 				
 				<!-- ניהול נתונים -->
@@ -9331,7 +9314,8 @@
 	    // התראה על חובות חמורים
 		function checkCriticalDebts() {
 			const criticalDebts = visits.filter(visit => {
-				if (visit.paid !== '0') return false;
+				const paymentStatus = getVisitPaymentStatus(visit.ID);
+				if (paymentStatus === '1') return false; // '1' = paid
 				
 				const daysSince = Math.floor((new Date() - new Date(visit.date)) / (1000 * 60 * 60 * 24));
 				return daysSince > 90 || parseFloat(visit.amount) > 1000;
@@ -9341,7 +9325,7 @@
 				const totalCritical = criticalDebts.reduce((sum, visit) => sum + parseFloat(visit.amount), 0);
 				
 				showToast(
-					`⚠️ יש ${criticalDebts.length} חובות דחופים (₪${totalCritical.toLocaleString()})`, 
+					`⚠️ יש ${criticalDebts.length} חובות חמורים (₪${totalCritical.toLocaleString()})`, 
 					'warning', 
 					8000
 				);
@@ -12794,6 +12778,7 @@
 							<div class="form-group" style="margin: 0;">
 								<label for="visitFormAmount" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💰 סכום:</label>
 								<input type="number" id="visitFormAmount" step="0.01" min="0" value="${isEdit ? (visitData.amount || 0) : ''}" placeholder="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+								<div id="visitFormCalculatedAmount" style="font-size: 11px; color: #999; margin-top: 3px;"></div>
 							</div>
 							
 							<div class="form-group" style="margin: 0;">
@@ -12934,6 +12919,12 @@
 				const amountField = document.getElementById('visitFormAmount');
 				if (amountField) {
 					amountField.value = Math.round(totalCost);
+				}
+				
+				// ✅ NEW: עדכן תצוגת "מחושב"
+				const calculatedDiv = document.getElementById('visitFormCalculatedAmount');
+				if (calculatedDiv) {
+					calculatedDiv.textContent = `מחושב: ${Math.round(totalCost)}₪`;
 				}
 				
 				console.log(`💰 עלות מחושבת: ${Math.round(totalCost)}₪ (${hours.toFixed(2)} שעות × ${numWorkers} עובדים + ${expense}₪ הוצאות)`);
@@ -14980,11 +14971,6 @@
 			}
 		}
 
-		// ✅ TEMPORARY: Placeholder for future CSV import feature
-		function handleImportFile(event) {
-			showToast('⚠️ תכונה זו בפיתוח - בינתיים השתמש בייבוא דרך טבלת העזר', 'info', 3000);
-			event.target.value = ''; // Reset file input
-		}
 
 		function closeAnyModal() {
 			// List of all possible modal IDs
