@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -9317,18 +9317,43 @@
 	    // התראה על חובות חמורים
 		function checkCriticalDebts() {
 			const criticalDebts = visits.filter(visit => {
-				const paymentStatus = getVisitPaymentStatus(visit.ID);
-				if (paymentStatus === '1') return false; // '1' = paid
+				// Skip visits with no amount
+				if (!visit.amount || visit.amount <= 0) {
+					return false;
+				}
 				
+				// Get payment status correctly
+				const paymentStatus = getVisitPaymentStatus(visit.ID);
+				
+				// Skip if fully paid or no payment needed
+				if (paymentStatus === '1' || paymentStatus === '2') {
+					return false; // '1' = paid, '2' = no payment needed
+				}
+				
+				// Calculate actual debt
+				const paidAmount = getVisitPaidAmount(visit.ID);
+				const debt = parseFloat(visit.amount) - paidAmount;
+				
+				// Skip if no debt
+				if (debt <= 0.01) {
+					return false;
+				}
+				
+				// Check if critical: old (>90 days) OR large amount (>1000)
 				const daysSince = Math.floor((new Date() - new Date(visit.date)) / (1000 * 60 * 60 * 24));
-				return daysSince > 90 || parseFloat(visit.amount) > 1000;
+				return daysSince > 90 || debt > 1000;
 			});
 			
 			if (criticalDebts.length > 0) {
-				const totalCritical = criticalDebts.reduce((sum, visit) => sum + parseFloat(visit.amount), 0);
+				// Calculate total DEBT (not total amount!)
+				const totalCritical = criticalDebts.reduce((sum, visit) => {
+					const paidAmount = getVisitPaidAmount(visit.ID);
+					const debt = parseFloat(visit.amount) - paidAmount;
+					return sum + debt;
+				}, 0);
 				
 				showToast(
-					`⚠️ יש ${criticalDebts.length} חובות חמורים (₪${totalCritical.toLocaleString()})`, 
+					`⚠️ יש ${criticalDebts.length} חובות חמורים (₪${Math.round(totalCritical).toLocaleString()})`, 
 					'warning', 
 					8000
 				);
