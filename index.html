@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -13352,6 +13352,14 @@
 				locationName = location ? location.name : 'לקוח לא נמצא';
 			}
 			
+			// Get location ID for warning (edit mode or pre-selected)
+			let locationId = null;
+			if (isEdit && visitData) {
+				locationId = visitData.location_id;
+			} else if (preSelectedClientId) {
+				locationId = preSelectedClientId;
+			}
+			
 			// כותרת דינמית
 			const title = isEdit ? `✏️ עריכת טיפול - ${locationName}` : '🔧 טיפול חדש';
 			const titleColor = isEdit ? '#e67e22' : '#3498db';
@@ -13368,7 +13376,8 @@
 					</button>
 					
 					<h3 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 22px; border-bottom: 2px solid ${titleColor}; padding-bottom: 10px;">${title}</h3>
-					
+					${locationId ? showOpenDebtsWarning(locationId) : ''}
+		
 					<form id="visitForm" onsubmit="handleVisitFormSubmit(event, ${isEdit ? `'${visitId}'` : 'null'})" style="display: flex; flex-direction: column; gap: 18px;">
 						
 						<!-- תאריך ${isEdit ? '' : 'ולקוח'} -->
@@ -15750,6 +15759,90 @@
 			}
 		}
 
+
+		// Show open debts warning for a client
+		function showOpenDebtsWarning(locationId) {
+			const location = locations.find(loc => loc.ID === locationId);
+			if (!location) return '';
+			
+			// Calculate total debt for this client
+			const clientVisits = visits.filter(v => v.location_id === locationId);
+			
+			let totalDebt = 0;
+			let unpaidVisitsCount = 0;
+			
+			for (const visit of clientVisits) {
+				const paidAmount = getVisitPaidAmount(visit.ID);
+				const debt = parseFloat(visit.amount || 0) - paidAmount;
+				
+				if (debt > 0.01) {
+					totalDebt += debt;
+					unpaidVisitsCount++;
+				}
+			}
+			
+			// No debt - no warning
+			if (totalDebt <= 0.01) {
+				return '';
+			}
+			
+			// Determine severity
+			let severity = 'low';
+			let severityColor = '#f39c12';
+			let severityIcon = '⚠️';
+			
+			if (totalDebt > 1000) {
+				severity = 'high';
+				severityColor = '#e74c3c';
+				severityIcon = '🚨';
+			} else if (totalDebt > 500) {
+				severity = 'medium';
+				severityColor = '#e67e22';
+				severityIcon = '⚠️';
+			}
+			
+			// Create warning HTML
+			const warningHTML = `
+				<div style="background: ${severityColor}; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+					<div style="display: flex; align-items: center; gap: 12px;">
+						<span style="font-size: 24px;">${severityIcon}</span>
+						<div style="flex: 1;">
+							<div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">
+								חובות פתוחים ללקוח
+							</div>
+							<div style="font-size: 14px; opacity: 0.95;">
+								${unpaidVisitsCount} טיפולים לא משולמים | סה"כ חוב: ₪${Math.round(totalDebt).toLocaleString()}
+							</div>
+						</div>
+						<button onclick="goToDebtsTab('${locationId}')" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">
+							📋 צפה בחובות
+						</button>
+					</div>
+				</div>
+			`;
+			
+			return warningHTML;
+		}
+
+		// Navigate to debts tab and filter by client
+		function goToDebtsTab(locationId) {
+			// Switch to debts tab
+			showSection('debts');
+			
+			// Filter by client
+			const location = locations.find(loc => loc.ID === locationId);
+			if (location) {
+				// Set the client search filter
+				const debtClientSearch = document.getElementById('debtClientSearch');
+				if (debtClientSearch) {
+					debtClientSearch.value = location.name;
+					handleDebtClientSelection(location.name);
+				}
+			}
+			
+			// Close modal if open
+			closeAnyModal();
+		}
 
    </script>
 </body>
