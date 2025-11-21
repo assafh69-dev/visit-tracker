@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -12164,10 +12164,14 @@
 				return [];
 			}
 			
+			// ✅ Get unpaid visits ONCE - not for every payment!
+			const allUnpaidVisits = getUnpaidVisits();
+			console.log(`📋 Processing ${unlinkedPayments.length} payments against ${allUnpaidVisits.length} unpaid visits`);
+			
 			const allMatches = [];
 			
 			for (const paymentInfo of unlinkedPayments) {
-				const match = findPaymentMatches(paymentInfo);
+				const match = findPaymentMatchesOptimized(paymentInfo, allUnpaidVisits);
 				if (match) {
 					allMatches.push(match);
 				}
@@ -12177,6 +12181,91 @@
 			return allMatches;
 		}
 
+
+		// Find matches for a single payment - OPTIMIZED VERSION
+		function findPaymentMatchesOptimized(paymentInfo, allUnpaidVisits) {
+			const payment = paymentInfo.payment;
+			const availableAmount = paymentInfo.availableAmount;
+			
+			// Filter to this client only
+			const clientVisits = allUnpaidVisits.filter(vInfo => 
+				vInfo.visit.location_id === payment.client_id
+			);
+			
+			if (clientVisits.length === 0) {
+				return null; // No matches possible
+			}
+			
+			// Filter by date if payment has a date
+			let eligibleVisits = clientVisits;
+			if (payment.date) {
+				// Only visits on or before payment date
+				eligibleVisits = clientVisits.filter(vInfo => 
+					vInfo.visit.date <= payment.date
+				);
+				
+				// If no visits before payment date, use all visits (fallback)
+				if (eligibleVisits.length === 0) {
+					eligibleVisits = clientVisits;
+				}
+			}
+			
+			// Sort by date (oldest first)
+			eligibleVisits.sort((a, b) => {
+				const dateA = new Date(a.visit.date);
+				const dateB = new Date(b.visit.date);
+				return dateA - dateB;
+			});
+			
+			// Allocate payment to visits
+			let remainingAmount = availableAmount;
+			const visitMatches = [];
+			
+			for (const vInfo of eligibleVisits) {
+				if (remainingAmount <= 0.01) break;
+				
+				const amountToAllocate = Math.min(remainingAmount, vInfo.debtAmount);
+				
+				// Calculate confidence
+				const confidence = calculateMatchConfidence(
+					payment, 
+					vInfo.visit, 
+					amountToAllocate
+				);
+				
+				visitMatches.push({
+					visit_id: vInfo.visit.ID,
+					visit_date: vInfo.visit.date,
+					visit_amount: vInfo.visit.amount,
+					visit_work: vInfo.visit.work_done || 'ללא תיאור',
+					debt_amount: vInfo.debtAmount,
+					amount_to_allocate: amountToAllocate,
+					confidence: confidence
+				});
+				
+				remainingAmount -= amountToAllocate;
+			}
+			
+			if (visitMatches.length === 0) {
+				return null;
+			}
+			
+			// Overall confidence is the highest confidence among matches
+			const maxConfidence = Math.max(...visitMatches.map(m => m.confidence));
+			
+			return {
+				payment: payment,
+				payment_id: payment.ID,
+				payment_date: payment.date,
+				payment_amount: payment.amount,
+				available_amount: availableAmount,
+				client_name: payment.client_name || 'לא ידוע',
+				matches: visitMatches,
+				total_allocated: visitMatches.reduce((sum, m) => sum + m.amount_to_allocate, 0),
+				remaining: remainingAmount,
+				overall_confidence: maxConfidence
+			};
+		}
 
 		// Show matches modal to user
 		function showMatchesModal(matches) {
