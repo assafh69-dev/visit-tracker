@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2982,13 +2982,16 @@
 					
 					<div class="import-main-buttons" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
 						<button onclick="createImportTable()" class="btn">
-							📗 צור טבלת עזר לייבוא
+							🔗 צור טבלת עזר לייבוא
 						</button>
 						<button onclick="importFromHelperTableFast()" class="btn" style="background: #27ae60; color: white;">
 							🚀 ייבוא מהיר וכולל
 						</button>
 						<button onclick="importPaymentsFromHelper()" class="btn" style="background: #9b59b6; color: white;">
 							💳 ייבוא תשלומים
+						</button>
+						<button onclick="autoLinkPaymentsToVisits()" class="btn" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);">
+							🔗 קישור אוטומטי תשלומים-טיפולים
 						</button>
 					</div>
 					
@@ -11957,6 +11960,581 @@
 		}
 
 		// ===== פונקציות טיפול בתשלומים ===== 
+
+		// ===== AUTO-LINK PAYMENTS TO VISITS SYSTEM =====
+
+		// Get all unlinked payments (payments without any links or with available amount)
+		function getUnlinkedPayments() {
+			const unlinkedPayments = [];
+			
+			for (const payment of payments) {
+				// Skip if no client_id (can't match without client)
+				if (!payment.client_id) {
+					continue;
+				}
+				
+				// Get payment link status
+				const linkStatus = getPaymentLinkStatus(payment.ID);
+				
+				// Include if: (1) no links at all, or (2) has available amount
+				if (linkStatus.linksCount === 0 || linkStatus.available > 0.01) {
+					unlinkedPayments.push({
+						payment: payment,
+						availableAmount: linkStatus.linksCount === 0 ? payment.amount : linkStatus.available
+					});
+				}
+			}
+			
+			console.log(`🔍 Found ${unlinkedPayments.length} unlinked/partially-linked payments`);
+			return unlinkedPayments;
+		}
+
+		// Get all unpaid visits (visits with debt)
+		function getUnpaidVisits() {
+			const unpaidVisits = [];
+			
+			for (const visit of visits) {
+				// Skip visits with no amount
+				if (!visit.amount || visit.amount <= 0) {
+					continue;
+				}
+				
+				// Calculate debt
+				const paidAmount = getVisitPaidAmount(visit.ID);
+				const debt = parseFloat(visit.amount) - paidAmount;
+				
+				// Include if has debt
+				if (debt > 0.01) {
+					unpaidVisits.push({
+						visit: visit,
+						debtAmount: debt,
+						paidAmount: paidAmount
+					});
+				}
+			}
+			
+			console.log(`🔍 Found ${unpaidVisits.length} unpaid visits with total debt`);
+			return unpaidVisits;
+		}
+
+		// Calculate match confidence level
+		function calculateMatchConfidence(payment, visit, amountToAllocate) {
+			let confidence = 1; // Default: ⭐ (low)
+			
+			const paymentAmount = parseFloat(payment.amount);
+			const visitAmount = parseFloat(visit.amount);
+			const paymentDate = payment.date;
+			const visitDate = visit.date;
+			
+			// Perfect match: same date + same amount
+			if (paymentDate && visitDate === paymentDate && 
+				Math.abs(paymentAmount - visitAmount) < 0.01) {
+				return 3; // ⭐⭐⭐ (perfect)
+			}
+			
+			// Very good match: similar amount (±5%)
+			const amountDiff = Math.abs(paymentAmount - visitAmount) / paymentAmount;
+			if (amountDiff < 0.05) {
+				confidence = 3; // ⭐⭐⭐ (very good)
+			}
+			// Good match: exact allocation amount
+			else if (Math.abs(amountToAllocate - visitAmount) < 0.01) {
+				confidence = 2; // ⭐⭐ (good)
+			}
+			
+			// Bonus: payment date is after visit date (makes sense)
+			if (paymentDate && visitDate && paymentDate >= visitDate) {
+				// Don't reduce confidence
+			} else if (paymentDate && visitDate && paymentDate < visitDate) {
+				// Payment before visit - reduce confidence
+				confidence = Math.max(1, confidence - 1);
+			}
+			
+			return confidence;
+		}
+
+		// Get confidence display
+		function getConfidenceDisplay(confidenceLevel) {
+			switch (confidenceLevel) {
+				case 3:
+					return { stars: '⭐⭐⭐', text: 'גבוהה', color: '#27ae60' };
+				case 2:
+					return { stars: '⭐⭐', text: 'בינונית', color: '#f39c12' };
+				case 1:
+				default:
+					return { stars: '⭐', text: 'נמוכה', color: '#95a5a6' };
+			}
+		}
+
+
+		// Find matches for a single payment
+		function findPaymentMatches(paymentInfo) {
+			const payment = paymentInfo.payment;
+			const availableAmount = paymentInfo.availableAmount;
+			
+			// Get all unpaid visits for this client
+			const unpaidVisits = getUnpaidVisits();
+			const clientVisits = unpaidVisits.filter(vInfo => 
+				vInfo.visit.location_id === payment.client_id
+			);
+			
+			if (clientVisits.length === 0) {
+				return null; // No matches possible
+			}
+			
+			// Filter by date if payment has a date
+			let eligibleVisits = clientVisits;
+			if (payment.date) {
+				// Only visits on or before payment date
+				eligibleVisits = clientVisits.filter(vInfo => 
+					vInfo.visit.date <= payment.date
+				);
+				
+				// If no visits before payment date, use all visits (fallback)
+				if (eligibleVisits.length === 0) {
+					eligibleVisits = clientVisits;
+				}
+			}
+			
+			// Sort by date (oldest first)
+			eligibleVisits.sort((a, b) => {
+				const dateA = new Date(a.visit.date);
+				const dateB = new Date(b.visit.date);
+				return dateA - dateB;
+			});
+			
+			// Allocate payment to visits
+			let remainingAmount = availableAmount;
+			const visitMatches = [];
+			
+			for (const vInfo of eligibleVisits) {
+				if (remainingAmount <= 0.01) break;
+				
+				const amountToAllocate = Math.min(remainingAmount, vInfo.debtAmount);
+				
+				// Calculate confidence
+				const confidence = calculateMatchConfidence(
+					payment, 
+					vInfo.visit, 
+					amountToAllocate
+				);
+				
+				visitMatches.push({
+					visit_id: vInfo.visit.ID,
+					visit_date: vInfo.visit.date,
+					visit_amount: vInfo.visit.amount,
+					visit_work: vInfo.visit.work_done || 'ללא תיאור',
+					debt_amount: vInfo.debtAmount,
+					amount_to_allocate: amountToAllocate,
+					confidence: confidence
+				});
+				
+				remainingAmount -= amountToAllocate;
+			}
+			
+			if (visitMatches.length === 0) {
+				return null;
+			}
+			
+			// Overall confidence is the highest confidence among matches
+			const maxConfidence = Math.max(...visitMatches.map(m => m.confidence));
+			
+			return {
+				payment: payment,
+				payment_id: payment.ID,
+				payment_date: payment.date,
+				payment_amount: payment.amount,
+				available_amount: availableAmount,
+				client_name: payment.client_name || 'לא ידוע',
+				matches: visitMatches,
+				total_allocated: visitMatches.reduce((sum, m) => sum + m.amount_to_allocate, 0),
+				remaining: remainingAmount,
+				overall_confidence: maxConfidence
+			};
+		}
+
+		// Main function: find all matches
+		function findAllMatches() {
+			console.log('🔗 Starting auto-match process...');
+			
+			const unlinkedPayments = getUnlinkedPayments();
+			
+			if (unlinkedPayments.length === 0) {
+				showToast('אין תשלומים לא מקושרים', 'info');
+				return [];
+			}
+			
+			const allMatches = [];
+			
+			for (const paymentInfo of unlinkedPayments) {
+				const match = findPaymentMatches(paymentInfo);
+				if (match) {
+					allMatches.push(match);
+				}
+			}
+			
+			console.log(`✅ Found ${allMatches.length} possible matches`);
+			return allMatches;
+		}
+
+
+		// Show matches modal to user
+		function showMatchesModal(matches) {
+			if (matches.length === 0) {
+				showToast('לא נמצאו התאמות אפשריות', 'info');
+				return;
+			}
+			
+			// Group by confidence
+			const highConfidence = matches.filter(m => m.overall_confidence === 3);
+			const mediumConfidence = matches.filter(m => m.overall_confidence === 2);
+			const lowConfidence = matches.filter(m => m.overall_confidence === 1);
+			
+			const modalHTML = `
+				<div style="background: white; padding: 30px; border-radius: 12px; max-width: 800px; width: 90vw; max-height: 85vh; overflow-y: auto; direction: rtl;">
+					<h3 style="margin-bottom: 25px; color: #2c3e50; border-bottom: 3px solid #9b59b6; padding-bottom: 15px; font-size: 24px;">
+						🔗 קישור אוטומטי תשלומים-טיפולים
+					</h3>
+					
+					<!-- Summary Stats -->
+					<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px; margin-bottom: 25px; color: white;">
+						<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
+							<div>
+								<div style="font-size: 28px; font-weight: bold;">${matches.length}</div>
+								<div style="font-size: 13px; opacity: 0.9;">התאמות נמצאו</div>
+							</div>
+							<div>
+								<div style="font-size: 28px; font-weight: bold;">${highConfidence.length}</div>
+								<div style="font-size: 13px; opacity: 0.9;">ביטחון גבוה</div>
+							</div>
+							<div>
+								<div style="font-size: 28px; font-weight: bold;">${mediumConfidence.length + lowConfidence.length}</div>
+								<div style="font-size: 13px; opacity: 0.9;">דורש סקירה</div>
+							</div>
+						</div>
+					</div>
+					
+					<!-- High Confidence Section -->
+					${highConfidence.length > 0 ? `
+						<div style="margin-bottom: 30px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 12px; background: #d4edda; border-radius: 8px; border-right: 4px solid #27ae60;">
+								<div>
+									<span style="font-size: 18px; font-weight: bold; color: #27ae60;">⭐⭐⭐ ביטחון גבוה</span>
+									<span style="font-size: 14px; color: #666; margin-right: 10px;">(${highConfidence.length} התאמות)</span>
+								</div>
+								<button onclick="approveAllHighConfidence()" class="btn" style="background: #27ae60; color: white; padding: 10px 20px; font-size: 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+									⚡ אשר את כל הבטוחות
+								</button>
+							</div>
+							<div id="highConfidenceMatches" style="max-height: 300px; overflow-y: auto;">
+								${renderMatchesList(highConfidence, 'high')}
+							</div>
+						</div>
+					` : ''}
+					
+					<!-- Medium/Low Confidence Section -->
+					${(mediumConfidence.length + lowConfidence.length) > 0 ? `
+						<div style="margin-bottom: 20px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 12px; background: #fff3cd; border-radius: 8px; border-right: 4px solid #f39c12;">
+								<div>
+									<span style="font-size: 18px; font-weight: bold; color: #f39c12;">⭐⭐ / ⭐ דורש סקירה</span>
+									<span style="font-size: 14px; color: #666; margin-right: 10px;">(${mediumConfidence.length + lowConfidence.length} התאמות)</span>
+								</div>
+								<button onclick="reviewMatchesOneByOne()" class="btn" style="background: #f39c12; color: white; padding: 10px 20px; font-size: 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+									👁️ סקור אחת-אחת
+								</button>
+							</div>
+							<div id="mediumLowConfidenceMatches" style="max-height: 300px; overflow-y: auto;">
+								${renderMatchesList([...mediumConfidence, ...lowConfidence], 'medium-low')}
+							</div>
+						</div>
+					` : ''}
+					
+					<!-- Action Buttons -->
+					<div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+						<button onclick="closeAnyModal()" class="btn" style="background: #95a5a6; color: white; padding: 12px 30px; font-size: 15px; border: none; border-radius: 8px; cursor: pointer;">
+							❌ ביטול
+						</button>
+					</div>
+				</div>
+			`;
+			
+			const modalContainer = document.getElementById('modalContainer');
+			modalContainer.innerHTML = modalHTML;
+			modalContainer.style.display = 'flex';
+			
+			// Store matches globally for later use
+			window.currentMatches = matches;
+			window.currentMatchIndex = 0;
+		}
+
+		// Render matches list
+		function renderMatchesList(matches, type) {
+			return matches.map((match, index) => {
+				const confDisplay = getConfidenceDisplay(match.overall_confidence);
+				const matchId = `${type}-${index}`;
+				
+				return `
+					<div id="match-${matchId}" style="background: white; border: 2px solid ${confDisplay.color}; border-radius: 8px; padding: 15px; margin-bottom: 12px;">
+						<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+							<div style="flex: 1;">
+								<div style="font-size: 16px; font-weight: bold; color: #2c3e50; margin-bottom: 5px;">
+									💰 ${match.client_name}
+								</div>
+								<div style="font-size: 13px; color: #666;">
+									תשלום: ${formatDate(match.payment_date)} | ₪${Math.round(match.payment_amount).toLocaleString()}
+								</div>
+							</div>
+							<div style="text-align: left;">
+								<div style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: ${confDisplay.color}; color: white; border-radius: 20px; font-size: 12px; font-weight: bold;">
+									${confDisplay.stars} ${confDisplay.text}
+								</div>
+							</div>
+						</div>
+						
+						<div style="background: #f8f9fa; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+							<div style="font-size: 12px; font-weight: bold; color: #495057; margin-bottom: 8px;">
+								📋 יקושר ל-${match.matches.length} טיפולים:
+							</div>
+							${match.matches.map(m => `
+								<div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e9ecef; font-size: 12px;">
+									<div style="color: #666;">
+										${formatDate(m.visit_date)} - ${m.visit_work}
+									</div>
+									<div style="color: #27ae60; font-weight: bold;">
+										₪${Math.round(m.amount_to_allocate).toLocaleString()}
+									</div>
+								</div>
+							`).join('')}
+							<div style="display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6; font-weight: bold;">
+								<span>סה"כ לקישור:</span>
+								<span style="color: #27ae60;">₪${Math.round(match.total_allocated).toLocaleString()}</span>
+							</div>
+							${match.remaining > 0.01 ? `
+								<div style="display: flex; justify-content: space-between; margin-top: 5px; color: #f39c12;">
+									<span>ישאר לא מקושר:</span>
+									<span style="font-weight: bold;">₪${Math.round(match.remaining).toLocaleString()}</span>
+								</div>
+							` : ''}
+						</div>
+						
+						${type === 'medium-low' ? `
+							<div style="display: flex; gap: 10px;">
+								<button onclick="approveMatch('${matchId}')" class="btn" style="flex: 1; background: #27ae60; color: white; padding: 8px; font-size: 13px; border: none; border-radius: 6px; cursor: pointer;">
+									✅ אשר
+								</button>
+								<button onclick="skipMatch('${matchId}')" class="btn" style="flex: 1; background: #95a5a6; color: white; padding: 8px; font-size: 13px; border: none; border-radius: 6px; cursor: pointer;">
+									⏭️ דלג
+								</button>
+							</div>
+						` : ''}
+					</div>
+				`;
+			}).join('');
+		}
+
+
+		// Execute a single match (create links)
+		async function executeMatch(match) {
+			const newLinks = [];
+			
+			for (const visitMatch of match.matches) {
+				const link = {
+					ID: generateID(),
+					payment_id: match.payment_id,
+					visit_id: visitMatch.visit_id,
+					amount_allocated: visitMatch.amount_to_allocate,
+					link_type: 'auto_linked',
+					created_at: new Date().toISOString()
+				};
+				
+				newLinks.push(link);
+				paymentVisitLinks.push(link);
+			}
+			
+			// Update visits paid status
+			for (const visitMatch of match.matches) {
+				const visit = visits.find(v => v.ID === visitMatch.visit_id);
+				if (visit) {
+					const newPaidAmount = getVisitPaidAmount(visitMatch.visit_id);
+					const visitAmount = parseFloat(visit.amount);
+					
+					// Update paid status
+					if (newPaidAmount >= visitAmount - 0.01) {
+						visit.paid = '1'; // Fully paid
+					} else if (newPaidAmount > 0) {
+						visit.paid = '3'; // Partially paid
+					}
+				}
+			}
+			
+			console.log(`✅ Created ${newLinks.length} links for payment ${match.payment_id}`);
+			return newLinks;
+		}
+
+		// Execute multiple matches
+		async function executeMatches(matchesToExecute) {
+			if (matchesToExecute.length === 0) {
+				showToast('אין התאמות לביצוע', 'info');
+				return;
+			}
+			
+			showLoading(`מקשר ${matchesToExecute.length} תשלומים...`);
+			
+			try {
+				let totalLinks = 0;
+				
+				// Execute all matches
+				for (const match of matchesToExecute) {
+					const links = await executeMatch(match);
+					totalLinks += links.length;
+				}
+				
+				// Save to localStorage
+				saveToLocalStorage();
+				
+				// Save to cloud
+				if (access_token && SPREADSHEET_ID) {
+					console.log('💾 Saving links to cloud...');
+					await savePaymentVisitLinksBatch(paymentVisitLinks);
+					await saveVisitsBatch(visits);
+				}
+				
+				hideLoading();
+				
+				showToast(`✅ הושלם בהצלחה!
+				
+		🔗 ${totalLinks} קישורים נוצרו
+		💰 ${matchesToExecute.length} תשלומים קושרו
+		📋 טיפולים עודכנו`, 'success', 5000);
+				
+				// Refresh displays
+				if (typeof applyPaymentFilters === 'function') {
+					applyPaymentFilters();
+				}
+				if (typeof applyVisitFilters === 'function') {
+					applyVisitFilters();
+				}
+				if (typeof displayDebts === 'function') {
+					displayDebts();
+				}
+				
+				// Close modal
+				closeAnyModal();
+				
+			} catch (error) {
+				hideLoading();
+				console.error('Error executing matches:', error);
+				showToast('שגיאה בביצוע קישורים', 'error');
+			}
+		}
+
+		// Approve all high confidence matches
+		async function approveAllHighConfidence() {
+			const highConfidenceMatches = window.currentMatches.filter(m => m.overall_confidence === 3);
+			
+			if (highConfidenceMatches.length === 0) {
+				showToast('אין התאמות בביטחון גבוה', 'info');
+				return;
+			}
+			
+			const confirmMsg = `לאשר ${highConfidenceMatches.length} התאמות בביטחון גבוה?
+			
+		זה יקשר אוטומטית תשלומים לטיפולים.`;
+			
+			if (confirm(confirmMsg)) {
+				await executeMatches(highConfidenceMatches);
+			}
+		}
+
+		// Approve single match
+		async function approveMatch(matchId) {
+			const [type, index] = matchId.split('-');
+			const matchIndex = parseInt(index);
+			
+			let match;
+			if (type === 'medium-low') {
+				const mediumLow = window.currentMatches.filter(m => m.overall_confidence <= 2);
+				match = mediumLow[matchIndex];
+			}
+			
+			if (!match) {
+				showToast('התאמה לא נמצאה', 'error');
+				return;
+			}
+			
+			// Hide the match card
+			const matchElement = document.getElementById(`match-${matchId}`);
+			if (matchElement) {
+				matchElement.style.opacity = '0.5';
+				matchElement.style.pointerEvents = 'none';
+			}
+			
+			await executeMatches([match]);
+		}
+
+		// Skip single match
+		function skipMatch(matchId) {
+			const matchElement = document.getElementById(`match-${matchId}`);
+			if (matchElement) {
+				matchElement.style.display = 'none';
+			}
+			
+			showToast('התאמה דולגה', 'info', 1500);
+		}
+
+		// Review matches one by one (simple version)
+		function reviewMatchesOneByOne() {
+			showToast('גלול למטה לסקור כל התאמה ולאשר/לדלג', 'info', 3000);
+			
+			// Scroll to first match
+			const firstMatch = document.querySelector('[id^="match-medium-low-"]');
+			if (firstMatch) {
+				firstMatch.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}
+		}
+
+
+		// Main function: Auto-link payments to visits
+		async function autoLinkPaymentsToVisits() {
+			console.log('🚀 Starting auto-link process...');
+			
+			// Validate connection
+			if (!access_token || !SPREADSHEET_ID) {
+				showToast('התחבר לגוגל שיטס קודם', 'warning');
+				return;
+			}
+			
+			// Show loading
+			showLoading('מחפש התאמות בין תשלומים לטיפולים...');
+			
+			try {
+				// Find all matches
+				const matches = findAllMatches();
+				
+				hideLoading();
+				
+				if (matches.length === 0) {
+					showToast('לא נמצאו התאמות אפשריות', 'info');
+					return;
+				}
+				
+				// Show matches modal
+				showMatchesModal(matches);
+				
+			} catch (error) {
+				hideLoading();
+				console.error('Error in auto-link process:', error);
+				showToast('שגיאה בתהליך הקישור האוטומטי', 'error');
+			}
+		}
+
+
+
+
+
+////<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 		// פונקציה חדשה לסימון חובות כשולמים
 		async function markAllDebtsPaid(locationId) {
