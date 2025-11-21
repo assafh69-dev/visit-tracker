@@ -2416,7 +2416,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -12357,6 +12357,33 @@
 			window.currentMatchIndex = 0;
 		}
 
+		// Safe date formatting - handles invalid dates
+		function formatDateSafe(dateStr) {
+			if (!dateStr || dateStr === '' || dateStr === 'undefined') {
+				return 'ללא תאריך';
+			}
+			
+			try {
+				// Try to parse the date
+				const date = new Date(dateStr);
+				
+				// Check if valid date
+				if (isNaN(date.getTime())) {
+					return 'תאריך לא תקין';
+				}
+				
+				const day = String(date.getDate()).padStart(2, '0');
+				const month = String(date.getMonth() + 1).padStart(2, '0');
+				const year = date.getFullYear();
+				
+				return `${day}.${month}.${year}`;
+			} catch (error) {
+				console.error('Error formatting date:', dateStr, error);
+				return 'תאריך לא תקין';
+			}
+		}
+
+
 		// Render matches list
 		function renderMatchesList(matches, type) {
 			return matches.map((match, index) => {
@@ -12371,7 +12398,7 @@
 									💰 ${match.client_name}
 								</div>
 								<div style="font-size: 13px; color: #666;">
-									תשלום: ${formatDate(match.payment_date)} | ₪${Math.round(match.payment_amount).toLocaleString()}
+									תשלום: ${formatDateSafe(match.payment_date)} | ₪${Math.round(match.payment_amount).toLocaleString()}
 								</div>
 							</div>
 							<div style="text-align: left;">
@@ -12388,7 +12415,7 @@
 							${match.matches.map(m => `
 								<div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e9ecef; font-size: 12px;">
 									<div style="color: #666;">
-										${formatDate(m.visit_date)} - ${m.visit_work}
+										${formatDateSafe(m.visit_date)} - ${m.visit_work}
 									</div>
 									<div style="color: #27ae60; font-weight: bold;">
 										₪${Math.round(m.amount_to_allocate).toLocaleString()}
