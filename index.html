@@ -2439,7 +2439,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.6</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -15725,13 +15725,19 @@
 
 		function closeAnyModal() {
 			// List of all possible modal IDs
-			const modalIds = ['editModal', 'telegramModal', 'clientModal', 'addTreatmentModal', 'linkPaymentModal'];
+			const modalIds = ['editModal', 'telegramModal', 'clientModal', 'addTreatmentModal', 'linkPaymentModal', 'modalContainer'];
 			
 			// Try to close by ID
 			for (const id of modalIds) {
 				const modal = document.getElementById(id);
 				if (modal) {
-					modal.remove();
+					if (id === 'modalContainer') {
+						// Special handling for modalContainer
+						modal.style.display = 'none';
+						modal.innerHTML = '';
+					} else {
+						modal.remove();
+					}
 					console.log(`✅ Closed modal: ${id}`);
 					return true;
 				}
