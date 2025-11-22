@@ -3013,6 +3013,9 @@
 						<button onclick="importPaymentsFromHelper()" class="btn" style="background: #9b59b6; color: white;">
 							💳 ייבוא תשלומים
 						</button>
+						<button onclick="autoCalculatePricesByDuration()" class="btn" style="background: linear-gradient(45deg, #f39c12, #e67e22); color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);">
+							⚡ חשב מחירים לפי זמן
+						</button>
 						<button onclick="autoLinkPaymentsToVisits()" class="btn" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);">
 							🔗 קישור אוטומטי תשלומים-טיפולים
 						</button>
@@ -8076,41 +8079,51 @@
 			const selectedDay = document.getElementById('debtDayFilter')?.value || '';
 			const selectedClientId = document.getElementById('debtClientSearch')?.getAttribute('data-selected-id') || '';
 			
-			// ✅ UPDATED: Calculate debts with partial payment support
+			// ✅ FIXED: Calculate debts including zero-amount visits that require payment
 			const clientDebts = new Map();
 			
 			visits.forEach(visit => {
-				if (visit.amount > 0) {
-					const visitAmount = parseFloat(visit.amount) || 0;
-					const paidAmount = getVisitPaidAmount(visit.ID);
-					const debt = visitAmount - paidAmount;
-					
-					// Only show if there's actual debt
-					if (debt > 0.01) { // Small threshold for rounding errors
-						const clientId = visit.location_id;
-						if (!clientDebts.has(clientId)) {
-							clientDebts.set(clientId, {
-								clientId: clientId,
-								clientName: visit.location_name || 'לא ידוע',
-								totalDebt: 0,
-								visits: []
-							});
-						}
-						
-						const clientDebt = clientDebts.get(clientId);
-						clientDebt.totalDebt += debt;
-						
-						const paidInfo = parsePaidField(visit.paid);
-						clientDebt.visits.push({
-							visitId: visit.ID,
-							date: visit.date,
-							amount: visitAmount,
-							paidAmount: paidAmount,
-							debt: debt,
-							workDone: visit.work_done || '',
-							paymentStatus: paidInfo.status
+				const paidInfo = parsePaidField(visit.paid);
+				
+				// Skip if status is "no payment required" (status '2')
+				if (paidInfo.status === '2') {
+					return;
+				}
+				
+				const visitAmount = parseFloat(visit.amount) || 0;
+				const paidAmount = getVisitPaidAmount(visit.ID);
+				const debt = visitAmount - paidAmount;
+				
+				// Include if: has debt OR zero amount that needs pricing
+				if (debt > 0.01 || visitAmount === 0) {
+					const clientId = visit.location_id;
+					if (!clientDebts.has(clientId)) {
+						clientDebts.set(clientId, {
+							clientId: clientId,
+							clientName: visit.location_name || 'לא ידוע',
+							totalDebt: 0,
+							zeroAmountCount: 0,
+							visits: []
 						});
 					}
+					
+					const clientDebt = clientDebts.get(clientId);
+					clientDebt.totalDebt += debt;
+					
+					if (visitAmount === 0) {
+						clientDebt.zeroAmountCount++;
+					}
+					
+					clientDebt.visits.push({
+						visitId: visit.ID,
+						date: visit.date,
+						amount: visitAmount,
+						paidAmount: paidAmount,
+						debt: debt,
+						workDone: visit.work_done || '',
+						paymentStatus: paidInfo.status,
+						isZeroAmount: visitAmount === 0
+					});
 				}
 			});
 			
@@ -8156,7 +8169,7 @@
 				return;
 			}
 			
-			// ✅ UPDATED: Show debts with collapsible details
+			// ✅ UPDATED: Show debts with zero-amount indicator
 			const html = debtsArray.map((debt, index) => `
 				<div class="debt-card" id="debtCard_${index}">
 					<div class="debt-header" onclick="toggleDebtDetails(${index})" style="cursor: pointer;">
@@ -8173,53 +8186,50 @@
 						
 						<!-- שורה 2: סכום + כפתורי פעולה -->
 						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-							<div class="debt-total" style="margin: 0;">💰 ${debt.totalDebt.toFixed(0)} ₪</div>
+							<div style="display: flex; align-items: center; gap: 10px;">
+								<div class="debt-total" style="margin: 0;">💰 ${debt.totalDebt.toFixed(0)} ₪</div>
+								${debt.zeroAmountCount > 0 ? `
+									<span style="background: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+										⚠️ +${debt.zeroAmountCount} ללא מחיר
+									</span>
+								` : ''}
+							</div>
 							<div style="display: flex; gap: 8px;">
 								<button onclick="event.stopPropagation(); showAddPaymentModal('${debt.clientId}')" 
 										class="action-btn" 
 										style="background: #27ae60; color: white; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;"
-										title="הוסף תשלום">
-									➕ תשלום
+										title="רישום תשלום">
+									💳 תשלום
 								</button>
-								<button onclick="event.stopPropagation(); showLinkPaymentModal('${debt.clientId}', ${debt.totalDebt})" 
-										class="action-btn" 
-										style="background: #9b59b6; color: white; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;"
-										title="קשר תשלום קיים">
-									💳 קישור
-								</button>
-								<button onclick="event.stopPropagation(); markClientDebtsPaid('${debt.clientId}')" 
+								<button onclick="event.stopPropagation(); markAllDebtsPaid('${debt.clientId}')" 
 										class="action-btn" 
 										style="background: #3498db; color: white; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;"
 										title="סמן הכל כשולם">
-									✓ סמן הכל
+									✓ סמן שולם
 								</button>
 							</div>
 						</div>
 						
-						<button type="button" 
-								class="debt-toggle-btn" 
-								id="debtToggle_${index}"
-								onclick="event.stopPropagation(); toggleDebtDetails(${index})"
-								style="width: 100%; margin-top: 10px; padding: 8px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
-							🔽 הצג פירוט (${debt.visits.length} טיפולים)
-						</button>
-					</div>
-					<div class="debt-visits" id="debtDetails_${index}" style="display: none; margin-top: 15px;">
-						<div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
-							<strong style="color: #666; font-size: 12px;">📋 פירוט טיפולים:</strong>
+						<!-- שורה 3: מידע נוסף -->
+						<div style="font-size: 12px; color: #7f8c8d;">
+							<span>📋 ${debt.visits.length} ביקורים</span>
+							<span style="margin-right: 15px;" id="debtExpand_${index}">▼ הצג פירוט</span>
 						</div>
+					</div>
+					
+					<!-- Collapsible Details -->
+					<div id="debtDetails_${index}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 2px solid #ecf0f1;">
 						${debt.visits.map(v => `
-							<div class="debt-visit-item" style="padding: 10px; background: white; border-right: 3px solid #e74c3c; border-radius: 4px; margin-bottom: 8px;">
+							<div style="padding: 10px; margin-bottom: 8px; background: ${v.isZeroAmount ? '#fff3cd' : '#f8f9fa'}; border-radius: 6px; border-right: 4px solid ${v.isZeroAmount ? '#ff9800' : '#3498db'};">
 								<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-									<span class="debt-date" style="font-weight: bold; color: #2c3e50;">${formatDate(v.date)}</span>
-									<span class="debt-amount" style="color: #e74c3c; font-weight: bold;">
-										${v.amount} ₪
-										${v.paymentStatus === '3' ? 
-											`<span style="color: #f39c12; font-size: 11px;">(שולם: ${v.paidAmount}₪)</span>` : 
-											''}
+									<span style="font-weight: 600; color: #2c3e50;">📅 ${formatDate(v.date)}</span>
+									<span style="font-weight: bold; color: ${v.isZeroAmount ? '#ff9800' : '#e74c3c'};">
+										${v.isZeroAmount ? '⚠️ לא הוזן מחיר' : v.debt.toFixed(0) + ' ₪'}
 									</span>
 								</div>
-								<span class="debt-work" style="font-size: 13px; color: #666;">${v.workDone || 'ללא תיאור'}</span>
+								<div style="font-size: 13px; color: #555;">
+									${v.workDone || 'ללא תיאור'}
+								</div>
 							</div>
 						`).join('')}
 					</div>
@@ -8582,15 +8592,21 @@
 			
 			const { clientId, availableAmount } = window.currentLinkData;
 			
-			// Get client's unpaid visits
+			// Get client's unpaid visits - INCLUDING ZERO AMOUNT VISITS!
 			const unpaidVisits = visits.filter(visit => {
 				if (visit.location_id !== clientId) return false;
-				if (!visit.amount || visit.amount <= 0) return false;
 				
+				const paidInfo = parsePaidField(visit.paid);
+				
+				// Skip "no payment required" status
+				if (paidInfo.status === '2') return false;
+				
+				const visitAmount = parseFloat(visit.amount) || 0;
 				const paidAmount = getVisitPaidAmount(visit.ID);
-				const debt = parseFloat(visit.amount) - paidAmount;
+				const debt = visitAmount - paidAmount;
 				
-				return debt > 0.01;
+				// Include if: has debt OR zero amount (needs pricing)
+				return debt > 0.01 || visitAmount === 0;
 			});
 			
 			// Sort by date (oldest first)
@@ -8606,19 +8622,28 @@
 			if (linkMethod === 'auto') {
 				let remainingAmount = availableAmount;
 				const allocations = [];
+				const zeroAmountVisits = [];
 				
 				for (const visit of unpaidVisits) {
+					const visitAmount = parseFloat(visit.amount) || 0;
+					
+					// Track zero-amount visits separately
+					if (visitAmount === 0) {
+						zeroAmountVisits.push(visit);
+						continue; // Skip in auto mode
+					}
+					
 					if (remainingAmount <= 0) break;
 					
 					const paidAmount = getVisitPaidAmount(visit.ID);
-					const debt = parseFloat(visit.amount) - paidAmount;
+					const debt = visitAmount - paidAmount;
 					const amountToAllocate = Math.min(remainingAmount, debt);
 					
 					allocations.push({
 						visitId: visit.ID,
 						date: visit.date,
 						workDone: visit.work_done || 'ללא תיאור',
-						visitAmount: parseFloat(visit.amount),
+						visitAmount: visitAmount,
 						debt: debt,
 						allocated: amountToAllocate
 					});
@@ -8628,13 +8653,40 @@
 				
 				const totalAllocated = allocations.reduce((sum, a) => sum + a.allocated, 0);
 				
+				// Build warning HTML if there are zero-amount visits
+				let warningHTML = '';
+				if (zeroAmountVisits.length > 0) {
+					warningHTML = `
+						<div style="background: #fff3cd; border: 2px solid #ff9800; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+							<div style="font-weight: 600; color: #856404; margin-bottom: 8px;">
+								⚠️ שים לב!
+							</div>
+							<div style="font-size: 13px; color: #856404; margin-bottom: 10px;">
+								נמצאו <strong>${zeroAmountVisits.length}</strong> טיפולים עם מחיר 0₪ שלא יקושרו:
+							</div>
+							<div style="font-size: 12px; background: white; padding: 8px; border-radius: 4px; max-height: 80px; overflow-y: auto;">
+								${zeroAmountVisits.slice(0, 3).map(v => `
+									<div style="padding: 3px 0;">• ${formatDate(v.date)} - ${v.work_done || 'ללא תיאור'}</div>
+								`).join('')}
+								${zeroAmountVisits.length > 3 ? `<div style="color: #999; margin-top: 5px;">...ועוד ${zeroAmountVisits.length - 3}</div>` : ''}
+							</div>
+							<div style="margin-top: 10px; font-size: 12px;">
+								💡 עבור למצב <strong>ידני</strong> כדי לעדכן מחירים ולקשר גם אותם
+							</div>
+						</div>
+					`;
+				}
+				
 				previewArea.innerHTML = `
+					${warningHTML}
+					
 					<div style="background: #e8f5e9; border: 2px solid #4caf50; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-						<div style="font-weight: 600; color: #2e7d32; margin-bottom: 10px;">✓ חלוקה אוטומטית:</div>
+						<div style="font-weight: 600; color: #2e7d32; margin-bottom: 10px;">✔ חלוקה אוטומטית:</div>
 						<div style="font-size: 13px; color: #555;">
 							<div>💰 סכום זמין: <strong>${availableAmount.toFixed(0)} ₪</strong></div>
 							<div>📋 יחולק על <strong>${allocations.length}</strong> טיפולים</div>
 							<div>💵 סה"כ יקושר: <strong>${totalAllocated.toFixed(0)} ₪</strong></div>
+							${remainingAmount > 0.01 ? `<div style="color: #ff9800;">⚠️ יישאר: <strong>${remainingAmount.toFixed(0)} ₪</strong> לא מקושר</div>` : ''}
 						</div>
 					</div>
 					
@@ -8655,32 +8707,46 @@
 				`;
 				
 				window.currentLinkData.allocations = allocations;
+				window.currentLinkData.hasZeroAmountVisits = zeroAmountVisits.length > 0;
+				window.currentLinkData.remainingAmount = remainingAmount;
 				executeBtn.disabled = false;
 				
 			} else {
-				// MANUAL mode
+				// MANUAL mode - WITH EDITABLE AMOUNTS!
 				previewArea.innerHTML = `
 					<div style="background: #fff3e0; border: 2px solid #ff9800; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
 						<div style="font-weight: 600; color: #e65100; margin-bottom: 5px;">✋ בחירה ידנית:</div>
 						<div style="font-size: 13px; color: #555;">
 							סמן את הטיפולים שברצונך לקשר (זמין: <strong>${availableAmount.toFixed(0)} ₪</strong>)
 						</div>
+						<div style="font-size: 12px; color: #e65100; margin-top: 5px;">
+							💡 ניתן לערוך מחירים ישירות בטבלה
+						</div>
 					</div>
 					
-					<div id="manualVisitsArea" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px;">
+					<div id="manualVisitsArea" style="max-height: 350px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px;">
 						${unpaidVisits.map(visit => {
+							const visitAmount = parseFloat(visit.amount) || 0;
 							const paidAmount = getVisitPaidAmount(visit.ID);
-							const debt = parseFloat(visit.amount) - paidAmount;
+							const debt = visitAmount - paidAmount;
+							const isZeroAmount = visitAmount === 0;
 							
 							return `
-								<label style="display: flex; padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; align-items: center;" onchange="updateManualSelectionSingle()">
-									<input type="checkbox" value="${visit.ID}" data-debt="${debt}" style="margin-left: 10px; width: 18px; height: 18px;">
-									<div style="flex: 1;">
+								<label style="display: grid; grid-template-columns: 30px 1fr 100px 80px; gap: 8px; padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; align-items: center; ${isZeroAmount ? 'background: #fff3cd;' : ''}" onchange="updateManualSelectionSingle()">
+									<input type="checkbox" value="${visit.ID}" data-debt="${debt}" style="width: 18px; height: 18px;">
+									<div>
 										<div style="font-size: 12px; color: #666;">${formatDate(visit.date)}</div>
 										<div style="font-size: 13px; color: #333;">${visit.work_done || 'ללא תיאור'}</div>
+										${visit.duration ? `<div style="font-size: 11px; color: #999;">⏱️ ${visit.duration} דק</div>` : ''}
 									</div>
-									<div style="text-align: left;">
-										<div style="font-size: 14px; font-weight: 600; color: #e74c3c;">${debt.toFixed(0)} ₪</div>
+									<input type="number" 
+										   value="${visitAmount}" 
+										   onclick="event.stopPropagation();"
+										   onchange="updateVisitAmountInModal(this, '${visit.ID}')"
+										   placeholder="מחיר"
+										   style="width: 100%; padding: 6px; border: 2px solid ${isZeroAmount ? '#ff9800' : '#ddd'}; border-radius: 4px; font-size: 14px; text-align: center; font-weight: bold;">
+									<div style="text-align: left; font-size: 14px; font-weight: 600; color: ${isZeroAmount ? '#ff9800' : '#e74c3c'};">
+										${debt > 0 ? debt.toFixed(0) + ' ₪' : (isZeroAmount ? '⚠️' : '✓')}
 									</div>
 								</label>
 							`;
@@ -8750,7 +8816,7 @@
 		// ✅ Execute payment linking for single payment
 		async function executeLinkPaymentSingle(paymentId) {
 			if (!window.currentLinkData || !window.currentLinkData.allocations) {
-				showToast('❌ אין נתונים לביצוע', 'error');
+				showToast('⌫ אין נתונים לביצוע', 'error');
 				return;
 			}
 			
@@ -8812,19 +8878,52 @@
 				
 				hideLoading();
 				
-				showToast(`✅ קושרו ${allocations.length} טיפולים (${totalLinked.toFixed(0)} ₪) לתשלום`, 'success');
+				// ✅ CHECK: Should we close modal or keep it open?
+				const hasZeroAmountVisits = window.currentLinkData.hasZeroAmountVisits || false;
+				const remainingAmount = window.currentLinkData.remainingAmount || 0;
 				
-				closeAnyModal();
-				window.currentLinkData = null;
+				if (remainingAmount > 0.01 || hasZeroAmountVisits) {
+					// Keep modal open - there's more work to do!
+					let message = `✅ קושרו ${allocations.length} טיפולים (${totalLinked.toFixed(0)} ₪)\n\n`;
+					
+					if (remainingAmount > 0.01) {
+						message += `⚠️ נשארו ${remainingAmount.toFixed(0)} ₪ לא מקושרים\n`;
+					}
+					
+					if (hasZeroAmountVisits) {
+						message += `⚠️ יש עוד טיפולים ללא מחיר\n`;
+					}
+					
+					message += `\n💡 עבור למצב ידני כדי להמשיך`;
+					
+					showToast(message, 'success', 5000);
+					
+					// Switch to manual mode automatically
+					const manualRadio = document.querySelector('input[name="linkMethod"][value="manual"]');
+					if (manualRadio) {
+						manualRadio.checked = true;
+					}
+					
+					// Refresh preview
+					setTimeout(() => {
+						updateLinkPaymentPreviewSingle(paymentId);
+					}, 1000);
+					
+				} else {
+					// All done - close modal
+					showToast(`✅ קושרו ${allocations.length} טיפולים (${totalLinked.toFixed(0)} ₪)`, 'success');
+					closeAnyModal();
+					window.currentLinkData = null;
+				}
 				
-				// Refresh
+				// Refresh displays
 				if (typeof displayDebts === 'function') displayDebts();
 				if (typeof displayPayments === 'function') displayPayments();
 				if (typeof displayVisits === 'function') displayVisits();
 				
 			} catch (error) {
 				console.error('Error executing payment link:', error);
-				showToast('❌ שגיאה בקישור תשלום: ' + error.message, 'error');
+				showToast('⌫ שגיאה בקישור תשלום: ' + error.message, 'error');
 				hideLoading();
 			}
 		}
@@ -9161,6 +9260,69 @@
 			}
 		}
 		
+
+		// ✅ Update visit amount directly from modal
+		function updateVisitAmountInModal(input, visitId) {
+			const newAmount = parseFloat(input.value) || 0;
+			const visit = visits.find(v => v.ID === visitId);
+			
+			if (!visit) {
+				showToast('⚠️ לא נמצא טיפול', 'warning');
+				return;
+			}
+			
+			// Update amount
+			visit.amount = newAmount;
+			
+			// Save to localStorage immediately
+			saveToLocalStorage();
+			
+			// Update the debt attribute for checkbox
+			const checkbox = input.closest('label').querySelector('input[type="checkbox"]');
+			if (checkbox) {
+				const paidAmount = getVisitPaidAmount(visitId);
+				const newDebt = newAmount - paidAmount;
+				checkbox.setAttribute('data-debt', newDebt);
+			}
+			
+			// Update debt display
+			const debtDisplay = input.closest('label').querySelector('div:last-child');
+			if (debtDisplay) {
+				const paidAmount = getVisitPaidAmount(visitId);
+				const debt = newAmount - paidAmount;
+				
+				if (newAmount === 0) {
+					debtDisplay.innerHTML = '⚠️';
+					debtDisplay.style.color = '#ff9800';
+				} else if (debt > 0) {
+					debtDisplay.innerHTML = debt.toFixed(0) + ' ₪';
+					debtDisplay.style.color = '#e74c3c';
+				} else {
+					debtDisplay.innerHTML = '✓';
+					debtDisplay.style.color = '#27ae60';
+				}
+			}
+			
+			// Change background color
+			const row = input.closest('label');
+			if (row) {
+				if (newAmount === 0) {
+					row.style.background = '#fff3cd';
+					input.style.borderColor = '#ff9800';
+				} else {
+					row.style.background = '';
+					input.style.borderColor = '#ddd';
+				}
+			}
+			
+			// Refresh selection calculation if checked
+			if (checkbox && checkbox.checked) {
+				updateManualSelectionSingle();
+			}
+			
+			// Show success
+			showToast(`✅ מחיר עודכן ל-${newAmount}₪`, 'success', 2000);
+		}
 
 		// Function to populate debt filter dropdowns
 		// Update loadDebtFilterOptions function with safety checks:
@@ -12042,17 +12204,19 @@
 			const unpaidVisits = [];
 			
 			for (const visit of visits) {
-				// Skip visits with no amount
-				if (!visit.amount || visit.amount <= 0) {
+				const paidInfo = parsePaidField(visit.paid);
+				
+				// Skip "no payment required" status
+				if (paidInfo.status === '2') {
 					continue;
 				}
 				
-				// Calculate debt
+				const visitAmount = parseFloat(visit.amount) || 0;
 				const paidAmount = getVisitPaidAmount(visit.ID);
-				const debt = parseFloat(visit.amount) - paidAmount;
+				const debt = visitAmount - paidAmount;
 				
-				// Include if has debt
-				if (debt > 0.01) {
+				// Include if has debt OR zero amount (needs pricing)
+				if (debt > 0.01 || visitAmount === 0) {
 					unpaidVisits.push({
 						visit: visit,
 						debtAmount: debt,
@@ -12061,7 +12225,7 @@
 				}
 			}
 			
-			console.log(`🔍 Found ${unpaidVisits.length} unpaid visits with total debt`);
+			console.log(`🔍 Found ${unpaidVisits.length} unpaid visits (including zero-amount)`);
 			return unpaidVisits;
 		}
 
@@ -15925,6 +16089,184 @@
 			// Close modal if open
 			closeAnyModal();
 		}
+
+		// ✅ Auto-calculate prices for zero-amount visits based on duration
+		async function autoCalculatePricesByDuration() {
+			console.log('⚡ Starting auto price calculation...');
+			
+			// Find all visits with zero amount that require payment
+			const zeroAmountVisits = visits.filter(visit => {
+				const paidInfo = parsePaidField(visit.paid);
+				
+				// Skip "no payment required"
+				if (paidInfo.status === '2') return false;
+				
+				const amount = parseFloat(visit.amount) || 0;
+				const duration = parseFloat(visit.duration) || 0;
+				
+				// Include if: zero amount AND has duration
+				return amount === 0 && duration > 0;
+			});
+			
+			if (zeroAmountVisits.length === 0) {
+				showToast('ℹ️ לא נמצאו טיפולים עם מחיר 0 ומשך זמן מוזן', 'info');
+				return;
+			}
+			
+			// Ask for hourly rate
+			const hourlyRate = prompt(
+				`נמצאו ${zeroAmountVisits.length} טיפולים ללא מחיר עם זמן מוזן.\n\n` +
+				`הזן תעריף לשעה (₪):`,
+				'150'
+			);
+			
+			if (!hourlyRate || hourlyRate.trim() === '') {
+				return; // User canceled
+			}
+			
+			const rate = parseFloat(hourlyRate);
+			
+			if (isNaN(rate) || rate <= 0) {
+				showToast('⚠️ תעריף לא תקין', 'warning');
+				return;
+			}
+			
+			// Show confirmation
+			const totalHours = zeroAmountVisits.reduce((sum, v) => sum + (parseFloat(v.duration) / 60), 0);
+			const estimatedTotal = totalHours * rate;
+			
+			const confirmed = confirm(
+				`⚡ חישוב אוטומטי של מחירים:\n\n` +
+				`📋 טיפולים: ${zeroAmountVisits.length}\n` +
+				`⏱️ סה"כ זמן: ${totalHours.toFixed(1)} שעות\n` +
+				`💰 תעריף: ${rate}₪ לשעה\n` +
+				`💵 סה"כ משוער: ${estimatedTotal.toFixed(0)}₪\n\n` +
+				`האם להמשיך?`
+			);
+			
+			if (!confirmed) return;
+			
+			try {
+				showLoading('מחשב מחירים...');
+				
+				let updatedCount = 0;
+				const updates = [];
+				
+				// Calculate and update prices
+				for (const visit of zeroAmountVisits) {
+					const duration = parseFloat(visit.duration);
+					const hours = duration / 60;
+					const calculatedPrice = Math.round(hours * rate);
+					
+					visit.amount = calculatedPrice;
+					updatedCount++;
+					
+					updates.push({
+						visitId: visit.ID,
+						date: visit.date,
+						client: visit.location_name,
+						duration: duration,
+						calculatedPrice: calculatedPrice
+					});
+				}
+				
+				// Save to localStorage
+				saveToLocalStorage();
+				
+				// Save to cloud
+				if (access_token && SPREADSHEET_ID) {
+					try {
+						await updateMultipleVisitsInSheets(zeroAmountVisits);
+					} catch (error) {
+						console.error('Error saving to cloud:', error);
+						showToast('⚠️ נשמר מקומית, אך יש בעיה בשמירה לענן', 'warning');
+					}
+				}
+				
+				hideLoading();
+				
+				// Show detailed results
+				showCalculationResults(updates, rate);
+				
+				// Refresh displays
+				if (typeof displayDebts === 'function') displayDebts();
+				if (typeof displayVisits === 'function') displayVisits();
+				
+				showToast(`✅ עודכנו ${updatedCount} טיפולים!`, 'success', 3000);
+				
+			} catch (error) {
+				hideLoading();
+				console.error('Error in auto price calculation:', error);
+				showToast('⌫ שגיאה בחישוב מחירים', 'error');
+			}
+		}
+
+		// ✅ Show detailed calculation results
+		function showCalculationResults(updates, hourlyRate) {
+			const totalAmount = updates.reduce((sum, u) => sum + u.calculatedPrice, 0);
+			const totalHours = updates.reduce((sum, u) => sum + (u.duration / 60), 0);
+			
+			const modalHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto; direction: rtl;">
+					<h3 style="margin: 0 0 20px 0; color: #2c3e50; border-bottom: 3px solid #f39c12; padding-bottom: 15px;">
+						⚡ תוצאות חישוב מחירים
+					</h3>
+					
+					<!-- Summary -->
+					<div style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px; color: white;">
+						<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
+							<div>
+								<div style="font-size: 28px; font-weight: bold;">${updates.length}</div>
+								<div style="font-size: 13px; opacity: 0.9;">טיפולים עודכנו</div>
+							</div>
+							<div>
+								<div style="font-size: 28px; font-weight: bold;">${totalHours.toFixed(1)}</div>
+								<div style="font-size: 13px; opacity: 0.9;">שעות סה"כ</div>
+							</div>
+							<div>
+								<div style="font-size: 28px; font-weight: bold;">₪${totalAmount.toLocaleString()}</div>
+								<div style="font-size: 13px; opacity: 0.9;">סה"כ חושב</div>
+							</div>
+						</div>
+						<div style="text-align: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3); font-size: 14px;">
+							💰 תעריף שעתי: <strong>${hourlyRate}₪</strong>
+						</div>
+					</div>
+					
+					<!-- Details -->
+					<div style="margin-bottom: 20px;">
+						<div style="font-weight: 600; margin-bottom: 10px; color: #555;">📋 פירוט טיפולים:</div>
+						<div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
+							${updates.map((u, index) => `
+								<div style="padding: 12px; border-bottom: 1px solid #eee; ${index % 2 === 0 ? 'background: #f8f9fa;' : ''}">
+									<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+										<span style="font-weight: 600; color: #2c3e50;">${u.client}</span>
+										<span style="font-weight: bold; color: #27ae60; font-size: 16px;">₪${u.calculatedPrice}</span>
+									</div>
+									<div style="display: flex; justify-content: space-between; font-size: 12px; color: #666;">
+										<span>📅 ${formatDate(u.date)}</span>
+										<span>⏱️ ${u.duration} דק (${(u.duration / 60).toFixed(1)} שע)</span>
+									</div>
+								</div>
+							`).join('')}
+						</div>
+					</div>
+					
+					<!-- Close Button -->
+					<div style="text-align: center;">
+						<button onclick="closeAnyModal()" class="btn" style="background: #27ae60; color: white; padding: 12px 40px; font-size: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+							✓ סגור
+						</button>
+					</div>
+				</div>
+			`;
+			
+			const modalContainer = document.getElementById('modalContainer');
+			modalContainer.innerHTML = modalHTML;
+			modalContainer.style.display = 'flex';
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+		}
+
 
    </script>
 </body>
