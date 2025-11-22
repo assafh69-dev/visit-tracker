@@ -2439,7 +2439,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -16090,6 +16090,7 @@
 			closeAnyModal();
 		}
 
+
 		// ✅ Auto-calculate prices for zero-amount visits based on duration
 		async function autoCalculatePricesByDuration() {
 			console.log('⚡ Starting auto price calculation...');
@@ -16102,7 +16103,7 @@
 				if (paidInfo.status === '2') return false;
 				
 				const amount = parseFloat(visit.amount) || 0;
-				const duration = parseFloat(visit.duration) || 0;
+				const duration = parseFloat(visit.duration_minutes) || 0; // ✅ FIXED: duration_minutes
 				
 				// Include if: zero amount AND has duration
 				return amount === 0 && duration > 0;
@@ -16121,7 +16122,7 @@
 			);
 			
 			if (!hourlyRate || hourlyRate.trim() === '') {
-				return; // User canceled
+				return;
 			}
 			
 			const rate = parseFloat(hourlyRate);
@@ -16132,7 +16133,7 @@
 			}
 			
 			// Show confirmation
-			const totalHours = zeroAmountVisits.reduce((sum, v) => sum + (parseFloat(v.duration) / 60), 0);
+			const totalHours = zeroAmountVisits.reduce((sum, v) => sum + (parseFloat(v.duration_minutes) / 60), 0); // ✅ FIXED
 			const estimatedTotal = totalHours * rate;
 			
 			const confirmed = confirm(
@@ -16154,7 +16155,7 @@
 				
 				// Calculate and update prices
 				for (const visit of zeroAmountVisits) {
-					const duration = parseFloat(visit.duration);
+					const duration = parseFloat(visit.duration_minutes); // ✅ FIXED
 					const hours = duration / 60;
 					const calculatedPrice = Math.round(hours * rate);
 					
