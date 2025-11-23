@@ -2405,36 +2405,36 @@
     <div class="container">
         <header class="header">
             <h1>טיפולים</h1>
-			<div id="connectionStatus" class="connection-status" style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
-				<!-- שורה 1: תווית -->
-				<div style="font-size: 14px; color: white; font-weight: bold;">
-					☁️ חיבור ל-Google Sheets
+				<div id="headerConnectionStatus" class="connection-status" style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+					<!-- שורה 1: תווית -->
+					<div style="font-size: 14px; color: white; font-weight: bold;">
+						☁️ חיבור ל-Google Sheets
+					</div>
+					
+					<!-- שורה 2: כפתורים -->
+					<div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+						<button onclick="connectToGoogleSheets()" id="connectBtn" class="connect-btn" style="padding: 8px 16px; font-size: 13px;">
+							התחבר
+						</button>
+						<button onclick="saveAllToSheets()" id="saveBtn" class="connect-btn" disabled style="padding: 8px 16px; font-size: 13px;">
+							שמור
+						</button>
+						<button onclick="loadAllFromSheets()" id="loadBtn" class="connect-btn" disabled style="padding: 8px 16px; font-size: 13px;">
+							טען
+						</button>
+						<button onclick="disconnectFromCloud()" class="btn" style="padding: 8px 16px; font-size: 13px; background: #e74c3c; color: white;">
+							🔌 התנתק
+						</button>
+					</div>
+					
+					<!-- שורה 3: סטטוס -->
+					<div id="statusText" style="color: white; font-weight: bold; font-size: 14px; text-align: center;">
+						⚪ לא מחובר
+					</div>
+					
+					<!-- שורה 4: זמן אחרון -->
+					<div id="lastSaved" style="font-size: 11px; color: rgba(255,255,255,0.8); text-align: center;"></div>
 				</div>
-				
-				<!-- שורה 2: כפתורים -->
-				<div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-					<button onclick="connectToGoogleSheets()" id="connectBtn" class="connect-btn" style="padding: 8px 16px; font-size: 13px;">
-						התחבר
-					</button>
-					<button onclick="saveAllToSheets()" id="saveBtn" class="connect-btn" disabled style="padding: 8px 16px; font-size: 13px;">
-						שמור
-					</button>
-					<button onclick="loadAllFromSheets()" id="loadBtn" class="connect-btn" disabled style="padding: 8px 16px; font-size: 13px;">
-						טען
-					</button>
-					<button onclick="disconnectFromCloud()" class="btn" style="background: #e74c3c; color: white;">
-						🔌 התנתק
-					</button>
-				</div>
-				
-				<!-- שורה 3: סטטוס -->
-				<div id="statusText" style="color: white; font-weight: bold; font-size: 14px; text-align: center;">
-					⚪ לא מחובר
-				</div>
-				
-				<!-- שורה 4: זמן אחרון -->
-				<div id="lastSaved" style="font-size: 11px; color: rgba(255,255,255,0.8); text-align: center;"></div>
-			</div>
            <nav class="nav-buttons">
 				<button onclick="showSection('planning')" class="nav-btn active">תכנון</button>
 				<button onclick="showSection('history')" class="nav-btn">טיפולים</button> 
@@ -2442,7 +2442,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -16319,18 +16319,31 @@
 		}
 
 		// ✅ Update connection status indicator
-		function updateConnectionStatus(isConnected) {
-			const statusElement = document.getElementById('connectionStatus');
-			if (!statusElement) return;
-			
-			if (isConnected) {
-				statusElement.innerHTML = '✅ מחובר לענן';
-				statusElement.style.color = '#27ae60';
-			} else {
-				statusElement.innerHTML = '❌ לא מחובר (מצב לא מקוון)';
-				statusElement.style.color = '#e74c3c';
+			function updateConnectionStatus(isConnected) {
+				// Update header status
+				const headerStatus = document.getElementById('statusText');
+				if (headerStatus) {
+					if (isConnected) {
+						headerStatus.innerHTML = '✅ מחובר';
+						headerStatus.style.color = '#4caf50';
+					} else {
+						headerStatus.innerHTML = '⚪ לא מחובר';
+						headerStatus.style.color = 'white';
+					}
+				}
+				
+				// Update tab status (if exists)
+				const tabStatus = document.getElementById('connectionStatus');
+				if (tabStatus) {
+					if (isConnected) {
+						tabStatus.innerHTML = '✅ מחובר לענן';
+						tabStatus.style.color = '#27ae60';
+					} else {
+						tabStatus.innerHTML = '❌ לא מחובר (מצב לא מקוון)';
+						tabStatus.style.color = '#e74c3c';
+					}
+				}
 			}
-		}
 
 
 		// Check connection status on page load
