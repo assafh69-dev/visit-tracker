@@ -2422,6 +2422,9 @@
 					<button onclick="loadAllFromSheets()" id="loadBtn" class="connect-btn" disabled style="padding: 8px 16px; font-size: 13px;">
 						טען
 					</button>
+					<button onclick="disconnectFromCloud()" class="btn" style="background: #e74c3c; color: white;">
+						🔌 התנתק
+					</button>
 				</div>
 				
 				<!-- שורה 3: סטטוס -->
@@ -2439,7 +2442,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3202,6 +3205,9 @@
 
 						// ודא שכל הטבלאות החדשות קיימות
 						await checkAndFixTableStructure();
+
+						// After successful connection:
+						updateConnectionStatus(true);
 
 						// טעינה אוטומטית של נתונים אם קיימים
 						if (SPREADSHEET_ID) {
@@ -16095,17 +16101,13 @@
 		async function autoCalculatePricesByDuration() {
 			console.log('⚡ Starting auto price calculation...');
 			
-			// Find all visits with zero amount that require payment
 			const zeroAmountVisits = visits.filter(visit => {
 				const paidInfo = parsePaidField(visit.paid);
-				
-				// Skip "no payment required"
 				if (paidInfo.status === '2') return false;
 				
 				const amount = parseFloat(visit.amount) || 0;
-				const duration = parseFloat(visit.duration_minutes) || 0; // ✅ FIXED: duration_minutes
+				const duration = parseFloat(visit.duration_minutes) || 0;
 				
-				// Include if: zero amount AND has duration
 				return amount === 0 && duration > 0;
 			});
 			
@@ -16114,26 +16116,21 @@
 				return;
 			}
 			
-			// Ask for hourly rate
 			const hourlyRate = prompt(
 				`נמצאו ${zeroAmountVisits.length} טיפולים ללא מחיר עם זמן מוזן.\n\n` +
 				`הזן תעריף לשעה (₪):`,
 				'150'
 			);
 			
-			if (!hourlyRate || hourlyRate.trim() === '') {
-				return;
-			}
+			if (!hourlyRate || hourlyRate.trim() === '') return;
 			
 			const rate = parseFloat(hourlyRate);
-			
 			if (isNaN(rate) || rate <= 0) {
 				showToast('⚠️ תעריף לא תקין', 'warning');
 				return;
 			}
 			
-			// Show confirmation
-			const totalHours = zeroAmountVisits.reduce((sum, v) => sum + (parseFloat(v.duration_minutes) / 60), 0); // ✅ FIXED
+			const totalHours = zeroAmountVisits.reduce((sum, v) => sum + (parseFloat(v.duration_minutes) / 60), 0);
 			const estimatedTotal = totalHours * rate;
 			
 			const confirmed = confirm(
@@ -16153,9 +16150,9 @@
 				let updatedCount = 0;
 				const updates = [];
 				
-				// Calculate and update prices
+				// Calculate prices
 				for (const visit of zeroAmountVisits) {
-					const duration = parseFloat(visit.duration_minutes); // ✅ FIXED
+					const duration = parseFloat(visit.duration_minutes);
 					const hours = duration / 60;
 					const calculatedPrice = Math.round(hours * rate);
 					
@@ -16171,29 +16168,44 @@
 					});
 				}
 				
-				// Save to localStorage
+				// Save locally
 				saveToLocalStorage();
-				
-				// Save to cloud
-				if (access_token && SPREADSHEET_ID) {
-					try {
-						await updateMultipleVisitsInSheets(zeroAmountVisits);
-					} catch (error) {
-						console.error('Error saving to cloud:', error);
-						showToast('⚠️ נשמר מקומית, אך יש בעיה בשמירה לענן', 'warning');
-					}
-				}
 				
 				hideLoading();
 				
-				// Show detailed results
+				// Show results immediately
 				showCalculationResults(updates, rate);
 				
 				// Refresh displays
 				if (typeof displayDebts === 'function') displayDebts();
 				if (typeof displayVisits === 'function') displayVisits();
 				
-				showToast(`✅ עודכנו ${updatedCount} טיפולים!`, 'success', 3000);
+				showToast(`✅ עודכנו ${updatedCount} טיפולים מקומית!`, 'success', 3000);
+				
+				// Save to cloud in background (if connected)
+				if (access_token && SPREADSHEET_ID && updatedCount > 0) {
+					if (updatedCount > 20) {
+						const shouldSaveToCloud = confirm(
+							`נשמר מקומית בהצלחה!\n\n` +
+							`האם לשמור גם לענן?\n` +
+							`(${updatedCount} טיפולים - עשוי לקחת זמן)`
+						);
+						
+						if (!shouldSaveToCloud) return;
+					}
+					
+					showToast('💾 שומר לענן ברקע...', 'info', 2000);
+					
+					// Non-blocking cloud save
+					updateMultipleVisitsInSheets(zeroAmountVisits)
+						.then(() => {
+							showToast('✅ נשמר גם לענן!', 'success', 3000);
+						})
+						.catch(error => {
+							console.error('Error saving to cloud:', error);
+							showToast('⚠️ שגיאה בשמירה לענן (נשמר מקומית)', 'warning', 4000);
+						});
+				}
 				
 			} catch (error) {
 				hideLoading();
@@ -16206,6 +16218,10 @@
 		function showCalculationResults(updates, hourlyRate) {
 			const totalAmount = updates.reduce((sum, u) => sum + u.calculatedPrice, 0);
 			const totalHours = updates.reduce((sum, u) => sum + (u.duration / 60), 0);
+			
+			// ✅ Limit display to first 50 for performance
+			const displayUpdates = updates.slice(0, 50);
+			const hasMore = updates.length > 50;
 			
 			const modalHTML = `
 				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto; direction: rtl;">
@@ -16236,9 +16252,11 @@
 					
 					<!-- Details -->
 					<div style="margin-bottom: 20px;">
-						<div style="font-weight: 600; margin-bottom: 10px; color: #555;">📋 פירוט טיפולים:</div>
+						<div style="font-weight: 600; margin-bottom: 10px; color: #555;">
+							📋 פירוט ${hasMore ? `(מציג ${displayUpdates.length} ראשונים מתוך ${updates.length})` : 'טיפולים:'}
+						</div>
 						<div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
-							${updates.map((u, index) => `
+							${displayUpdates.map((u, index) => `
 								<div style="padding: 12px; border-bottom: 1px solid #eee; ${index % 2 === 0 ? 'background: #f8f9fa;' : ''}">
 									<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
 										<span style="font-weight: 600; color: #2c3e50;">${u.client}</span>
@@ -16253,7 +16271,6 @@
 						</div>
 					</div>
 					
-					<!-- Close Button -->
 					<div style="text-align: center;">
 						<button onclick="closeAnyModal()" class="btn" style="background: #27ae60; color: white; padding: 12px 40px; font-size: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
 							✓ סגור
@@ -16267,6 +16284,63 @@
 			modalContainer.style.display = 'flex';
 			window.scrollTo({ top: 0, behavior: 'smooth' });
 		}
+
+
+		// ✅ Disconnect from cloud
+		function disconnectFromCloud() {
+			if (!access_token) {
+				showToast('ℹ️ כבר לא מחובר לענן', 'info');
+				return;
+			}
+			
+			if (confirm('האם להתנתק מהענן?\n\n✓ הנתונים נשארים שמורים מקומית\n✓ תוכל להתחבר שוב בכל עת\n✓ שינויים חדשים לא יישמרו אוטומטית לענן')) {
+				// Clear tokens
+				access_token = null;
+				SPREADSHEET_ID = null;
+				
+				// Clear from localStorage
+				localStorage.removeItem('google_access_token');
+				localStorage.removeItem('google_token_expiry');
+				localStorage.removeItem('google_spreadsheet_id');
+				
+				// Stop auto-refresh
+				if (window.tokenRefreshInterval) {
+					clearInterval(window.tokenRefreshInterval);
+					window.tokenRefreshInterval = null;
+				}
+				
+				// Update UI
+				updateConnectionStatus(false);
+				
+				showToast('🔌 התנתקת מהענן בהצלחה', 'success');
+				
+				console.log('✅ Disconnected from cloud');
+			}
+		}
+
+		// ✅ Update connection status indicator
+		function updateConnectionStatus(isConnected) {
+			const statusElement = document.getElementById('connectionStatus');
+			if (!statusElement) return;
+			
+			if (isConnected) {
+				statusElement.innerHTML = '✅ מחובר לענן';
+				statusElement.style.color = '#27ae60';
+			} else {
+				statusElement.innerHTML = '❌ לא מחובר (מצב לא מקוון)';
+				statusElement.style.color = '#e74c3c';
+			}
+		}
+
+
+		// Check connection status on page load
+		document.addEventListener('DOMContentLoaded', function() {
+			if (access_token && SPREADSHEET_ID) {
+				updateConnectionStatus(true);
+			} else {
+				updateConnectionStatus(false);
+			}
+		});
 
 
    </script>
