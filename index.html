@@ -2442,7 +2442,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4119,10 +4119,23 @@
 					return clients.filter(client => client.daysDiff === 0);
 					
 				case 'weekly':
-					// השבוע הנוכחי (א'-ש')
+					// השבוע הנוכחי (א'-ש') - כולל טיפולים שבוצעו וטיפולים מתוכננים
 					return clients.filter(client => {
-						// מראשון השבוע (כולל מאחרים מהשבוע) עד שבת השבוע
-						return client.daysDiff >= -daysSinceSunday && client.daysDiff <= daysUntilSaturday;
+						// בדיקה 1: next_visit השבוע
+						const nextVisitThisWeek = client.daysDiff >= -daysSinceSunday && client.daysDiff <= daysUntilSaturday;
+						
+						// בדיקה 2: last_visit השבוע
+						let lastVisitThisWeek = false;
+						if (client.last_visit) {
+							const lastVisitDate = new Date(client.last_visit);
+							lastVisitDate.setHours(0, 0, 0, 0);
+							const today = new Date();
+							today.setHours(0, 0, 0, 0);
+							const lastVisitDaysDiff = Math.floor((lastVisitDate - today) / (1000 * 60 * 60 * 24));
+							lastVisitThisWeek = lastVisitDaysDiff >= -daysSinceSunday && lastVisitDaysDiff <= 0;
+						}
+						
+						return nextVisitThisWeek || lastVisitThisWeek;
 					});
 					
 				case 'next_week':
@@ -5170,7 +5183,10 @@
         function showAddLocationForm() {
 			const modalHTML = `
 				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90vw; max-height: 80vh; overflow-y: auto;">
-					<h3 style="margin-bottom: 20px; color: #2c3e50;">הוספת לקוח חדש</h3>
+					<div style="position: relative;">
+						<button onclick="closeAnyModal()" style="position: absolute; top: 0; left: 0; background: #e74c3c; border: none; color: white; font-size: 20px; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">×</button>
+						<h3 style="margin-bottom: 20px; color: #2c3e50;">הוספת לקוח חדש</h3>
+					</div>
 					
 					<form id="locationForm" onsubmit="handleLocationSubmit(event)">
 						<div class="form-group">
@@ -5812,7 +5828,10 @@
        function showAddReceiptForm() {
 			const modalHTML = `
 				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90vw; max-height: 80vh; overflow-y: auto;">
-					<h3 style="margin-bottom: 20px; color: #2c3e50;">🧾 הוספת קבלה חדשה</h3>
+					<div style="position: relative;">
+						<button onclick="closeAnyModal()" style="position: absolute; top: 0; left: 0; background: #e74c3c; border: none; color: white; font-size: 20px; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">×</button>
+						<h3 style="margin-bottom: 20px; color: #2c3e50;">🧾 הוספת קבלה חדשה</h3>
+					</div>
 					
 					<form id="receiptForm" onsubmit="handleReceiptSubmit(event)">
 						<div class="form-group">
@@ -6965,6 +6984,9 @@
 				
 				document.getElementById('costBreakdown').textContent = breakdown;
 				document.getElementById('costBreakdown').style.whiteSpace = 'pre-line';
+				document.getElementById('costBreakdown').style.color = '#27ae60';
+				document.getElementById('costBreakdown').style.fontSize = '14px';
+				document.getElementById('costBreakdown').style.fontWeight = '600';
 			} else {
 				document.getElementById('costBreakdown').textContent = '';
 			}
@@ -10088,9 +10110,12 @@
 			
 			const modalHTML = `
 				<div style="background: white; padding: 30px; border-radius: 12px; max-width: 700px; width: 90vw; max-height: 80vh; overflow-y: auto; direction: rtl;">
-					<h3 style="margin-bottom: 25px; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
-						💰 הוספת תשלום חדש
-					</h3>
+					<div style="position: relative;">
+						<button onclick="closeAnyModal()" style="position: absolute; top: 0; left: 0; background: #e74c3c; border: none; color: white; font-size: 20px; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">×</button>
+						<h3 style="margin-bottom: 25px; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+							💰 הוספת תשלום חדש
+						</h3>
+					</div>
 					
 					<!-- בחירת לקוח -->
 					<div class="form-group" style="margin-bottom: 20px;">
@@ -12499,9 +12524,12 @@
 			
 			const modalHTML = `
 				<div style="background: white; padding: 30px; border-radius: 12px; max-width: 800px; width: 90vw; max-height: 85vh; overflow-y: auto; direction: rtl;">
-					<h3 style="margin-bottom: 25px; color: #2c3e50; border-bottom: 3px solid #9b59b6; padding-bottom: 15px; font-size: 24px;">
-						🔗 קישור אוטומטי תשלומים-טיפולים
-					</h3>
+					<div style="position: relative;">
+						<button onclick="closeAnyModal()" style="position: absolute; top: 0; left: 0; background: #e74c3c; border: none; color: white; font-size: 20px; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">×</button>
+						<h3 style="margin-bottom: 25px; color: #2c3e50; border-bottom: 3px solid #9b59b6; padding-bottom: 15px; font-size: 24px;">
+							🔗 קישור אוטומטי תשלומים-טיפולים
+						</h3>
+					</div>
 					
 					<!-- Summary Stats -->
 					<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px; margin-bottom: 25px; color: white;">
@@ -12834,10 +12862,18 @@
 		async function autoLinkPaymentsToVisits() {
 			console.log('🚀 Starting auto-link process...');
 			
-			// Validate connection
+			// Check connection - warn but allow to continue
 			if (!access_token || !SPREADSHEET_ID) {
-				showToast('התחבר לגוגל שיטס קודם', 'warning');
-				return;
+				const continueOffline = confirm(
+					'⚠️ אין חיבור לענן!\n\n' +
+					'הקישורים יישמרו מקומית בלבד.\n' +
+					'תצטרך לשמור לענן ידנית אחר כך.\n\n' +
+					'להמשיך בכל זאת?'
+				);
+				
+				if (!continueOffline) {
+					return;
+				}
 			}
 			
 			// Show loading
@@ -13719,6 +13755,25 @@
 							<label for="visitFormNotes" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">📝 הערות:</label>
 							<textarea id="visitFormNotes" rows="2" placeholder="הערות נוספות..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical;">${isEdit ? (visitData.notes || '') : ''}</textarea>
 						</div>
+
+						${isEdit ? `
+						<!-- סטטוס תשלום -->
+						<div style="background: ${visitData.paid === '0' ? '#fff3cd' : visitData.paid === '2' ? '#e8f5e9' : '#d4edda'}; padding: 15px; border-radius: 8px; border: 2px solid ${visitData.paid === '0' ? '#ffc107' : visitData.paid === '2' ? '#4caf50' : '#27ae60'};">
+							<div style="display: flex; justify-content: space-between; align-items: center;">
+								<div>
+									<span style="font-weight: 600; color: #555;">💳 סטטוס תשלום:</span>
+									<span style="font-weight: bold; margin-right: 10px; color: ${visitData.paid === '0' ? '#856404' : '#155724'};">
+										${visitData.paid === '0' ? '❌ לא שולם' : visitData.paid === '2' ? '🚫 ללא תשלום' : visitData.paid === '3' ? '½ שולם חלקית' : '✅ שולם'}
+									</span>
+								</div>
+								${visitData.paid !== '0' && visitData.paid !== '2' ? `
+									<button type="button" onclick="cancelVisitPaidStatus('${visitId}')" style="background: #e74c3c; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+										🔓 בטל סימון שולם
+									</button>
+								` : ''}
+							</div>
+						</div>
+						` : ''}
 						
 						<!-- כפתורי פעולה -->
 						<div style="display: flex; gap: 12px; justify-content: center; margin-top: 10px; padding-top: 15px; border-top: 1px solid #e9ecef;">
@@ -16355,6 +16410,66 @@
 			}
 		});
 
+
+		// ✅ Cancel "paid" status for a visit - allow re-linking
+		async function cancelVisitPaidStatus(visitId) {
+			const visit = visits.find(v => v.ID === visitId);
+			if (!visit) {
+				showToast('⚠️ טיפול לא נמצא', 'warning');
+				return;
+			}
+			
+			const paidInfo = parsePaidField(visit.paid);
+			
+			if (paidInfo.status === '0') {
+				showToast('ℹ️ הטיפול כבר מסומן כ"לא שולם"', 'info');
+				return;
+			}
+			
+			// Check if visit has linked payments
+			const linkedPayments = paymentVisitLinks.filter(link => link.visit_id === visitId);
+			
+			let confirmMessage = `האם לבטל את סימון "שולם" לטיפול?\n\n`;
+			confirmMessage += `📅 תאריך: ${formatDate(visit.date)}\n`;
+			confirmMessage += `💰 סכום: ₪${visit.amount}\n`;
+			
+			if (linkedPayments.length > 0) {
+				confirmMessage += `\n⚠️ שים לב: יש ${linkedPayments.length} קישורי תשלום לטיפול זה.\n`;
+				confirmMessage += `הקישורים יישארו, רק הסטטוס ישתנה.`;
+			}
+			
+			if (!confirm(confirmMessage)) {
+				return;
+			}
+			
+			try {
+				// Update status to "not paid"
+				visit.paid = '0';
+				
+				// Save locally
+				saveToLocalStorage();
+				
+				// Save to cloud if connected
+				if (access_token && SPREADSHEET_ID) {
+					try {
+						await updateMultipleVisitsInSheets([visit]);
+					} catch (error) {
+						console.error('Error saving to cloud:', error);
+						showToast('⚠️ נשמר מקומית, שגיאה בשמירה לענן', 'warning');
+					}
+				}
+				
+				showToast('✅ סטטוס התשלום בוטל - הטיפול זמין לקישור מחדש', 'success');
+				
+				// Refresh displays
+				if (typeof displayVisits === 'function') displayVisits();
+				if (typeof displayDebts === 'function') displayDebts();
+				
+			} catch (error) {
+				console.error('Error canceling paid status:', error);
+				showToast('⌫ שגיאה בביטול סטטוס', 'error');
+			}
+		}
 
    </script>
 </body>
