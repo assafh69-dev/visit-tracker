@@ -3319,7 +3319,7 @@
 				console.log('✅ Token set in gapi.client');
 				
 				// עדכון UI
-				updateCloudStatus('✅ מחובר וממסונכרן', 'התחבר');
+				updateCloudStatus('✅ מחובר ומסונכרן', 'התחבר');
 				document.getElementById('statusText').classList.add('connected');
 				document.getElementById('saveBtn').disabled = false;
 				document.getElementById('loadBtn').disabled = false;
@@ -4356,7 +4356,16 @@
 		// רינדור רגיל (יומי/מאחרות)
 		function renderRegularPlanningList() {
 			const container = document.getElementById('planningCardsContainer');
-			container.innerHTML = planningClients.map(client => renderClientRow(client)).join('');
+			
+			// הוספת כותרת עם תאריך לתצוגה יומית
+			let headerHtml = '';
+			if (currentPlanningView === 'daily') {
+				const today = new Date();
+				const formattedDate = today.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+				headerHtml = `<div class="day-content-header">${planningClients.length} טיפולים היום - ${formattedDate}</div>`;
+			}
+			
+			container.innerHTML = headerHtml + planningClients.map(client => renderClientRow(client)).join('');
 			setTimeout(setTodayAsDefault, 100);
 		}
 
@@ -5389,39 +5398,32 @@
 						</h2>
 					</div>
 					
-					<!-- Statistics Cards -->
-					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
-						<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 10px; color: white;">
-							<div style="font-size: 13px; opacity: 0.9;">סה"כ טיפולים</div>
-							<div style="font-size: 28px; font-weight: bold;">${totalVisits}</div>
+					<!-- Compact Statistics + Next Treatment -->
+					<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; align-items: center;">
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; flex: 1;">
+							<span style="background: #667eea; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px;">
+								🔧 ${totalVisits} טיפולים
+							</span>
+							<span style="background: #f093fb; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px;">
+								💵 ₪${totalIncome.toFixed(0)}
+							</span>
+							<span style="background: #4facfe; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px;">
+								✓ ₪${totalPaid.toFixed(0)}
+							</span>
+							<span style="background: ${totalDebt > 0 ? '#e74c3c' : '#27ae60'}; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px;">
+								${totalDebt > 0 ? '⚠ חוב ₪' + Math.abs(totalDebt).toFixed(0) : '✓ ללא חוב'}
+							</span>
 						</div>
-						<div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 15px; border-radius: 10px; color: white;">
-							<div style="font-size: 13px; opacity: 0.9;">סה"כ הכנסות</div>
-							<div style="font-size: 28px; font-weight: bold;">₪${totalIncome.toFixed(0)}</div>
-						</div>
-						<div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 15px; border-radius: 10px; color: white;">
-							<div style="font-size: 13px; opacity: 0.9;">שולם</div>
-							<div style="font-size: 28px; font-weight: bold;">₪${totalPaid.toFixed(0)}</div>
-						</div>
-						<div style="background: ${totalDebt > 0 ? 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' : 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'}; padding: 15px; border-radius: 10px; color: white;">
-							<div style="font-size: 13px; opacity: 0.9;">${totalDebt > 0 ? 'חוב' : 'ללא חובות'}</div>
-							<div style="font-size: 28px; font-weight: bold;">₪${Math.abs(totalDebt).toFixed(0)}</div>
-						</div>
-					</div>
-					
-					<!-- Next Treatment Info -->
-					<div style="background: #e8f5e9; border: 2px solid #4caf50; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-						<div style="display: flex; justify-content: space-between; align-items: center;">
-							<div>
-								<div style="font-size: 14px; color: #2e7d32; margin-bottom: 5px;">📅 טיפול הבא מתוכנן ל:</div>
-								<div style="font-size: 20px; font-weight: bold; color: #1b5e20;">${formatDate(client.next_visit)}</div>
-								<div style="font-size: 12px; color: #666; margin-top: 3px;">טיפול אחרון: ${lastVisit !== 'אין' ? formatDate(lastVisit) : 'אין'}</div>
+						<div style="display: flex; align-items: center; gap: 10px; background: #e8f5e9; padding: 8px 12px; border-radius: 8px; border: 1px solid #4caf50;">
+							<div style="font-size: 12px; color: #2e7d32;">
+								<div>📅 הבא: <strong>${formatDate(client.next_visit)}</strong></div>
+								<div style="font-size: 11px; color: #666;">אחרון: ${lastVisit !== 'אין' ? formatDate(lastVisit) : 'אין'}</div>
 							</div>
-								<button onclick="startTreatment('${clientId}')" 
-										title="התחל טיפול עכשיו"
-										style="padding: 10px 14px; background: #4caf50; color: white; border: none; border-radius: 8px; font-size: 20px; cursor: pointer;">
-									▶️
-								</button>
+							<button onclick="startTreatment('${clientId}')" 
+									title="התחל טיפול עכשיו"
+									style="padding: 6px 10px; background: #4caf50; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer;">
+								▶️
+							</button>
 						</div>
 					</div>
 					
@@ -5524,49 +5526,57 @@
 							<table style="width: 100%; border-collapse: collapse;">
 								<thead style="position: sticky; top: 0; background: #f8f9fa;">
 									<tr style="border-bottom: 2px solid #dee2e6;">
-										<th style="padding: 10px; text-align: right;">תאריך</th>
-										<th style="padding: 10px; text-align: right;">עבודה</th>
-										<th style="padding: 10px; text-align: right;">זמן</th>
-										<th style="padding: 10px; text-align: right;">סכום</th>
-										<th style="padding: 10px; text-align: right;">תשלום</th>
-										<th style="padding: 10px; text-align: center;">פעולות</th>
+										<th style="padding: 8px; text-align: right;">תאריך</th>
+										<th style="padding: 8px; text-align: right;">זמן</th>
+										<th style="padding: 8px; text-align: right;">סכום</th>
+										<th style="padding: 8px; text-align: right;">תשלום</th>
+										<th style="padding: 8px; text-align: center;">פעולות</th>
 									</tr>
 								</thead>
 								<tbody>
-									${clientVisits.map(visit => {
+									${clientVisits.map((visit, index) => {
 										const paidInfo = parsePaidField(visit.paid);
 										let paymentBadge = '';
 
 										if (paidInfo.status === '1') {
-											paymentBadge = `<span style="background: #d4edda; color: #155724; padding: 3px 8px; border-radius: 4px; font-size: 12px;">✓ שולם</span>`;
+											paymentBadge = `<span style="background: #d4edda; color: #155724; padding: 2px 6px; border-radius: 4px; font-size: 11px;">✓</span>`;
 										} else if (paidInfo.status === '3') {
-											paymentBadge = `<span style="background: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 4px; font-size: 12px;">⚠ חלקי</span>`;
+											paymentBadge = `<span style="background: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 4px; font-size: 11px;">½</span>`;
 										} else if (paidInfo.status === '2') {
-											paymentBadge = `<span style="background: #e2e3e5; color: #383d41; padding: 3px 8px; border-radius: 4px; font-size: 12px;">🚫 ללא</span>`;
+											paymentBadge = `<span style="background: #e2e3e5; color: #383d41; padding: 2px 6px; border-radius: 4px; font-size: 11px;">-</span>`;
 										} else {
-											paymentBadge = `<span style="background: #f8d7da; color: #721c24; padding: 3px 8px; border-radius: 4px; font-size: 12px;">✗ לא שולם</span>`;
+											paymentBadge = `<span style="background: #f8d7da; color: #721c24; padding: 2px 6px; border-radius: 4px; font-size: 11px;">✗</span>`;
 										}
 										
 										const duration = visit.duration_minutes ? `${(visit.duration_minutes / 60).toFixed(1)}ש` : '-';
+										const workDone = visit.work_done || '';
+										const hasWorkDone = workDone.length > 0;
 										
 										return `
-											<tr style="border-bottom: 1px solid #dee2e6;">
-												<td style="padding: 10px;">${formatDate(visit.date)}</td>
-												<td style="padding: 10px; font-size: 13px; color: #666;">${visit.work_done || '-'}</td>
-												<td style="padding: 10px;">${duration}</td>
-												<td style="padding: 10px; font-weight: bold; color: #27ae60;">${visit.amount || 0}₪</td>
-												<td style="padding: 10px;">${paymentBadge}</td>
-												<td style="padding: 10px; text-align: center;">
+											<tr style="border-bottom: 1px solid #dee2e6; cursor: ${hasWorkDone ? 'pointer' : 'default'};" 
+												onclick="${hasWorkDone ? `toggleVisitDetails('visit-details-${index}')` : ''}">
+												<td style="padding: 8px; font-size: 13px;">${formatDate(visit.date)}</td>
+												<td style="padding: 8px; font-size: 13px;">${duration}</td>
+												<td style="padding: 8px; font-weight: bold; color: #27ae60;">${visit.amount || 0}₪</td>
+												<td style="padding: 8px;">${paymentBadge}</td>
+												<td style="padding: 8px; text-align: center;" onclick="event.stopPropagation();">
 													<button onclick="closeAnyModal(); setTimeout(() => showVisitForm('${visit.ID}'), 100);" 
-															style="padding: 5px 8px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 5px;" 
+															style="padding: 4px 6px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" 
 															title="עריכת טיפול">✏️</button>
 													${paidInfo.status === '0' ? `
-														<button onclick="closeAnyModal(); setTimeout(() => showAddPaymentModal('${clientId}', '${visit.ID}'), 100);" 
-																style="padding: 5px 8px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;" 
-																title="תשלום מהיר">💰</button>
+														<button onclick="closeAnyModal(); setTimeout(() => showAddPaymentModal('${clientId}'), 100);" 
+																style="padding: 4px 6px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 3px;" 
+																title="תשלום">💰</button>
 													` : ''}
 												</td>
 											</tr>
+											${hasWorkDone ? `
+												<tr id="visit-details-${index}" style="display: none; background: #f8f9fa;">
+													<td colspan="5" style="padding: 8px 15px; font-size: 12px; color: #666; border-bottom: 1px solid #dee2e6;">
+														📝 ${workDone}
+													</td>
+												</tr>
+											` : ''}
 										`;
 									}).join('')}
 								</tbody>
@@ -15759,9 +15769,12 @@
 					const amount = visit.amount || 0;
 					const workDone = visit.work_done || 'ללא תיאור';
 					
+					const paidInfo = parsePaidField(visit.paid);
+					const isPaid = paidInfo.status === '1';
+
 					return `
-						<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 8px; opacity: 0.8;">
-							<div style="display: flex; justify-content: space-between;">
+						<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 8px;">
+							<div style="display: flex; justify-content: space-between; align-items: center;">
 								<div style="flex: 1;">
 									<div style="font-weight: bold; color: #2c3e50;">${clientName}</div>
 									<div style="font-size: 12px; color: #666;">${workDone}</div>
@@ -15769,8 +15782,19 @@
 										${startTime} → ${endTime}
 									</div>
 								</div>
-								<div style="text-align: left; color: #27ae60; font-weight: bold;">
-									${amount}₪
+								<div style="display: flex; align-items: center; gap: 8px;">
+									<div style="text-align: left; color: #27ae60; font-weight: bold;">
+										${amount}₪
+										${isPaid ? '<span style="color: #27ae60; font-size: 11px;">✓</span>' : '<span style="color: #e74c3c; font-size: 11px;">✗</span>'}
+									</div>
+									<button onclick="showVisitForm('${visit.ID}')" 
+											style="padding: 5px 8px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;" 
+											title="עריכת טיפול">✏️</button>
+									${!isPaid ? `
+										<button onclick="showAddPaymentModal('${visit.location_id}')" 
+												style="padding: 5px 8px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;" 
+												title="הוסף תשלום">💰</button>
+									` : ''}
 								</div>
 							</div>
 						</div>
@@ -16570,6 +16594,14 @@
 			console.log('✅ All tab filters cleared');
 		}
 
+
+		// Toggle visit details row
+		function toggleVisitDetails(rowId) {
+			const row = document.getElementById(rowId);
+			if (row) {
+				row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+			}
+		}
 
    </script>
 </body>
