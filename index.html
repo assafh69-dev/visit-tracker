@@ -2443,7 +2443,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4301,16 +4301,19 @@
 					}
 				});
 				
-				// חישוב התאריך של היום הזה בשבוע
-				const dayIndex = dayIndexMap[dayName];
-				let daysDiff = dayIndex - todayDayIndex;
-				if (currentPlanningView === 'next_week') {
-					daysDiff += 7; // שבוע הבא
+				// חישוב התאריך רק לשבוע נוכחי ושבוע הבא
+				let formattedDate = '';
+				if (currentPlanningView === 'weekly' || currentPlanningView === 'next_week') {
+					const dayIndex = dayIndexMap[dayName];
+					let daysDiff = dayIndex - todayDayIndex;
+					if (currentPlanningView === 'next_week') {
+						daysDiff += 7; // שבוע הבא
+					}
+					const dayDate = new Date(today);
+					dayDate.setDate(today.getDate() + daysDiff);
+					formattedDate = dayDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
 				}
-				const dayDate = new Date(today);
-				dayDate.setDate(today.getDate() + daysDiff);
-				const formattedDate = dayDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
-				
+
 				return { dayName, clients: dayClients, date: formattedDate };
 			});
 			
@@ -4341,7 +4344,7 @@
 							const isActive = selectedDayTab ? (day.dayName === selectedDayTab) : (index === 0);
 							return `<div class="day-content ${isActive ? 'active' : ''}" data-day="${day.dayName}">
 										<div class="day-content-header">
-											${day.clients.length} טיפולים ליום ${day.dayName}' - ${day.date}
+											${day.clients.length} טיפולים ליום ${day.dayName}'${day.date ? ' - ' + day.date : ''}
 										</div>
 										${day.clients.map(client => renderClientRow(client)).join('')}
 									</div>`;
