@@ -2443,7 +2443,8 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
+				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2999,6 +3000,114 @@
 				</div>
 			</section>
 
+			<!-- Tasks Section -->
+			<section id="tasks" class="section" style="display: none;">
+				<div class="section-header">
+					<h2>📋 משימות מיוחדות</h2>
+					<div style="display: flex; gap: 10px; align-items: center;">
+						<button onclick="showAddTaskModal()" class="add-btn" style="background: #9b59b6;">
+							➕ משימה חדשה
+						</button>
+					</div>
+				</div>
+				
+				<!-- Tasks Filters -->
+				<div class="filters-panel" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+					<div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
+						<!-- Status Filter -->
+						<div style="flex: 1; min-width: 150px;">
+							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">סטטוס:</label>
+							<select id="filterTaskStatus" onchange="displayTasks()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+								<option value="">הכל</option>
+								<option value="pending">ממתין</option>
+								<option value="in_progress">בתהליך</option>
+								<option value="completed">הושלם</option>
+								<option value="cancelled">בוטל</option>
+							</select>
+						</div>
+						
+						<!-- Type Filter -->
+						<div style="flex: 1; min-width: 150px;">
+							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">סוג משימה:</label>
+							<select id="filterTaskType" onchange="displayTasks()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+								<option value="">הכל</option>
+								<option value="pest_control">🪲 הדברה</option>
+								<option value="planting">🌱 שתילה</option>
+								<option value="tree_trimming">✂️ גיזום עצים</option>
+								<option value="upgrade">🏡 שדרוג גינה</option>
+								<option value="repair">🔧 תיקון</option>
+								<option value="other">📦 אחר</option>
+							</select>
+						</div>
+						
+						<!-- Client Filter -->
+						<div style="flex: 1; min-width: 200px;">
+							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">לקוח:</label>
+							<input type="text" id="filterTaskClient" placeholder="🔍 חיפוש לקוח..." 
+								   onkeyup="displayTasks()" 
+								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+						</div>
+						
+						<!-- Date Range -->
+						<div style="flex: 1; min-width: 150px;">
+							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">מתאריך:</label>
+							<input type="date" id="filterTaskDateFrom" onchange="displayTasks()" 
+								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+						</div>
+						
+						<div style="flex: 1; min-width: 150px;">
+							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">עד תאריך:</label>
+							<input type="date" id="filterTaskDateTo" onchange="displayTasks()" 
+								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+						</div>
+						
+						<!-- Clear Filters -->
+						<div style="align-self: flex-end;">
+							<button onclick="clearTaskFilters()" style="padding: 8px 15px; background: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+								🗑️ נקה
+							</button>
+						</div>
+					</div>
+				</div>
+				
+				<!-- Tasks Stats -->
+				<div id="tasksStats" style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+					<div style="background: #fff3cd; padding: 10px 20px; border-radius: 8px; border-right: 4px solid #ffc107;">
+						<div style="font-size: 12px; color: #856404;">ממתינות</div>
+						<div style="font-size: 24px; font-weight: bold; color: #856404;" id="statsPending">0</div>
+					</div>
+					<div style="background: #cce5ff; padding: 10px 20px; border-radius: 8px; border-right: 4px solid #007bff;">
+						<div style="font-size: 12px; color: #004085;">בתהליך</div>
+						<div style="font-size: 24px; font-weight: bold; color: #004085;" id="statsInProgress">0</div>
+					</div>
+					<div style="background: #d4edda; padding: 10px 20px; border-radius: 8px; border-right: 4px solid #28a745;">
+						<div style="font-size: 12px; color: #155724;">הושלמו</div>
+						<div style="font-size: 24px; font-weight: bold; color: #155724;" id="statsCompleted">0</div>
+					</div>
+				</div>
+				
+				<!-- Tasks Table -->
+				<div class="table-container" style="overflow-x: auto;">
+					<table id="tasksTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+						<thead style="background: #9b59b6; color: white;">
+							<tr>
+								<th style="padding: 12px; text-align: right;">סטטוס</th>
+								<th style="padding: 12px; text-align: right;">סוג</th>
+								<th style="padding: 12px; text-align: right;">לקוח</th>
+								<th style="padding: 12px; text-align: right;">תיאור</th>
+								<th style="padding: 12px; text-align: right;">תאריך יעד</th>
+								<th style="padding: 12px; text-align: right;">עלות משוערת</th>
+								<th style="padding: 12px; text-align: center;">פעולות</th>
+							</tr>
+						</thead>
+						<tbody id="tasksTableBody">
+							<!-- Will be populated by displayTasks() -->
+						</tbody>
+					</table>
+				</div>
+			</section>
+
+
 			<!-- System Section -->
 			<section id="system" class="section">
 				<h2>🛠️ מערכת</h2>
@@ -3130,6 +3239,7 @@
         let receipts = [];
 		let payments = [];
 		let paymentVisitLinks = [];
+		let tasks = [];
         let currentFilter = 'today';
 		
 		// הגדרות עלות
@@ -3385,6 +3495,7 @@
 			await loadLocationsFromSheets();
 			await loadVisitsFromSheets(); 
 			await loadReceiptsFromSheets();
+			await loadTasksFromSheets();
 		}
 
 		async function loadOptionalData() {
@@ -3822,6 +3933,7 @@
 				localStorage.setItem('payments_data', JSON.stringify(payments));
 				localStorage.setItem('payment_links_data', JSON.stringify(paymentVisitLinks));
 				localStorage.setItem('incomes_data', JSON.stringify(incomes));
+				localStorage.setItem('tasks_data', JSON.stringify(tasks));
 				
 				console.log('Data saved to local storage');
 			} catch (error) {
@@ -3838,6 +3950,7 @@
 				const savedPaymentLinks = localStorage.getItem('payment_links_data');
 				const savedIncomes = localStorage.getItem('incomes_data');
 				const savedCostSettings = localStorage.getItem('cost_settings');
+				const savedTasks = localStorage.getItem('tasks_data');
 				
 				if (savedLocations) {
 					locations = JSON.parse(savedLocations);
@@ -3857,6 +3970,9 @@
 				if (savedIncomes) {
 					incomes = JSON.parse(savedIncomes);
 				}
+				if (savedTasks) {
+					tasks = JSON.parse(savedTasks);
+				}
 				if (savedCostSettings) {
 					costSettings = JSON.parse(savedCostSettings);
 					document.getElementById('hourlyRate').value = costSettings.hourlyRate;
@@ -3869,8 +3985,6 @@
 				console.error('Error loading from local storage:', error);
 			}
 		}
-
-
       
         // Navigation
         function showSection(sectionName) {
@@ -5450,6 +5564,12 @@
 								style="padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 15px; color: #666;">
 							ℹ️ פרטים
 						</button>
+						<button onclick="switchClientProfileTab('tasks')" 
+								class="client-profile-tab" 
+								data-tab="tasks"
+								style="padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 15px; color: #666;">
+							📋 משימות
+						</button>
 					</div>
 					
 					<!-- Tab Content -->
@@ -5731,6 +5851,49 @@
 						</div>
 					</div>
 				`;
+			} } else if (tabName === 'tasks') {
+				// Tasks tab
+				const clientTasks = tasks.filter(t => t.client_id === clientId);
+				
+				html = `
+					<div style="margin-bottom: 15px; text-align: center;">
+						<button onclick="closeAnyModal(); setTimeout(() => { showAddTaskModal('${clientId}'); }, 100);" 
+								style="padding: 12px 24px; background: #9b59b6; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold;">
+							➕ הוסף משימה
+						</button>
+					</div>
+				`;
+				
+				if (clientTasks.length === 0) {
+					html += '<div style="text-align: center; padding: 40px; color: #666;">אין משימות ללקוח זה</div>';
+				} else {
+					html += `<div style="max-height: 300px; overflow-y: auto;">`;
+					clientTasks.forEach(task => {
+						const typeInfo = TASK_TYPES[task.type] || TASK_TYPES['other'];
+						const statusInfo = TASK_STATUSES[task.status] || TASK_STATUSES['pending'];
+						
+						html += `
+							<div style="background: ${statusInfo.bg}; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-right: 4px solid ${statusInfo.color};">
+								<div style="display: flex; justify-content: space-between; align-items: start;">
+									<div style="flex: 1;">
+										<div style="font-weight: 600; color: #333;">
+											${typeInfo.icon} ${task.description}
+										</div>
+										<div style="font-size: 12px; color: #666; margin-top: 5px;">
+											📅 יעד: ${formatDate(task.due_date)} | ${statusInfo.icon} ${statusInfo.label}
+										</div>
+										${task.notes ? `<div style="font-size: 11px; color: #888; margin-top: 3px;">💬 ${task.notes}</div>` : ''}
+									</div>
+									<div style="display: flex; gap: 5px;">
+										<button onclick="closeAnyModal(); setTimeout(() => showEditTaskModal('${task.ID}'), 100);" 
+												style="padding: 4px 8px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">✏️</button>
+									</div>
+								</div>
+							</div>
+						`;
+					});
+					html += `</div>`;
+				}
 			}
 			
 			contentDiv.innerHTML = html;
@@ -7217,7 +7380,7 @@
 			
 			try {
 				// בדיקת כותרות בכל גיליון - כולל החדשים
-				const sheetsToCheck = ['Locations', 'Visits', 'Receipts', 'TelegramVisits', 'TelegramIncomes', 'Payments', 'PaymentVisitLink'];
+				const sheetsToCheck = ['Locations', 'Visits', 'Receipts', 'TelegramVisits', 'TelegramIncomes', 'Payments', 'PaymentVisitLink', 'Tasks'];
 				
 				for (const sheetName of sheetsToCheck) {
 					try {
@@ -7253,8 +7416,9 @@
 				'TelegramVisits': ['message_id', 'date', 'text', 'processed', 'location_id', 'visit_id'],
 				'TelegramIncomes': ['message_id', 'date', 'text', 'processed', 'receipt_id'],
 				'Payments': ['ID', 'date', 'time', 'amount', 'payment_method', 'source_type', 'client_id', 'client_name', 'notes', 'status', 'created_at', 'reference', 'check_date', 'bank_account', 'payment_details'],
-				'PaymentVisitLink': ['ID', 'payment_id', 'visit_id', 'amount_allocated']
-			};
+				'PaymentVisitLink': ['ID', 'payment_id', 'visit_id', 'amount_allocated'],
+				'Tasks': ['ID', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date']
+				};
 			
 			const headers = headersMap[sheetName];
 			if (!headers) {
@@ -7289,7 +7453,8 @@
 				await addHeadersToSheet('PaymentVisitLink');   
 				await addHeadersToSheet('TelegramVisits');     
 				await addHeadersToSheet('TelegramIncomes');    
-				
+				await addHeadersToSheet('Tasks');
+
 				// הוספת כותרות ל-SystemSettings
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
@@ -8402,8 +8567,15 @@
 		}
 
 
-		// ✅ Show modal to link existing payment to client debts
-		function showLinkPaymentModal(clientId, totalDebt) {
+		// ✅ UNIFIED: Show link payment modal - can be called from debts or payments tab
+		function showLinkPaymentModal(clientId, totalDebt, preSelectedPaymentId = null) {
+			// If called with paymentId only (from payments tab), extract clientId
+			if (!totalDebt && typeof clientId === 'string' && clientId.startsWith('PAY')) {
+				// This is actually a paymentId, redirect to the proper function
+				showLinkPaymentModalFromPayments(clientId);
+				return;
+			}
+			
 			const client = locations.find(loc => loc.ID === clientId);
 			if (!client) {
 				showToast('❌ לא נמצא לקוח', 'error');
@@ -8420,7 +8592,6 @@
 			
 			// Calculate available amount for each payment
 			const paymentsWithAvailable = clientPayments.map(payment => {
-				// Get all links for this payment
 				const links = paymentVisitLinks.filter(link => link.payment_id === payment.ID);
 				const allocatedAmount = links.reduce((sum, link) => sum + (parseFloat(link.amount_allocated) || 0), 0);
 				const availableAmount = parseFloat(payment.amount) - allocatedAmount;
@@ -8430,12 +8601,25 @@
 					allocatedAmount,
 					availableAmount
 				};
-			}).filter(p => p.availableAmount > 0); // Only show payments with available balance
+			}).filter(p => p.availableAmount > 0);
 			
 			if (paymentsWithAvailable.length === 0) {
 				showToast('ℹ️ כל התשלומים הקיימים כבר מקושרים במלואם. השתמש ב"➕ תשלום" להוספת תשלום חדש.', 'info');
 				return;
 			}
+			
+			// If preSelectedPaymentId provided, use it; otherwise use first available
+			const selectedPayment = preSelectedPaymentId 
+				? paymentsWithAvailable.find(p => p.ID === preSelectedPaymentId) || paymentsWithAvailable[0]
+				: paymentsWithAvailable[0];
+			
+			// Store data for later use
+			window.currentLinkData = {
+				clientId: clientId,
+				paymentId: selectedPayment.ID,
+				availableAmount: selectedPayment.availableAmount,
+				totalDebt: totalDebt || 0
+			};
 			
 			// Create modal HTML
 			const modalHTML = `
@@ -8443,81 +8627,113 @@
 					<div style="background: white; border-radius: 12px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
 						<!-- Header -->
 						<div style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); color: white; padding: 20px; border-radius: 12px 12px 0 0; position: relative;">
-							<h2 style="margin: 0; font-size: 20px;">💳 קישור תשלום ללקוח</h2>
+							<button onclick="closeAnyModal()" style="position: absolute; top: 15px; left: 15px; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">×</button>
+							<h2 style="margin: 0; font-size: 20px;">💳 קישור תשלום לטיפולים</h2>
 							<p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">${client.name}</p>
-							<button onclick="closeAnyModal()" style="position: absolute; top: 15px; left: 15px...">×</button>
 						</div>
 						
 						<!-- Body -->
 						<div style="padding: 20px;">
-							<!-- Debt Info -->
-							<div style="background: #fff3cd; border-right: 4px solid #ffc107; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-								<div style="font-size: 14px; color: #856404; margin-bottom: 5px;">💰 חוב נוכחי:</div>
-								<div style="font-size: 24px; font-weight: bold; color: #856404;">${totalDebt.toFixed(0)} ₪</div>
-							</div>
+							<!-- Payment Selection (if multiple) -->
+							${paymentsWithAvailable.length > 1 ? `
+								<div style="margin-bottom: 15px;">
+									<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">בחר תשלום:</label>
+									<select id="selectedPaymentId" onchange="updateSelectedPayment()" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
+										${paymentsWithAvailable.map(p => `
+											<option value="${p.ID}" ${p.ID === selectedPayment.ID ? 'selected' : ''}>
+												${formatDate(p.date)} - ₪${p.amount} (זמין: ₪${p.availableAmount.toFixed(0)})
+											</option>
+										`).join('')}
+									</select>
+								</div>
+							` : ''}
 							
-							<!-- Payment Selection -->
-							<div style="margin-bottom: 20px;">
-								<label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333;">בחר תשלום לקישור:</label>
-								<select id="selectedPaymentId" onchange="updateLinkPaymentPreview()" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;">
-									<option value="">-- בחר תשלום --</option>
-									${paymentsWithAvailable.map(p => `
-										<option value="${p.ID}" data-available="${p.availableAmount}">
-											${formatDate(p.date)} - ${p.availableAmount.toFixed(0)} ₪ זמין (${p.payment_method || 'מזומן'})
-										</option>
-									`).join('')}
-								</select>
+							<!-- Payment Info -->
+							<div style="background: #e8f5e9; border: 2px solid #4caf50; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+								<div style="display: flex; justify-content: space-between; align-items: center;">
+									<div>
+										<div style="font-size: 12px; color: #666;">תשלום מתאריך ${formatDate(selectedPayment.date)}</div>
+										<div style="font-size: 20px; font-weight: bold; color: #2e7d32;">₪${selectedPayment.availableAmount.toFixed(0)} זמין לקישור</div>
+									</div>
+									<div style="font-size: 24px;">💰</div>
+								</div>
 							</div>
 							
 							<!-- Link Method -->
-							<div style="margin-bottom: 20px;">
-								<label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333;">איך לחלק?</label>
+							<div style="margin-bottom: 15px;">
+								<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">שיטת קישור:</label>
 								<div style="display: flex; gap: 10px;">
-									<label style="flex: 1; padding: 12px; border: 2px solid #9b59b6; border-radius: 6px; cursor: pointer; text-align: center; background: #f8f4fb;">
-										<input type="radio" name="linkMethod" value="auto" checked onchange="updateLinkPaymentPreview()" style="margin-left: 8px;">
-										<span style="font-weight: 600;">אוטומטי</span>
-										<div style="font-size: 11px; color: #666; margin-top: 4px;">לפי הטיפולים הישנים</div>
+									<label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer;">
+										<input type="radio" name="linkMethod" value="auto" checked onchange="updateLinkPaymentPreviewSingle('${selectedPayment.ID}')" style="margin-left: 8px;">
+										<div>
+											<div style="font-weight: 600;">🤖 אוטומטי</div>
+											<div style="font-size: 11px; color: #666;">מהישן לחדש</div>
+										</div>
 									</label>
-									<label style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer; text-align: center;">
-										<input type="radio" name="linkMethod" value="manual" onchange="updateLinkPaymentPreview()" style="margin-left: 8px;">
-										<span style="font-weight: 600;">ידני</span>
-										<div style="font-size: 11px; color: #666; margin-top: 4px;">אני אבחר</div>
+									<label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer;">
+										<input type="radio" name="linkMethod" value="manual" onchange="updateLinkPaymentPreviewSingle('${selectedPayment.ID}')" style="margin-left: 8px;">
+										<div>
+											<div style="font-weight: 600;">✋ ידני</div>
+											<div style="font-size: 11px; color: #666;">בחירה חופשית</div>
+										</div>
 									</label>
 								</div>
 							</div>
 							
 							<!-- Preview Area -->
-							<div id="linkPreviewArea" style="min-height: 100px;">
-								<!-- Will be filled by updateLinkPaymentPreview() -->
+							<div id="linkPreviewArea" style="min-height: 100px; border: 1px solid #eee; border-radius: 8px; padding: 10px;">
+								<div style="text-align: center; color: #999; padding: 20px;">טוען...</div>
 							</div>
-						</div>
-						
-						<!-- Footer -->
-						<div style="padding: 15px 20px; background: #f8f9fa; border-radius: 0 0 12px 12px; display: flex; gap: 10px; justify-content: flex-end;">
-							<button onclick="closeAnyModal()" style="padding: 10px 20px; background: #6c757d...">
-								ביטול
-							</button>
-							<button onclick="executeLinkPayment()" id="executeLinkBtn" disabled style="padding: 10px 20px; background: #9b59b6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
-								קשר תשלום ✓
-							</button>
+							
+							<!-- Action Buttons -->
+							<div style="display: flex; gap: 10px; margin-top: 20px;">
+								<button id="executeLinkBtn" onclick="executeLinkPaymentSingle('${selectedPayment.ID}')" 
+										style="flex: 1; padding: 12px; background: #9b59b6; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;" disabled>
+									🔗 בצע קישור
+								</button>
+								<button onclick="closeAnyModal()" 
+										style="padding: 12px 20px; background: #95a5a6; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
+									ביטול
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>
 			`;
 			
-			// Inject modal
-			document.body.insertAdjacentHTML('beforeend', modalHTML);
+			// Show modal
+			const modalContainer = document.createElement('div');
+			modalContainer.id = 'linkPaymentModalContainer';
+			modalContainer.innerHTML = modalHTML;
+			document.body.appendChild(modalContainer);
 			
-			// Store client data for later use
-			window.currentLinkData = {
-				clientId: clientId,
-				clientName: client.name,
-				totalDebt: totalDebt
-			};
+			// Load preview
+			setTimeout(() => updateLinkPaymentPreviewSingle(selectedPayment.ID), 100);
+		}
+
+		// Helper function to update selected payment
+		function updateSelectedPayment() {
+			const select = document.getElementById('selectedPaymentId');
+			if (!select || !window.currentLinkData) return;
+			
+			const paymentId = select.value;
+			const payment = payments.find(p => p.ID === paymentId);
+			if (!payment) return;
+			
+			// Recalculate available amount
+			const links = paymentVisitLinks.filter(link => link.payment_id === paymentId);
+			const allocatedAmount = links.reduce((sum, link) => sum + (parseFloat(link.amount_allocated) || 0), 0);
+			const availableAmount = parseFloat(payment.amount) - allocatedAmount;
+			
+			window.currentLinkData.paymentId = paymentId;
+			window.currentLinkData.availableAmount = availableAmount;
+			
+			// Update preview
+			updateLinkPaymentPreviewSingle(paymentId);
 		}
 		
 		
-		// ✅ Open link payment modal from payments tab
+		// ✅ Show link payment modal from payments tab (calls unified function)
 		function showLinkPaymentModalFromPayments(paymentId) {
 			const payment = payments.find(p => p.ID === paymentId);
 			if (!payment) {
@@ -8531,316 +8747,24 @@
 				return;
 			}
 			
-			const client = locations.find(loc => loc.ID === clientId);
-			if (!client) {
-				showToast('❌ לא נמצא לקוח', 'error');
-				return;
-			}
-			
 			// Calculate client's total debt
-			const clientDebts = new Map();
+			let totalDebt = 0;
 			visits.forEach(visit => {
 				if (visit.location_id === clientId && visit.amount > 0) {
 					const visitAmount = parseFloat(visit.amount) || 0;
 					const paidAmount = getVisitPaidAmount(visit.ID);
 					const debt = visitAmount - paidAmount;
-					
 					if (debt > 0.01) {
-						if (!clientDebts.has(clientId)) {
-							clientDebts.set(clientId, { totalDebt: 0 });
-						}
-						clientDebts.get(clientId).totalDebt += debt;
+						totalDebt += debt;
 					}
 				}
 			});
 			
-			const totalDebt = clientDebts.has(clientId) ? clientDebts.get(clientId).totalDebt : 0;
-			
-			// Calculate available amount from payment
-			const links = paymentVisitLinks.filter(link => link.payment_id === paymentId);
-			const allocatedAmount = links.reduce((sum, link) => sum + (parseFloat(link.amount_allocated) || 0), 0);
-			const availableAmount = parseFloat(payment.amount) - allocatedAmount;
-			
-			if (availableAmount <= 0.01) {
-				showToast('ℹ️ תשלום זה כבר מקושר במלואו', 'info');
-				return;
-			}
-			
-			// Create modal HTML (simplified - only this payment)
-			const modalHTML = `
-				<div id="linkPaymentModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;">
-					<div style="background: white; border-radius: 12px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-						<!-- Header -->
-						<div style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); color: white; padding: 20px; border-radius: 12px 12px 0 0; position: relative;">
-							<h2 style="margin: 0; font-size: 20px;">💳 קישור תשלום ללקוח</h2>
-							<p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">${client.name}</p>
-							<button onclick="closeAnyModal()" style="position: absolute; top: 15px; left: 15px; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">×</button>
-						</div>
-						
-						<!-- Body -->
-						<div style="padding: 20px;">
-							<!-- Payment Info -->
-							<div style="background: #e8f5e9; border-right: 4px solid #4caf50; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
-								<div style="font-size: 14px; color: #2e7d32; margin-bottom: 5px;">💳 תשלום מ-${formatDate(payment.date)}:</div>
-								<div style="font-size: 18px; font-weight: bold; color: #2e7d32;">${availableAmount.toFixed(0)} ₪ זמין</div>
-								<div style="font-size: 12px; color: #666; margin-top: 5px;">מתוך ${payment.amount} ₪ כולל</div>
-							</div>
-							
-							<!-- Debt Info -->
-							${totalDebt > 0 ? `
-							<div style="background: #fff3cd; border-right: 4px solid #ffc107; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-								<div style="font-size: 14px; color: #856404; margin-bottom: 5px;">💰 חוב נוכחי:</div>
-								<div style="font-size: 20px; font-weight: bold; color: #856404;">${totalDebt.toFixed(0)} ₪</div>
-							</div>
-							` : '<div style="text-align: center; color: #4caf50; padding: 15px; background: #e8f5e9; border-radius: 6px; margin-bottom: 20px;">✅ אין חובות פתוחים</div>'}
-							
-							<!-- Link Method -->
-							<div style="margin-bottom: 20px;">
-								<label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333;">איך לחלק?</label>
-								<div style="display: flex; gap: 10px;">
-									<label style="flex: 1; padding: 12px; border: 2px solid #9b59b6; border-radius: 6px; cursor: pointer; text-align: center; background: #f8f4fb;">
-										<input type="radio" name="linkMethod" value="auto" checked onchange="updateLinkPaymentPreviewSingle('${paymentId}')" style="margin-left: 8px;">
-										<span style="font-weight: 600;">אוטומטי</span>
-										<div style="font-size: 11px; color: #666; margin-top: 4px;">לפי הטיפולים הישנים</div>
-									</label>
-									<label style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer; text-align: center;">
-										<input type="radio" name="linkMethod" value="manual" onchange="updateLinkPaymentPreviewSingle('${paymentId}')" style="margin-left: 8px;">
-										<span style="font-weight: 600;">ידני</span>
-										<div style="font-size: 11px; color: #666; margin-top: 4px;">אני אבחר</div>
-									</label>
-								</div>
-							</div>
-							
-							<!-- Preview Area -->
-							<div id="linkPreviewArea" style="min-height: 100px;">
-								<!-- Will be filled by updateLinkPaymentPreviewSingle() -->
-							</div>
-						</div>
-						
-						<!-- Footer -->
-						<div style="padding: 15px 20px; background: #f8f9fa; border-radius: 0 0 12px 12px; display: flex; gap: 10px; justify-content: flex-end;">
-							<button onclick="closeAnyModal()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
-								ביטול
-							</button>
-							<button onclick="executeLinkPaymentSingle('${paymentId}')" id="executeLinkBtn" disabled style="padding: 10px 20px; background: #9b59b6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
-								קשר תשלום ✓
-							</button>
-						</div>
-					</div>
-				</div>
-			`;
-			
-			// Inject modal
-			document.body.insertAdjacentHTML('beforeend', modalHTML);
-			
-			// Store data
-			window.currentLinkData = {
-				paymentId: paymentId,
-				clientId: clientId,
-				clientName: client.name,
-				totalDebt: totalDebt,
-				availableAmount: availableAmount
-			};
-			
-			// Trigger initial preview
-			setTimeout(() => updateLinkPaymentPreviewSingle(paymentId), 100);
+			// Call unified function with pre-selected payment
+			showLinkPaymentModal(clientId, totalDebt, paymentId);
 		}
 		
-		// ✅ Update preview for single payment linking
-		function updateLinkPaymentPreviewSingle(paymentId) {
-			const previewArea = document.getElementById('linkPreviewArea');
-			const executeBtn = document.getElementById('executeLinkBtn');
-			const linkMethod = document.querySelector('input[name="linkMethod"]:checked')?.value;
-			
-			if (!window.currentLinkData || !linkMethod) {
-				previewArea.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">טוען...</div>';
-				return;
-			}
-			
-			const { clientId, availableAmount } = window.currentLinkData;
-			
-			// Get client's unpaid visits - INCLUDING ZERO AMOUNT VISITS!
-			const unpaidVisits = visits.filter(visit => {
-				if (visit.location_id !== clientId) return false;
-				
-				const paidInfo = parsePaidField(visit.paid);
-				
-				// Skip "no payment required" status
-				if (paidInfo.status === '2') return false;
-				
-				const visitAmount = parseFloat(visit.amount) || 0;
-				const paidAmount = getVisitPaidAmount(visit.ID);
-				const debt = visitAmount - paidAmount;
-				
-				// In manual mode - also show paid visits that are not linked
-				if (linkMethod === 'manual') {
-					const hasLinks = paymentVisitLinks.some(link => link.visit_id === visit.ID);
-					// Show if: has debt OR zero amount OR paid but not linked
-					return debt > 0.01 || visitAmount === 0 || (paidInfo.status === '1' && !hasLinks);
-				}
 
-				// Auto mode - only unpaid or zero amount
-				return debt > 0.01 || visitAmount === 0;
-			});
-			
-			// Sort by date (oldest first)
-			unpaidVisits.sort((a, b) => new Date(a.date) - new Date(b.date));
-			
-			if (unpaidVisits.length === 0) {
-				previewArea.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">אין טיפולים פתוחים לקישור</div>';
-				executeBtn.disabled = true;
-				return;
-			}
-			
-			// AUTO mode
-			if (linkMethod === 'auto') {
-				let remainingAmount = availableAmount;
-				const allocations = [];
-				const zeroAmountVisits = [];
-				
-				for (const visit of unpaidVisits) {
-					const visitAmount = parseFloat(visit.amount) || 0;
-					
-					// Track zero-amount visits separately
-					if (visitAmount === 0) {
-						zeroAmountVisits.push(visit);
-						continue; // Skip in auto mode
-					}
-					
-					if (remainingAmount <= 0) break;
-					
-					const paidAmount = getVisitPaidAmount(visit.ID);
-					const debt = visitAmount - paidAmount;
-					const amountToAllocate = Math.min(remainingAmount, debt);
-					
-					allocations.push({
-						visitId: visit.ID,
-						date: visit.date,
-						workDone: visit.work_done || 'ללא תיאור',
-						visitAmount: visitAmount,
-						debt: debt,
-						allocated: amountToAllocate
-					});
-					
-					remainingAmount -= amountToAllocate;
-				}
-				
-				const totalAllocated = allocations.reduce((sum, a) => sum + a.allocated, 0);
-				
-				// Build warning HTML if there are zero-amount visits
-				let warningHTML = '';
-				if (zeroAmountVisits.length > 0) {
-					warningHTML = `
-						<div style="background: #fff3cd; border: 2px solid #ff9800; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-							<div style="font-weight: 600; color: #856404; margin-bottom: 8px;">
-								⚠️ שים לב!
-							</div>
-							<div style="font-size: 13px; color: #856404; margin-bottom: 10px;">
-								נמצאו <strong>${zeroAmountVisits.length}</strong> טיפולים עם מחיר 0₪ שלא יקושרו:
-							</div>
-							<div style="font-size: 12px; background: white; padding: 8px; border-radius: 4px; max-height: 80px; overflow-y: auto;">
-								${zeroAmountVisits.slice(0, 3).map(v => `
-									<div style="padding: 3px 0;">• ${formatDate(v.date)} - ${v.work_done || 'ללא תיאור'}</div>
-								`).join('')}
-								${zeroAmountVisits.length > 3 ? `<div style="color: #999; margin-top: 5px;">...ועוד ${zeroAmountVisits.length - 3}</div>` : ''}
-							</div>
-							<div style="margin-top: 10px; font-size: 12px;">
-								💡 עבור למצב <strong>ידני</strong> כדי לעדכן מחירים ולקשר גם אותם
-							</div>
-						</div>
-					`;
-				}
-				
-				previewArea.innerHTML = `
-					${warningHTML}
-					
-					<div style="background: #e8f5e9; border: 2px solid #4caf50; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-						<div style="font-weight: 600; color: #2e7d32; margin-bottom: 10px;">✔ חלוקה אוטומטית:</div>
-						<div style="font-size: 13px; color: #555;">
-							<div>💰 סכום זמין: <strong>${availableAmount.toFixed(0)} ₪</strong></div>
-							<div>📋 יחולק על <strong>${allocations.length}</strong> טיפולים</div>
-							<div>💵 סה"כ יקושר: <strong>${totalAllocated.toFixed(0)} ₪</strong></div>
-							${remainingAmount > 0.01 ? `<div style="color: #ff9800;">⚠️ יישאר: <strong>${remainingAmount.toFixed(0)} ₪</strong> לא מקושר</div>` : ''}
-						</div>
-					</div>
-					
-					<div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px;">
-						${allocations.map(a => `
-							<div style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-								<div style="flex: 1;">
-									<div style="font-size: 12px; color: #666;">${formatDate(a.date)}</div>
-									<div style="font-size: 13px; color: #333;">${a.workDone}</div>
-								</div>
-								<div style="text-align: left;">
-									<div style="font-size: 14px; font-weight: 600; color: #4caf50;">${a.allocated.toFixed(0)} ₪</div>
-									<div style="font-size: 11px; color: #999;">מתוך ${a.visitAmount.toFixed(0)} ₪</div>
-								</div>
-							</div>
-						`).join('')}
-					</div>
-				`;
-				
-				window.currentLinkData.allocations = allocations;
-				window.currentLinkData.hasZeroAmountVisits = zeroAmountVisits.length > 0;
-				window.currentLinkData.remainingAmount = remainingAmount;
-				executeBtn.disabled = false;
-				
-			} else {
-				// MANUAL mode - WITH EDITABLE AMOUNTS!
-				previewArea.innerHTML = `
-					<div style="background: #fff3e0; border: 2px solid #ff9800; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-						<div style="font-weight: 600; color: #e65100; margin-bottom: 5px;">✋ בחירה ידנית:</div>
-						<div style="font-size: 13px; color: #555;">
-							סמן את הטיפולים שברצונך לקשר (זמין: <strong>${availableAmount.toFixed(0)} ₪</strong>)
-						</div>
-						<div style="font-size: 12px; color: #e65100; margin-top: 5px;">
-							💡 ניתן לערוך מחירים ישירות בטבלה
-						</div>
-					</div>
-					
-					<div id="manualVisitsArea" style="max-height: 350px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px;">
-						${unpaidVisits.map(visit => {
-							const visitAmount = parseFloat(visit.amount) || 0;
-							const paidAmount = getVisitPaidAmount(visit.ID);
-							const debt = visitAmount - paidAmount;
-							const isZeroAmount = visitAmount === 0;
-							const paidInfo = parsePaidField(visit.paid);
-							const hasLinks = paymentVisitLinks.some(link => link.visit_id === visit.ID);
-							const isPaidNotLinked = paidInfo.status === '1' && !hasLinks;
-							
-							// Background color: yellow for zero amount, green for paid not linked, default otherwise
-							const bgColor = isZeroAmount ? 'background: #fff3cd;' : (isPaidNotLinked ? 'background: #e8f5e9;' : '');
-							
-							return `
-								<label style="display: grid; grid-template-columns: 30px 1fr 100px 80px; gap: 8px; padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; align-items: center; ${bgColor}" onchange="updateManualSelectionSingle()">					<input type="checkbox" value="${visit.ID}" data-debt="${debt}" style="width: 18px; height: 18px;">
-									<div>
-										<div style="font-size: 12px; color: #666;">${formatDate(visit.date)}</div>
-										<div style="font-size: 13px; color: #333;">${visit.work_done || 'ללא תיאור'}</div>
-										${visit.duration ? `<div style="font-size: 11px; color: #999;">⏱️ ${visit.duration} דק</div>` : ''}
-									</div>
-									<input type="number" 
-										   value="${visitAmount}" 
-										   onclick="event.stopPropagation();"
-										   onchange="updateVisitAmountInModal(this, '${visit.ID}')"
-										   placeholder="מחיר"
-										   style="width: 100%; padding: 6px; border: 2px solid ${isZeroAmount ? '#ff9800' : '#ddd'}; border-radius: 4px; font-size: 14px; text-align: center; font-weight: bold;">
-									<div style="text-align: left; font-size: 14px; font-weight: 600; color: ${isZeroAmount ? '#ff9800' : (isPaidNotLinked ? '#27ae60' : '#e74c3c')};">
-										${debt > 0 ? debt.toFixed(0) + ' ₪' : (isZeroAmount ? '⚠️' : (isPaidNotLinked ? '🔗' : '✓'))}
-									</div>
-									${isPaidNotLinked ? '<div style="grid-column: 2 / -1; font-size: 11px; color: #27ae60; margin-top: -5px;">✓ שולם - לא מקושר</div>' : ''}
-								</label>
-							`;
-						}).join('')}
-					</div>
-					
-					<div id="manualSummary" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 13px; color: #666;">
-						לא נבחרו טיפולים
-					</div>
-				`;
-				
-				executeBtn.disabled = true;
-			}
-		}
 		
 		// ✅ Update manual selection for single payment
 		function updateManualSelectionSingle() {
@@ -9204,99 +9128,7 @@
 			}
 		}
 		
-		
-	// ✅ Execute payment linking
-		async function executeLinkPayment() {
-			if (!window.currentLinkData || !window.currentLinkData.allocations) {
-				showToast('❌ אין נתונים לביצוע', 'error');
-				return;
-			}
 			
-			const { clientId, clientName, allocations } = window.currentLinkData;
-			const selectedPaymentId = document.getElementById('selectedPaymentId').value;
-			
-			if (!selectedPaymentId || allocations.length === 0) {
-				showToast('⚠️ אנא בחר תשלום וטיפולים לקישור', 'warning');
-				return;
-			}
-			
-			try {
-				showLoading('מקשר תשלום לטיפולים...');
-				
-				const payment = payments.find(p => p.ID === selectedPaymentId);
-				const totalLinked = allocations.reduce((sum, a) => sum + a.allocated, 0);
-				
-				// Create payment-visit links
-				allocations.forEach(allocation => {
-					const link = {
-						ID: generateID(),
-						payment_id: payment.ID,
-						visit_id: allocation.visitId,
-						amount_allocated: allocation.allocated,
-						link_type: allocation.allocated >= allocation.debt ? 'full_payment' : 'partial_payment',
-						created_at: new Date().toISOString()
-					};
-					
-					paymentVisitLinks.push(link);
-					
-					// Update visit paid status
-					const visit = visits.find(v => v.ID === allocation.visitId);
-					if (visit) {
-						const totalPaid = getVisitPaidAmount(visit.ID);
-						const visitAmount = parseFloat(visit.amount);
-						
-						if (totalPaid >= visitAmount - 0.01) {
-							// Fully paid
-							visit.paid = `paid:${payment.date}`;
-						} else {
-							// Partially paid
-							visit.paid = `partial:${totalPaid.toFixed(2)}`;
-						}
-					}
-				});
-				
-				// Save to localStorage
-				saveToLocalStorage();
-				
-				// Save to cloud if connected
-				if (access_token && SPREADSHEET_ID) {
-					try {
-						// Save links
-						await savePaymentVisitLinksToSheets();
-						
-						// Update visits
-						const visitsToUpdate = allocations.map(a => visits.find(v => v.ID === a.visitId)).filter(v => v);
-						if (visitsToUpdate.length > 0) {
-							await updateMultipleVisitsInSheets(visitsToUpdate);
-						}
-					} catch (error) {
-						console.error('Error saving to cloud:', error);
-					}
-				}
-				
-				hideLoading();
-				
-				// Show success message
-				showToast(`✅ קושרו ${allocations.length} טיפולים (${totalLinked.toFixed(0)} ₪) לתשלום מ-${formatDate(payment.date)}`, 'success');
-				
-				// Close modal
-				closeAnyModal();
-				
-				// Clean up
-				window.currentLinkData = null;
-				
-				// Refresh displays
-				if (typeof displayDebts === 'function') displayDebts();
-				if (typeof displayPayments === 'function') displayPayments();
-				if (typeof displayVisits === 'function') displayVisits();
-				
-			} catch (error) {
-				console.error('Error executing payment link:', error);
-				showToast('❌ שגיאה בקישור תשלום: ' + error.message, 'error');
-				hideLoading();
-			}
-		}	
-		
 		
 		// ✅ Save payment-visit links to Google Sheets
 		async function savePaymentVisitLinksToSheets() {
@@ -16605,6 +16437,685 @@
 				row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
 			}
 		}
+
+
+
+		// ==================== TASKS MANAGEMENT ====================
+
+		// Task type definitions
+		const TASK_TYPES = {
+			'pest_control': { icon: '🪲', label: 'הדברה', color: '#e74c3c' },
+			'planting': { icon: '🌱', label: 'שתילה', color: '#27ae60' },
+			'tree_trimming': { icon: '✂️', label: 'גיזום עצים', color: '#f39c12' },
+			'upgrade': { icon: '🏡', label: 'שדרוג גינה', color: '#9b59b6' },
+			'repair': { icon: '🔧', label: 'תיקון', color: '#3498db' },
+			'other': { icon: '📦', label: 'אחר', color: '#95a5a6' }
+		};
+
+		// Task status definitions
+		const TASK_STATUSES = {
+			'pending': { icon: '⏳', label: 'ממתין', color: '#ffc107', bg: '#fff3cd' },
+			'in_progress': { icon: '🔄', label: 'בתהליך', color: '#007bff', bg: '#cce5ff' },
+			'completed': { icon: '✅', label: 'הושלם', color: '#28a745', bg: '#d4edda' },
+			'cancelled': { icon: '❌', label: 'בוטל', color: '#dc3545', bg: '#f8d7da' }
+		};
+
+		// Display tasks in table
+		function displayTasks() {
+			const tbody = document.getElementById('tasksTableBody');
+			if (!tbody) return;
+			
+			// Get filter values
+			const statusFilter = document.getElementById('filterTaskStatus')?.value || '';
+			const typeFilter = document.getElementById('filterTaskType')?.value || '';
+			const clientFilter = document.getElementById('filterTaskClient')?.value?.toLowerCase() || '';
+			const dateFromFilter = document.getElementById('filterTaskDateFrom')?.value || '';
+			const dateToFilter = document.getElementById('filterTaskDateTo')?.value || '';
+			
+			// Filter tasks
+			let filteredTasks = tasks.filter(task => {
+				if (statusFilter && task.status !== statusFilter) return false;
+				if (typeFilter && task.type !== typeFilter) return false;
+				if (clientFilter && !task.client_name?.toLowerCase().includes(clientFilter)) return false;
+				if (dateFromFilter && task.due_date < dateFromFilter) return false;
+				if (dateToFilter && task.due_date > dateToFilter) return false;
+				return true;
+			});
+			
+			// Sort by due date (closest first), then by status
+			filteredTasks.sort((a, b) => {
+				const statusOrder = { 'in_progress': 0, 'pending': 1, 'completed': 2, 'cancelled': 3 };
+				if (statusOrder[a.status] !== statusOrder[b.status]) {
+					return statusOrder[a.status] - statusOrder[b.status];
+				}
+				return new Date(a.due_date) - new Date(b.due_date);
+			});
+			
+			// Update stats
+			updateTasksStats();
+			
+			// Render table
+			if (filteredTasks.length === 0) {
+				tbody.innerHTML = `
+					<tr>
+						<td colspan="7" style="text-align: center; padding: 40px; color: #666;">
+							<div style="font-size: 48px; margin-bottom: 10px;">📋</div>
+							<div>אין משימות להצגה</div>
+							<button onclick="showAddTaskModal()" style="margin-top: 15px; padding: 10px 20px; background: #9b59b6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+								➕ הוסף משימה ראשונה
+							</button>
+						</td>
+					</tr>
+				`;
+				return;
+			}
+			
+			tbody.innerHTML = filteredTasks.map(task => {
+				const typeInfo = TASK_TYPES[task.type] || TASK_TYPES['other'];
+				const statusInfo = TASK_STATUSES[task.status] || TASK_STATUSES['pending'];
+				
+				// Check if overdue
+				const isOverdue = task.status !== 'completed' && task.status !== 'cancelled' && 
+								  new Date(task.due_date) < new Date(new Date().toDateString());
+				
+				return `
+					<tr style="border-bottom: 1px solid #eee; ${isOverdue ? 'background: #fff5f5;' : ''}">
+						<td style="padding: 12px;">
+							<span style="background: ${statusInfo.bg}; color: ${statusInfo.color}; padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: 600;">
+								${statusInfo.icon} ${statusInfo.label}
+							</span>
+						</td>
+						<td style="padding: 12px;">
+							<span style="color: ${typeInfo.color}; font-weight: 600;">
+								${typeInfo.icon} ${typeInfo.label}
+							</span>
+						</td>
+						<td style="padding: 12px; font-weight: 600;">${task.client_name || '-'}</td>
+						<td style="padding: 12px; max-width: 200px;">
+							<div style="font-size: 13px; color: #333;">${task.description || '-'}</div>
+							${task.notes ? `<div style="font-size: 11px; color: #666; margin-top: 3px;">💬 ${task.notes}</div>` : ''}
+						</td>
+						<td style="padding: 12px; ${isOverdue ? 'color: #dc3545; font-weight: bold;' : ''}">
+							${isOverdue ? '⚠️ ' : ''}${formatDate(task.due_date)}
+						</td>
+						<td style="padding: 12px; font-weight: 600; color: #27ae60;">
+							${task.estimated_cost ? '₪' + task.estimated_cost : '-'}
+						</td>
+						<td style="padding: 12px; text-align: center;">
+							<div style="display: flex; gap: 5px; justify-content: center;">
+								${task.status === 'pending' ? `
+									<button onclick="updateTaskStatus('${task.ID}', 'in_progress')" 
+											style="padding: 5px 8px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" 
+											title="התחל">▶️</button>
+								` : ''}
+								${task.status === 'in_progress' ? `
+									<button onclick="completeTask('${task.ID}')" 
+											style="padding: 5px 8px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" 
+											title="סיים">✅</button>
+								` : ''}
+								<button onclick="showEditTaskModal('${task.ID}')" 
+										style="padding: 5px 8px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" 
+										title="עריכה">✏️</button>
+								<button onclick="deleteTask('${task.ID}')" 
+										style="padding: 5px 8px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" 
+										title="מחק">🗑️</button>
+							</div>
+						</td>
+					</tr>
+				`;
+			}).join('');
+		}
+
+		// Update tasks statistics
+		function updateTasksStats() {
+			const pending = tasks.filter(t => t.status === 'pending').length;
+			const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+			const completed = tasks.filter(t => t.status === 'completed').length;
+			
+			const statsPending = document.getElementById('statsPending');
+			const statsInProgress = document.getElementById('statsInProgress');
+			const statsCompleted = document.getElementById('statsCompleted');
+			
+			if (statsPending) statsPending.textContent = pending;
+			if (statsInProgress) statsInProgress.textContent = inProgress;
+			if (statsCompleted) statsCompleted.textContent = completed;
+		}
+
+		// Clear task filters
+		function clearTaskFilters() {
+			document.getElementById('filterTaskStatus').value = '';
+			document.getElementById('filterTaskType').value = '';
+			document.getElementById('filterTaskClient').value = '';
+			document.getElementById('filterTaskDateFrom').value = '';
+			document.getElementById('filterTaskDateTo').value = '';
+			displayTasks();
+		}
+
+		// Show add task modal
+		function showAddTaskModal(preSelectedClientId = null) {
+			const today = new Date().toISOString().split('T')[0];
+			
+			const modalHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 550px; width: 90vw; max-height: 90vh; overflow-y: auto; position: relative;">
+					<button onclick="closeAnyModal()" style="position: absolute; top: 15px; left: 15px; background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
+					
+					<h3 style="margin: 0 0 20px 0; color: #9b59b6; border-bottom: 2px solid #9b59b6; padding-bottom: 10px;">
+						📋 משימה חדשה
+					</h3>
+					
+					<form id="taskForm" onsubmit="saveTask(event)" style="display: flex; flex-direction: column; gap: 15px;">
+						<!-- Client Selection -->
+						<div>
+							<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">לקוח:</label>
+							<div style="position: relative;">
+								<input type="text" id="taskClientSearch" placeholder="🔍 חיפוש לקוח..." 
+									   onkeyup="filterTaskClientOptions()" 
+									   autocomplete="off"
+									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+								<div id="taskClientOptions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 0 0 6px 6px; z-index: 100;"></div>
+								<input type="hidden" id="taskClientId" required>
+							</div>
+						</div>
+						
+						<!-- Task Type -->
+						<div>
+							<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">סוג משימה:</label>
+							<select id="taskType" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+								<option value="">בחר סוג...</option>
+								<option value="pest_control">🪲 הדברה</option>
+								<option value="planting">🌱 שתילה</option>
+								<option value="tree_trimming">✂️ גיזום עצים</option>
+								<option value="upgrade">🏡 שדרוג גינה</option>
+								<option value="repair">🔧 תיקון</option>
+								<option value="other">📦 אחר</option>
+							</select>
+						</div>
+						
+						<!-- Description -->
+						<div>
+							<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">תיאור המשימה:</label>
+							<textarea id="taskDescription" rows="2" required placeholder="מה צריך לעשות?"
+									  style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
+						</div>
+						
+						<!-- Due Date & Priority -->
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">תאריך יעד:</label>
+								<input type="date" id="taskDueDate" value="${today}" required
+									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+							</div>
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">עדיפות:</label>
+								<select id="taskPriority" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="normal">רגילה</option>
+									<option value="high">גבוהה 🔴</option>
+									<option value="low">נמוכה</option>
+								</select>
+							</div>
+						</div>
+						
+						<!-- Estimated Cost & Equipment -->
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">עלות משוערת (₪):</label>
+								<input type="number" id="taskEstimatedCost" min="0" placeholder="0"
+									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+							</div>
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">ציוד נדרש:</label>
+								<input type="text" id="taskEquipment" placeholder="רשום ציוד..."
+									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+							</div>
+						</div>
+						
+						<!-- Notes -->
+						<div>
+							<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">הערות / דגשים:</label>
+							<textarea id="taskNotes" rows="2" placeholder="הערות נוספות, דגשים חשובים..."
+									  style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
+						</div>
+						
+						<!-- Recurring -->
+						<div style="background: #f8f9fa; padding: 12px; border-radius: 6px;">
+							<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+								<input type="checkbox" id="taskRecurring" onchange="toggleRecurringOptions()">
+								<span style="font-weight: 600; color: #555;">🔄 משימה חוזרת</span>
+							</label>
+							<div id="recurringOptions" style="display: none; margin-top: 10px;">
+								<select id="taskRecurringInterval" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="weekly">כל שבוע</option>
+									<option value="biweekly">כל שבועיים</option>
+									<option value="monthly">כל חודש</option>
+									<option value="quarterly" selected>כל רבעון (3 חודשים)</option>
+									<option value="biannual">כל חצי שנה</option>
+									<option value="yearly">כל שנה</option>
+								</select>
+							</div>
+						</div>
+						
+						<!-- Submit Buttons -->
+						<div style="display: flex; gap: 10px; margin-top: 10px;">
+							<button type="submit" style="flex: 1; padding: 12px; background: #9b59b6; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
+								💾 שמור משימה
+							</button>
+							<button type="button" onclick="closeAnyModal()" style="padding: 12px 20px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer;">
+								ביטול
+							</button>
+						</div>
+					</form>
+				</div>
+			`;
+			
+			showEditModal(modalHTML);
+			
+			// Pre-select client if provided
+			if (preSelectedClientId) {
+				const client = locations.find(loc => loc.ID === preSelectedClientId);
+				if (client) {
+					document.getElementById('taskClientSearch').value = client.name;
+					document.getElementById('taskClientId').value = preSelectedClientId;
+				}
+			}
+		}
+
+		// Toggle recurring options visibility
+		function toggleRecurringOptions() {
+			const checkbox = document.getElementById('taskRecurring');
+			const options = document.getElementById('recurringOptions');
+			if (options) {
+				options.style.display = checkbox.checked ? 'block' : 'none';
+			}
+		}
+
+		// Filter client options for task
+		function filterTaskClientOptions() {
+			const searchInput = document.getElementById('taskClientSearch');
+			const optionsDiv = document.getElementById('taskClientOptions');
+			const searchTerm = searchInput.value.toLowerCase();
+			
+			if (searchTerm.length < 1) {
+				optionsDiv.style.display = 'none';
+				return;
+			}
+			
+			const matchingClients = locations.filter(loc => 
+				loc.active === '1' && 
+				(loc.name?.toLowerCase().includes(searchTerm) || 
+				 loc.full_address?.toLowerCase().includes(searchTerm))
+			).slice(0, 10);
+			
+			if (matchingClients.length === 0) {
+				optionsDiv.style.display = 'none';
+				return;
+			}
+			
+			optionsDiv.innerHTML = matchingClients.map(client => `
+				<div onclick="selectTaskClient('${client.ID}', '${client.name}')" 
+					 style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; hover: background #f0f0f0;">
+					<div style="font-weight: 600;">${client.name}</div>
+					<div style="font-size: 12px; color: #666;">${client.full_address || ''}</div>
+				</div>
+			`).join('');
+			
+			optionsDiv.style.display = 'block';
+		}
+
+		// Select client for task
+		function selectTaskClient(clientId, clientName) {
+			document.getElementById('taskClientSearch').value = clientName;
+			document.getElementById('taskClientId').value = clientId;
+			document.getElementById('taskClientOptions').style.display = 'none';
+		}
+
+		// Save task
+		async function saveTask(event, taskId = null) {
+			event.preventDefault();
+			
+			const clientId = document.getElementById('taskClientId').value;
+			const client = locations.find(loc => loc.ID === clientId);
+			
+			if (!clientId || !client) {
+				showToast('❌ נא לבחור לקוח', 'error');
+				return;
+			}
+			
+			const taskData = {
+				ID: taskId || 'TASK_' + Date.now(),
+				client_id: clientId,
+				client_name: client.name,
+				type: document.getElementById('taskType').value,
+				description: document.getElementById('taskDescription').value,
+				due_date: document.getElementById('taskDueDate').value,
+				priority: document.getElementById('taskPriority').value,
+				estimated_cost: parseFloat(document.getElementById('taskEstimatedCost').value) || 0,
+				equipment: document.getElementById('taskEquipment').value,
+				notes: document.getElementById('taskNotes').value,
+				recurring: document.getElementById('taskRecurring').checked,
+				recurring_interval: document.getElementById('taskRecurringInterval')?.value || '',
+				status: taskId ? (tasks.find(t => t.ID === taskId)?.status || 'pending') : 'pending',
+				created_date: taskId ? (tasks.find(t => t.ID === taskId)?.created_date || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
+				completed_date: ''
+			};
+			
+			if (taskId) {
+				// Update existing
+				const index = tasks.findIndex(t => t.ID === taskId);
+				if (index !== -1) {
+					tasks[index] = taskData;
+				}
+				showToast('✅ משימה עודכנה', 'success');
+			} else {
+				// Add new
+				tasks.push(taskData);
+				showToast('✅ משימה נוספה', 'success');
+			}
+			
+			saveToLocalStorage();
+			closeAnyModal();
+			displayTasks();
+			
+			// Save to cloud if connected
+			if (access_token && SPREADSHEET_ID) {
+				try {
+					await saveTasksToSheets();
+				} catch (error) {
+					console.error('Error saving tasks to cloud:', error);
+				}
+			}
+		}
+
+		// Show edit task modal
+		function showEditTaskModal(taskId) {
+			const task = tasks.find(t => t.ID === taskId);
+			if (!task) {
+				showToast('❌ משימה לא נמצאה', 'error');
+				return;
+			}
+			
+			showAddTaskModal();
+			
+			// Fill form with task data
+			setTimeout(() => {
+				document.getElementById('taskClientSearch').value = task.client_name || '';
+				document.getElementById('taskClientId').value = task.client_id || '';
+				document.getElementById('taskType').value = task.type || '';
+				document.getElementById('taskDescription').value = task.description || '';
+				document.getElementById('taskDueDate').value = task.due_date || '';
+				document.getElementById('taskPriority').value = task.priority || 'normal';
+				document.getElementById('taskEstimatedCost').value = task.estimated_cost || '';
+				document.getElementById('taskEquipment').value = task.equipment || '';
+				document.getElementById('taskNotes').value = task.notes || '';
+				document.getElementById('taskRecurring').checked = task.recurring || false;
+				if (task.recurring) {
+					toggleRecurringOptions();
+					document.getElementById('taskRecurringInterval').value = task.recurring_interval || 'quarterly';
+				}
+				
+				// Update form to edit mode
+				const form = document.getElementById('taskForm');
+				form.onsubmit = (e) => saveTask(e, taskId);
+				
+				// Update title
+				const title = form.parentElement.querySelector('h3');
+				if (title) title.innerHTML = '✏️ עריכת משימה';
+			}, 100);
+		}
+
+		// Update task status
+		async function updateTaskStatus(taskId, newStatus) {
+			const task = tasks.find(t => t.ID === taskId);
+			if (!task) return;
+			
+			task.status = newStatus;
+			
+			if (newStatus === 'completed') {
+				task.completed_date = new Date().toISOString().split('T')[0];
+			}
+			
+			saveToLocalStorage();
+			displayTasks();
+			
+			const statusLabel = TASK_STATUSES[newStatus]?.label || newStatus;
+			showToast(`✅ סטטוס עודכן ל: ${statusLabel}`, 'success');
+			
+			// Save to cloud if connected
+			if (access_token && SPREADSHEET_ID) {
+				try {
+					await saveTasksToSheets();
+				} catch (error) {
+					console.error('Error saving tasks to cloud:', error);
+				}
+			}
+		}
+
+		// Complete task - with option to create visit
+		async function completeTask(taskId) {
+			const task = tasks.find(t => t.ID === taskId);
+			if (!task) return;
+			
+			const createVisit = confirm(
+				`✅ לסמן את המשימה כהושלמה?\n\n` +
+				`${task.description}\n\n` +
+				`האם ליצור גם רשומת טיפול?`
+			);
+			
+			task.status = 'completed';
+			task.completed_date = new Date().toISOString().split('T')[0];
+			
+			saveToLocalStorage();
+			displayTasks();
+			showToast('✅ משימה הושלמה', 'success');
+			
+			// Create visit if requested
+			if (createVisit && task.client_id) {
+				closeAnyModal();
+				setTimeout(() => {
+					showVisitForm(null, task.client_id);
+					// Pre-fill work done
+					setTimeout(() => {
+						const workDoneField = document.getElementById('visitFormWorkDone');
+						if (workDoneField) {
+							const typeLabel = TASK_TYPES[task.type]?.label || task.type;
+							workDoneField.value = `${typeLabel}: ${task.description}`;
+						}
+						const amountField = document.getElementById('visitFormAmount');
+						if (amountField && task.estimated_cost) {
+							amountField.value = task.estimated_cost;
+						}
+					}, 200);
+				}, 100);
+			}
+			
+			// Handle recurring tasks
+			if (task.recurring && task.recurring_interval) {
+				createNextRecurringTask(task);
+			}
+			
+			// Save to cloud if connected
+			if (access_token && SPREADSHEET_ID) {
+				try {
+					await saveTasksToSheets();
+				} catch (error) {
+					console.error('Error saving tasks to cloud:', error);
+				}
+			}
+		}
+
+		// Create next recurring task
+		function createNextRecurringTask(originalTask) {
+			const intervalDays = {
+				'weekly': 7,
+				'biweekly': 14,
+				'monthly': 30,
+				'quarterly': 90,
+				'biannual': 180,
+				'yearly': 365
+			};
+			
+			const days = intervalDays[originalTask.recurring_interval] || 90;
+			const nextDate = new Date(originalTask.due_date);
+			nextDate.setDate(nextDate.getDate() + days);
+			
+			const newTask = {
+				...originalTask,
+				ID: 'TASK_' + Date.now(),
+				status: 'pending',
+				due_date: nextDate.toISOString().split('T')[0],
+				created_date: new Date().toISOString().split('T')[0],
+				completed_date: ''
+			};
+			
+			tasks.push(newTask);
+			saveToLocalStorage();
+			
+			showToast(`🔄 נוצרה משימה חוזרת ל-${formatDate(newTask.due_date)}`, 'info');
+		}
+
+		// Delete task
+		async function deleteTask(taskId) {
+			const task = tasks.find(t => t.ID === taskId);
+			if (!task) return;
+			
+			if (!confirm(`האם למחוק את המשימה?\n\n${task.description}`)) {
+				return;
+			}
+			
+			tasks = tasks.filter(t => t.ID !== taskId);
+			saveToLocalStorage();
+			displayTasks();
+			showToast('🗑️ משימה נמחקה', 'success');
+			
+			// Save to cloud if connected
+			if (access_token && SPREADSHEET_ID) {
+				try {
+					await saveTasksToSheets();
+				} catch (error) {
+					console.error('Error saving tasks to cloud:', error);
+				}
+			}
+		}
+
+		// Save tasks to Google Sheets
+		async function saveTasksToSheets() {
+			if (!access_token || !SPREADSHEET_ID) return;
+			
+			try {
+				// Check if Tasks sheet exists, create if not
+				const spreadsheet = await gapi.client.sheets.spreadsheets.get({
+					spreadsheetId: SPREADSHEET_ID
+				});
+				
+				const tasksSheet = spreadsheet.result.sheets.find(s => s.properties.title === 'Tasks');
+				
+				if (!tasksSheet) {
+					// Create Tasks sheet
+					await gapi.client.sheets.spreadsheets.batchUpdate({
+						spreadsheetId: SPREADSHEET_ID,
+						resource: {
+							requests: [{
+								addSheet: {
+									properties: { title: 'Tasks' }
+								}
+							}]
+						}
+					});
+					
+					// Add headers
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: 'Tasks!A1:N1',
+						valueInputOption: 'RAW',
+						resource: {
+							values: [['ID', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date']]
+						}
+					});
+				}
+				
+				// Clear existing data (except header)
+				await gapi.client.sheets.spreadsheets.values.clear({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Tasks!A2:O1000'
+				});
+				
+				// Write tasks
+				if (tasks.length > 0) {
+					const rows = tasks.map(t => [
+						t.ID,
+						t.client_id,
+						t.client_name,
+						t.type,
+						t.description,
+						t.due_date,
+						t.priority,
+						t.estimated_cost,
+						t.equipment,
+						t.notes,
+						t.recurring ? '1' : '0',
+						t.recurring_interval,
+						t.status,
+						t.created_date,
+						t.completed_date
+					]);
+					
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: 'Tasks!A2',
+						valueInputOption: 'RAW',
+						resource: { values: rows }
+					});
+				}
+				
+				console.log('✅ Tasks saved to cloud');
+			} catch (error) {
+				console.error('Error saving tasks:', error);
+				throw error;
+			}
+		}
+
+		// Load tasks from Google Sheets
+		async function loadTasksFromSheets() {
+			if (!access_token || !SPREADSHEET_ID) return;
+			
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Tasks!A2:O1000'
+				});
+				
+				const rows = response.result.values || [];
+				
+				tasks = rows.map(row => ({
+					ID: row[0] || '',
+					client_id: row[1] || '',
+					client_name: row[2] || '',
+					type: row[3] || 'other',
+					description: row[4] || '',
+					due_date: row[5] || '',
+					priority: row[6] || 'normal',
+					estimated_cost: parseFloat(row[7]) || 0,
+					equipment: row[8] || '',
+					notes: row[9] || '',
+					recurring: row[10] === '1',
+					recurring_interval: row[11] || '',
+					status: row[12] || 'pending',
+					created_date: row[13] || '',
+					completed_date: row[14] || ''
+				}));
+				
+				console.log(`✅ Loaded ${tasks.length} tasks from cloud`);
+				displayTasks();
+			} catch (error) {
+				if (error.status === 400 && error.result?.error?.message?.includes('Unable to parse range')) {
+					// Tasks sheet doesn't exist yet - that's ok
+					console.log('Tasks sheet not found - will be created on first save');
+				} else {
+					console.error('Error loading tasks:', error);
+				}
+			}
+		}
+
+
 
    </script>
 </body>
