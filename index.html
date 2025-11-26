@@ -2444,7 +2444,7 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -7411,14 +7411,14 @@
 		async function addHeadersToSheet(sheetName) {
 			const headersMap = {
 				'Locations': ['ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 'client_requests'],
-				'Visits': ['ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 'duration_minutes', 'num_workers', 'start_time', 'end_time', 'amount', 'paid', 'expense', 'notes'],  // ✅ ADDED: 'paid' field
+				'Visits': ['ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 'duration_minutes', 'num_workers', 'start_time', 'end_time', 'amount', 'paid', 'expense', 'notes'],
 				'Receipts': ['ID', 'book_number', 'receipt_number', 'date', 'location_id', 'location_name', 'amount', 'payment_type', 'notes'],
 				'TelegramVisits': ['message_id', 'date', 'text', 'processed', 'location_id', 'visit_id'],
 				'TelegramIncomes': ['message_id', 'date', 'text', 'processed', 'receipt_id'],
 				'Payments': ['ID', 'date', 'time', 'amount', 'payment_method', 'source_type', 'client_id', 'client_name', 'notes', 'status', 'created_at', 'reference', 'check_date', 'bank_account', 'payment_details'],
 				'PaymentVisitLink': ['ID', 'payment_id', 'visit_id', 'amount_allocated'],
 				'Tasks': ['ID', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date']
-				};
+			};
 			
 			const headers = headersMap[sheetName];
 			if (!headers) {
@@ -7427,6 +7427,30 @@
 			}
 			
 			try {
+				// First, check if sheet exists
+				const spreadsheet = await gapi.client.sheets.spreadsheets.get({
+					spreadsheetId: SPREADSHEET_ID
+				});
+				
+				const sheetExists = spreadsheet.result.sheets.some(s => s.properties.title === sheetName);
+				
+				// Create sheet if it doesn't exist
+				if (!sheetExists) {
+					console.log(`Creating sheet: ${sheetName}`);
+					await gapi.client.sheets.spreadsheets.batchUpdate({
+						spreadsheetId: SPREADSHEET_ID,
+						resource: {
+							requests: [{
+								addSheet: {
+									properties: { title: sheetName }
+								}
+							}]
+						}
+					});
+					console.log(`✅ Sheet ${sheetName} created`);
+				}
+				
+				// Now add headers
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
 					range: `${sheetName}!A1:${String.fromCharCode(64 + headers.length)}1`,
