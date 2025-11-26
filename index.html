@@ -749,6 +749,7 @@
 			background: linear-gradient(45deg, #28a745, #20c997);
 			color: white;
 			box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+			text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 		}
 
 		#statusText.connecting {
@@ -2442,7 +2443,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4282,7 +4283,11 @@
 			const container = document.getElementById('planningCardsContainer');
 			const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 			
-			// יצירת מערך עם נתוני ימים
+			// יצירת מערך עם נתוני ימים + חישוב תאריכים
+			const today = new Date();
+			const todayDayIndex = today.getDay(); // 0=ראשון
+			const dayIndexMap = {'א': 0, 'ב': 1, 'ג': 2, 'ד': 3, 'ה': 4, 'ו': 5, 'ש': 6};
+
 			const daysData = dayNames.map(dayName => {
 				const dayClients = planningClients.filter(client => 
 					(client.allowed_day || 'א') === dayName
@@ -4296,7 +4301,17 @@
 					}
 				});
 				
-				return { dayName, clients: dayClients };
+				// חישוב התאריך של היום הזה בשבוע
+				const dayIndex = dayIndexMap[dayName];
+				let daysDiff = dayIndex - todayDayIndex;
+				if (currentPlanningView === 'next_week') {
+					daysDiff += 7; // שבוע הבא
+				}
+				const dayDate = new Date(today);
+				dayDate.setDate(today.getDate() + daysDiff);
+				const formattedDate = dayDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+				
+				return { dayName, clients: dayClients, date: formattedDate };
 			});
 			
 			// רק ימים עם לקוחות
@@ -4326,7 +4341,7 @@
 							const isActive = selectedDayTab ? (day.dayName === selectedDayTab) : (index === 0);
 							return `<div class="day-content ${isActive ? 'active' : ''}" data-day="${day.dayName}">
 										<div class="day-content-header">
-											${day.clients.length} טיפולים ליום ${day.dayName}'
+											${day.clients.length} טיפולים ליום ${day.dayName}' - ${day.date}
 										</div>
 										${day.clients.map(client => renderClientRow(client)).join('')}
 									</div>`;
@@ -5311,7 +5326,7 @@
 				document.getElementById('statusText').textContent = '🔄 שומר לקוח...';
 				try {
 					await saveLocationToSheets(locationData);
-					document.getElementById('statusText').textContent = 'מחובר';
+					updateCloudStatus('✅ מחובר ומסונכרן', 'נשמר');
 					showSuccess('לקוח נשמר בהצלחה ל-Google Sheets!');
 				} catch (error) {
 					if (error.status === 401) {
@@ -14365,6 +14380,9 @@
 				});
 			}
 			
+			// Sort by date - newest first
+			filteredPayments.sort((a, b) => new Date(b.date) - new Date(a.date));
+
 			displayPayments(filteredPayments);
 			updatePaymentsStats(filteredPayments);
 		}
