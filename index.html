@@ -2442,7 +2442,7 @@
 				<button onclick="showSection('receipts')" class="nav-btn">קבלות</button>
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -5514,6 +5514,7 @@
 										<th style="padding: 10px; text-align: right;">זמן</th>
 										<th style="padding: 10px; text-align: right;">סכום</th>
 										<th style="padding: 10px; text-align: right;">תשלום</th>
+										<th style="padding: 10px; text-align: center;">פעולות</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -5540,6 +5541,16 @@
 												<td style="padding: 10px;">${duration}</td>
 												<td style="padding: 10px; font-weight: bold; color: #27ae60;">${visit.amount || 0}₪</td>
 												<td style="padding: 10px;">${paymentBadge}</td>
+												<td style="padding: 10px; text-align: center;">
+													<button onclick="closeAnyModal(); setTimeout(() => showVisitForm('${visit.ID}'), 100);" 
+															style="padding: 5px 8px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 5px;" 
+															title="עריכת טיפול">✏️</button>
+													${paidInfo.status === '0' ? `
+														<button onclick="closeAnyModal(); setTimeout(() => showAddPaymentModal('${clientId}', '${visit.ID}'), 100);" 
+																style="padding: 5px 8px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;" 
+																title="תשלום מהיר">💰</button>
+													` : ''}
+												</td>
 											</tr>
 										`;
 									}).join('')}
@@ -8633,7 +8644,14 @@
 				const paidAmount = getVisitPaidAmount(visit.ID);
 				const debt = visitAmount - paidAmount;
 				
-				// Include if: has debt OR zero amount (needs pricing)
+				// In manual mode - also show paid visits that are not linked
+				if (linkMethod === 'manual') {
+					const hasLinks = paymentVisitLinks.some(link => link.visit_id === visit.ID);
+					// Show if: has debt OR zero amount OR paid but not linked
+					return debt > 0.01 || visitAmount === 0 || (paidInfo.status === '1' && !hasLinks);
+				}
+
+				// Auto mode - only unpaid or zero amount
 				return debt > 0.01 || visitAmount === 0;
 			});
 			
@@ -8758,10 +8776,15 @@
 							const paidAmount = getVisitPaidAmount(visit.ID);
 							const debt = visitAmount - paidAmount;
 							const isZeroAmount = visitAmount === 0;
+							const paidInfo = parsePaidField(visit.paid);
+							const hasLinks = paymentVisitLinks.some(link => link.visit_id === visit.ID);
+							const isPaidNotLinked = paidInfo.status === '1' && !hasLinks;
+							
+							// Background color: yellow for zero amount, green for paid not linked, default otherwise
+							const bgColor = isZeroAmount ? 'background: #fff3cd;' : (isPaidNotLinked ? 'background: #e8f5e9;' : '');
 							
 							return `
-								<label style="display: grid; grid-template-columns: 30px 1fr 100px 80px; gap: 8px; padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; align-items: center; ${isZeroAmount ? 'background: #fff3cd;' : ''}" onchange="updateManualSelectionSingle()">
-									<input type="checkbox" value="${visit.ID}" data-debt="${debt}" style="width: 18px; height: 18px;">
+								<label style="display: grid; grid-template-columns: 30px 1fr 100px 80px; gap: 8px; padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; align-items: center; ${bgColor}" onchange="updateManualSelectionSingle()">					<input type="checkbox" value="${visit.ID}" data-debt="${debt}" style="width: 18px; height: 18px;">
 									<div>
 										<div style="font-size: 12px; color: #666;">${formatDate(visit.date)}</div>
 										<div style="font-size: 13px; color: #333;">${visit.work_done || 'ללא תיאור'}</div>
@@ -8773,9 +8796,10 @@
 										   onchange="updateVisitAmountInModal(this, '${visit.ID}')"
 										   placeholder="מחיר"
 										   style="width: 100%; padding: 6px; border: 2px solid ${isZeroAmount ? '#ff9800' : '#ddd'}; border-radius: 4px; font-size: 14px; text-align: center; font-weight: bold;">
-									<div style="text-align: left; font-size: 14px; font-weight: 600; color: ${isZeroAmount ? '#ff9800' : '#e74c3c'};">
-										${debt > 0 ? debt.toFixed(0) + ' ₪' : (isZeroAmount ? '⚠️' : '✓')}
+									<div style="text-align: left; font-size: 14px; font-weight: 600; color: ${isZeroAmount ? '#ff9800' : (isPaidNotLinked ? '#27ae60' : '#e74c3c')};">
+										${debt > 0 ? debt.toFixed(0) + ' ₪' : (isZeroAmount ? '⚠️' : (isPaidNotLinked ? '🔗' : '✓'))}
 									</div>
+									${isPaidNotLinked ? '<div style="grid-column: 2 / -1; font-size: 11px; color: #27ae60; margin-top: -5px;">✓ שולם - לא מקושר</div>' : ''}
 								</label>
 							`;
 						}).join('')}
@@ -14592,9 +14616,12 @@
 			
 			const modalContent = `
 				<div style="background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 90vw; max-height: 80vh; overflow-y: auto; direction: rtl;">
-					<h3 style="margin-bottom: 25px; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
-						💳 פרטי תשלום
-					</h3>
+					<div style="position: relative;">
+						<button onclick="closeAnyModal()" style="position: absolute; top: 0; left: 0; background: #e74c3c; border: none; color: white; font-size: 20px; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">×</button>
+						<h3 style="margin-bottom: 25px; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+							💳 פרטי תשלום
+						</h3>
+					</div>
 					
 					<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; margin-bottom: 20px; color: white;">
 						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -15862,7 +15889,10 @@
 				clientSelector.style.display = 'none';
 				clientSelector.value = '';
 				
-				showToast('נעילה שוחררה - כל הטאבים עצמאיים', 'info', 2000);
+				// ✅ Clear all filters in all tabs
+				clearAllTabFilters();
+				
+				showToast('נעילה שוחררה - כל הסינונים נוקו', 'success', 2000);
 			} else {
 				// Lock - show client selector
 				isClientLocked = true;
@@ -16470,6 +16500,58 @@
 				showToast('⌫ שגיאה בביטול סטטוס', 'error');
 			}
 		}
+
+		// ✅ Clear all filters when unlocking
+		function clearAllTabFilters() {
+			// Clear visits/history tab
+			const visitSearch = document.getElementById('visitSmartSearch');
+			if (visitSearch) {
+				visitSearch.value = '';
+				if (typeof handleVisitSmartSearch === 'function') {
+					handleVisitSmartSearch('');
+				}
+			}
+			
+			// Clear debts tab
+			const debtSearch = document.getElementById('debtClientSearch');
+			if (debtSearch) {
+				debtSearch.value = '';
+				debtSearch.removeAttribute('data-selected-id');
+				if (typeof displayDebts === 'function') {
+					displayDebts();
+				}
+			}
+			
+			// Clear payments tab
+			const paymentSearch = document.getElementById('paymentSmartSearch');
+			if (paymentSearch) {
+				paymentSearch.value = '';
+				if (typeof handlePaymentSmartSearch === 'function') {
+					handlePaymentSmartSearch('');
+				}
+			}
+			
+			// Clear receipts tab
+			const receiptSearch = document.getElementById('receiptSmartSearch');
+			if (receiptSearch) {
+				receiptSearch.value = '';
+				if (typeof handleReceiptSmartSearch === 'function') {
+					handleReceiptSmartSearch('');
+				}
+			}
+			
+			// Clear locations tab
+			const nameFilter = document.getElementById('filterClientName');
+			if (nameFilter) {
+				nameFilter.value = '';
+				if (typeof filterLocationsTable === 'function') {
+					filterLocationsTable();
+				}
+			}
+			
+			console.log('✅ All tab filters cleared');
+		}
+
 
    </script>
 </body>
