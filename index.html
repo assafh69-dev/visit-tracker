@@ -4484,7 +4484,7 @@
 		}
 
 		// רינדור שורת לקוח (משותף לשני המצבים)
-		// Update the renderClientRow function to show last treatment date
+		// Update the renderClientRow function to show last treatment date		
 		function renderClientRow(client) {
 			const nextVisitFormatted = formatDate(client.next_visit);
 			
@@ -4493,14 +4493,6 @@
 			const lastTreatmentDate = clientVisits.length > 0 
 				? clientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
 				: '';
-			
-			// ✅ חישוב היום בשבוע לפי next_visit במקום allowed_day
-			const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
-			let visitDayName = client.allowed_day || 'א'; // ברירת מחדל
-			if (client.next_visit) {
-				const nextVisitDate = new Date(client.next_visit);
-				visitDayName = dayNames[nextVisitDate.getDay()];
-			}
 			
 			// צבע לתאריך הבא לפי סטטוס
 			let nextDateColor = '#2196F3'; // כחול - ברירת מחדל
@@ -4545,33 +4537,54 @@
 									<span class="date-label">קודם:</span>
 									<span class="date-value">${formatDate(lastTreatmentDate)}</span>
 								</div>` 
-								: ''}
+								: 
+								`<div class="planning-date-item">
+									<span class="date-label">קודם:</span>
+									<span class="date-value" style="color: #999;">---</span>
+								</div>`
+							}
 							<div class="planning-date-item">
 								<span class="date-label">הבא:</span>
-								<span class="date-value" style="color: ${nextDateColor}; font-weight: bold;">${nextVisitFormatted}</span>
-								<span class="date-day">(יום ${visitDayName}')</span>
+								<span class="date-value" style="color: ${nextDateColor}; font-weight: 600;">${nextVisitFormatted}</span>
 							</div>
+							${client.base_amount > 0 ? 
+								`<div class="planning-amount-small">💰 ${client.base_amount} ₪</div>` 
+								: ''
+							}
 						</div>
-						
-						<!-- מידע נוסף -->
-						<div class="planning-info-section">
-							<span class="planning-interval">🔄 כל ${client.interval_weeks || 4} שבועות</span>
-							<span class="planning-status-text">${statusText}</span>
-						</div>
-						
-						<!-- כפתורים -->
-						<div class="planning-actions">
-							<button class="planning-btn planning-btn-start" onclick="startTreatment('${client.ID}')">
-								▶️ התחל
+
+						<!-- כפתורי פעולה -->
+						<div class="planning-actions-row">
+							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
+								1W+
 							</button>
-							<button class="planning-btn planning-btn-profile" onclick="showClientProfile('${client.ID}')">
+							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 2)" title="שבועיים">
+								2W+
+							</button>
+							<button class="profile-btn-mobile" onclick="showClientProfile('${client.ID}')" title="פרופיל">
 								👤
 							</button>
-							<button class="planning-btn planning-btn-postpone" onclick="showPostponeOptions('${client.ID}')">
-								⏰
+							<label class="active-checkbox-mobile" title="פעיל">
+								<input type="checkbox" ${client.active === '1' ? 'checked' : ''} onchange="toggleClientActive('${client.ID}', this.checked ? '1' : '0')">
+							</label>
+						</div>
+
+						<!-- בחירת תאריך והתחלה -->
+						<div class="planning-date-row">
+							<input type="date" class="planning-date-input-mobile" value="" onchange="updateClientNextVisit('${client.ID}', this.value)" id="dateInput_${client.ID}">
+							<button class="start-treatment-btn-mobile" onclick="startTreatment('${client.ID}')" title="התחל טיפול">
+								▶️
 							</button>
 						</div>
 					</div>
+					
+					<!-- הערות ובקשות -->
+					${(client.notes || client.client_requests) ? `
+						<div class="planning-row-details">
+							${client.client_requests ? `<div class="client-requests">📢 בקשות: ${client.client_requests}</div>` : ''}
+							${client.notes ? `<div class="client-notes">💭 הערות: ${client.notes}</div>` : ''}
+						</div>
+					` : ''}
 				</div>
 			`;
 		}
