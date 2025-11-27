@@ -2444,7 +2444,7 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3325,13 +3325,9 @@
 						updateConnectionStatus(true);
 
 						// טעינה אוטומטית של נתונים אם קיימים
-						if (SPREADSHEET_ID) {
-							try {
-								await loadAllFromSheets();
-							} catch (error) {
-								console.log('Could not auto-load data:', error);
-							}
-						}
+						// ❌ בוטל: טעינה אוטומטית - עכשיו רק ידנית
+						// המשתמש יבחר מתי לטעון כדי למנוע דריסת נתונים מקומיים
+						console.log('✅ מחובר לענן - טעינה ידנית בלבד (כפתור "טען")');
 					},
 				});
 				
@@ -3441,13 +3437,13 @@
 				// הגדרת רענון אוטומטי
 				setupTokenRefresh();
 				
-				// טעינת נתונים
+				// בדיקת מבנה טבלאות בלבד - ללא טעינת נתונים
 				await findOrCreateMainSpreadsheet();
 				await checkAndFixTableStructure();
 				
-				if (SPREADSHEET_ID) {
-					await loadAllFromSheets();
-				}
+				// ❌ בוטל: טעינה אוטומטית - עכשיו רק ידנית
+				// המשתמש יבחר מתי לטעון כדי למנוע דריסת נתונים מקומיים
+				console.log('✅ Token שוחזר - טעינה ידנית בלבד (כפתור "טען")');
 				
 				showToast('חיבור Google שוחזר בהצלחה', 'success');
 				return true;
@@ -4283,41 +4279,31 @@
 	
 		// מיון לקוחות לפי התצוגה הנוכחית
 		function sortPlanningClients() {
+			const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
+			
 			planningClients.sort((a, b) => {
-				// הגדרת dayOrder פעם אחת בתחילת הפונקציה
-				const dayOrder = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
-				
 				switch (currentPlanningView) {
 					case 'daily':
 						// מיון לפי שעה מועדפת אם קיימת, אחרת לפי שם
 						return (a.name || '').localeCompare(b.name || '');
 						
 					case 'weekly':
-						// מיון לפי יום בשבוע, ואז לפי תאריך
-						const aDay = dayOrder.indexOf(a.allowed_day || 'א');
-						const bDay = dayOrder.indexOf(b.allowed_day || 'א');
-						if (aDay !== bDay) return aDay - bDay;
-						return a.daysDiff - b.daysDiff;
-						
 					case 'next_week':
-						// מיון לפי יום בשבוע, ואז לפי תאריך
-						const aDayNext = dayOrder.indexOf(a.allowed_day || 'א');
-						const bDayNext = dayOrder.indexOf(b.allowed_day || 'א');
-						if (aDayNext !== bDayNext) return aDayNext - bDayNext;
-						return a.daysDiff - b.daysDiff;	
+					case 'future':
+						// ✅ שינוי: מיון לפי היום של next_visit במקום allowed_day
+						const aNextDate = a.next_visit ? new Date(a.next_visit) : new Date('9999-12-31');
+						const bNextDate = b.next_visit ? new Date(b.next_visit) : new Date('9999-12-31');
+						const aDayIndex = aNextDate.getDay();
+						const bDayIndex = bNextDate.getDay();
+						
+						if (aDayIndex !== bDayIndex) return aDayIndex - bDayIndex;
+						// בתוך אותו יום - לפי תאריך ואז לפי שם
+						if (a.daysDiff !== b.daysDiff) return a.daysDiff - b.daysDiff;
+						return (a.name || '').localeCompare(b.name || '');
 						
 					case 'overdue':
 						// מיון לפי חומרת האיחור (הכי מאחר ראשון)
 						return b.daysOverdue - a.daysOverdue;
-						
-					case 'future':
-						// מיון לפי יום בשבוע, ואז לפי תאריך (כמו שבועי)
-						const aDayFuture = dayOrder.indexOf(a.allowed_day || 'א');
-						const bDayFuture = dayOrder.indexOf(b.allowed_day || 'א');
-						if (aDayFuture !== bDayFuture) return aDayFuture - bDayFuture;
-						// בתוך אותו יום - לפי תאריך ואז לפי שם
-						if (a.daysDiff !== b.daysDiff) return a.daysDiff - b.daysDiff;
-						return (a.name || '').localeCompare(b.name || '');   
 						
 					default:
 						return 0;
@@ -4400,7 +4386,7 @@
 		}
 
 
-		// רינדור למצב שבועי ומאחרות עם טאבי ימים
+				// רינדור למצב שבועי ומאחרות עם טאבי ימים
 		function renderWeeklyPlanningByDays() {
 			const container = document.getElementById('planningCardsContainer');
 			const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
@@ -4411,9 +4397,15 @@
 			const dayIndexMap = {'א': 0, 'ב': 1, 'ג': 2, 'ד': 3, 'ה': 4, 'ו': 5, 'ש': 6};
 
 			const daysData = dayNames.map(dayName => {
-				const dayClients = planningClients.filter(client => 
-					(client.allowed_day || 'א') === dayName
-				);
+				// ✅ שינוי: סינון לפי היום של next_visit במקום allowed_day
+				const dayClients = planningClients.filter(client => {
+					if (!client.next_visit) return false;
+					const nextVisitDate = new Date(client.next_visit);
+					const visitDayIndex = nextVisitDate.getDay(); // 0=ראשון
+					const visitDayName = dayNames[visitDayIndex];
+					return visitDayName === dayName;
+				});
+				
 				// מיון לקוחות היום
 				dayClients.sort((a, b) => {
 					if (currentPlanningView === 'overdue') {
@@ -4505,6 +4497,14 @@
 				? clientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
 				: '';
 			
+			// ✅ חישוב היום בשבוע לפי next_visit במקום allowed_day
+			const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
+			let visitDayName = client.allowed_day || 'א'; // ברירת מחדל
+			if (client.next_visit) {
+				const nextVisitDate = new Date(client.next_visit);
+				visitDayName = dayNames[nextVisitDate.getDay()];
+			}
+			
 			// צבע לתאריך הבא לפי סטטוס
 			let nextDateColor = '#2196F3'; // כחול - ברירת מחדל
 			if (currentPlanningView === 'overdue') {
@@ -4548,54 +4548,33 @@
 									<span class="date-label">קודם:</span>
 									<span class="date-value">${formatDate(lastTreatmentDate)}</span>
 								</div>` 
-								: 
-								`<div class="planning-date-item">
-									<span class="date-label">קודם:</span>
-									<span class="date-value" style="color: #999;">---</span>
-								</div>`
-							}
+								: ''}
 							<div class="planning-date-item">
 								<span class="date-label">הבא:</span>
-								<span class="date-value" style="color: ${nextDateColor}; font-weight: 600;">${nextVisitFormatted}</span>
+								<span class="date-value" style="color: ${nextDateColor}; font-weight: bold;">${nextVisitFormatted}</span>
+								<span class="date-day">(יום ${visitDayName}')</span>
 							</div>
-							${client.base_amount > 0 ? 
-								`<div class="planning-amount-small">💰 ${client.base_amount} ₪</div>` 
-								: ''
-							}
 						</div>
-
-						<!-- כפתורי פעולה -->
-						<div class="planning-actions-row">
-							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
-								1W+
+						
+						<!-- מידע נוסף -->
+						<div class="planning-info-section">
+							<span class="planning-interval">🔄 כל ${client.interval_weeks || 4} שבועות</span>
+							<span class="planning-status-text">${statusText}</span>
+						</div>
+						
+						<!-- כפתורים -->
+						<div class="planning-actions">
+							<button class="planning-btn planning-btn-start" onclick="startTreatment('${client.ID}')">
+								▶️ התחל
 							</button>
-							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 2)" title="שבועיים">
-								2W+
-							</button>
-							<button class="profile-btn-mobile" onclick="showClientProfile('${client.ID}')" title="פרופיל">
+							<button class="planning-btn planning-btn-profile" onclick="showClientProfile('${client.ID}')">
 								👤
 							</button>
-							<label class="active-checkbox-mobile" title="פעיל">
-								<input type="checkbox" ${client.active === '1' ? 'checked' : ''} onchange="toggleClientActive('${client.ID}', this.checked ? '1' : '0')">
-							</label>
-						</div>
-
-						<!-- בחירת תאריך והתחלה -->
-						<div class="planning-date-row">
-							<input type="date" class="planning-date-input-mobile" value="" onchange="updateClientNextVisit('${client.ID}', this.value)" id="dateInput_${client.ID}">
-							<button class="start-treatment-btn-mobile" onclick="startTreatment('${client.ID}')" title="התחל טיפול">
-								▶️
+							<button class="planning-btn planning-btn-postpone" onclick="showPostponeOptions('${client.ID}')">
+								⏰
 							</button>
 						</div>
 					</div>
-					
-					<!-- הערות ובקשות -->
-					${(client.notes || client.client_requests) ? `
-						<div class="planning-row-details">
-							${client.client_requests ? `<div class="client-requests">📢 בקשות: ${client.client_requests}</div>` : ''}
-							${client.notes ? `<div class="client-notes">💭 הערות: ${client.notes}</div>` : ''}
-						</div>
-					` : ''}
 				</div>
 			`;
 		}
@@ -15649,8 +15628,8 @@
 					const workDone = visit.work_done || 'ללא תיאור';
 					
 					return `
-						<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 8px; opacity: 0.8;">
-							<div style="display: flex; justify-content: space-between;">
+						<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 8px;">
+							<div style="display: flex; justify-content: space-between; align-items: center;">
 								<div style="flex: 1;">
 									<div style="font-weight: bold; color: #2c3e50;">${clientName}</div>
 									<div style="font-size: 12px; color: #666;">${workDone}</div>
@@ -15658,8 +15637,14 @@
 										${startTime} → ${endTime}
 									</div>
 								</div>
-								<div style="text-align: left; color: #27ae60; font-weight: bold;">
-									${amount}₪
+								<div style="display: flex; align-items: center; gap: 8px;">
+									<span style="color: #27ae60; font-weight: bold; font-size: 14px;">${amount}₪</span>
+									<button onclick="showVisitForm('${visit.ID}')" 
+											style="padding: 6px 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
+											title="עריכת טיפול">✏️</button>
+									<button onclick="showAddPaymentModal(null, '${visit.ID}')"
+											style="padding: 6px 10px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
+											title="תשלום">💰</button>
 								</div>
 							</div>
 						</div>
