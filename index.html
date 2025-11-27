@@ -2444,7 +2444,7 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3000,6 +3000,85 @@
 				</div>
 			</section>
 
+			<!-- System Section -->
+			<section id="system" class="section">
+				<h2>🛠️ מערכת</h2>
+				
+				<!-- Import Section -->
+				<div class="form-section">
+					<h3>📥 ייבוא נתונים</h3>
+					
+					<div class="import-main-buttons" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
+						<button onclick="createImportTable()" class="btn">
+							🔗 צור טבלת עזר לייבוא
+						</button>
+						<button onclick="importFromHelperTableFast()" class="btn" style="background: #27ae60; color: white;">
+							🚀 ייבוא מהיר וכולל
+						</button>
+						<button onclick="importPaymentsFromHelper()" class="btn" style="background: #9b59b6; color: white;">
+							💳 ייבוא תשלומים
+						</button>
+						<button onclick="autoCalculatePricesByDuration()" class="btn" style="background: linear-gradient(45deg, #f39c12, #e67e22); color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);">
+							⚡ חשב מחירים לפי זמן
+						</button>
+						<button onclick="autoLinkPaymentsToVisits()" class="btn" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);">
+							🔗 קישור אוטומטי תשלומים-טיפולים
+						</button>
+					</div>
+					
+					<div style="text-align: center; margin: 15px 0;">
+						<span style="color: #666;">או</span>
+					</div>
+				</div>
+				
+				<!-- ניהול נתונים -->
+				<div class="form-section">
+					<h3>🗂️ ניהול נתונים</h3>
+					
+					<div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+						<h4 style="color: #856404; margin-bottom: 10px;">⚠️ ניקוי נתונים</h4>
+						<p style="font-size: 14px; color: #856404; margin-bottom: 10px;">
+							נקה את כל הנתונים המקומיים לפני ייבוא חדש (לא משפיע על הענן)
+						</p>
+						
+						<button class="btn" onclick="clearAllDataBeforeImport()" 
+								style="background: #dc3545; color: white; border: none;">
+							🗑️ נקה את כל הנתונים המקומיים
+						</button>
+					</div>
+					
+					<!-- סטטוס טבלת עזר -->
+					<div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px;">
+						<h4 style="color: #495057; margin-bottom: 10px;">📊 טבלת עזר לייבוא</h4>
+						<div id="importTableStatus">
+							<span style="font-size: 13px; color: #666;">
+								בודק סטטוס טבלת עזר...
+							</span>
+						</div>
+					</div>
+				</div>
+				
+				<!-- Additional System Features -->
+				<div class="form-section">
+					<h3>⚙️ הגדרות מערכת</h3>
+					
+					<!-- Cost Settings -->
+					<div style="background: rgba(39, 174, 96, 0.1); border: 2px solid #27ae60; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+						<h4 style="color: #27ae60; margin-bottom: 10px;">💰 הגדרות עלות טיפול</h4>
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+							<div class="form-group">
+								<label for="hourlyRate">שעת עבודה (₪):</label>
+								<input type="number" id="hourlyRate" value="150" min="0" onchange="saveCostSettings()">
+							</div>
+							<div class="form-group">
+								<label for="workerCost">תוספת לפועל (₪):</label>
+								<input type="number" id="workerCost" value="50" min="0" onchange="saveCostSettings()">
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+			
 			<!-- Tasks Section -->
 			<section id="tasks" class="section" style="display: none;">
 				<div class="section-header">
@@ -3104,86 +3183,6 @@
 							<!-- Will be populated by displayTasks() -->
 						</tbody>
 					</table>
-				</div>
-			</section>
-
-
-			<!-- System Section -->
-			<section id="system" class="section">
-				<h2>🛠️ מערכת</h2>
-				
-				<!-- Import Section -->
-				<div class="form-section">
-					<h3>📥 ייבוא נתונים</h3>
-					
-					<div class="import-main-buttons" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
-						<button onclick="createImportTable()" class="btn">
-							🔗 צור טבלת עזר לייבוא
-						</button>
-						<button onclick="importFromHelperTableFast()" class="btn" style="background: #27ae60; color: white;">
-							🚀 ייבוא מהיר וכולל
-						</button>
-						<button onclick="importPaymentsFromHelper()" class="btn" style="background: #9b59b6; color: white;">
-							💳 ייבוא תשלומים
-						</button>
-						<button onclick="autoCalculatePricesByDuration()" class="btn" style="background: linear-gradient(45deg, #f39c12, #e67e22); color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);">
-							⚡ חשב מחירים לפי זמן
-						</button>
-						<button onclick="autoLinkPaymentsToVisits()" class="btn" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);">
-							🔗 קישור אוטומטי תשלומים-טיפולים
-						</button>
-					</div>
-					
-					<div style="text-align: center; margin: 15px 0;">
-						<span style="color: #666;">או</span>
-					</div>
-				</div>
-				
-				<!-- ניהול נתונים -->
-				<div class="form-section">
-					<h3>🗂️ ניהול נתונים</h3>
-					
-					<div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-						<h4 style="color: #856404; margin-bottom: 10px;">⚠️ ניקוי נתונים</h4>
-						<p style="font-size: 14px; color: #856404; margin-bottom: 10px;">
-							נקה את כל הנתונים המקומיים לפני ייבוא חדש (לא משפיע על הענן)
-						</p>
-						
-						<button class="btn" onclick="clearAllDataBeforeImport()" 
-								style="background: #dc3545; color: white; border: none;">
-							🗑️ נקה את כל הנתונים המקומיים
-						</button>
-					</div>
-					
-					<!-- סטטוס טבלת עזר -->
-					<div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px;">
-						<h4 style="color: #495057; margin-bottom: 10px;">📊 טבלת עזר לייבוא</h4>
-						<div id="importTableStatus">
-							<span style="font-size: 13px; color: #666;">
-								בודק סטטוס טבלת עזר...
-							</span>
-						</div>
-					</div>
-				</div>
-				
-				<!-- Additional System Features -->
-				<div class="form-section">
-					<h3>⚙️ הגדרות מערכת</h3>
-					
-					<!-- Cost Settings -->
-					<div style="background: rgba(39, 174, 96, 0.1); border: 2px solid #27ae60; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-						<h4 style="color: #27ae60; margin-bottom: 10px;">💰 הגדרות עלות טיפול</h4>
-						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-							<div class="form-group">
-								<label for="hourlyRate">שעת עבודה (₪):</label>
-								<input type="number" id="hourlyRate" value="150" min="0" onchange="saveCostSettings()">
-							</div>
-							<div class="form-group">
-								<label for="workerCost">תוספת לפועל (₪):</label>
-								<input type="number" id="workerCost" value="50" min="0" onchange="saveCostSettings()">
-							</div>
-						</div>
-					</div>
 				</div>
 			</section>
 			
