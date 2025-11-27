@@ -3558,9 +3558,7 @@
 				});
 				
 				const rows = response.result.values;
-				console.log('🔍 Raw locations data (first row):', rows ? rows[0] : 'No data');
-				console.log('🔍 Raw locations data (second row):', rows ? rows[1] : 'No data');
-				
+								
 				if (rows && rows.length > 1) {
 					locations = rows.slice(1).map((row, index) => {
 						const location = {
@@ -5917,9 +5915,9 @@
 			
 			// צור חלון עריכה
 			const editModalHTML = `
-				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90vw; max-height: 80vh; overflow-y: auto;">
-					<h3 style="margin-bottom: 20px; color: #2c3e50;">🏠 עריכת לקוח - ${location.name}</h3>
-					
+				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90vw; max-height: 80vh; overflow-y: auto; position: relative;">
+					<button onclick="closeAnyModal()" style="position: absolute; top: 15px; left: 15px; background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px; font-weight: bold;">×</button>
+					<h3 style="margin-bottom: 20px; color: #2c3e50;">🏠 עריכת לקוח - ${location.name}</h3>	
 					<form id="editLocationForm">
 						<div class="form-group">
 							<label>שם הלקוח:</label>
