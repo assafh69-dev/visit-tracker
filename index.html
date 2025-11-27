@@ -2444,7 +2444,7 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3320,9 +3320,6 @@
 
 						// ודא שכל הטבלאות החדשות קיימות
 						await checkAndFixTableStructure();
-
-						// After successful connection:
-						updateConnectionStatus(true);
 
 						// טעינה אוטומטית של נתונים אם קיימים
 						// ❌ בוטל: טעינה אוטומטית - עכשיו רק ידנית
@@ -16335,7 +16332,7 @@
 				}
 				
 				// Update UI
-				updateConnectionStatus(false);
+				updateCloudStatus('⚪ לא מחובר', 'התנתק');
 				
 				showToast('🔌 התנתקת מהענן בהצלחה', 'success');
 				
@@ -16343,42 +16340,6 @@
 			}
 		}
 
-		// ✅ Update connection status indicator
-			function updateConnectionStatus(isConnected) {
-				// Update header status
-				const headerStatus = document.getElementById('statusText');
-				if (headerStatus) {
-					if (isConnected) {
-						headerStatus.innerHTML = '✅ מחובר';
-						headerStatus.style.color = '#4caf50';
-					} else {
-						headerStatus.innerHTML = '⚪ לא מחובר';
-						headerStatus.style.color = 'white';
-					}
-				}
-				
-				// Update tab status (if exists)
-				const tabStatus = document.getElementById('connectionStatus');
-				if (tabStatus) {
-					if (isConnected) {
-						tabStatus.innerHTML = '✅ מחובר לענן';
-						tabStatus.style.color = '#27ae60';
-					} else {
-						tabStatus.innerHTML = '❌ לא מחובר (מצב לא מקוון)';
-						tabStatus.style.color = '#e74c3c';
-					}
-				}
-			}
-
-
-		// Check connection status on page load
-		document.addEventListener('DOMContentLoaded', function() {
-			if (access_token && SPREADSHEET_ID) {
-				updateConnectionStatus(true);
-			} else {
-				updateConnectionStatus(false);
-			}
-		});
 
 
 		// ✅ Cancel "paid" status for a visit - allow re-linking
