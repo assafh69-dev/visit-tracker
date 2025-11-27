@@ -2444,7 +2444,7 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2459,68 +2459,73 @@
         <main class="main-content">
             <!-- Planning Section -->
 			<section id="planning" class="section active">
-				<h2>📅 תכנון יומי ושבועי</h2>
-				
-           <!-- מצב יום עבודה -->
-			<div class="work-day-section" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #28a745; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-				<h3 style="margin: 0 0 15px 0; color: #28a745; font-size: 18px; display: flex; align-items: center; gap: 8px;">
-					🏃‍♂️ הטיפולים שלי היום
-					<span id="todayWorkStatus" style="font-size: 14px; color: #666; font-weight: normal;"></span>
-				</h3>
-				
-				<div id="todayTreatmentsContainer">
-					<!-- הטיפולים של היום יוכנסו כאן דינמית -->
-				</div>
-				
-				<div style="text-align: center; margin-top: 15px;">
-					<button onclick="refreshTodayTreatments()" class="btn" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
-						🔄 רענן
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+					<h2 style="margin: 0;">📅 תכנון יומי ושבועי</h2>
+					<button onclick="showScheduleClientModal()" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+						📅 זמן לקוח
 					</button>
 				</div>
-			</div>
-			
-            <!-- טאבים -->
-            <div class="planning-view-tabs">
-				<button class="planning-tab-btn active" onclick="switchPlanningView('daily')">היום</button>
-				<button class="planning-tab-btn" onclick="switchPlanningView('weekly')">השבוע</button>
-				<button class="planning-tab-btn" onclick="switchPlanningView('next_week')">הבא</button>
-				<button class="planning-tab-btn" onclick="switchPlanningView('overdue')">איחור</button>
-				<button class="planning-tab-btn" onclick="switchPlanningView('future')">עתידי</button>
-			</div>
+					
+			   <!-- מצב יום עבודה -->
+				<div class="work-day-section" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #28a745; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+					<h3 style="margin: 0 0 15px 0; color: #28a745; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+						🏃‍♂️ הטיפולים שלי היום
+						<span id="todayWorkStatus" style="font-size: 14px; color: #666; font-weight: normal;"></span>
+					</h3>
+					
+					<div id="todayTreatmentsContainer">
+						<!-- הטיפולים של היום יוכנסו כאן דינמית -->
+					</div>
+					
+					<div style="text-align: center; margin-top: 15px;">
+						<button onclick="refreshTodayTreatments()" class="btn" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+							🔄 רענן
+						</button>
+					</div>
+				</div>
+				
+				<!-- טאבים -->
+				<div class="planning-view-tabs">
+					<button class="planning-tab-btn active" onclick="switchPlanningView('daily')">היום</button>
+					<button class="planning-tab-btn" onclick="switchPlanningView('weekly')">השבוע</button>
+					<button class="planning-tab-btn" onclick="switchPlanningView('next_week')">הבא</button>
+					<button class="planning-tab-btn" onclick="switchPlanningView('overdue')">איחור</button>
+					<button class="planning-tab-btn" onclick="switchPlanningView('future')">עתידי</button>
+				</div>
 
-            <!-- כרטיסי לקוחות -->
-            <div class="planning-cards-container" id="planningCardsContainer">
-                <!-- כרטיסים יטענו כאן דינמית -->
-            </div>
+				<!-- כרטיסי לקוחות -->
+				<div class="planning-cards-container" id="planningCardsContainer">
+					<!-- כרטיסים יטענו כאן דינמית -->
+				</div>
 
-            <!-- סטטיסטיקות (שמירה על הקיים) -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
-                <div style="background: rgba(52, 152, 219, 0.1); border: 2px solid #3498db; border-radius: 8px; padding: 12px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-size: 13px; color: #2c3e50;">לקוחות:</span>
-                        <span id="totalLocations" style="font-weight: bold; color: #2c3e50;">0</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-size: 13px; color: #2c3e50;">פעילים:</span>
-                        <span id="activeLocations" style="font-weight: bold; color: #27ae60;">0</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="font-size: 13px; color: #2c3e50;">טיפולים השבוע:</span>
-                        <span id="weeklyVisits" style="font-weight: bold; color: #2c3e50;">0</span>
-                    </div>
-                </div>
-                
-                <div style="background: rgba(39, 174, 96, 0.1); border: 2px solid #27ae60; border-radius: 8px; padding: 12px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-size: 13px; color: #2c3e50;">הכנסה השבוע:</span>
-                        <span id="weeklyIncome" style="font-weight: bold; color: #27ae60;">₪0</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="font-size: 13px; color: #2c3e50;">חובות פתוחים:</span>
-                        <span id="openDebts" style="font-weight: bold; color: #e74c3c;">₪0</span>
-                    </div>
-                </div>
-            </div>
+				<!-- סטטיסטיקות (שמירה על הקיים) -->
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+					<div style="background: rgba(52, 152, 219, 0.1); border: 2px solid #3498db; border-radius: 8px; padding: 12px;">
+						<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+							<span style="font-size: 13px; color: #2c3e50;">לקוחות:</span>
+							<span id="totalLocations" style="font-weight: bold; color: #2c3e50;">0</span>
+						</div>
+						<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+							<span style="font-size: 13px; color: #2c3e50;">פעילים:</span>
+							<span id="activeLocations" style="font-weight: bold; color: #27ae60;">0</span>
+						</div>
+						<div style="display: flex; justify-content: space-between;">
+							<span style="font-size: 13px; color: #2c3e50;">טיפולים השבוע:</span>
+							<span id="weeklyVisits" style="font-weight: bold; color: #2c3e50;">0</span>
+						</div>
+					</div>
+					
+					<div style="background: rgba(39, 174, 96, 0.1); border: 2px solid #27ae60; border-radius: 8px; padding: 12px;">
+						<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+							<span style="font-size: 13px; color: #2c3e50;">הכנסה השבוע:</span>
+							<span id="weeklyIncome" style="font-weight: bold; color: #27ae60;">₪0</span>
+						</div>
+						<div style="display: flex; justify-content: space-between;">
+							<span style="font-size: 13px; color: #2c3e50;">חובות פתוחים:</span>
+							<span id="openDebts" style="font-weight: bold; color: #e74c3c;">₪0</span>
+						</div>
+					</div>
+				</div>
 			</section>
 
 			<!-- History Section -->
@@ -15565,29 +15570,41 @@
 			const container = document.getElementById('todayTreatmentsContainer');
 			const statusElement = document.getElementById('todayWorkStatus');
 			
-			if (todayVisits.length === 0) {
+			// Get today's tasks
+			const todayTasks = (typeof tasks !== 'undefined' ? tasks : []).filter(task => 
+				task.due_date === today && 
+				task.status !== 'completed' && 
+				task.status !== 'cancelled'
+			);
+			
+			if (todayVisits.length === 0 && todayTasks.length === 0) {
 				container.innerHTML = `
-					<div style="text-align: center; padding: 15px; color: #666; font-style: italic;">
-						עדיין לא התחלת טיפולים היום 🌅
+					<div style="text-align: center; padding: 30px; color: #666;">
+						<div style="font-size: 48px; margin-bottom: 15px;">🌅</div>
+						<div style="font-style: italic; margin-bottom: 20px;">אין טיפולים או משימות מתוכננים להיום</div>
+						<button onclick="showScheduleClientModal()" style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+							📅 זמן לקוח
+						</button>
 					</div>
 				`;
 				statusElement.textContent = '';
 				return;
 			}
 			
-			// ✅ NEW: Separate in-progress from completed
+			// Separate in-progress from completed
 			const inProgressVisits = todayVisits.filter(v => v.start_time && !v.end_time);
 			const completedVisits = todayVisits.filter(v => v.end_time);
 			const notStartedVisits = todayVisits.filter(v => !v.start_time);
 			
 			// Update status summary
 			const totalIncome = todayVisits.reduce((sum, v) => sum + parseFloat(v.amount || 0), 0);
-			statusElement.textContent = `(${completedVisits.length}/${todayVisits.length} הסתיימו • ₪${totalIncome} סה"כ)`;
+			const taskCount = todayTasks.length > 0 ? ` • ${todayTasks.length} משימות` : '';
+			statusElement.textContent = `(${completedVisits.length}/${todayVisits.length} הסתיימו • ₪${totalIncome} סה"כ${taskCount})`;
 			
 			// Generate treatments HTML
 			let html = '';
 			
-			// ✅ Show in-progress treatments first
+			// Show in-progress treatments first
 			if (inProgressVisits.length > 0) {
 				html += `<div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
 					<h4 style="margin: 0 0 10px 0; color: #856404;">🔄 בתהליך עכשיו</h4>`;
@@ -15631,12 +15648,9 @@
 					const amount = visit.amount || 0;
 					const workDone = visit.work_done || 'ללא תיאור';
 					
-					const paidInfo = parsePaidField(visit.paid);
-					const isPaid = paidInfo.status === '1';
-
 					return `
-						<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 8px;">
-							<div style="display: flex; justify-content: space-between; align-items: center;">
+						<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 8px; opacity: 0.8;">
+							<div style="display: flex; justify-content: space-between;">
 								<div style="flex: 1;">
 									<div style="font-weight: bold; color: #2c3e50;">${clientName}</div>
 									<div style="font-size: 12px; color: #666;">${workDone}</div>
@@ -15644,19 +15658,8 @@
 										${startTime} → ${endTime}
 									</div>
 								</div>
-								<div style="display: flex; align-items: center; gap: 8px;">
-									<div style="text-align: left; color: #27ae60; font-weight: bold;">
-										${amount}₪
-										${isPaid ? '<span style="color: #27ae60; font-size: 11px;">✓</span>' : '<span style="color: #e74c3c; font-size: 11px;">✗</span>'}
-									</div>
-									<button onclick="showVisitForm('${visit.ID}')" 
-											style="padding: 5px 8px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;" 
-											title="עריכת טיפול">✏️</button>
-									${!isPaid ? `
-										<button onclick="showAddPaymentModal('${visit.location_id}')" 
-												style="padding: 5px 8px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;" 
-												title="הוסף תשלום">💰</button>
-									` : ''}
+								<div style="text-align: left; color: #27ae60; font-weight: bold;">
+									${amount}₪
 								</div>
 							</div>
 						</div>
@@ -15668,7 +15671,7 @@
 			
 			// Show not started treatments
 			if (notStartedVisits.length > 0) {
-				html += `<div>
+				html += `<div style="margin-bottom: 10px;">
 					<h4 style="margin: 0 0 10px 0; color: #666;">📋 מתוכננים</h4>`;
 				
 				html += notStartedVisits.map(visit => {
@@ -15682,6 +15685,54 @@
 									style="margin-top: 5px; padding: 6px 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
 								▶️ התחל טיפול
 							</button>
+						</div>
+					`;
+				}).join('');
+				
+				html += `</div>`;
+			}
+			
+			// Show today's tasks
+			if (todayTasks.length > 0) {
+				html += `<div style="background: #f3e5f5; border: 2px solid #9b59b6; border-radius: 8px; padding: 10px; margin-top: 10px;">
+					<h4 style="margin: 0 0 10px 0; color: #9b59b6;">📋 משימות להיום (${todayTasks.length})</h4>`;
+				
+				html += todayTasks.map(task => {
+					const typeInfo = typeof TASK_TYPES !== 'undefined' && TASK_TYPES[task.type] ? TASK_TYPES[task.type] : { icon: '📦', label: task.type || 'אחר' };
+					const statusInfo = typeof TASK_STATUSES !== 'undefined' && TASK_STATUSES[task.status] ? TASK_STATUSES[task.status] : { icon: '⏳', label: 'ממתין' };
+					
+					return `
+						<div style="background: white; padding: 10px; border-radius: 5px; margin-bottom: 8px; border-left: 4px solid #9b59b6;">
+							<div style="display: flex; justify-content: space-between; align-items: center;">
+								<div style="flex: 1;">
+									<div style="font-weight: bold; color: #2c3e50;">
+										${typeInfo.icon} ${task.client_name || 'ללא לקוח'}
+									</div>
+									<div style="font-size: 12px; color: #666;">${task.description || ''}</div>
+									<div style="font-size: 11px; color: #9b59b6; margin-top: 3px;">
+										${statusInfo.icon} ${statusInfo.label}
+										${task.estimated_cost ? ' • ₪' + task.estimated_cost : ''}
+									</div>
+								</div>
+								<div style="display: flex; gap: 5px;">
+									${task.status === 'pending' ? `
+										<button onclick="updateTaskStatus('${task.ID}', 'in_progress')" 
+												style="padding: 6px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+											▶️ התחל
+										</button>
+									` : ''}
+									${task.status === 'in_progress' ? `
+										<button onclick="completeTask('${task.ID}')" 
+												style="padding: 6px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+											✅ סיים
+										</button>
+									` : ''}
+									<button onclick="showEditTaskModal('${task.ID}')" 
+											style="padding: 6px 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+										✏️
+									</button>
+								</div>
+							</div>
 						</div>
 					`;
 				}).join('');
@@ -17142,7 +17193,246 @@
 			}
 		}
 
+		// ==================== SCHEDULE CLIENT ====================
 
+		// Show schedule client modal
+		function showScheduleClientModal() {
+			const today = new Date().toISOString().split('T')[0];
+			const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+			
+			const modalHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 90vw; max-height: 90vh; overflow-y: auto; position: relative;">
+					<button onclick="closeAnyModal()" style="position: absolute; top: 15px; left: 15px; background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
+					
+					<h3 style="margin: 0 0 20px 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+						📅 זמן לקוח
+					</h3>
+					
+					<!-- Client Search -->
+					<div style="margin-bottom: 15px;">
+						<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">לקוח:</label>
+						<div style="position: relative;">
+							<input type="text" id="scheduleClientSearch" placeholder="🔍 הקלד שם לקוח..." 
+								   onkeyup="filterScheduleClients()" 
+								   autocomplete="off"
+								   style="width: 100%; padding: 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px;">
+							<div id="scheduleClientOptions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: white; border: 2px solid #667eea; border-top: none; border-radius: 0 0 8px 8px; z-index: 100;"></div>
+						</div>
+						<input type="hidden" id="scheduleClientId">
+					</div>
+					
+					<!-- Date Selection -->
+					<div style="margin-bottom: 15px;">
+						<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">תאריך:</label>
+						<div style="display: flex; gap: 8px; margin-bottom: 8px;">
+							<button type="button" onclick="setScheduleDate('${today}')" style="flex: 1; padding: 8px; background: #e8f5e9; border: 2px solid #27ae60; border-radius: 6px; cursor: pointer; font-weight: 600; color: #27ae60;">
+								היום
+							</button>
+							<button type="button" onclick="setScheduleDate('${tomorrow}')" style="flex: 1; padding: 8px; background: #e3f2fd; border: 2px solid #2196f3; border-radius: 6px; cursor: pointer; font-weight: 600; color: #2196f3;">
+								מחר
+							</button>
+						</div>
+						<input type="date" id="scheduleDate" value="${today}" 
+							   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+					</div>
+					
+					<!-- Type Selection -->
+					<div style="margin-bottom: 15px;">
+						<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">סוג:</label>
+						<div style="display: flex; gap: 10px;">
+							<label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer;" onclick="toggleScheduleType('treatment')">
+								<input type="radio" name="scheduleType" value="treatment" checked style="width: 18px; height: 18px;">
+								<span style="font-weight: 600;">🌿 טיפול רגיל</span>
+							</label>
+							<label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer;" onclick="toggleScheduleType('task')">
+								<input type="radio" name="scheduleType" value="task" style="width: 18px; height: 18px;">
+								<span style="font-weight: 600;">📋 משימה</span>
+							</label>
+						</div>
+					</div>
+					
+					<!-- Task Details (hidden by default) -->
+					<div id="scheduleTaskDetails" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+						<div style="margin-bottom: 10px;">
+							<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">סוג משימה:</label>
+							<select id="scheduleTaskType" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+								<option value="pest_control">🪲 הדברה</option>
+								<option value="planting">🌱 שתילה</option>
+								<option value="tree_trimming">✂️ גיזום עצים</option>
+								<option value="upgrade">🏡 שדרוג גינה</option>
+								<option value="repair">🔧 תיקון</option>
+								<option value="other">📦 אחר</option>
+							</select>
+						</div>
+						<div>
+							<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">תיאור:</label>
+							<input type="text" id="scheduleTaskDescription" placeholder="מה צריך לעשות?" 
+								   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+						</div>
+					</div>
+					
+					<!-- Submit -->
+					<div style="display: flex; gap: 10px;">
+						<button onclick="saveScheduleClient()" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
+							💾 שמור
+						</button>
+						<button onclick="closeAnyModal()" style="padding: 12px 20px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer;">
+							ביטול
+						</button>
+					</div>
+				</div>
+			`;
+			
+			showEditModal(modalHTML);
+		}
+
+		// Set schedule date from quick buttons
+		function setScheduleDate(date) {
+			document.getElementById('scheduleDate').value = date;
+		}
+
+		// Toggle schedule type (show/hide task details)
+		function toggleScheduleType(type) {
+			const taskDetails = document.getElementById('scheduleTaskDetails');
+			if (type === 'task') {
+				taskDetails.style.display = 'block';
+			} else {
+				taskDetails.style.display = 'none';
+			}
+		}
+
+		// Filter clients for schedule modal
+		function filterScheduleClients() {
+			const searchInput = document.getElementById('scheduleClientSearch');
+			const optionsDiv = document.getElementById('scheduleClientOptions');
+			const searchTerm = searchInput.value.toLowerCase();
+			
+			if (searchTerm.length < 1) {
+				optionsDiv.style.display = 'none';
+				return;
+			}
+			
+			const matchingClients = locations.filter(loc => 
+				loc.active === '1' && 
+				(loc.name?.toLowerCase().includes(searchTerm) || 
+				 loc.full_address?.toLowerCase().includes(searchTerm) ||
+				 loc.contact_person?.toLowerCase().includes(searchTerm))
+			).slice(0, 10);
+			
+			if (matchingClients.length === 0) {
+				optionsDiv.innerHTML = '<div style="padding: 15px; color: #666; text-align: center;">לא נמצאו לקוחות</div>';
+				optionsDiv.style.display = 'block';
+				return;
+			}
+			
+			optionsDiv.innerHTML = matchingClients.map(client => `
+				<div onclick="selectScheduleClient('${client.ID}', '${client.name.replace(/'/g, "\\'")}')" 
+					 style="padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.2s;"
+					 onmouseover="this.style.background='#f0f0ff'" onmouseout="this.style.background='white'">
+					<div style="font-weight: 600; color: #333;">${client.name}</div>
+					<div style="font-size: 12px; color: #666;">${client.full_address || ''}</div>
+				</div>
+			`).join('');
+			
+			optionsDiv.style.display = 'block';
+		}
+
+		// Select client for scheduling
+		function selectScheduleClient(clientId, clientName) {
+			document.getElementById('scheduleClientSearch').value = clientName;
+			document.getElementById('scheduleClientId').value = clientId;
+			document.getElementById('scheduleClientOptions').style.display = 'none';
+		}
+
+		// Save scheduled client
+		async function saveScheduleClient() {
+			const clientId = document.getElementById('scheduleClientId').value;
+			const scheduleDate = document.getElementById('scheduleDate').value;
+			const scheduleType = document.querySelector('input[name="scheduleType"]:checked')?.value;
+			
+			if (!clientId) {
+				showToast('❌ נא לבחור לקוח', 'error');
+				return;
+			}
+			
+			if (!scheduleDate) {
+				showToast('❌ נא לבחור תאריך', 'error');
+				return;
+			}
+			
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) {
+				showToast('❌ לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			if (scheduleType === 'treatment') {
+				// Update client's next_visit date
+				client.next_visit = scheduleDate;
+				saveToLocalStorage();
+				
+				closeAnyModal();
+				loadPlanningData();
+				loadTodayTreatments();
+				
+				showToast(`✅ ${client.name} תוזמן ל-${formatDate(scheduleDate)}`, 'success');
+				
+				// Save to cloud if connected
+				if (access_token && SPREADSHEET_ID) {
+					try {
+						await saveLocationToSheets(client);
+					} catch (error) {
+						console.error('Error saving to cloud:', error);
+					}
+				}
+				
+			} else if (scheduleType === 'task') {
+				// Create new task
+				const taskType = document.getElementById('scheduleTaskType').value;
+				const taskDescription = document.getElementById('scheduleTaskDescription').value;
+				
+				if (!taskDescription) {
+					showToast('❌ נא להזין תיאור למשימה', 'error');
+					return;
+				}
+				
+				const newTask = {
+					ID: 'TASK_' + Date.now(),
+					client_id: clientId,
+					client_name: client.name,
+					type: taskType,
+					description: taskDescription,
+					due_date: scheduleDate,
+					priority: 'normal',
+					estimated_cost: 0,
+					equipment: '',
+					notes: '',
+					recurring: false,
+					recurring_interval: '',
+					status: 'pending',
+					created_date: new Date().toISOString().split('T')[0],
+					completed_date: ''
+				};
+				
+				tasks.push(newTask);
+				saveToLocalStorage();
+				
+				closeAnyModal();
+				loadTodayTreatments();
+				displayTasks();
+				
+				showToast(`✅ משימה נוצרה ל-${client.name} בתאריך ${formatDate(scheduleDate)}`, 'success');
+				
+				// Save to cloud if connected
+				if (access_token && SPREADSHEET_ID) {
+					try {
+						await saveTasksToSheets();
+					} catch (error) {
+						console.error('Error saving to cloud:', error);
+					}
+				}
+			}
+		}
 
    </script>
 </body>
