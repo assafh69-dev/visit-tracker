@@ -7,7 +7,6 @@
 	
 	<script src="https://apis.google.com/js/api.js"></script>
 	<script src="https://accounts.google.com/gsi/client"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" async></script>
 
 	
     <style>
@@ -2446,7 +2445,7 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.6</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -17527,7 +17526,9 @@
 			`;
 		}
 
-		// Generate PDF balance report for client
+
+
+		// Generate balance report for client - displays in modal with copy option
 		function generateClientBalanceReport(clientId) {
 			const client = locations.find(loc => loc.ID === clientId);
 			if (!client) {
@@ -17558,98 +17559,24 @@
 			const totalPayments = clientPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 			const balance = totalTreatments - totalPayments;
 			
-			// Initialize jsPDF
-			const { jsPDF } = window.jspdf;
-			const doc = new jsPDF({
-				orientation: 'portrait',
-				unit: 'mm',
-				format: 'a4'
-			});
+			// Payment method labels
+			const paymentMethods = {
+				'cash': 'מזומן',
+				'check': 'צק',
+				'transfer': 'העברה',
+				'app': 'אפליקציה',
+				'credit': 'אשראי'
+			};
 			
-			// Add Hebrew font support - use built-in font with RTL handling
-			doc.setR2L(true);
+			// Build treatments table
+			let treatmentsHTML = '';
+			let treatmentsText = '';
 			
-			let yPos = 20;
-			const pageWidth = doc.internal.pageSize.getWidth();
-			const rightMargin = pageWidth - 20;
-			
-			// Helper function for right-aligned Hebrew text
-			function addHebrewText(text, y, options = {}) {
-				const fontSize = options.fontSize || 12;
-				const fontStyle = options.fontStyle || 'normal';
-				doc.setFontSize(fontSize);
-				doc.setFont('helvetica', fontStyle);
-				
-				// For Hebrew, we write from right
-				const textWidth = doc.getTextWidth(text);
-				const x = options.center ? (pageWidth / 2) : (options.x || rightMargin);
-				
-				if (options.center) {
-					doc.text(text, pageWidth / 2, y, { align: 'center' });
-				} else {
-					doc.text(text, x, y, { align: 'right' });
-				}
-			}
-			
-			// Title
-			doc.setFillColor(155, 89, 182);
-			doc.rect(0, 0, pageWidth, 35, 'F');
-			doc.setTextColor(255, 255, 255);
-			addHebrewText('דוח מאזן לקוח', 15, { fontSize: 22, fontStyle: 'bold', center: true });
-			addHebrewText(client.name, 28, { fontSize: 16, center: true });
-			
-			yPos = 45;
-			doc.setTextColor(0, 0, 0);
-			
-			// Date range
-			doc.setFillColor(245, 245, 245);
-			doc.rect(15, yPos - 5, pageWidth - 30, 12, 'F');
-			addHebrewText(`תקופה: ${formatDate(dateFrom)} - ${formatDate(dateTo)}`, yPos + 3, { fontSize: 11, center: true });
-			
-			yPos = 60;
-			
-			// Treatments section
-			doc.setFillColor(52, 152, 219);
-			doc.rect(15, yPos, pageWidth - 30, 8, 'F');
-			doc.setTextColor(255, 255, 255);
-			addHebrewText(`טיפולים שבוצעו (${clientVisits.length})`, yPos + 5.5, { fontSize: 12, fontStyle: 'bold', center: true });
-			
-			yPos += 12;
-			doc.setTextColor(0, 0, 0);
-			
-			// Treatments table header
-			doc.setFillColor(230, 230, 230);
-			doc.rect(15, yPos, pageWidth - 30, 7, 'F');
-			doc.setFontSize(9);
-			doc.text('סכום', 25, yPos + 5);
-			doc.text('משך', 50, yPos + 5);
-			doc.text('תיאור', 100, yPos + 5);
-			doc.text('תאריך', rightMargin, yPos + 5, { align: 'right' });
-			
-			yPos += 10;
-			
-			// Treatments rows
 			if (clientVisits.length === 0) {
-				doc.setFontSize(10);
-				doc.text('אין טיפולים בתקופה זו', pageWidth / 2, yPos + 5, { align: 'center' });
-				yPos += 12;
+				treatmentsHTML = '<tr><td colspan="4" style="text-align: center; padding: 10px; color: #666;">אין טיפולים בתקופה זו</td></tr>';
+				treatmentsText = 'אין טיפולים בתקופה זו\n';
 			} else {
-				clientVisits.forEach((visit, index) => {
-					if (yPos > 250) {
-						doc.addPage();
-						yPos = 20;
-					}
-					
-					// Alternate row colors
-					if (index % 2 === 0) {
-						doc.setFillColor(250, 250, 250);
-						doc.rect(15, yPos - 3, pageWidth - 30, 8, 'F');
-					}
-					
-					doc.setFontSize(9);
-					doc.text(`${parseFloat(visit.amount || 0).toFixed(0)}`, 25, yPos + 2);
-					
-					// Calculate duration
+				clientVisits.forEach(visit => {
 					let duration = '-';
 					if (visit.start_time && visit.end_time) {
 						const start = visit.start_time.split(':');
@@ -17663,126 +17590,203 @@
 							duration = `${hours}:${mins.toString().padStart(2, '0')}`;
 						}
 					}
-					doc.text(duration, 50, yPos + 2);
 					
-					const workDone = (visit.work_done || 'טיפול').substring(0, 40);
-					doc.text(workDone, 100, yPos + 2);
-					doc.text(formatDate(visit.date), rightMargin, yPos + 2, { align: 'right' });
+					const workDone = visit.work_done || 'טיפול';
+					const amount = parseFloat(visit.amount) || 0;
 					
-					yPos += 8;
+					treatmentsHTML += `
+						<tr style="border-bottom: 1px solid #eee;">
+							<td style="padding: 8px;">${formatDate(visit.date)}</td>
+							<td style="padding: 8px;">${workDone}</td>
+							<td style="padding: 8px;">${duration}</td>
+							<td style="padding: 8px;">₪${amount.toFixed(0)}</td>
+						</tr>
+					`;
+					treatmentsText += `${formatDate(visit.date)} | ${workDone} | ${duration} | ₪${amount.toFixed(0)}\n`;
 				});
 			}
 			
-			// Treatments total
-			doc.setFillColor(52, 152, 219);
-			doc.rect(15, yPos, pageWidth - 30, 8, 'F');
-			doc.setTextColor(255, 255, 255);
-			doc.setFontSize(11);
-			doc.text(`${totalTreatments.toFixed(0)}`, 25, yPos + 5.5);
-			doc.text(':סה"כ טיפולים', rightMargin, yPos + 5.5, { align: 'right' });
+			// Build payments table
+			let paymentsHTML = '';
+			let paymentsText = '';
 			
-			yPos += 18;
-			doc.setTextColor(0, 0, 0);
-			
-			// Check if need new page
-			if (yPos > 200) {
-				doc.addPage();
-				yPos = 20;
-			}
-			
-			// Payments section
-			doc.setFillColor(39, 174, 96);
-			doc.rect(15, yPos, pageWidth - 30, 8, 'F');
-			doc.setTextColor(255, 255, 255);
-			addHebrewText(`תשלומים שהתקבלו (${clientPayments.length})`, yPos + 5.5, { fontSize: 12, fontStyle: 'bold', center: true });
-			
-			yPos += 12;
-			doc.setTextColor(0, 0, 0);
-			
-			// Payments table header
-			doc.setFillColor(230, 230, 230);
-			doc.rect(15, yPos, pageWidth - 30, 7, 'F');
-			doc.setFontSize(9);
-			doc.text('סכום', 25, yPos + 5);
-			doc.text('אמצעי תשלום', 70, yPos + 5);
-			doc.text('תאריך', rightMargin, yPos + 5, { align: 'right' });
-			
-			yPos += 10;
-			
-			// Payment method labels
-			const paymentMethods = {
-				'cash': 'מזומן',
-				'check': 'צק',
-				'transfer': 'העברה',
-				'app': 'אפליקציה',
-				'credit': 'אשראי'
-			};
-			
-			// Payments rows
 			if (clientPayments.length === 0) {
-				doc.setFontSize(10);
-				doc.text('אין תשלומים בתקופה זו', pageWidth / 2, yPos + 5, { align: 'center' });
-				yPos += 12;
+				paymentsHTML = '<tr><td colspan="3" style="text-align: center; padding: 10px; color: #666;">אין תשלומים בתקופה זו</td></tr>';
+				paymentsText = 'אין תשלומים בתקופה זו\n';
 			} else {
-				clientPayments.forEach((payment, index) => {
-					if (yPos > 250) {
-						doc.addPage();
-						yPos = 20;
-					}
+				clientPayments.forEach(payment => {
+					const method = paymentMethods[payment.method] || payment.method || '-';
+					const amount = parseFloat(payment.amount) || 0;
 					
-					if (index % 2 === 0) {
-						doc.setFillColor(250, 250, 250);
-						doc.rect(15, yPos - 3, pageWidth - 30, 8, 'F');
-					}
-					
-					doc.setFontSize(9);
-					doc.text(`${parseFloat(payment.amount || 0).toFixed(0)}`, 25, yPos + 2);
-					doc.text(paymentMethods[payment.method] || payment.method || '-', 70, yPos + 2);
-					doc.text(formatDate(payment.date), rightMargin, yPos + 2, { align: 'right' });
-					
-					yPos += 8;
+					paymentsHTML += `
+						<tr style="border-bottom: 1px solid #eee;">
+							<td style="padding: 8px;">${formatDate(payment.date)}</td>
+							<td style="padding: 8px;">${method}</td>
+							<td style="padding: 8px;">₪${amount.toFixed(0)}</td>
+						</tr>
+					`;
+					paymentsText += `${formatDate(payment.date)} | ${method} | ₪${amount.toFixed(0)}\n`;
 				});
 			}
 			
-			// Payments total
-			doc.setFillColor(39, 174, 96);
-			doc.rect(15, yPos, pageWidth - 30, 8, 'F');
-			doc.setTextColor(255, 255, 255);
-			doc.setFontSize(11);
-			doc.text(`${totalPayments.toFixed(0)}`, 25, yPos + 5.5);
-			doc.text(':סה"כ תשלומים', rightMargin, yPos + 5.5, { align: 'right' });
-			
-			yPos += 20;
-			doc.setTextColor(0, 0, 0);
-			
-			// Summary section
-			doc.setFillColor(balance > 0 ? 231 : 39, balance > 0 ? 76 : 174, balance > 0 ? 60 : 96);
-			doc.rect(15, yPos, pageWidth - 30, 25, 'F');
-			doc.setTextColor(255, 255, 255);
-			
-			doc.setFontSize(14);
-			doc.text('סיכום', pageWidth / 2, yPos + 8, { align: 'center' });
-			
-			doc.setFontSize(18);
-			const balanceText = balance > 0 ? `יתרה לתשלום: ${balance.toFixed(0)} ש"ח` : 
-								balance < 0 ? `יתרה לזכות: ${Math.abs(balance).toFixed(0)} ש"ח` : 
+			// Balance text
+			const balanceText = balance > 0 ? `יתרה לתשלום: ₪${balance.toFixed(0)}` : 
+								balance < 0 ? `יתרה לזכות: ₪${Math.abs(balance).toFixed(0)}` : 
 								'מאוזן - אין יתרה';
-			doc.text(balanceText, pageWidth / 2, yPos + 19, { align: 'center' });
 			
-			// Footer
-			yPos += 35;
-			doc.setTextColor(128, 128, 128);
-			doc.setFontSize(9);
-			const now = new Date();
-			const generatedDate = `${now.toLocaleDateString('he-IL')} ${now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}`;
-			doc.text(`הופק בתאריך: ${generatedDate}`, pageWidth / 2, yPos, { align: 'center' });
+			// Plain text version for copying
+			const plainText = `
+		דוח מאזן לקוח
+		═══════════════════════════════
+		${client.name}
+		${client.full_address || ''}
+		תקופה: ${formatDate(dateFrom)} - ${formatDate(dateTo)}
+		═══════════════════════════════
+
+		טיפולים שבוצעו (${clientVisits.length})
+		───────────────────────────────
+		תאריך | תיאור | משך | סכום
+		${treatmentsText}סה"כ טיפולים: ₪${totalTreatments.toFixed(0)}
+
+		תשלומים שהתקבלו (${clientPayments.length})
+		───────────────────────────────
+		תאריך | אמצעי תשלום | סכום
+		${paymentsText}סה"כ תשלומים: ₪${totalPayments.toFixed(0)}
+
+		═══════════════════════════════
+		סיכום
+		───────────────────────────────
+		סה"כ טיפולים:  ₪${totalTreatments.toFixed(0)}
+		סה"כ תשלומים:  ₪${totalPayments.toFixed(0)}
+		${balanceText}
+		═══════════════════════════════
+		הופק בתאריך: ${new Date().toLocaleDateString('he-IL')}
+		`.trim();
+
+			// Build modal HTML
+			const reportHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 700px; width: 95vw; max-height: 85vh; overflow-y: auto; position: relative;">
+					<button onclick="closeAnyModal()" 
+							style="position: absolute; top: 15px; left: 15px; background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
+					
+					<!-- Header -->
+					<div style="text-align: center; background: linear-gradient(135deg, #9b59b6, #667eea); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+						<h2 style="margin: 0 0 5px 0;">דוח מאזן לקוח</h2>
+						<div style="font-size: 18px; font-weight: bold;">${client.name}</div>
+						<div style="font-size: 13px; opacity: 0.9;">${client.full_address || ''}</div>
+						<div style="font-size: 12px; margin-top: 10px; background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 15px; display: inline-block;">
+							תקופה: ${formatDate(dateFrom)} - ${formatDate(dateTo)}
+						</div>
+					</div>
+					
+					<!-- Treatments Section -->
+					<div style="margin-bottom: 20px;">
+						<h3 style="color: #3498db; border-bottom: 2px solid #3498db; padding-bottom: 8px; margin-bottom: 10px;">
+							🔧 טיפולים שבוצעו (${clientVisits.length})
+						</h3>
+						<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+							<thead>
+								<tr style="background: #f5f5f5;">
+									<th style="padding: 10px; text-align: right;">תאריך</th>
+									<th style="padding: 10px; text-align: right;">תיאור</th>
+									<th style="padding: 10px; text-align: right;">משך</th>
+									<th style="padding: 10px; text-align: right;">סכום</th>
+								</tr>
+							</thead>
+							<tbody>
+								${treatmentsHTML}
+							</tbody>
+							<tfoot>
+								<tr style="background: #3498db; color: white; font-weight: bold;">
+									<td colspan="3" style="padding: 10px; text-align: right;">סה"כ טיפולים:</td>
+									<td style="padding: 10px;">₪${totalTreatments.toFixed(0)}</td>
+								</tr>
+							</tfoot>
+						</table>
+					</div>
+					
+					<!-- Payments Section -->
+					<div style="margin-bottom: 20px;">
+						<h3 style="color: #27ae60; border-bottom: 2px solid #27ae60; padding-bottom: 8px; margin-bottom: 10px;">
+							💰 תשלומים שהתקבלו (${clientPayments.length})
+						</h3>
+						<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+							<thead>
+								<tr style="background: #f5f5f5;">
+									<th style="padding: 10px; text-align: right;">תאריך</th>
+									<th style="padding: 10px; text-align: right;">אמצעי תשלום</th>
+									<th style="padding: 10px; text-align: right;">סכום</th>
+								</tr>
+							</thead>
+							<tbody>
+								${paymentsHTML}
+							</tbody>
+							<tfoot>
+								<tr style="background: #27ae60; color: white; font-weight: bold;">
+									<td colspan="2" style="padding: 10px; text-align: right;">סה"כ תשלומים:</td>
+									<td style="padding: 10px;">₪${totalPayments.toFixed(0)}</td>
+								</tr>
+							</tfoot>
+						</table>
+					</div>
+					
+					<!-- Summary Section -->
+					<div style="background: ${balance > 0 ? '#ffebee' : '#e8f5e9'}; border: 2px solid ${balance > 0 ? '#e74c3c' : '#27ae60'}; border-radius: 10px; padding: 20px; text-align: center;">
+						<h3 style="margin: 0 0 15px 0; color: ${balance > 0 ? '#c0392b' : '#27ae60'};">סיכום</h3>
+						<div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 15px;">
+							<div>
+								<div style="font-size: 12px; color: #666;">סה"כ טיפולים</div>
+								<div style="font-size: 20px; font-weight: bold; color: #3498db;">₪${totalTreatments.toFixed(0)}</div>
+							</div>
+							<div>
+								<div style="font-size: 12px; color: #666;">סה"כ תשלומים</div>
+								<div style="font-size: 20px; font-weight: bold; color: #27ae60;">₪${totalPayments.toFixed(0)}</div>
+							</div>
+						</div>
+						<div style="font-size: 24px; font-weight: bold; color: ${balance > 0 ? '#e74c3c' : '#27ae60'};">
+							${balanceText}
+						</div>
+					</div>
+					
+					<!-- Action Buttons -->
+					<div style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
+						<button onclick="copyBalanceReport()" 
+								style="padding: 12px 25px; background: #9b59b6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer;">
+							📋 העתק לזיכרון
+						</button>
+						<button onclick="closeAnyModal()" 
+								style="padding: 12px 25px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer;">
+							סגור
+						</button>
+					</div>
+					
+					<!-- Hidden text for copying -->
+					<textarea id="balanceReportText" style="position: absolute; left: -9999px;">${plainText}</textarea>
+				</div>
+			`;
 			
-			// Save PDF
-			const fileName = `מאזן_${client.name.replace(/\s+/g, '_')}_${dateFrom}_${dateTo}.pdf`;
-			doc.save(fileName);
-			
-			closeAnyModal();
-			showToast('דוח PDF נוצר בהצלחה!', 'success');
+			// Show modal
+			const container = document.getElementById('modalContainer');
+			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: block;';
+			container.innerHTML = `
+				<div onclick="closeAnyModal()" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 99999;">
+					<div onclick="event.stopPropagation()">
+						${reportHTML}
+					</div>
+				</div>
+			`;
+		}
+
+		// Copy balance report to clipboard
+		function copyBalanceReport() {
+			const textArea = document.getElementById('balanceReportText');
+			if (textArea) {
+				textArea.select();
+				document.execCommand('copy');
+				showToast('📋 הדוח הועתק לזיכרון!', 'success');
+			} else {
+				showToast('שגיאה בהעתקה', 'error');
+			}
 		}
 
 
