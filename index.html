@@ -7,6 +7,7 @@
 	
 	<script src="https://apis.google.com/js/api.js"></script>
 	<script src="https://accounts.google.com/gsi/client"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 	
     <style>
 		* {
@@ -2444,7 +2445,7 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v5.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3110,15 +3111,26 @@
 							</select>
 						</div>
 						
+						<!-- Scope Filter -->
+						<div style="flex: 1; min-width: 150px;">
+							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">היקף:</label>
+							<select id="filterTaskScope" onchange="displayTasks()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+								<option value="">הכל</option>
+								<option value="client">👤 ללקוח</option>
+								<option value="all">👥 גורפת</option>
+								<option value="personal">🔧 עצמית</option>
+							</select>
+						</div>
+
 						<!-- Type Filter -->
 						<div style="flex: 1; min-width: 150px;">
-							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">סוג משימה:</label>
+							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">נושא:</label>
 							<select id="filterTaskType" onchange="displayTasks()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
 								<option value="">הכל</option>
 								<option value="pest_control">🪲 הדברה</option>
 								<option value="planting">🌱 שתילה</option>
 								<option value="tree_trimming">✂️ גיזום עצים</option>
-								<option value="upgrade">🏡 שדרוג גינה</option>
+								<option value="upgrade">🡠 שדרוג גינה</option>
 								<option value="repair">🔧 תיקון</option>
 								<option value="other">📦 אחר</option>
 							</select>
@@ -3176,7 +3188,8 @@
 						<thead style="background: #9b59b6; color: white;">
 							<tr>
 								<th style="padding: 12px; text-align: right;">סטטוס</th>
-								<th style="padding: 12px; text-align: right;">סוג</th>
+								<th style="padding: 12px; text-align: right;">היקף</th>
+								<th style="padding: 12px; text-align: right;">נושא</th>
 								<th style="padding: 12px; text-align: right;">לקוח</th>
 								<th style="padding: 12px; text-align: right;">תיאור</th>
 								<th style="padding: 12px; text-align: right;">תאריך יעד</th>
@@ -5537,6 +5550,11 @@
 									title="התחל טיפול עכשיו"
 									style="padding: 6px 10px; background: #4caf50; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer;">
 								▶️
+							</button>
+							<button onclick="showBalanceReportModal('${clientId}')" 
+									title="הפק דוח מאזן PDF"
+									style="padding: 6px 10px; background: #9b59b6; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer;">
+								📄
 							</button>
 						</div>
 					</div>
@@ -16504,6 +16522,7 @@
 			
 			// Get filter values
 			const statusFilter = document.getElementById('filterTaskStatus')?.value || '';
+			const scopeFilter = document.getElementById('filterTaskScope')?.value || '';
 			const typeFilter = document.getElementById('filterTaskType')?.value || '';
 			const clientFilter = document.getElementById('filterTaskClient')?.value?.toLowerCase() || '';
 			const dateFromFilter = document.getElementById('filterTaskDateFrom')?.value || '';
@@ -16512,6 +16531,7 @@
 			// Filter tasks
 			let filteredTasks = tasks.filter(task => {
 				if (statusFilter && task.status !== statusFilter) return false;
+				if (scopeFilter && task.scope !== scopeFilter) return false;
 				if (typeFilter && task.type !== typeFilter) return false;
 				if (clientFilter && !task.client_name?.toLowerCase().includes(clientFilter)) return false;
 				if (dateFromFilter && task.due_date < dateFromFilter) return false;
@@ -16551,6 +16571,14 @@
 				const typeInfo = TASK_TYPES[task.type] || TASK_TYPES['other'];
 				const statusInfo = TASK_STATUSES[task.status] || TASK_STATUSES['pending'];
 				
+				// Scope display
+				const scopeLabels = {
+					'client': '👤 ללקוח',
+					'all': '👥 גורפת',
+					'personal': '🔧 עצמית'
+				};
+				const scopeLabel = scopeLabels[task.scope] || scopeLabels['client'];
+				
 				// Check if overdue
 				const isOverdue = task.status !== 'completed' && task.status !== 'cancelled' && 
 								  new Date(task.due_date) < new Date(new Date().toDateString());
@@ -16561,6 +16589,9 @@
 							<span style="background: ${statusInfo.bg}; color: ${statusInfo.color}; padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: 600;">
 								${statusInfo.icon} ${statusInfo.label}
 							</span>
+						</td>
+						<td style="padding: 12px; font-size: 12px;">
+							${scopeLabel}
 						</td>
 						<td style="padding: 12px;">
 							<span style="color: ${typeInfo.color}; font-weight: 600;">
@@ -16618,9 +16649,9 @@
 			if (statsCompleted) statsCompleted.textContent = completed;
 		}
 
-		// Clear task filters
 		function clearTaskFilters() {
 			document.getElementById('filterTaskStatus').value = '';
+			document.getElementById('filterTaskScope').value = '';
 			document.getElementById('filterTaskType').value = '';
 			document.getElementById('filterTaskClient').value = '';
 			document.getElementById('filterTaskDateFrom').value = '';
@@ -16641,8 +16672,18 @@
 					</h3>
 					
 					<form id="taskForm" onsubmit="saveTask(event)" style="display: flex; flex-direction: column; gap: 15px;">
-						<!-- Client Selection -->
+						<!-- Scope Selection -->
 						<div>
+							<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">היקף:</label>
+							<select id="taskScope" required onchange="toggleTaskClientField()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+								<option value="client">👤 ללקוח ספציפי</option>
+								<option value="all">👥 גורפת - לכל הלקוחות</option>
+								<option value="personal">🔧 עצמית - לא קשורה ללקוחות</option>
+							</select>
+						</div>
+
+						<!-- Client Selection -->
+						<div id="taskClientSection">
 							<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">לקוח:</label>
 							<div style="position: relative;">
 								<input type="text" id="taskClientSearch" placeholder="🔍 חיפוש לקוח..." 
@@ -16650,7 +16691,7 @@
 									   autocomplete="off"
 									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
 								<div id="taskClientOptions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 0 0 6px 6px; z-index: 100;"></div>
-								<input type="hidden" id="taskClientId" required>
+								<input type="hidden" id="taskClientId">
 							</div>
 						</div>
 						
@@ -16755,6 +16796,26 @@
 				}
 			}
 		}
+		
+		
+		// Toggle client field based on scope selection
+		function toggleTaskClientField() {
+			const scope = document.getElementById('taskScope').value;
+			const clientSection = document.getElementById('taskClientSection');
+			const clientIdInput = document.getElementById('taskClientId');
+			const clientSearchInput = document.getElementById('taskClientSearch');
+			
+			if (scope === 'client') {
+				clientSection.style.display = 'block';
+				clientIdInput.required = true;
+			} else {
+				clientSection.style.display = 'none';
+				clientIdInput.required = false;
+				clientIdInput.value = '';
+				clientSearchInput.value = '';
+			}
+		}
+
 
 		// Toggle recurring options visibility
 		function toggleRecurringOptions() {
@@ -16819,8 +16880,9 @@
 			
 			const taskData = {
 				ID: taskId || 'TASK_' + Date.now(),
+				scope: document.getElementById('taskScope').value,
 				client_id: clientId,
-				client_name: client.name,
+				client_name: client ? client.name : '',
 				type: document.getElementById('taskType').value,
 				description: document.getElementById('taskDescription').value,
 				due_date: document.getElementById('taskDueDate').value,
@@ -16874,6 +16936,8 @@
 			
 			// Fill form with task data
 			setTimeout(() => {
+				document.getElementById('taskScope').value = task.scope || 'client';
+				toggleTaskClientField();
 				document.getElementById('taskClientSearch').value = task.client_name || '';
 				document.getElementById('taskClientId').value = task.client_id || '';
 				document.getElementById('taskType').value = task.type || '';
@@ -17061,10 +17125,10 @@
 					// Add headers
 					await gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: SPREADSHEET_ID,
-						range: 'Tasks!A1:N1',
+						range: 'Tasks!A1:P1',
 						valueInputOption: 'RAW',
 						resource: {
-							values: [['ID', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date']]
+							values: [['ID', 'scope', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date']]
 						}
 					});
 				}
@@ -17072,13 +17136,14 @@
 				// Clear existing data (except header)
 				await gapi.client.sheets.spreadsheets.values.clear({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Tasks!A2:O1000'
+					range: 'Tasks!A2:P1000'
 				});
 				
 				// Write tasks
 				if (tasks.length > 0) {
 					const rows = tasks.map(t => [
 						t.ID,
+						t.scope || 'client',
 						t.client_id,
 						t.client_name,
 						t.type,
@@ -17117,27 +17182,28 @@
 			try {
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Tasks!A2:O1000'
+					range: 'Tasks!A2:P1000'
 				});
 				
 				const rows = response.result.values || [];
 				
 				tasks = rows.map(row => ({
 					ID: row[0] || '',
-					client_id: row[1] || '',
-					client_name: row[2] || '',
-					type: row[3] || 'other',
-					description: row[4] || '',
-					due_date: row[5] || '',
-					priority: row[6] || 'normal',
-					estimated_cost: parseFloat(row[7]) || 0,
-					equipment: row[8] || '',
-					notes: row[9] || '',
-					recurring: row[10] === '1',
-					recurring_interval: row[11] || '',
-					status: row[12] || 'pending',
-					created_date: row[13] || '',
-					completed_date: row[14] || ''
+					scope: row[1] || 'client',
+					client_id: row[2] || '',
+					client_name: row[3] || '',
+					type: row[4] || 'other',
+					description: row[5] || '',
+					due_date: row[6] || '',
+					priority: row[7] || 'normal',
+					estimated_cost: parseFloat(row[8]) || 0,
+					equipment: row[9] || '',
+					notes: row[10] || '',
+					recurring: row[11] === '1',
+					recurring_interval: row[12] || '',
+					status: row[13] || 'pending',
+					created_date: row[14] || '',
+					completed_date: row[15] || ''
 				}));
 				
 				console.log(`✅ Loaded ${tasks.length} tasks from cloud`);
@@ -17392,6 +17458,331 @@
 				}
 			}
 		}
+
+		// ==================== CLIENT BALANCE REPORT ====================
+
+		// Show modal to select date range for balance report
+		function showBalanceReportModal(clientId) {
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			// Get client's first visit date for default range
+			const clientVisits = visits.filter(v => v.location_id === clientId).sort((a, b) => a.date.localeCompare(b.date));
+			const firstVisitDate = clientVisits.length > 0 ? clientVisits[0].date : new Date().toISOString().split('T')[0];
+			const today = new Date().toISOString().split('T')[0];
+			
+			const modalHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 90vw; position: relative;">
+					<button onclick="closeAnyModal()" 
+							style="position: absolute; top: 15px; left: 15px; background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
+					
+					<h3 style="margin: 0 0 20px 0; color: #9b59b6; border-bottom: 2px solid #9b59b6; padding-bottom: 10px;">
+						📄 הפקת דוח מאזן
+					</h3>
+					
+					<div style="margin-bottom: 15px;">
+						<div style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 10px;">
+							👤 ${client.name}
+						</div>
+					</div>
+					
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+						<div>
+							<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">מתאריך:</label>
+							<input type="date" id="reportDateFrom" value="${firstVisitDate}"
+								   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+						</div>
+						<div>
+							<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">עד תאריך:</label>
+							<input type="date" id="reportDateTo" value="${today}"
+								   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+						</div>
+					</div>
+					
+					<div style="display: flex; gap: 10px;">
+						<button onclick="generateClientBalanceReport('${clientId}')" 
+								style="flex: 1; padding: 12px; background: #9b59b6; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
+							📄 הפק PDF
+						</button>
+						<button onclick="closeAnyModal()" 
+								style="padding: 12px 20px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer;">
+							ביטול
+						</button>
+					</div>
+				</div>
+			`;
+			
+			const container = document.getElementById('modalContainer');
+			container.innerHTML = `
+				<div onclick="closeAnyModal()" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+					<div onclick="event.stopPropagation()">
+						${modalHTML}
+					</div>
+				</div>
+			`;
+		}
+
+		// Generate PDF balance report for client
+		function generateClientBalanceReport(clientId) {
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			const dateFrom = document.getElementById('reportDateFrom').value;
+			const dateTo = document.getElementById('reportDateTo').value;
+			
+			if (!dateFrom || !dateTo) {
+				showToast('יש לבחור טווח תאריכים', 'warning');
+				return;
+			}
+			
+			// Get visits in date range
+			const clientVisits = visits
+				.filter(v => v.location_id === clientId && v.date >= dateFrom && v.date <= dateTo)
+				.sort((a, b) => a.date.localeCompare(b.date));
+			
+			// Get payments in date range
+			const clientPayments = payments
+				.filter(p => p.client_id === clientId && p.date >= dateFrom && p.date <= dateTo)
+				.sort((a, b) => a.date.localeCompare(b.date));
+			
+			// Calculate totals
+			const totalTreatments = clientVisits.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
+			const totalPayments = clientPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+			const balance = totalTreatments - totalPayments;
+			
+			// Initialize jsPDF
+			const { jsPDF } = window.jspdf;
+			const doc = new jsPDF({
+				orientation: 'portrait',
+				unit: 'mm',
+				format: 'a4'
+			});
+			
+			// Add Hebrew font support - use built-in font with RTL handling
+			doc.setR2L(true);
+			
+			let yPos = 20;
+			const pageWidth = doc.internal.pageSize.getWidth();
+			const rightMargin = pageWidth - 20;
+			
+			// Helper function for right-aligned Hebrew text
+			function addHebrewText(text, y, options = {}) {
+				const fontSize = options.fontSize || 12;
+				const fontStyle = options.fontStyle || 'normal';
+				doc.setFontSize(fontSize);
+				doc.setFont('helvetica', fontStyle);
+				
+				// For Hebrew, we write from right
+				const textWidth = doc.getTextWidth(text);
+				const x = options.center ? (pageWidth / 2) : (options.x || rightMargin);
+				
+				if (options.center) {
+					doc.text(text, pageWidth / 2, y, { align: 'center' });
+				} else {
+					doc.text(text, x, y, { align: 'right' });
+				}
+			}
+			
+			// Title
+			doc.setFillColor(155, 89, 182);
+			doc.rect(0, 0, pageWidth, 35, 'F');
+			doc.setTextColor(255, 255, 255);
+			addHebrewText('דוח מאזן לקוח', 15, { fontSize: 22, fontStyle: 'bold', center: true });
+			addHebrewText(client.name, 28, { fontSize: 16, center: true });
+			
+			yPos = 45;
+			doc.setTextColor(0, 0, 0);
+			
+			// Date range
+			doc.setFillColor(245, 245, 245);
+			doc.rect(15, yPos - 5, pageWidth - 30, 12, 'F');
+			addHebrewText(`תקופה: ${formatDate(dateFrom)} - ${formatDate(dateTo)}`, yPos + 3, { fontSize: 11, center: true });
+			
+			yPos = 60;
+			
+			// Treatments section
+			doc.setFillColor(52, 152, 219);
+			doc.rect(15, yPos, pageWidth - 30, 8, 'F');
+			doc.setTextColor(255, 255, 255);
+			addHebrewText(`טיפולים שבוצעו (${clientVisits.length})`, yPos + 5.5, { fontSize: 12, fontStyle: 'bold', center: true });
+			
+			yPos += 12;
+			doc.setTextColor(0, 0, 0);
+			
+			// Treatments table header
+			doc.setFillColor(230, 230, 230);
+			doc.rect(15, yPos, pageWidth - 30, 7, 'F');
+			doc.setFontSize(9);
+			doc.text('סכום', 25, yPos + 5);
+			doc.text('משך', 50, yPos + 5);
+			doc.text('תיאור', 100, yPos + 5);
+			doc.text('תאריך', rightMargin, yPos + 5, { align: 'right' });
+			
+			yPos += 10;
+			
+			// Treatments rows
+			if (clientVisits.length === 0) {
+				doc.setFontSize(10);
+				doc.text('אין טיפולים בתקופה זו', pageWidth / 2, yPos + 5, { align: 'center' });
+				yPos += 12;
+			} else {
+				clientVisits.forEach((visit, index) => {
+					if (yPos > 250) {
+						doc.addPage();
+						yPos = 20;
+					}
+					
+					// Alternate row colors
+					if (index % 2 === 0) {
+						doc.setFillColor(250, 250, 250);
+						doc.rect(15, yPos - 3, pageWidth - 30, 8, 'F');
+					}
+					
+					doc.setFontSize(9);
+					doc.text(`${parseFloat(visit.amount || 0).toFixed(0)}`, 25, yPos + 2);
+					
+					// Calculate duration
+					let duration = '-';
+					if (visit.start_time && visit.end_time) {
+						const start = visit.start_time.split(':');
+						const end = visit.end_time.split(':');
+						const startMins = parseInt(start[0]) * 60 + parseInt(start[1]);
+						const endMins = parseInt(end[0]) * 60 + parseInt(end[1]);
+						const diffMins = endMins - startMins;
+						if (diffMins > 0) {
+							const hours = Math.floor(diffMins / 60);
+							const mins = diffMins % 60;
+							duration = `${hours}:${mins.toString().padStart(2, '0')}`;
+						}
+					}
+					doc.text(duration, 50, yPos + 2);
+					
+					const workDone = (visit.work_done || 'טיפול').substring(0, 40);
+					doc.text(workDone, 100, yPos + 2);
+					doc.text(formatDate(visit.date), rightMargin, yPos + 2, { align: 'right' });
+					
+					yPos += 8;
+				});
+			}
+			
+			// Treatments total
+			doc.setFillColor(52, 152, 219);
+			doc.rect(15, yPos, pageWidth - 30, 8, 'F');
+			doc.setTextColor(255, 255, 255);
+			doc.setFontSize(11);
+			doc.text(`${totalTreatments.toFixed(0)}`, 25, yPos + 5.5);
+			doc.text(':סה"כ טיפולים', rightMargin, yPos + 5.5, { align: 'right' });
+			
+			yPos += 18;
+			doc.setTextColor(0, 0, 0);
+			
+			// Check if need new page
+			if (yPos > 200) {
+				doc.addPage();
+				yPos = 20;
+			}
+			
+			// Payments section
+			doc.setFillColor(39, 174, 96);
+			doc.rect(15, yPos, pageWidth - 30, 8, 'F');
+			doc.setTextColor(255, 255, 255);
+			addHebrewText(`תשלומים שהתקבלו (${clientPayments.length})`, yPos + 5.5, { fontSize: 12, fontStyle: 'bold', center: true });
+			
+			yPos += 12;
+			doc.setTextColor(0, 0, 0);
+			
+			// Payments table header
+			doc.setFillColor(230, 230, 230);
+			doc.rect(15, yPos, pageWidth - 30, 7, 'F');
+			doc.setFontSize(9);
+			doc.text('סכום', 25, yPos + 5);
+			doc.text('אמצעי תשלום', 70, yPos + 5);
+			doc.text('תאריך', rightMargin, yPos + 5, { align: 'right' });
+			
+			yPos += 10;
+			
+			// Payment method labels
+			const paymentMethods = {
+				'cash': 'מזומן',
+				'check': 'צק',
+				'transfer': 'העברה',
+				'app': 'אפליקציה',
+				'credit': 'אשראי'
+			};
+			
+			// Payments rows
+			if (clientPayments.length === 0) {
+				doc.setFontSize(10);
+				doc.text('אין תשלומים בתקופה זו', pageWidth / 2, yPos + 5, { align: 'center' });
+				yPos += 12;
+			} else {
+				clientPayments.forEach((payment, index) => {
+					if (yPos > 250) {
+						doc.addPage();
+						yPos = 20;
+					}
+					
+					if (index % 2 === 0) {
+						doc.setFillColor(250, 250, 250);
+						doc.rect(15, yPos - 3, pageWidth - 30, 8, 'F');
+					}
+					
+					doc.setFontSize(9);
+					doc.text(`${parseFloat(payment.amount || 0).toFixed(0)}`, 25, yPos + 2);
+					doc.text(paymentMethods[payment.method] || payment.method || '-', 70, yPos + 2);
+					doc.text(formatDate(payment.date), rightMargin, yPos + 2, { align: 'right' });
+					
+					yPos += 8;
+				});
+			}
+			
+			// Payments total
+			doc.setFillColor(39, 174, 96);
+			doc.rect(15, yPos, pageWidth - 30, 8, 'F');
+			doc.setTextColor(255, 255, 255);
+			doc.setFontSize(11);
+			doc.text(`${totalPayments.toFixed(0)}`, 25, yPos + 5.5);
+			doc.text(':סה"כ תשלומים', rightMargin, yPos + 5.5, { align: 'right' });
+			
+			yPos += 20;
+			doc.setTextColor(0, 0, 0);
+			
+			// Summary section
+			doc.setFillColor(balance > 0 ? 231 : 39, balance > 0 ? 76 : 174, balance > 0 ? 60 : 96);
+			doc.rect(15, yPos, pageWidth - 30, 25, 'F');
+			doc.setTextColor(255, 255, 255);
+			
+			doc.setFontSize(14);
+			doc.text('סיכום', pageWidth / 2, yPos + 8, { align: 'center' });
+			
+			doc.setFontSize(18);
+			const balanceText = balance > 0 ? `יתרה לתשלום: ${balance.toFixed(0)} ש"ח` : 
+								balance < 0 ? `יתרה לזכות: ${Math.abs(balance).toFixed(0)} ש"ח` : 
+								'מאוזן - אין יתרה';
+			doc.text(balanceText, pageWidth / 2, yPos + 19, { align: 'center' });
+			
+			// Footer
+			yPos += 35;
+			doc.setTextColor(128, 128, 128);
+			doc.setFontSize(9);
+			const now = new Date();
+			const generatedDate = `${now.toLocaleDateString('he-IL')} ${now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}`;
+			doc.text(`הופק בתאריך: ${generatedDate}`, pageWidth / 2, yPos, { align: 'center' });
+			
+			// Save PDF
+			const fileName = `מאזן_${client.name.replace(/\s+/g, '_')}_${dateFrom}_${dateTo}.pdf`;
+			doc.save(fileName);
+			
+			closeAnyModal();
+			showToast('דוח PDF נוצר בהצלחה!', 'success');
+		}
+
 
    </script>
 </body>
