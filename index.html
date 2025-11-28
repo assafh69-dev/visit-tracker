@@ -2446,7 +2446,7 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.6</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -8321,8 +8321,9 @@
 				const incomeSuccess = incomes.length > 0 ? await saveIncomesBatch(incomes) : true;
 				const paymentSuccess = payments.length > 0 ? await savePaymentsBatch(payments) : true;
 				const linkSuccess = paymentVisitLinks.length > 0 ? await savePaymentVisitLinksBatch(paymentVisitLinks) : true;
+				const tasksSuccess = tasks.length > 0 ? await saveTasksToSheets() : true;
 
-				const allSaved = locationSuccess && visitSuccess && receiptSuccess && incomeSuccess && paymentSuccess && linkSuccess;
+				const allSaved = locationSuccess && visitSuccess && receiptSuccess && incomeSuccess && paymentSuccess && linkSuccess && tasksSuccess;
 							
 
 			if (allSaved) {
@@ -17516,8 +17517,9 @@
 			`;
 			
 			const container = document.getElementById('modalContainer');
+			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: block;';
 			container.innerHTML = `
-				<div onclick="closeAnyModal()" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+				<div onclick="closeAnyModal()" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 99999;">
 					<div onclick="event.stopPropagation()">
 						${modalHTML}
 					</div>
