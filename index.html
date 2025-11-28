@@ -17602,7 +17602,7 @@
 							<td style="padding: 8px;">₪${amount.toFixed(0)}</td>
 						</tr>
 					`;
-					treatmentsText += `${formatDate(visit.date)} | ${workDone} | ${duration} | ₪${amount.toFixed(0)}\n`;
+					treatmentsText += `${formatDate(visit.date)}\t${workDone}\t${duration}\t₪${amount.toFixed(0)}\n`;
 				});
 			}
 			
@@ -17625,7 +17625,7 @@
 							<td style="padding: 8px;">₪${amount.toFixed(0)}</td>
 						</tr>
 					`;
-					paymentsText += `${formatDate(payment.date)} | ${method} | ₪${amount.toFixed(0)}\n`;
+					paymentsText += `${formatDate(payment.date)}\t${method}\t₪${amount.toFixed(0)}\n`;
 				});
 			}
 			
@@ -17645,12 +17645,12 @@
 
 		טיפולים שבוצעו (${clientVisits.length})
 		───────────────────────────────
-		תאריך | תיאור | משך | סכום
+		תאריך	תיאור	משך	סכום
 		${treatmentsText}סה"כ טיפולים: ₪${totalTreatments.toFixed(0)}
 
 		תשלומים שהתקבלו (${clientPayments.length})
 		───────────────────────────────
-		תאריך | אמצעי תשלום | סכום
+		תאריך	אמצעי תשלום	סכום
 		${paymentsText}סה"כ תשלומים: ₪${totalPayments.toFixed(0)}
 
 		═══════════════════════════════
