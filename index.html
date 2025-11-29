@@ -2445,7 +2445,7 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -8463,24 +8463,24 @@
 									</span>
 								` : ''}
 							</div>
-							<div style="display: flex; gap: 8px;">
+							<div style="display: flex; gap: 5px; flex-wrap: wrap;">
 								<button onclick="event.stopPropagation(); showAddPaymentModal('${debt.clientId}')" 
 										class="action-btn" 
-										style="background: #27ae60; color: white; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;"
+										style="background: #27ae60; color: white; padding: 5px 8px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer;"
 										title="רישום תשלום">
-									💳 תשלום
+									💳
 								</button>
 								<button onclick="event.stopPropagation(); markAllDebtsPaid('${debt.clientId}')" 
 										class="action-btn" 
-										style="background: #3498db; color: white; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;"
+										style="background: #3498db; color: white; padding: 5px 8px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer;"
 										title="סמן הכל כשולם">
-									✓ סמן שולם
+									✓
 								</button>
 								<button onclick="event.stopPropagation(); showBalanceReportModal('${debt.clientId}')" 
 										class="action-btn" 
-										style="background: #9b59b6; color: white; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;"
+										style="background: #9b59b6; color: white; padding: 5px 8px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer;"
 										title="דוח מאזן">
-									📄 דוח
+									📄
 								</button>
 							</div>
 						</div>
@@ -8518,21 +8518,18 @@
 
 		function toggleDebtDetails(index) {
 			const detailsDiv = document.getElementById(`debtDetails_${index}`);
-			const toggleBtn = document.getElementById(`debtToggle_${index}`);
+			const expandSpan = document.getElementById(`debtExpand_${index}`);
 			
-			if (!detailsDiv || !toggleBtn) return;
+			if (!detailsDiv) return;
 			
 			if (detailsDiv.style.display === 'none') {
 				// הרחב
 				detailsDiv.style.display = 'block';
-				toggleBtn.innerHTML = '🔼 הסתר פירוט';
-				toggleBtn.style.background = '#95a5a6';
+				if (expandSpan) expandSpan.innerHTML = '▲ הסתר פירוט';
 			} else {
 				// כווץ
 				detailsDiv.style.display = 'none';
-				const visitsCount = detailsDiv.querySelectorAll('.debt-visit-item').length;
-				toggleBtn.innerHTML = `🔽 הצג פירוט (${visitsCount} טיפולים)`;
-				toggleBtn.style.background = '#3498db';
+				if (expandSpan) expandSpan.innerHTML = '▼ הצג פירוט';
 			}
 		}
 
