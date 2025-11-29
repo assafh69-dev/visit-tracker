@@ -2445,7 +2445,7 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -17529,6 +17529,7 @@
 
 
 		// Generate balance report for client - displays in modal with copy option
+		/*
 		function generateClientBalanceReport(clientId) {
 			const client = locations.find(loc => loc.ID === clientId);
 			if (!client) {
@@ -17776,6 +17777,306 @@
 				</div>
 			`;
 		}
+		*/
+
+		// Generate balance report for client - displays in modal with copy as HTML table
+		function generateClientBalanceReport(clientId) {
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) {
+				showToast('לקוח לא נמצא', 'error');
+				return;
+			}
+			
+			const dateFrom = document.getElementById('reportDateFrom').value;
+			const dateTo = document.getElementById('reportDateTo').value;
+			
+			if (!dateFrom || !dateTo) {
+				showToast('יש לבחור טווח תאריכים', 'warning');
+				return;
+			}
+			
+			// Get visits in date range
+			const clientVisits = visits
+				.filter(v => v.location_id === clientId && v.date >= dateFrom && v.date <= dateTo)
+				.sort((a, b) => a.date.localeCompare(b.date));
+			
+			// Get payments in date range
+			const clientPayments = payments
+				.filter(p => p.client_id === clientId && p.date >= dateFrom && p.date <= dateTo)
+				.sort((a, b) => a.date.localeCompare(b.date));
+			
+			// Calculate totals
+			const totalTreatments = clientVisits.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
+			const totalPayments = clientPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+			const balance = totalTreatments - totalPayments;
+			
+			// Payment method labels
+			const paymentMethods = {
+				'cash': 'מזומן',
+				'check': 'צק',
+				'transfer': 'העברה',
+				'app': 'אפליקציה',
+				'credit': 'אשראי'
+			};
+			
+			// Build treatments rows
+			let treatmentsHTML = '';
+			let treatmentsTableHTML = '';
+			
+			if (clientVisits.length === 0) {
+				treatmentsHTML = '<tr><td colspan="4" style="text-align: center; padding: 10px; color: #666;">אין טיפולים בתקופה זו</td></tr>';
+				treatmentsTableHTML = '<tr><td colspan="4" style="text-align: center;">אין טיפולים בתקופה זו</td></tr>';
+			} else {
+				clientVisits.forEach(visit => {
+					let duration = '-';
+					if (visit.start_time && visit.end_time) {
+						const start = visit.start_time.split(':');
+						const end = visit.end_time.split(':');
+						const startMins = parseInt(start[0]) * 60 + parseInt(start[1]);
+						const endMins = parseInt(end[0]) * 60 + parseInt(end[1]);
+						const diffMins = endMins - startMins;
+						if (diffMins > 0) {
+							const hours = Math.floor(diffMins / 60);
+							const mins = diffMins % 60;
+							duration = `${hours}:${mins.toString().padStart(2, '0')}`;
+						}
+					}
+					
+					const workDone = visit.work_done || 'טיפול';
+					const amount = parseFloat(visit.amount) || 0;
+					
+					treatmentsHTML += `
+						<tr style="border-bottom: 1px solid #eee;">
+							<td style="padding: 8px;">${formatDate(visit.date)}</td>
+							<td style="padding: 8px;">${workDone}</td>
+							<td style="padding: 8px;">${duration}</td>
+							<td style="padding: 8px;">₪${amount.toFixed(0)}</td>
+						</tr>
+					`;
+					treatmentsTableHTML += `<tr><td>${formatDate(visit.date)}</td><td>${workDone}</td><td>${duration}</td><td>₪${amount.toFixed(0)}</td></tr>`;
+				});
+			}
+			
+			// Build payments rows
+			let paymentsHTML = '';
+			let paymentsTableHTML = '';
+			
+			if (clientPayments.length === 0) {
+				paymentsHTML = '<tr><td colspan="3" style="text-align: center; padding: 10px; color: #666;">אין תשלומים בתקופה זו</td></tr>';
+				paymentsTableHTML = '<tr><td colspan="3" style="text-align: center;">אין תשלומים בתקופה זו</td></tr>';
+			} else {
+				clientPayments.forEach(payment => {
+					const method = paymentMethods[payment.method] || payment.method || '-';
+					const amount = parseFloat(payment.amount) || 0;
+					
+					paymentsHTML += `
+						<tr style="border-bottom: 1px solid #eee;">
+							<td style="padding: 8px;">${formatDate(payment.date)}</td>
+							<td style="padding: 8px;">${method}</td>
+							<td style="padding: 8px;">₪${amount.toFixed(0)}</td>
+						</tr>
+					`;
+					paymentsTableHTML += `<tr><td>${formatDate(payment.date)}</td><td>${method}</td><td>₪${amount.toFixed(0)}</td></tr>`;
+				});
+			}
+			
+			// Balance text
+			const balanceText = balance > 0 ? `יתרה לתשלום: ₪${balance.toFixed(0)}` : 
+								balance < 0 ? `יתרה לזכות: ₪${Math.abs(balance).toFixed(0)}` : 
+								'מאוזן - אין יתרה';
+			
+			// HTML table version for copying (will paste as formatted table in Google Docs)
+			const copyHTML = `
+		<div dir="rtl" style="font-family: Arial, sans-serif;">
+		<h2 style="text-align: center;">דוח מאזן לקוח</h2>
+		<h3 style="text-align: center;">${client.name}</h3>
+		<p style="text-align: center;">${client.full_address || ''}</p>
+		<p style="text-align: center;">תקופה: ${formatDate(dateFrom)} - ${formatDate(dateTo)}</p>
+
+		<h3>טיפולים שבוצעו (${clientVisits.length})</h3>
+		<table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+		<tr style="background-color: #3498db; color: white;">
+		<th>תאריך</th><th>תיאור</th><th>משך</th><th>סכום</th>
+		</tr>
+		${treatmentsTableHTML}
+		<tr style="background-color: #3498db; color: white; font-weight: bold;">
+		<td colspan="3">סה"כ טיפולים:</td><td>₪${totalTreatments.toFixed(0)}</td>
+		</tr>
+		</table>
+
+		<h3>תשלומים שהתקבלו (${clientPayments.length})</h3>
+		<table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+		<tr style="background-color: #27ae60; color: white;">
+		<th>תאריך</th><th>אמצעי תשלום</th><th>סכום</th>
+		</tr>
+		${paymentsTableHTML}
+		<tr style="background-color: #27ae60; color: white; font-weight: bold;">
+		<td colspan="2">סה"כ תשלומים:</td><td>₪${totalPayments.toFixed(0)}</td>
+		</tr>
+		</table>
+
+		<h3 style="text-align: center; margin-top: 20px;">סיכום</h3>
+		<table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 50%; margin: 0 auto;">
+		<tr><td>סה"כ טיפולים:</td><td>₪${totalTreatments.toFixed(0)}</td></tr>
+		<tr><td>סה"כ תשלומים:</td><td>₪${totalPayments.toFixed(0)}</td></tr>
+		<tr style="background-color: ${balance > 0 ? '#ffebee' : '#e8f5e9'}; font-weight: bold;">
+		<td colspan="2" style="text-align: center;">${balanceText}</td>
+		</tr>
+		</table>
+
+		<p style="text-align: center; color: #666; margin-top: 20px;">הופק בתאריך: ${new Date().toLocaleDateString('he-IL')}</p>
+		</div>
+		`;
+
+			// Build modal HTML
+			const reportHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 700px; width: 95vw; max-height: 85vh; overflow-y: auto; position: relative;">
+					<button onclick="closeAnyModal()" 
+							style="position: absolute; top: 15px; left: 15px; background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
+					
+					<!-- Header -->
+					<div style="text-align: center; background: linear-gradient(135deg, #9b59b6, #667eea); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+						<h2 style="margin: 0 0 5px 0;">דוח מאזן לקוח</h2>
+						<div style="font-size: 18px; font-weight: bold;">${client.name}</div>
+						<div style="font-size: 13px; opacity: 0.9;">${client.full_address || ''}</div>
+						<div style="font-size: 12px; margin-top: 10px; background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 15px; display: inline-block;">
+							תקופה: ${formatDate(dateFrom)} - ${formatDate(dateTo)}
+						</div>
+					</div>
+					
+					<!-- Treatments Section -->
+					<div style="margin-bottom: 20px;">
+						<h3 style="color: #3498db; border-bottom: 2px solid #3498db; padding-bottom: 8px; margin-bottom: 10px;">
+							🔧 טיפולים שבוצעו (${clientVisits.length})
+						</h3>
+						<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+							<thead>
+								<tr style="background: #f5f5f5;">
+									<th style="padding: 10px; text-align: right;">תאריך</th>
+									<th style="padding: 10px; text-align: right;">תיאור</th>
+									<th style="padding: 10px; text-align: right;">משך</th>
+									<th style="padding: 10px; text-align: right;">סכום</th>
+								</tr>
+							</thead>
+							<tbody>
+								${treatmentsHTML}
+							</tbody>
+							<tfoot>
+								<tr style="background: #3498db; color: white; font-weight: bold;">
+									<td colspan="3" style="padding: 10px; text-align: right;">סה"כ טיפולים:</td>
+									<td style="padding: 10px;">₪${totalTreatments.toFixed(0)}</td>
+								</tr>
+							</tfoot>
+						</table>
+					</div>
+					
+					<!-- Payments Section -->
+					<div style="margin-bottom: 20px;">
+						<h3 style="color: #27ae60; border-bottom: 2px solid #27ae60; padding-bottom: 8px; margin-bottom: 10px;">
+							💰 תשלומים שהתקבלו (${clientPayments.length})
+						</h3>
+						<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+							<thead>
+								<tr style="background: #f5f5f5;">
+									<th style="padding: 10px; text-align: right;">תאריך</th>
+									<th style="padding: 10px; text-align: right;">אמצעי תשלום</th>
+									<th style="padding: 10px; text-align: right;">סכום</th>
+								</tr>
+							</thead>
+							<tbody>
+								${paymentsHTML}
+							</tbody>
+							<tfoot>
+								<tr style="background: #27ae60; color: white; font-weight: bold;">
+									<td colspan="2" style="padding: 10px; text-align: right;">סה"כ תשלומים:</td>
+									<td style="padding: 10px;">₪${totalPayments.toFixed(0)}</td>
+								</tr>
+							</tfoot>
+						</table>
+					</div>
+					
+					<!-- Summary Section -->
+					<div style="background: ${balance > 0 ? '#ffebee' : '#e8f5e9'}; border: 2px solid ${balance > 0 ? '#e74c3c' : '#27ae60'}; border-radius: 10px; padding: 20px; text-align: center;">
+						<h3 style="margin: 0 0 15px 0; color: ${balance > 0 ? '#c0392b' : '#27ae60'};">סיכום</h3>
+						<div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 15px;">
+							<div>
+								<div style="font-size: 12px; color: #666;">סה"כ טיפולים</div>
+								<div style="font-size: 20px; font-weight: bold; color: #3498db;">₪${totalTreatments.toFixed(0)}</div>
+							</div>
+							<div>
+								<div style="font-size: 12px; color: #666;">סה"כ תשלומים</div>
+								<div style="font-size: 20px; font-weight: bold; color: #27ae60;">₪${totalPayments.toFixed(0)}</div>
+							</div>
+						</div>
+						<div style="font-size: 24px; font-weight: bold; color: ${balance > 0 ? '#e74c3c' : '#27ae60'};">
+							${balanceText}
+						</div>
+					</div>
+					
+					<!-- Action Buttons -->
+					<div style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
+						<button onclick="copyBalanceReportHTML()" 
+								style="padding: 12px 25px; background: #9b59b6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer;">
+							📋 העתק כטבלה
+						</button>
+						<button onclick="closeAnyModal()" 
+								style="padding: 12px 25px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer;">
+							סגור
+						</button>
+					</div>
+					
+					<!-- Hidden div for copying HTML -->
+					<div id="balanceReportHTML" style="position: absolute; left: -9999px;">${copyHTML}</div>
+				</div>
+			`;
+			
+			// Show modal
+			const container = document.getElementById('modalContainer');
+			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: block;';
+			container.innerHTML = `
+				<div onclick="closeAnyModal()" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 99999;">
+					<div onclick="event.stopPropagation()">
+						${reportHTML}
+					</div>
+				</div>
+			`;
+		}
+
+		// Copy balance report as HTML (pastes as formatted table)
+		function copyBalanceReportHTML() {
+			const htmlContent = document.getElementById('balanceReportHTML');
+			if (!htmlContent) {
+				showToast('שגיאה בהעתקה', 'error');
+				return;
+			}
+			
+			// Create a blob with HTML content
+			const blob = new Blob([htmlContent.innerHTML], { type: 'text/html' });
+			
+			// Use clipboard API to copy HTML
+			navigator.clipboard.write([
+				new ClipboardItem({
+					'text/html': blob,
+					'text/plain': new Blob([htmlContent.innerText], { type: 'text/plain' })
+				})
+			]).then(() => {
+				showToast('📋 הדוח הועתק! הדבק ב-Google Docs', 'success');
+			}).catch(err => {
+				console.error('Copy failed:', err);
+				// Fallback - select and copy
+				const range = document.createRange();
+				range.selectNode(htmlContent);
+				window.getSelection().removeAllRanges();
+				window.getSelection().addRange(range);
+				document.execCommand('copy');
+				window.getSelection().removeAllRanges();
+				showToast('📋 הדוח הועתק!', 'success');
+			});
+		}
+
+
+////==============================================================================
+
 
 		// Copy balance report to clipboard
 		function copyBalanceReport() {
