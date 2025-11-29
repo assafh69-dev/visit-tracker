@@ -2445,7 +2445,7 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -7337,9 +7337,6 @@
 					console.log('Found existing spreadsheet');
 					SPREADSHEET_ID = response.result.files[0].id;
 					showToast('נמצאה טבלה קיימת!', 'success');
-					
-					// בדיקה ותיקון של מבנה הטבלה
-					await checkAndFixTableStructure();
 				} else {
 					console.log('No spreadsheet found, creating new one...');
 					await createNewMainSpreadsheet();
@@ -8478,6 +8475,12 @@
 										style="background: #3498db; color: white; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;"
 										title="סמן הכל כשולם">
 									✓ סמן שולם
+								</button>
+								<button onclick="event.stopPropagation(); showBalanceReportModal('${debt.clientId}')" 
+										class="action-btn" 
+										style="background: #9b59b6; color: white; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;"
+										title="דוח מאזן">
+									📄 דוח
 								</button>
 							</div>
 						</div>
