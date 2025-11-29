@@ -2445,7 +2445,7 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4414,26 +4414,29 @@
 		}
 
 
-				// רינדור למצב שבועי ומאחרות עם טאבי ימים
+		// רינדור למצב שבועי ומאחרות עם טאבי ימים
 		function renderWeeklyPlanningByDays() {
 			const container = document.getElementById('planningCardsContainer');
 			const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 			
 			// יצירת מערך עם נתוני ימים + חישוב תאריכים
 			const today = new Date();
+			today.setHours(0, 0, 0, 0);
 			const todayDayIndex = today.getDay(); // 0=ראשון
 			const dayIndexMap = {'א': 0, 'ב': 1, 'ג': 2, 'ד': 3, 'ה': 4, 'ו': 5, 'ש': 6};
 
-			const daysData = dayNames.map(dayName => {
-				// ✅ שינוי: סינון לפי היום של next_visit במקום allowed_day
-				const dayClients = planningClients.filter(client => {
-					if (!client.next_visit) return false;
-					const nextVisitDate = new Date(client.next_visit);
-					const visitDayIndex = nextVisitDate.getDay(); // 0=ראשון
-					const visitDayName = dayNames[visitDayIndex];
-					return visitDayName === dayName;
+			// קבלת מאחרים דחופים לתצוגה שבועית (מרווח עד 12 שבועות)
+			const urgentOverdueByDay = {};
+			if (currentPlanningView === 'weekly') {
+				dayNames.forEach(dayName => {
+					urgentOverdueByDay[dayName] = getUrgentOverdueForDay(dayName);
 				});
-				
+			}
+
+			const daysData = dayNames.map(dayName => {
+				const dayClients = planningClients.filter(client => 
+					(client.allowed_day || 'א') === dayName
+				);
 				// מיון לקוחות היום
 				dayClients.sort((a, b) => {
 					if (currentPlanningView === 'overdue') {
@@ -4456,11 +4459,14 @@
 					formattedDate = dayDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
 				}
 
-				return { dayName, clients: dayClients, date: formattedDate };
+				// מאחרים דחופים ליום זה
+				const overdueForDay = urgentOverdueByDay[dayName] || [];
+
+				return { dayName, clients: dayClients, date: formattedDate, overdueClients: overdueForDay };
 			});
 			
-			// רק ימים עם לקוחות
-			const activeDays = daysData.filter(day => day.clients.length > 0);
+			// רק ימים עם לקוחות או מאחרים
+			const activeDays = daysData.filter(day => day.clients.length > 0 || day.overdueClients.length > 0);
 			
 			if (activeDays.length === 0) {
 				container.innerHTML = '<div class="planning-empty-state"><h3>אין לקוחות להציג</h3></div>';
@@ -4474,20 +4480,36 @@
 						${activeDays.map((day, index) => {
 							// אם יש יום שנבחר, השתמש בו. אחרת - היום הראשון
 							const isActive = selectedDayTab ? (day.dayName === selectedDayTab) : (index === 0);
-							return `<button class="day-tab-btn ${isActive ? 'active' : ''}" 
+							const hasOverdue = day.overdueClients.length > 0;
+							return `<button class="day-tab-btn ${isActive ? 'active' : ''} ${hasOverdue ? 'has-overdue' : ''}" 
 											 onclick="switchDayTab('${day.dayName}')" 
 											 data-day="${day.dayName}">
-										${day.dayName}
+										${day.dayName}${hasOverdue ? ' ⚠️' : ''}
 									</button>`;
 						}).join('')}
 					</div>
 					<div class="days-content">
 						${activeDays.map((day, index) => {
 							const isActive = selectedDayTab ? (day.dayName === selectedDayTab) : (index === 0);
+							
+							// מאחרים דחופים ליום זה
+							let overdueHtml = '';
+							if (day.overdueClients.length > 0) {
+								overdueHtml = `
+									<div style="margin-bottom: 15px; background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); border: 2px solid #e74c3c; border-radius: 10px; padding: 12px;">
+										<div style="font-size: 14px; font-weight: 600; color: #c0392b; margin-bottom: 10px;">
+											⚠️ מאחרים דחופים (${day.overdueClients.length})
+										</div>
+										${day.overdueClients.map(client => renderClientRow(client)).join('')}
+									</div>
+								`;
+							}
+							
 							return `<div class="day-content ${isActive ? 'active' : ''}" data-day="${day.dayName}">
 										<div class="day-content-header">
 											${day.clients.length} טיפולים ליום ${day.dayName}'${day.date ? ' - ' + day.date : ''}
 										</div>
+										${overdueHtml}
 										${day.clients.map(client => renderClientRow(client)).join('')}
 									</div>`;
 						}).join('')}
@@ -4496,6 +4518,51 @@
 			`;
 			
 			container.innerHTML = html;
+		}
+
+		// פונקציה לקבלת מאחרים דחופים ליום ספציפי
+		function getUrgentOverdueForDay(dayName) {
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			
+			return locations
+				.filter(loc => {
+					// רק לקוחות פעילים
+					if (loc.active !== 'כן' && loc.active !== true && loc.active !== '1') return false;
+					
+					// רק היום המועדף תואם
+					if ((loc.allowed_day || 'א') !== dayName) return false;
+					
+					// רק עם מרווח עד 12 שבועות (3 חודשים)
+					const interval = parseInt(loc.interval_weeks) || 4;
+					if (interval > 12) return false;
+					
+					// רק מאחרים (תאריך הבא עבר)
+					if (!loc.next_visit) return false;
+					const nextVisit = new Date(loc.next_visit);
+					if (nextVisit >= today) return false;
+					
+					// לא להציג את מי שכבר מופיע ברשימה השבועית
+					const isInWeeklyList = planningClients.some(pc => pc.ID === loc.ID);
+					if (isInWeeklyList) return false;
+					
+					return true;
+				})
+				.map(loc => {
+					const nextVisit = new Date(loc.next_visit);
+					const daysOverdue = Math.floor((today - nextVisit) / (1000 * 60 * 60 * 24));
+					const interval = parseInt(loc.interval_weeks) || 4;
+					
+					return {
+						...loc,
+						daysOverdue: daysOverdue,
+						interval_weeks: interval,
+						urgencyScore: daysOverdue / (interval * 7),
+						status: 'overdue'
+					};
+				})
+				.sort((a, b) => b.urgencyScore - a.urgencyScore)
+				.slice(0, 5); // מקסימום 5 לכל יום
 		}
 
 		// רינדור רגיל (יומי/מאחרות)
