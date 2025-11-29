@@ -2445,7 +2445,7 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4716,6 +4716,9 @@
 
 						<!-- כפתורי פעולה -->
 						<div class="planning-actions-row">
+							<button class="week-btn-mobile" onclick="setNextAllowedDayThisWeek('${client.ID}', '${client.allowed_day}')" title="היום הקרוב" style="background: #e74c3c;">
+								0W
+							</button>
 							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
 								1W+
 							</button>
@@ -13276,6 +13279,43 @@
 			const weekText = weeksAhead === 1 ? 'שבוע' : 'שבועיים';
 			showToast(`נקבע ${allowedDay} בעוד ${weekText} (${formatDate(dateString)})`, 'success');
 		}
+
+		// קביעת תאריך הטיפול הבא ליום המועדף הכי קרוב (כולל היום)
+		function setNextAllowedDayThisWeek(clientId, allowedDay) {
+			const client = locations.find(loc => loc.ID === clientId);
+			if (!client) return;
+			
+			const dayIndexMap = {'א': 0, 'ב': 1, 'ג': 2, 'ד': 3, 'ה': 4, 'ו': 5, 'ש': 6};
+			const targetDayIndex = dayIndexMap[allowedDay] ?? 0;
+			
+			const today = new Date();
+			const todayIndex = today.getDay();
+			
+			// חישוב ההפרש - אם היום הוא היום המועדף, ההפרש הוא 0
+			let daysDiff = targetDayIndex - todayIndex;
+			if (daysDiff < 0) {
+				daysDiff += 7; // אם היום כבר עבר השבוע, קח את השבוע הבא
+			}
+			
+			const nextDate = new Date(today);
+			nextDate.setDate(today.getDate() + daysDiff);
+			const nextDateStr = nextDate.toISOString().split('T')[0];
+			
+			client.next_visit = nextDateStr;
+			saveToLocalStorage();
+			
+			showToast(`✅ ${client.name} - ${formatDate(nextDateStr)}`, 'success');
+			
+			// רענון התצוגה
+			loadPlanningClientsAdvanced();
+			renderPlanningCards();
+			
+			// שמירה לענן
+			if (access_token && SPREADSHEET_ID) {
+				saveLocationsBatch(locations).catch(err => console.error('Error saving:', err));
+			}
+		}
+
 
 		function loadLocationsForSelect() {
 			const select = document.getElementById('locationSelect');
