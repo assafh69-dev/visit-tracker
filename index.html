@@ -4716,8 +4716,8 @@
 
 						<!-- כפתורי פעולה -->
 						<div class="planning-actions-row">
-							<button class="week-btn-mobile" onclick="setNextAllowedDayThisWeek('${client.ID}', '${client.allowed_day}')" title="היום הקרוב" style="background: #e74c3c;">
-								0W
+							<button class="week-btn-mobile" onclick="setNextAllowedDayThisWeek('${client.ID}', '${client.allowed_day}')" title="היום הקרוב">
+								📍
 							</button>
 							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
 								1W+
@@ -13289,12 +13289,13 @@
 			const targetDayIndex = dayIndexMap[allowedDay] ?? 0;
 			
 			const today = new Date();
+			today.setHours(12, 0, 0, 0); // קביעה לשעה 12 בצהריים למניעת בעיות אזור זמן
 			const todayIndex = today.getDay();
 			
-			// חישוב ההפרש - אם היום הוא היום המועדף, ההפרש הוא 0
+			// חישוב ההפרש
 			let daysDiff = targetDayIndex - todayIndex;
 			if (daysDiff < 0) {
-				daysDiff += 7; // אם היום כבר עבר השבוע, קח את השבוע הבא
+				daysDiff += 7;
 			}
 			
 			const nextDate = new Date(today);
