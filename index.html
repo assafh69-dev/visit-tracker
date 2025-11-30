@@ -2445,7 +2445,8 @@
 				<button onclick="showSection('debts')" class="nav-btn">💰 חובות</button>
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3037,6 +3038,23 @@
 					</div>
 				</div>
 				
+				<!-- גיבוי ושחזור -->
+				<div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 12px; padding: 20px; margin-top: 20px;">
+					<h3 style="margin: 0 0 15px 0; color: #856404;">💾 גיבוי ושחזור</h3>
+					<p style="color: #856404; font-size: 14px; margin-bottom: 15px;">
+						גיבוי שומר עותק של כל הנתונים. מומלץ לפני פעולות מסוכנות.
+					</p>
+					<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+						<button onclick="createBackup()" style="padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+							💾 צור גיבוי עכשיו
+						</button>
+						<button onclick="showRestoreConfirm()" style="padding: 12px 20px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+							🔄 שחזר מגיבוי
+						</button>
+					</div>
+					<div id="backupStatus" style="margin-top: 15px; font-size: 13px; color: #666;"></div>
+				</div>
+				
 				<!-- ניהול נתונים -->
 				<div class="form-section">
 					<h3>🗂️ ניהול נתונים</h3>
@@ -3204,6 +3222,63 @@
 				</div>
 			</section>
 			
+			<!-- Expenses Section -->
+			<section id="expenses" class="section">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+					<h2 style="margin: 0;">💰 הוצאות</h2>
+					<button onclick="showAddExpenseModal()" style="padding: 10px 20px; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600;">
+						➕ הוספת הוצאה
+					</button>
+				</div>
+				
+				<!-- Expense Stats -->
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+					<div style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;" id="totalExpensesAmount">0 ₪</div>
+						<div style="font-size: 12px; opacity: 0.9;">סה"כ הוצאות</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;" id="generalExpensesAmount">0 ₪</div>
+						<div style="font-size: 12px; opacity: 0.9;">הוצאות כלליות</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;" id="clientExpensesAmount">0 ₪</div>
+						<div style="font-size: 12px; opacity: 0.9;">הוצאות לקוחות</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;" id="expensesCount">0</div>
+						<div style="font-size: 12px; opacity: 0.9;">מספר הוצאות</div>
+					</div>
+				</div>
+				
+				<!-- Filters -->
+				<div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+					<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+						<select id="expenseTypeFilter" onchange="displayExpenses()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
+							<option value="">כל הסוגים</option>
+							<option value="general">כללי</option>
+							<option value="client">לקוח</option>
+						</select>
+						<select id="expenseCategoryFilter" onchange="displayExpenses()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
+							<option value="">כל הקטגוריות</option>
+							<option value="fuel">⛽ דלק ושמנים</option>
+							<option value="equipment">🔧 ציוד וכלים</option>
+							<option value="materials">🧪 חומרים</option>
+							<option value="vehicle">🚗 רכב</option>
+							<option value="tools">🔨 כלי עבודה</option>
+							<option value="parts">⚙️ חלקי חילוף</option>
+							<option value="other">📦 אחר</option>
+						</select>
+						<input type="month" id="expenseMonthFilter" onchange="displayExpenses()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
+					</div>
+				</div>
+				
+				<!-- Expenses List -->
+				<div id="expensesContainer">
+					<!-- Will be populated by displayExpenses() -->
+				</div>
+			</section>
+			
         </main>
     </div>
 
@@ -3257,6 +3332,7 @@
 		let payments = [];
 		let paymentVisitLinks = [];
 		let tasks = [];
+		let expenses = [];
         let currentFilter = 'today';
 		
 		// הגדרות עלות
@@ -3531,6 +3607,7 @@
 			await loadVisitsFromSheets(); 
 			await loadReceiptsFromSheets();
 			await loadTasksFromSheets();
+			await loadExpensesFromSheets();
 		}
 
 		async function loadOptionalData() {
@@ -3684,7 +3761,8 @@
 						location_name: row[5] || '',
 						amount: row[6] || 0,
 						payment_type: row[7] || '',
-						notes: row[8] || ''
+						notes: row[8] || '',
+						payment_id: row[9] || ''
 					}));
 				}
 				
@@ -3722,7 +3800,8 @@
 						reference: row[11] || '',
 						check_date: row[12] || '',
 						bank_account: row[13] || '',
-						payment_details: row[14] || ''
+						payment_details: row[14] || '',
+						receipt_id: row[15] || ''
 					}));
 				}
 				
@@ -3967,6 +4046,7 @@
 				localStorage.setItem('payment_links_data', JSON.stringify(paymentVisitLinks));
 				localStorage.setItem('incomes_data', JSON.stringify(incomes));
 				localStorage.setItem('tasks_data', JSON.stringify(tasks));
+				localStorage.setItem('expenses', JSON.stringify(expenses));
 				
 				console.log('Data saved to local storage');
 			} catch (error) {
@@ -3984,6 +4064,7 @@
 				const savedIncomes = localStorage.getItem('incomes_data');
 				const savedCostSettings = localStorage.getItem('cost_settings');
 				const savedTasks = localStorage.getItem('tasks_data');
+				const savedExpenses = localStorage.getItem('expenses_data');
 				
 				if (savedLocations) {
 					locations = JSON.parse(savedLocations);
@@ -4005,6 +4086,9 @@
 				}
 				if (savedTasks) {
 					tasks = JSON.parse(savedTasks);
+				}
+				if (savedExpenses) {
+					expenses = JSON.parse(savedExpenses);
 				}
 				if (savedCostSettings) {
 					costSettings = JSON.parse(savedCostSettings);
@@ -4103,11 +4187,16 @@
 						applyPaymentFilters();
 					}
 					break;
-					case 'tasks':
+				case 'tasks':
 					if (typeof displayTasks === 'function') {
 						displayTasks();
 					}
 					break;
+				case 'expenses':
+					if (typeof displayExpenses === 'function') {
+						displayExpenses();
+					}
+					break;	
 			}
 		}
 
@@ -4602,15 +4691,22 @@
 			setTimeout(setTodayAsDefault, 100);
 		}
 
-		// פונקציה לקבלת מאחרים דחופים (מרווח עד 12 שבועות)
+		// פונקציה לקבלת מאחרים דחופים (מרווח עד 12 שבועות) - רק ליום המועדף של היום
 		function getUrgentOverdueClients() {
 			const today = new Date();
 			today.setHours(0, 0, 0, 0);
+			
+			// היום בשבוע - לסינון לפי יום מועדף
+			const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
+			const todayDayName = dayNames[today.getDay()];
 			
 			return locations
 				.filter(loc => {
 					// רק לקוחות פעילים
 					if (loc.active !== 'כן' && loc.active !== true && loc.active !== '1') return false;
+					
+					// רק לקוחות שהיום המועדף שלהם הוא היום
+					if ((loc.allowed_day || 'א') !== todayDayName) return false;
 					
 					// רק עם מרווח עד 12 שבועות (3 חודשים)
 					const interval = parseInt(loc.interval_weeks) || 4;
@@ -4717,7 +4813,7 @@
 						<!-- כפתורי פעולה -->
 						<div class="planning-actions-row">
 							<button class="week-btn-mobile" onclick="setNextAllowedDayThisWeek('${client.ID}', '${client.allowed_day}')" title="היום הקרוב">
-								📍
+								⏬
 							</button>
 							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
 								1W+
@@ -5736,6 +5832,18 @@
 								style="padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 15px; color: #666;">
 							📋 משימות
 						</button>
+						<button onclick="switchClientProfileTab('stats')" 
+								class="client-profile-tab" 
+								data-tab="stats"
+								style="padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 15px; color: #666;">
+							📊 סטטיסטיקה
+						</button>
+						<button onclick="switchClientProfileTab('expenses')" 
+								class="client-profile-tab" 
+								data-tab="expenses"
+								style="padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 15px; color: #666;">
+							💰 הוצאות
+						</button>
 					</div>
 					
 					<!-- Tab Content -->
@@ -6060,7 +6168,171 @@
 					});
 					html += `</div>`;
 				}
+			} else if (tabName === 'stats') {
+				// Statistics tab - monthly breakdown
+				const clientVisits = visits
+					.filter(v => v.location_id === clientId)
+					.sort((a, b) => b.date.localeCompare(a.date));
+				
+				// Target rate (can be customized later)
+				const targetRate = 150; // ש"ח לשעה
+				
+				// Group visits by month
+				const monthlyData = {};
+				clientVisits.forEach(visit => {
+					const date = new Date(visit.date);
+					const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+					
+					if (!monthlyData[monthKey]) {
+						monthlyData[monthKey] = {
+							month: monthKey,
+							visits: 0,
+							totalMinutes: 0,
+							totalIncome: 0
+						};
+					}
+					
+					monthlyData[monthKey].visits++;
+					monthlyData[monthKey].totalMinutes += parseFloat(visit.duration_minutes) || 0;
+					monthlyData[monthKey].totalIncome += parseFloat(visit.amount) || 0;
+				});
+				
+				// Convert to array and sort by month (newest first)
+				const monthlyArray = Object.values(monthlyData).sort((a, b) => b.month.localeCompare(a.month));
+				
+				// Calculate overall averages
+				const totalHours = monthlyArray.reduce((sum, m) => sum + m.totalMinutes / 60, 0);
+				const totalIncome = monthlyArray.reduce((sum, m) => sum + m.totalIncome, 0);
+				const overallRate = totalHours > 0 ? totalIncome / totalHours : 0;
+				
+				// Format month name
+				const formatMonth = (monthKey) => {
+					const [year, month] = monthKey.split('-');
+					const monthNames = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+					return `${monthNames[parseInt(month) - 1]} ${year}`;
+				};
+				
+				html = `
+					<!-- Overall Summary -->
+					<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+						<div style="text-align: center; margin-bottom: 15px;">
+							<div style="font-size: 14px; opacity: 0.9;">ממוצע הכנסה לשעה</div>
+							<div style="font-size: 36px; font-weight: bold;">${overallRate.toFixed(0)} ₪</div>
+							<div style="font-size: 12px; margin-top: 5px; padding: 5px 10px; border-radius: 20px; display: inline-block; background: ${overallRate >= targetRate ? 'rgba(39, 174, 96, 0.3)' : 'rgba(231, 76, 60, 0.3)'};">
+								${overallRate >= targetRate ? '✓ מעל היעד' : '⚠ מתחת ליעד'} (${targetRate} ₪/שעה)
+							</div>
+						</div>
+						<div style="display: flex; justify-content: space-around; text-align: center;">
+							<div>
+								<div style="font-size: 24px; font-weight: bold;">${totalHours.toFixed(1)}</div>
+								<div style="font-size: 12px; opacity: 0.9;">שעות סה"כ</div>
+							</div>
+							<div>
+								<div style="font-size: 24px; font-weight: bold;">${totalIncome.toFixed(0)} ₪</div>
+								<div style="font-size: 12px; opacity: 0.9;">הכנסה סה"כ</div>
+							</div>
+							<div>
+								<div style="font-size: 24px; font-weight: bold;">${monthlyArray.length}</div>
+								<div style="font-size: 12px; opacity: 0.9;">חודשים</div>
+							</div>
+						</div>
+					</div>
+					
+					<!-- Monthly Table -->
+					<div style="max-height: 350px; overflow-y: auto;">
+						<table style="width: 100%; border-collapse: collapse;">
+							<thead style="position: sticky; top: 0; background: #f8f9fa;">
+								<tr style="border-bottom: 2px solid #dee2e6;">
+									<th style="padding: 10px; text-align: right; font-weight: 600;">חודש</th>
+									<th style="padding: 10px; text-align: center; font-weight: 600;">טיפולים</th>
+									<th style="padding: 10px; text-align: center; font-weight: 600;">שעות</th>
+									<th style="padding: 10px; text-align: center; font-weight: 600;">הכנסה</th>
+									<th style="padding: 10px; text-align: center; font-weight: 600;">לשעה</th>
+								</tr>
+							</thead>
+							<tbody>
+								${monthlyArray.length === 0 ? `
+									<tr>
+										<td colspan="5" style="padding: 40px; text-align: center; color: #666;">אין נתונים להצגה</td>
+									</tr>
+								` : monthlyArray.map(m => {
+									const hours = m.totalMinutes / 60;
+									const rate = hours > 0 ? m.totalIncome / hours : 0;
+									const rateColor = rate >= targetRate ? '#27ae60' : rate >= targetRate * 0.8 ? '#f39c12' : '#e74c3c';
+									
+									return `
+										<tr style="border-bottom: 1px solid #dee2e6;">
+											<td style="padding: 10px; font-weight: 500;">${formatMonth(m.month)}</td>
+											<td style="padding: 10px; text-align: center;">${m.visits}</td>
+											<td style="padding: 10px; text-align: center;">${hours.toFixed(1)}</td>
+											<td style="padding: 10px; text-align: center; font-weight: 600; color: #27ae60;">${m.totalIncome.toFixed(0)} ₪</td>
+											<td style="padding: 10px; text-align: center;">
+												<span style="background: ${rateColor}; color: white; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+													${rate.toFixed(0)} ₪
+												</span>
+											</td>
+										</tr>
+									`;
+								}).join('')}
+							</tbody>
+						</table>
+					</div>
+				`;
+			} else if (tabName === 'expenses') {
+				// Client expenses tab
+				const clientExpenses = expenses
+					.filter(exp => exp.client_id === clientId)
+					.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+				
+				const totalExpenses = clientExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+				
+				html = `
+					<div style="margin-bottom: 15px; text-align: center;">
+						<button onclick="closeAnyModal(); setTimeout(() => showAddExpenseModal('${clientId}', '${client.name}'), 100);" 
+								style="padding: 12px 24px; background: #e74c3c; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold;">
+							➕ הוסף הוצאה ללקוח
+						</button>
+					</div>
+				`;
+				
+				if (clientExpenses.length === 0) {
+					html += '<div style="text-align: center; padding: 40px; color: #666;">אין הוצאות ללקוח זה</div>';
+				} else {
+					html += `
+						<div style="background: #fce4ec; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #e74c3c;">
+							<div style="display: flex; justify-content: space-between; align-items: center;">
+								<span style="font-size: 14px; color: #c0392b; font-weight: bold;">סה"כ הוצאות ללקוח:</span>
+								<span style="font-size: 24px; font-weight: bold; color: #e74c3c;">${totalExpenses.toFixed(0)} ₪</span>
+							</div>
+						</div>
+						
+						<div style="max-height: 300px; overflow-y: auto;">
+							${clientExpenses.map(exp => {
+								const category = EXPENSE_CATEGORIES[exp.category] || EXPENSE_CATEGORIES['other'];
+								const payment = PAYMENT_METHODS[exp.payment_method] || PAYMENT_METHODS['cash'];
+								
+								return `
+									<div style="background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 8px; border-right: 4px solid #e74c3c;">
+										<div style="display: flex; justify-content: space-between; align-items: center;">
+											<div>
+												<div style="font-weight: 600; color: #333;">${category.icon} ${exp.description}</div>
+												<div style="font-size: 12px; color: #666; margin-top: 3px;">
+													📅 ${formatDate(exp.date)} | ${payment.icon} ${payment.name}
+												</div>
+												${exp.vendor_name ? `<div style="font-size: 11px; color: #888; margin-top: 2px;">🏪 ${exp.vendor_name}</div>` : ''}
+											</div>
+											<div style="font-size: 18px; font-weight: bold; color: #e74c3c;">
+												${exp.amount} ₪
+											</div>
+										</div>
+									</div>
+								`;
+							}).join('')}
+						</div>
+					`;
+				}
 			}
+			
 			
 			contentDiv.innerHTML = html;
 		}
@@ -7575,12 +7847,13 @@
 			const headersMap = {
 				'Locations': ['ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 'client_requests'],
 				'Visits': ['ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 'duration_minutes', 'num_workers', 'start_time', 'end_time', 'amount', 'paid', 'expense', 'notes'],
-				'Receipts': ['ID', 'book_number', 'receipt_number', 'date', 'location_id', 'location_name', 'amount', 'payment_type', 'notes'],
+				'Receipts': ['ID', 'book_number', 'receipt_number', 'date', 'location_id', 'location_name', 'amount', 'payment_type', 'notes', 'payment_id'],
 				'TelegramVisits': ['message_id', 'date', 'text', 'processed', 'location_id', 'visit_id'],
 				'TelegramIncomes': ['message_id', 'date', 'text', 'processed', 'receipt_id'],
-				'Payments': ['ID', 'date', 'time', 'amount', 'payment_method', 'source_type', 'client_id', 'client_name', 'notes', 'status', 'created_at', 'reference', 'check_date', 'bank_account', 'payment_details'],
+				'Payments': ['ID', 'date', 'time', 'amount', 'payment_method', 'source_type', 'client_id', 'client_name', 'notes', 'status', 'created_at', 'reference', 'check_date', 'bank_account', 'payment_details', 'receipt_id'],
 				'PaymentVisitLink': ['ID', 'payment_id', 'visit_id', 'amount_allocated'],
-				'Tasks': ['ID', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date']
+				'Tasks': ['ID', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date'],
+				'Expenses': ['ID', 'date', 'amount', 'description', 'category', 'expense_type', 'client_id', 'client_name', 'visit_id', 'vendor_name', 'vendor_type', 'payment_method', 'receipt_number', 'notes']
 			};
 			
 			const headers = headersMap[sheetName];
@@ -7641,6 +7914,7 @@
 				await addHeadersToSheet('TelegramVisits');     
 				await addHeadersToSheet('TelegramIncomes');    
 				await addHeadersToSheet('Tasks');
+				await addHeadersToSheet('Expenses');
 
 				// הוספת כותרות ל-SystemSettings
 				await gapi.client.sheets.spreadsheets.values.update({
@@ -7667,6 +7941,13 @@
 			if (!importTableId) {
 				showToast('לא נמצא ID של טבלת העזר', 'warning');
 				return;
+			}
+			
+			// גיבוי אוטומטי לפני ייבוא
+			if (access_token && SPREADSHEET_ID) {
+				showToast('💾 יוצר גיבוי לפני ייבוא...', 'info');
+				console.log('💾 יוצר גיבוי לפני ייבוא...');
+				await createBackup();
 			}
 			
 			console.log('🔍 Import Table ID:', importTableId); // לוג חדש
@@ -8469,8 +8750,9 @@
 				const paymentSuccess = payments.length > 0 ? await savePaymentsBatch(payments) : true;
 				const linkSuccess = paymentVisitLinks.length > 0 ? await savePaymentVisitLinksBatch(paymentVisitLinks) : true;
 				const tasksSuccess = tasks.length > 0 ? await saveTasksToSheets() : true;
+				const expensesSuccess = expenses.length > 0 ? await saveExpensesBatch(expenses) : true;
 
-				const allSaved = locationSuccess && visitSuccess && receiptSuccess && incomeSuccess && paymentSuccess && linkSuccess && tasksSuccess;
+				const allSaved = locationSuccess && visitSuccess && receiptSuccess && incomeSuccess && paymentSuccess && linkSuccess && tasksSuccess && expensesSuccess;
 							
 
 			if (allSaved) {
@@ -9977,7 +10259,8 @@
 					receipt.location_name,
 					receipt.amount,
 					receipt.payment_type,
-					receipt.notes
+					receipt.notes,
+					receipt.payment_id || ''
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.append({
@@ -10021,13 +10304,14 @@
 					payment.reference || '',
 					payment.check_date || '',
 					payment.bank_account || '',
-					payment.payment_details || ''
+					payment.payment_details || '',
+					payment.receipt_id || ''
 				]);
-
-				// ✅ Clear existing data first
+				
+				// ✅ Clear existing data first (עדכון טווח ל-P)
 				await gapi.client.sheets.spreadsheets.values.clear({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Payments!A2:O'
+					range: 'Payments!A2:P'
 				});
 				
 				// ✅ Then write new data
@@ -10045,6 +10329,51 @@
 				
 			} catch (error) {
 				console.error('Error saving payments batch:', error);
+				return false;
+			}
+		}
+		
+		
+		// שמירת הוצאות לענן
+		async function saveExpensesBatch(expensesArray) {
+			if (!access_token || !SPREADSHEET_ID) return false;
+			
+			try {
+				console.log('💰 saveExpensesBatch called with', expensesArray.length, 'expenses');
+				
+				const values = expensesArray.map(exp => [
+					exp.ID,
+					exp.date,
+					exp.amount,
+					exp.description,
+					exp.category,
+					exp.expense_type,
+					exp.client_id || '',
+					exp.client_name || '',
+					exp.visit_id || '',
+					exp.vendor_name || '',
+					exp.vendor_type || 'other',
+					exp.payment_method || 'cash',
+					exp.receipt_number || '',
+					exp.notes || ''
+				]);
+				
+				// Add header row
+				const header = ['ID', 'date', 'amount', 'description', 'category', 'expense_type', 'client_id', 'client_name', 'visit_id', 'vendor_name', 'vendor_type', 'payment_method', 'receipt_number', 'notes'];
+				
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Expenses!A1',
+					valueInputOption: 'RAW',
+					resource: {
+						values: [header, ...values]
+					}
+				});
+				
+				console.log('✅ Expenses saved to cloud');
+				return true;
+			} catch (error) {
+				console.error('❌ Error saving expenses:', error);
 				return false;
 			}
 		}
@@ -10625,26 +10954,27 @@
 					// שמור תשלום חדש לענן
 					await gapi.client.sheets.spreadsheets.values.append({
 						spreadsheetId: SPREADSHEET_ID,
-						range: 'Payments!A:O',
+						range: 'Payments!A:P',
 						valueInputOption: 'USER_ENTERED',
 						resource: {
 							values: [[
-								payment.ID,
-								payment.date,
-								payment.time,
-								payment.amount,
-								payment.payment_method,
-								payment.source_type,
-								payment.client_id,
-								payment.client_name,
-								payment.notes,
-								payment.status,
-								payment.created_at,
-								payment.reference,
-								payment.check_date,
-								payment.bank_account,
-								payment.payment_details
-							]]
+							payment.ID,
+							payment.date,
+							payment.time,
+							payment.amount,
+							payment.payment_method,
+							payment.source_type,
+							payment.client_id,
+							payment.client_name,
+							payment.notes,
+							payment.status,
+							payment.created_at,
+							payment.reference,
+							payment.check_date,
+							payment.bank_account,
+							payment.payment_details,
+							payment.receipt_id || ''
+						]]
 						}
 					});
 					
@@ -10667,6 +10997,7 @@
 					showToast('💾 תשלום נוסף בהצלחה (מקומית)', 'info');
 				}
 				
+				
 				hideLoading();
 
 				// 🔓 שחרר את הכפתור
@@ -10688,15 +11019,20 @@
 					applyPaymentFilters();
 				}
 				
-				} catch (error) {
-					console.error('Error saving payment:', error);
-					showToast('❌ שגיאה בשמירת תשלום', 'error');
-					hideLoading();
-					
-					// 🔓 שחרר את הכפתור
-					saveBtn = document.getElementById('savePaymentBtn');
-					if (saveBtn) saveBtn.disabled = false;
-				}
+				// שאלה להפקת קבלה
+				setTimeout(() => {
+					showReceiptPrompt(payment);
+				}, 500);
+				
+			} catch (error) {
+				console.error('Error saving payment:', error);
+				showToast('❌ שגיאה בשמירת תשלום', 'error');
+				hideLoading();
+				
+				// 🔓 שחרר את הכפתור
+				saveBtn = document.getElementById('savePaymentBtn');
+				if (saveBtn) saveBtn.disabled = false;
+			}
 		}
 
 
@@ -13271,7 +13607,10 @@
 				targetDate.setDate(today.getDate() + daysUntilTargetDay + ((weeksAhead - 1) * 7));
 			}
 			
-			const dateString = targetDate.toISOString().split('T')[0];
+			const year = targetDate.getFullYear();
+			const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+			const day = String(targetDate.getDate()).padStart(2, '0');
+			const dateString = `${year}-${month}-${day}`;
 			
 			// עדכון התאריך
 			updateClientNextVisit(clientId, dateString);
@@ -14557,6 +14896,10 @@
 					</td>
 					<td>
 						<button onclick="showPaymentDetails('${payment.ID}')" class="action-btn" style="background: #3498db; color: white;" title="פירוט מלא">🔍</button>
+						${payment.receipt_id 
+							? '<span style="color: #27ae60; font-size: 12px; margin-right: 5px;">🧾</span>' 
+							: `<button onclick="createReceiptFromPayment('${payment.ID}')" style="padding: 4px 8px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 5px;">🧾</button>`
+						}
 					</td>
 				`;
 				
@@ -15580,6 +15923,9 @@
 			}, 1000);
 			
 			console.log('App initialization complete');
+			
+			// עדכון סטטוס גיבוי
+			setTimeout(updateBackupStatus, 1000);
 			
 			// תזכורת למאחרים מאתמול - מופעל 3 שניות אחרי טעינה
 			setTimeout(() => {
@@ -16722,6 +17068,37 @@
 			'completed': { icon: '✅', label: 'הושלם', color: '#28a745', bg: '#d4edda' },
 			'cancelled': { icon: '❌', label: 'בוטל', color: '#dc3545', bg: '#f8d7da' }
 		};
+
+		// קטגוריות הוצאות
+		const EXPENSE_CATEGORIES = {
+			'fuel': { name: 'דלק ושמנים', icon: '⛽' },
+			'equipment': { name: 'ציוד וכלים', icon: '🔧' },
+			'materials': { name: 'חומרים', icon: '🧪' },
+			'vehicle': { name: 'רכב', icon: '🚗' },
+			'tools': { name: 'כלי עבודה', icon: '🔨' },
+			'parts': { name: 'חלקי חילוף', icon: '⚙️' },
+			'other': { name: 'אחר', icon: '📦' }
+		};
+
+		// סוגי ספקים
+		const VENDOR_TYPES = {
+			'store': { name: 'חנות', icon: '🏪' },
+			'garage': { name: 'מוסך', icon: '🔧' },
+			'gas_station': { name: 'תחנת דלק', icon: '⛽' },
+			'online': { name: 'רכישה מקוונת', icon: '💻' },
+			'nursery': { name: 'משתלה', icon: '🌱' },
+			'other': { name: 'אחר', icon: '📍' }
+		};
+
+		// אמצעי תשלום
+		const PAYMENT_METHODS = {
+			'cash': { name: 'מזומן', icon: '💵' },
+			'credit': { name: 'אשראי', icon: '💳' },
+			'transfer': { name: 'העברה', icon: '🏦' },
+			'bit': { name: 'ביט', icon: '📱' },
+			'check': { name: 'צ׳ק', icon: '📝' }
+		};
+
 
 		// Display tasks in table
 		function displayTasks() {
@@ -18393,6 +18770,880 @@
 				</div>
 			`;
 		}
+
+		// הצגת שאלה להפקת קבלה אחרי תשלום
+		function showReceiptPrompt(payment) {
+			const modalHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 90vw; text-align: center;">
+					<div style="font-size: 48px; margin-bottom: 15px;">🧾</div>
+					<h3 style="margin: 0 0 10px 0; color: #2c3e50;">להפיק קבלה?</h3>
+					<p style="color: #666; margin-bottom: 20px;">
+						תשלום ${payment.amount} ₪ מ${payment.location_name}
+					</p>
+					<div style="display: flex; gap: 10px; justify-content: center;">
+						<button onclick="createReceiptFromPayment('${payment.ID}'); closeAnyModal();" 
+								style="padding: 12px 25px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+							✓ כן, הפק קבלה
+						</button>
+						<button onclick="closeAnyModal();" 
+								style="padding: 12px 25px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+							לא עכשיו
+						</button>
+					</div>
+				</div>
+			`;
+			
+			const container = document.getElementById('modalContainer');
+			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
+			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
+			container.onclick = closeAnyModal;
+		}
+
+
+		// יצירת קבלה מתשלום קיים
+		function createReceiptFromPayment(paymentId) {
+			const payment = payments.find(p => p.ID === paymentId);
+			if (!payment) {
+				showToast('תשלום לא נמצא', 'error');
+				return;
+			}
+			
+			// בדיקה אם כבר יש קבלה לתשלום זה
+			if (payment.receipt_id) {
+				showToast('כבר קיימת קבלה לתשלום זה', 'warning');
+				return;
+			}
+			
+			// חישוב מספר קבלה הבא
+			const maxReceiptNum = receipts.length > 0 
+				? Math.max(...receipts.map(r => parseInt(r.receipt_number) || 0))
+				: 0;
+			const nextReceiptNum = maxReceiptNum + 1;
+			
+			// חישוב מספר פנקס (כל 50 קבלות)
+			const bookNumber = Math.floor((nextReceiptNum - 1) / 50) + 1;
+			
+			// תרגום אמצעי תשלום
+			const methodTranslation = {
+				'cash': 'מזומן',
+				'transfer': 'העברה',
+				'check': 'צ׳ק',
+				'credit': 'אשראי',
+				'bit': 'ביט'
+			};
+			const paymentType = methodTranslation[payment.method] || payment.method || 'מזומן';
+			
+			// יצירת קבלה חדשה
+			const newReceipt = {
+				ID: 'R' + Date.now(),
+				book_number: bookNumber.toString(),
+				receipt_number: nextReceiptNum.toString(),
+				date: payment.date,
+				location_id: payment.location_id,
+				location_name: payment.location_name,
+				amount: payment.amount,
+				payment_type: paymentType,
+				notes: `קבלה עבור תשלום ${payment.ID}`,
+				payment_id: payment.ID
+			};
+			
+			// הוספה למערך
+			receipts.push(newReceipt);
+			
+			// עדכון התשלום עם מזהה הקבלה
+			payment.receipt_id = newReceipt.ID;
+			
+			// שמירה
+			saveToLocalStorage();
+			
+			// שמירה לענן
+			if (access_token && SPREADSHEET_ID) {
+				saveReceiptsBatch(receipts).catch(err => console.error('Error saving receipt:', err));
+				savePaymentsBatch(payments).catch(err => console.error('Error saving payment:', err));
+			}
+			
+			showToast(`✅ קבלה ${nextReceiptNum} נוצרה בהצלחה`, 'success');
+			
+			// רענון תצוגה אם בטאב קבלות
+			if (typeof displayReceipts === 'function') {
+				displayReceipts();
+			}
+		}
+
+
+		// יצירת גיבוי של כל הנתונים
+		async function createBackup() {
+			if (!access_token || !SPREADSHEET_ID) {
+				showToast('נדרש חיבור לענן ליצירת גיבוי', 'error');
+				return false;
+			}
+			
+			showToast('💾 יוצר גיבוי...', 'info');
+			
+			try {
+				const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+				
+				// רשימת הגיליונות לגיבוי
+				const sheetsToBackup = ['Locations', 'Visits', 'Receipts', 'Payments', 'PaymentVisitLinks', 'Tasks', 'Incomes', 'Expenses'];
+				
+				for (const sheetName of sheetsToBackup) {
+					const backupSheetName = `${sheetName}_Backup`;
+					
+					// קריאת הנתונים מהגיליון המקורי
+					try {
+						const response = await gapi.client.sheets.spreadsheets.values.get({
+							spreadsheetId: SPREADSHEET_ID,
+							range: `${sheetName}!A:ZZ`
+						});
+						
+						const values = response.result.values || [];
+						
+						if (values.length === 0) {
+							console.log(`⏭️ ${sheetName} ריק - מדלג`);
+							continue;
+						}
+						
+						// בדיקה אם גיליון הגיבוי קיים, אם לא - יצירה
+						await ensureBackupSheetExists(backupSheetName);
+						
+						// ניקוי גיליון הגיבוי
+						await gapi.client.sheets.spreadsheets.values.clear({
+							spreadsheetId: SPREADSHEET_ID,
+							range: `${backupSheetName}!A:ZZ`
+						});
+						
+						// כתיבת הנתונים לגיליון הגיבוי
+						await gapi.client.sheets.spreadsheets.values.update({
+							spreadsheetId: SPREADSHEET_ID,
+							range: `${backupSheetName}!A1`,
+							valueInputOption: 'RAW',
+							resource: { values: values }
+						});
+						
+						console.log(`✅ ${sheetName} גובה בהצלחה (${values.length} שורות)`);
+						
+					} catch (err) {
+						console.log(`⚠️ ${sheetName} לא קיים או שגיאה:`, err.message);
+					}
+				}
+				
+				// שמירת זמן הגיבוי
+				localStorage.setItem('lastBackupTime', new Date().toISOString());
+				updateBackupStatus();
+				
+				showToast('✅ גיבוי נוצר בהצלחה!', 'success');
+				return true;
+				
+			} catch (error) {
+				console.error('❌ שגיאה ביצירת גיבוי:', error);
+				showToast('❌ שגיאה ביצירת גיבוי', 'error');
+				return false;
+			}
+		}
+
+		// וידוא שגיליון גיבוי קיים
+		async function ensureBackupSheetExists(sheetName) {
+			try {
+				// ניסיון לקרוא מהגיליון
+				await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: `${sheetName}!A1`
+				});
+			} catch (error) {
+				// הגיליון לא קיים - יצירה
+				console.log(`📝 יוצר גיליון גיבוי: ${sheetName}`);
+				await gapi.client.sheets.spreadsheets.batchUpdate({
+					spreadsheetId: SPREADSHEET_ID,
+					resource: {
+						requests: [{
+							addSheet: {
+								properties: { title: sheetName }
+							}
+						}]
+					}
+				});
+			}
+		}
+
+
+		// הצגת אישור לפני שחזור
+		function showRestoreConfirm() {
+			const lastBackup = localStorage.getItem('lastBackupTime');
+			const lastBackupText = lastBackup 
+				? `גיבוי אחרון: ${new Date(lastBackup).toLocaleString('he-IL')}`
+				: 'לא נמצא מידע על גיבוי אחרון';
+			
+			const modalHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 450px; width: 90vw; text-align: center;">
+					<div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+					<h3 style="margin: 0 0 10px 0; color: #dc3545;">שחזור מגיבוי</h3>
+					<p style="color: #666; margin-bottom: 10px;">
+						פעולה זו תחליף את כל הנתונים הנוכחיים בנתונים מהגיבוי.
+					</p>
+					<p style="color: #856404; background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 20px; font-size: 13px;">
+						${lastBackupText}
+					</p>
+					<div style="display: flex; gap: 10px; justify-content: center;">
+						<button onclick="restoreFromBackup(); closeAnyModal();" 
+								style="padding: 12px 25px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+							🔄 כן, שחזר
+						</button>
+						<button onclick="closeAnyModal();" 
+								style="padding: 12px 25px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+							ביטול
+						</button>
+					</div>
+				</div>
+			`;
+			
+			const container = document.getElementById('modalContainer');
+			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
+			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
+			container.onclick = closeAnyModal;
+		}
+
+		// שחזור מגיבוי
+		async function restoreFromBackup() {
+			if (!access_token || !SPREADSHEET_ID) {
+				showToast('נדרש חיבור לענן לשחזור', 'error');
+				return false;
+			}
+			
+			showToast('🔄 משחזר מגיבוי...', 'info');
+			
+			try {
+				const sheetsToRestore = ['Locations', 'Visits', 'Receipts', 'Payments', 'PaymentVisitLinks', 'Tasks', 'Incomes', 'Expenses'];
+				let restoredCount = 0;
+				
+				for (const sheetName of sheetsToRestore) {
+					const backupSheetName = `${sheetName}_Backup`;
+					
+					try {
+						// קריאת הנתונים מגיליון הגיבוי
+						const response = await gapi.client.sheets.spreadsheets.values.get({
+							spreadsheetId: SPREADSHEET_ID,
+							range: `${backupSheetName}!A:ZZ`
+						});
+						
+						const values = response.result.values || [];
+						
+						if (values.length === 0) {
+							console.log(`⏭️ ${backupSheetName} ריק - מדלג`);
+							continue;
+						}
+						
+						// ניקוי הגיליון המקורי
+						await gapi.client.sheets.spreadsheets.values.clear({
+							spreadsheetId: SPREADSHEET_ID,
+							range: `${sheetName}!A:ZZ`
+						});
+						
+						// כתיבת הנתונים מהגיבוי לגיליון המקורי
+						await gapi.client.sheets.spreadsheets.values.update({
+							spreadsheetId: SPREADSHEET_ID,
+							range: `${sheetName}!A1`,
+							valueInputOption: 'RAW',
+							resource: { values: values }
+						});
+						
+						console.log(`✅ ${sheetName} שוחזר בהצלחה (${values.length} שורות)`);
+						restoredCount++;
+						
+					} catch (err) {
+						console.log(`⚠️ ${backupSheetName} לא קיים או שגיאה:`, err.message);
+					}
+				}
+				
+				if (restoredCount > 0) {
+					// טעינה מחדש של הנתונים
+					await loadAllFromSheets();
+					saveToLocalStorage();
+					
+					showToast(`✅ שוחזרו ${restoredCount} טבלאות בהצלחה!`, 'success');
+					
+					// רענון התצוגה
+					if (typeof loadPlanningClientsAdvanced === 'function') {
+						loadPlanningClientsAdvanced();
+						renderPlanningCards();
+					}
+				} else {
+					showToast('⚠️ לא נמצאו גיבויים לשחזור', 'warning');
+				}
+				
+				return true;
+				
+			} catch (error) {
+				console.error('❌ שגיאה בשחזור:', error);
+				showToast('❌ שגיאה בשחזור מגיבוי', 'error');
+				return false;
+			}
+		}
+
+		// עדכון סטטוס גיבוי
+		function updateBackupStatus() {
+			const statusDiv = document.getElementById('backupStatus');
+			if (!statusDiv) return;
+			
+			const lastBackup = localStorage.getItem('lastBackupTime');
+			if (lastBackup) {
+				const date = new Date(lastBackup);
+				statusDiv.innerHTML = `✅ גיבוי אחרון: ${date.toLocaleString('he-IL')}`;
+			} else {
+				statusDiv.innerHTML = '⚠️ טרם בוצע גיבוי';
+			}
+		}
+
+
+		// טעינת הוצאות מהענן
+		async function loadExpensesFromSheets() {
+			try {
+				// וודא שהגיליון קיים עם כותרות
+				await addHeadersToSheet('Expenses');
+				
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Expenses!A:N'
+				});
+				
+				if (response.result.values && response.result.values.length > 1) {
+					expenses = response.result.values.slice(1).map(row => ({
+						ID: row[0] || '',
+						date: row[1] || '',
+						amount: parseFloat(row[2]) || 0,
+						description: row[3] || '',
+						category: row[4] || 'other',
+						expense_type: row[5] || 'general',
+						client_id: row[6] || '',
+						client_name: row[7] || '',
+						visit_id: row[8] || '',
+						vendor_name: row[9] || '',
+						vendor_type: row[10] || 'other',
+						payment_method: row[11] || 'cash',
+						receipt_number: row[12] || '',
+						notes: row[13] || ''
+					}));
+					console.log(`✅ Loaded ${expenses.length} expenses`);
+				} else {
+					expenses = [];
+					console.log('ℹ️ No expenses found');
+				}
+			} catch (err) {
+				console.error('⚠️ Error loading expenses:', err.message);
+				expenses = [];
+			}
+		}
+
+
+		// הצגת הוצאות
+		function displayExpenses() {
+			const container = document.getElementById('expensesContainer');
+			if (!container) return;
+			
+			// Get filters
+			const typeFilter = document.getElementById('expenseTypeFilter')?.value || '';
+			const categoryFilter = document.getElementById('expenseCategoryFilter')?.value || '';
+			const monthFilter = document.getElementById('expenseMonthFilter')?.value || '';
+			
+			// Filter expenses
+			let filtered = [...expenses];
+			
+			if (typeFilter) {
+				filtered = filtered.filter(exp => exp.expense_type === typeFilter);
+			}
+			
+			if (categoryFilter) {
+				filtered = filtered.filter(exp => exp.category === categoryFilter);
+			}
+			
+			if (monthFilter) {
+				filtered = filtered.filter(exp => exp.date && exp.date.startsWith(monthFilter));
+			}
+			
+			// Sort by date (newest first)
+			filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+			
+			// Update stats
+			updateExpenseStats(filtered);
+			
+			// Display
+			if (filtered.length === 0) {
+				container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">אין הוצאות להצגה</div>';
+				return;
+			}
+			
+			const html = filtered.map(exp => {
+				const category = EXPENSE_CATEGORIES[exp.category] || EXPENSE_CATEGORIES['other'];
+				const vendor = VENDOR_TYPES[exp.vendor_type] || VENDOR_TYPES['other'];
+				const payment = PAYMENT_METHODS[exp.payment_method] || PAYMENT_METHODS['cash'];
+				const isClient = exp.expense_type === 'client';
+				
+				return `
+					<div style="background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; margin-bottom: 10px; border-right: 4px solid ${isClient ? '#9b59b6' : '#3498db'};">
+						<div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
+							<div style="flex: 1; min-width: 200px;">
+								<div style="font-size: 16px; font-weight: 600; color: #333; margin-bottom: 5px;">
+									${category.icon} ${exp.description}
+								</div>
+								<div style="font-size: 13px; color: #666;">
+									📅 ${formatDate(exp.date)}
+									${exp.vendor_name ? ` | ${vendor.icon} ${exp.vendor_name}` : ''}
+								</div>
+								${isClient && exp.client_name ? `
+									<div style="font-size: 12px; color: #9b59b6; margin-top: 5px;">
+										👤 ${exp.client_name}
+									</div>
+								` : ''}
+								${exp.notes ? `
+									<div style="font-size: 12px; color: #888; margin-top: 5px;">
+										💬 ${exp.notes}
+									</div>
+								` : ''}
+							</div>
+							<div style="text-align: left;">
+								<div style="font-size: 20px; font-weight: bold; color: #e74c3c;">
+									${exp.amount} ₪
+								</div>
+								<div style="font-size: 11px; color: #666;">
+									${payment.icon} ${payment.name}
+								</div>
+								<div style="margin-top: 8px; display: flex; gap: 5px;">
+									<button onclick="showEditExpenseModal('${exp.ID}')" 
+											style="padding: 4px 8px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
+										✏️
+									</button>
+									<button onclick="deleteExpense('${exp.ID}')" 
+											style="padding: 4px 8px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
+										🗑️
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				`;
+			}).join('');
+			
+			container.innerHTML = html;
+		}
+
+		// עדכון סטטיסטיקות הוצאות
+		function updateExpenseStats(filteredExpenses) {
+			const total = filteredExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+			const general = filteredExpenses.filter(exp => exp.expense_type !== 'client').reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+			const client = filteredExpenses.filter(exp => exp.expense_type === 'client').reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+			
+			const totalEl = document.getElementById('totalExpensesAmount');
+			const generalEl = document.getElementById('generalExpensesAmount');
+			const clientEl = document.getElementById('clientExpensesAmount');
+			const countEl = document.getElementById('expensesCount');
+			
+			if (totalEl) totalEl.textContent = `${total.toFixed(0)} ₪`;
+			if (generalEl) generalEl.textContent = `${general.toFixed(0)} ₪`;
+			if (clientEl) clientEl.textContent = `${client.toFixed(0)} ₪`;
+			if (countEl) countEl.textContent = filteredExpenses.length;
+		}
+
+
+
+		// הצגת מודל הוספת הוצאה
+		function showAddExpenseModal(clientId = '', clientName = '') {
+			const today = new Date().toISOString().split('T')[0];
+			const isClientExpense = clientId ? true : false;
+			
+			// בניית רשימת לקוחות
+			const clientOptions = locations
+				.filter(loc => loc.active === 'כן' || loc.active === true || loc.active === '1')
+				.map(loc => `<option value="${loc.ID}" ${loc.ID === clientId ? 'selected' : ''}>${loc.name}</option>`)
+				.join('');
+			
+			const modalHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 95vw; max-height: 90vh; overflow-y: auto;">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+						<h3 style="margin: 0; color: #e74c3c;">💰 הוספת הוצאה</h3>
+						<button onclick="closeAnyModal()" style="background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
+					</div>
+					
+					<form id="addExpenseForm" onsubmit="saveNewExpense(event)">
+						<!-- תאריך וסכום -->
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">תאריך *</label>
+								<input type="date" id="expenseDate" value="${today}" required 
+									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+							</div>
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סכום *</label>
+								<input type="number" id="expenseAmount" required min="0" step="0.01"
+									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+							</div>
+						</div>
+						
+						<!-- תיאור -->
+						<div style="margin-bottom: 15px;">
+							<label style="display: block; margin-bottom: 5px; font-weight: 600;">תיאור *</label>
+							<input type="text" id="expenseDescription" required placeholder="מה נרכש/שולם"
+								   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+						</div>
+						
+						<!-- קטגוריה וסוג -->
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">קטגוריה</label>
+								<select id="expenseCategory" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="fuel">⛽ דלק ושמנים</option>
+									<option value="equipment">🔧 ציוד וכלים</option>
+									<option value="materials">🧪 חומרים</option>
+									<option value="vehicle">🚗 רכב</option>
+									<option value="tools">🔨 כלי עבודה</option>
+									<option value="parts">⚙️ חלקי חילוף</option>
+									<option value="other" selected>📦 אחר</option>
+								</select>
+							</div>
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סוג הוצאה</label>
+								<select id="expenseType" onchange="toggleClientSelect()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="general" ${!isClientExpense ? 'selected' : ''}>כללי</option>
+									<option value="client" ${isClientExpense ? 'selected' : ''}>לקוח ספציפי</option>
+								</select>
+							</div>
+						</div>
+						
+						<!-- בחירת לקוח (מוסתר בהתחלה) -->
+						<div id="clientSelectContainer" style="margin-bottom: 15px; display: ${isClientExpense ? 'block' : 'none'};">
+							<label style="display: block; margin-bottom: 5px; font-weight: 600;">לקוח</label>
+							<select id="expenseClientId" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+								<option value="">בחר לקוח...</option>
+								${clientOptions}
+							</select>
+						</div>
+						
+						<!-- ספק -->
+						<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 15px;">
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">שם הספק/בית עסק</label>
+								<input type="text" id="expenseVendorName" placeholder="למשל: מחסני כלי גינון"
+									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+							</div>
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סוג ספק</label>
+								<select id="expenseVendorType" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="store">🏪 חנות</option>
+									<option value="garage">🔧 מוסך</option>
+									<option value="gas_station">⛽ תחנת דלק</option>
+									<option value="online">💻 מקוון</option>
+									<option value="nursery">🌱 משתלה</option>
+									<option value="other">📍 אחר</option>
+								</select>
+							</div>
+						</div>
+						
+						<!-- אמצעי תשלום ומספר קבלה -->
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">אמצעי תשלום</label>
+								<select id="expensePaymentMethod" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="cash">💵 מזומן</option>
+									<option value="credit">💳 אשראי</option>
+									<option value="transfer">🏦 העברה</option>
+									<option value="bit">📱 ביט</option>
+									<option value="check">📝 צ׳ק</option>
+								</select>
+							</div>
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">מספר חשבונית</label>
+								<input type="text" id="expenseReceiptNumber" placeholder="אופציונלי"
+									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+							</div>
+						</div>
+						
+						<!-- הערות -->
+						<div style="margin-bottom: 20px;">
+							<label style="display: block; margin-bottom: 5px; font-weight: 600;">הערות</label>
+							<textarea id="expenseNotes" rows="2" placeholder="הערות נוספות..."
+									  style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; resize: vertical;"></textarea>
+						</div>
+						
+						<!-- כפתורים -->
+						<div style="display: flex; gap: 10px; justify-content: center;">
+							<button type="submit" style="padding: 12px 30px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
+								✓ שמור הוצאה
+							</button>
+							<button type="button" onclick="closeAnyModal()" style="padding: 12px 30px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+								ביטול
+							</button>
+						</div>
+					</form>
+				</div>
+			`;
+			
+			const container = document.getElementById('modalContainer');
+			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
+			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
+			container.onclick = closeAnyModal;
+		}
+
+		// הצגה/הסתרה של בחירת לקוח
+		function toggleClientSelect() {
+			const expenseType = document.getElementById('expenseType').value;
+			const clientContainer = document.getElementById('clientSelectContainer');
+			if (clientContainer) {
+				clientContainer.style.display = expenseType === 'client' ? 'block' : 'none';
+			}
+		}
+
+
+		// שמירת הוצאה חדשה
+		function saveNewExpense(event) {
+			event.preventDefault();
+			
+			const expenseType = document.getElementById('expenseType').value;
+			const clientId = document.getElementById('expenseClientId')?.value || '';
+			const client = clientId ? locations.find(loc => loc.ID === clientId) : null;
+			
+			const newExpense = {
+				ID: 'EXP' + Date.now(),
+				date: document.getElementById('expenseDate').value,
+				amount: parseFloat(document.getElementById('expenseAmount').value) || 0,
+				description: document.getElementById('expenseDescription').value,
+				category: document.getElementById('expenseCategory').value,
+				expense_type: expenseType,
+				client_id: expenseType === 'client' ? clientId : '',
+				client_name: expenseType === 'client' && client ? client.name : '',
+				visit_id: '',
+				vendor_name: document.getElementById('expenseVendorName').value,
+				vendor_type: document.getElementById('expenseVendorType').value,
+				payment_method: document.getElementById('expensePaymentMethod').value,
+				receipt_number: document.getElementById('expenseReceiptNumber').value,
+				notes: document.getElementById('expenseNotes').value
+			};
+			
+			expenses.push(newExpense);
+			saveToLocalStorage();
+			
+			// שמירה לענן
+			if (access_token && SPREADSHEET_ID) {
+				saveExpensesBatch(expenses).catch(err => console.error('Error saving expense:', err));
+			}
+			
+			showToast('✅ הוצאה נשמרה בהצלחה', 'success');
+			closeAnyModal();
+			displayExpenses();
+		}
+
+
+		// הצגת מודל עריכת הוצאה
+		function showEditExpenseModal(expenseId) {
+			const expense = expenses.find(exp => exp.ID === expenseId);
+			if (!expense) {
+				showToast('הוצאה לא נמצאה', 'error');
+				return;
+			}
+			
+			const isClientExpense = expense.expense_type === 'client';
+			
+			// בניית רשימת לקוחות
+			const clientOptions = locations
+				.filter(loc => loc.active === 'כן' || loc.active === true || loc.active === '1')
+				.map(loc => `<option value="${loc.ID}" ${loc.ID === expense.client_id ? 'selected' : ''}>${loc.name}</option>`)
+				.join('');
+			
+			const modalHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 95vw; max-height: 90vh; overflow-y: auto;">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+						<h3 style="margin: 0; color: #e74c3c;">✏️ עריכת הוצאה</h3>
+						<button onclick="closeAnyModal()" style="background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
+					</div>
+					
+					<form id="editExpenseForm" onsubmit="updateExpense(event, '${expenseId}')">
+						<!-- תאריך וסכום -->
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">תאריך *</label>
+								<input type="date" id="editExpenseDate" value="${expense.date}" required 
+									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+							</div>
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סכום *</label>
+								<input type="number" id="editExpenseAmount" value="${expense.amount}" required min="0" step="0.01"
+									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+							</div>
+						</div>
+						
+						<!-- תיאור -->
+						<div style="margin-bottom: 15px;">
+							<label style="display: block; margin-bottom: 5px; font-weight: 600;">תיאור *</label>
+							<input type="text" id="editExpenseDescription" value="${expense.description}" required
+								   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+						</div>
+						
+						<!-- קטגוריה וסוג -->
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">קטגוריה</label>
+								<select id="editExpenseCategory" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="fuel" ${expense.category === 'fuel' ? 'selected' : ''}>⛽ דלק ושמנים</option>
+									<option value="equipment" ${expense.category === 'equipment' ? 'selected' : ''}>🔧 ציוד וכלים</option>
+									<option value="materials" ${expense.category === 'materials' ? 'selected' : ''}>🧪 חומרים</option>
+									<option value="vehicle" ${expense.category === 'vehicle' ? 'selected' : ''}>🚗 רכב</option>
+									<option value="tools" ${expense.category === 'tools' ? 'selected' : ''}>🔨 כלי עבודה</option>
+									<option value="parts" ${expense.category === 'parts' ? 'selected' : ''}>⚙️ חלקי חילוף</option>
+									<option value="other" ${expense.category === 'other' ? 'selected' : ''}>📦 אחר</option>
+								</select>
+							</div>
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סוג הוצאה</label>
+								<select id="editExpenseType" onchange="toggleEditClientSelect()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="general" ${!isClientExpense ? 'selected' : ''}>כללי</option>
+									<option value="client" ${isClientExpense ? 'selected' : ''}>לקוח ספציפי</option>
+								</select>
+							</div>
+						</div>
+						
+						<!-- בחירת לקוח -->
+						<div id="editClientSelectContainer" style="margin-bottom: 15px; display: ${isClientExpense ? 'block' : 'none'};">
+							<label style="display: block; margin-bottom: 5px; font-weight: 600;">לקוח</label>
+							<select id="editExpenseClientId" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+								<option value="">בחר לקוח...</option>
+								${clientOptions}
+							</select>
+						</div>
+						
+						<!-- ספק -->
+						<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 15px;">
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">שם הספק/בית עסק</label>
+								<input type="text" id="editExpenseVendorName" value="${expense.vendor_name || ''}"
+									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+							</div>
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סוג ספק</label>
+								<select id="editExpenseVendorType" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="store" ${expense.vendor_type === 'store' ? 'selected' : ''}>🏪 חנות</option>
+									<option value="garage" ${expense.vendor_type === 'garage' ? 'selected' : ''}>🔧 מוסך</option>
+									<option value="gas_station" ${expense.vendor_type === 'gas_station' ? 'selected' : ''}>⛽ תחנת דלק</option>
+									<option value="online" ${expense.vendor_type === 'online' ? 'selected' : ''}>💻 מקוון</option>
+									<option value="nursery" ${expense.vendor_type === 'nursery' ? 'selected' : ''}>🌱 משתלה</option>
+									<option value="other" ${expense.vendor_type === 'other' ? 'selected' : ''}>📍 אחר</option>
+								</select>
+							</div>
+						</div>
+						
+						<!-- אמצעי תשלום ומספר קבלה -->
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">אמצעי תשלום</label>
+								<select id="editExpensePaymentMethod" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="cash" ${expense.payment_method === 'cash' ? 'selected' : ''}>💵 מזומן</option>
+									<option value="credit" ${expense.payment_method === 'credit' ? 'selected' : ''}>💳 אשראי</option>
+									<option value="transfer" ${expense.payment_method === 'transfer' ? 'selected' : ''}>🏦 העברה</option>
+									<option value="bit" ${expense.payment_method === 'bit' ? 'selected' : ''}>📱 ביט</option>
+									<option value="check" ${expense.payment_method === 'check' ? 'selected' : ''}>📝 צ׳ק</option>
+								</select>
+							</div>
+							<div>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">מספר חשבונית</label>
+								<input type="text" id="editExpenseReceiptNumber" value="${expense.receipt_number || ''}"
+									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+							</div>
+						</div>
+						
+						<!-- הערות -->
+						<div style="margin-bottom: 20px;">
+							<label style="display: block; margin-bottom: 5px; font-weight: 600;">הערות</label>
+							<textarea id="editExpenseNotes" rows="2"
+									  style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; resize: vertical;">${expense.notes || ''}</textarea>
+						</div>
+						
+						<!-- כפתורים -->
+						<div style="display: flex; gap: 10px; justify-content: center;">
+							<button type="submit" style="padding: 12px 30px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
+								✓ עדכן
+							</button>
+							<button type="button" onclick="closeAnyModal()" style="padding: 12px 30px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+								ביטול
+							</button>
+						</div>
+					</form>
+				</div>
+			`;
+			
+			const container = document.getElementById('modalContainer');
+			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
+			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
+			container.onclick = closeAnyModal;
+		}
+
+		// הצגה/הסתרה של בחירת לקוח בעריכה
+		function toggleEditClientSelect() {
+			const expenseType = document.getElementById('editExpenseType').value;
+			const clientContainer = document.getElementById('editClientSelectContainer');
+			if (clientContainer) {
+				clientContainer.style.display = expenseType === 'client' ? 'block' : 'none';
+			}
+		}
+
+		// עדכון הוצאה
+		function updateExpense(event, expenseId) {
+			event.preventDefault();
+			
+			const expense = expenses.find(exp => exp.ID === expenseId);
+			if (!expense) {
+				showToast('הוצאה לא נמצאה', 'error');
+				return;
+			}
+			
+			const expenseType = document.getElementById('editExpenseType').value;
+			const clientId = document.getElementById('editExpenseClientId')?.value || '';
+			const client = clientId ? locations.find(loc => loc.ID === clientId) : null;
+			
+			expense.date = document.getElementById('editExpenseDate').value;
+			expense.amount = parseFloat(document.getElementById('editExpenseAmount').value) || 0;
+			expense.description = document.getElementById('editExpenseDescription').value;
+			expense.category = document.getElementById('editExpenseCategory').value;
+			expense.expense_type = expenseType;
+			expense.client_id = expenseType === 'client' ? clientId : '';
+			expense.client_name = expenseType === 'client' && client ? client.name : '';
+			expense.vendor_name = document.getElementById('editExpenseVendorName').value;
+			expense.vendor_type = document.getElementById('editExpenseVendorType').value;
+			expense.payment_method = document.getElementById('editExpensePaymentMethod').value;
+			expense.receipt_number = document.getElementById('editExpenseReceiptNumber').value;
+			expense.notes = document.getElementById('editExpenseNotes').value;
+			
+			saveToLocalStorage();
+			
+			// שמירה לענן
+			if (access_token && SPREADSHEET_ID) {
+				saveExpensesBatch(expenses).catch(err => console.error('Error saving expense:', err));
+			}
+			
+			showToast('✅ הוצאה עודכנה בהצלחה', 'success');
+			closeAnyModal();
+			displayExpenses();
+		}
+
+
+		// מחיקת הוצאה
+		function deleteExpense(expenseId) {
+			if (!confirm('האם למחוק את ההוצאה?')) return;
+			
+			const index = expenses.findIndex(exp => exp.ID === expenseId);
+			if (index === -1) {
+				showToast('הוצאה לא נמצאה', 'error');
+				return;
+			}
+			
+			expenses.splice(index, 1);
+			saveToLocalStorage();
+			
+			// שמירה לענן
+			if (access_token && SPREADSHEET_ID) {
+				saveExpensesBatch(expenses).catch(err => console.error('Error saving expenses:', err));
+			}
+			
+			showToast('✅ הוצאה נמחקה', 'success');
+			displayExpenses();
+		}
+
+
 
 
    </script>
