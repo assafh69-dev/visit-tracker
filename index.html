@@ -2446,7 +2446,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4505,14 +4505,20 @@
 			}
 			
 			if (planningClients.length === 0) {
+				// בתצוגה יומית - עדיין צריך לבדוק אם יש מאחרים
+				if (currentPlanningView === 'daily') {
+					renderRegularPlanningList();
+					return;
+				}
+				
+				// בתצוגה שבועית - עדיין צריך לבדוק אם יש מאחרים
+				if (currentPlanningView === 'weekly' || currentPlanningView === 'next_week') {
+					renderWeeklyPlanningByDays();
+					return;
+				}
+				
 				let emptyMessage = '';
 				switch (currentPlanningView) {
-					case 'daily':
-						emptyMessage = '<h3>😊 אין לקוחות מתוכננים להיום</h3><p>כל הטיפולים מעודכנים!</p>';
-						break;
-					case 'weekly':
-						emptyMessage = '<h3>📅 אין לקוחות מתוכננים השבוע</h3><p>תכנון נקי לשבוע הקרוב!</p>';
-						break;
 					case 'overdue':
 						emptyMessage = '<h3>✅ אין לקוחות מאחרים</h3><p>כל הטיפולים במועדם!</p>';
 						break;
