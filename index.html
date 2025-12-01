@@ -2446,7 +2446,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3054,6 +3054,36 @@
 					</div>
 					<div id="backupStatus" style="margin-top: 15px; font-size: 13px; color: #666;"></div>
 				</div>
+				
+				<!-- ייצוא נתונים -->
+				<div style="background: #e3f2fd; border: 2px solid #2196f3; border-radius: 12px; padding: 20px; margin-top: 20px;">
+					<h3 style="margin: 0 0 15px 0; color: #1565c0;">📤 ייצוא נתונים</h3>
+					<p style="color: #1565c0; font-size: 14px; margin-bottom: 15px;">
+						ייצוא טיפולים לגיליון בפורמט המקורי (תואם לאקסל הישן)
+					</p>
+					<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px;">
+						<label style="font-size: 14px; color: #333;">מתאריך:</label>
+						<input type="date" id="exportFromDate" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+						<label style="font-size: 14px; color: #333;">עד תאריך:</label>
+						<input type="date" id="exportToDate" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+					</div>
+					<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+						<button onclick="exportVisitsClassic()" style="padding: 12px 20px; background: #2196f3; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+							📤 ייצוא טיפולים (מבנה קלאסי)
+						</button>
+						<button onclick="setExportDateRange('year')" style="padding: 8px 15px; background: #90caf9; color: #1565c0; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+							השנה
+						</button>
+						<button onclick="setExportDateRange('lastYear')" style="padding: 8px 15px; background: #90caf9; color: #1565c0; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+							שנה שעברה
+						</button>
+						<button onclick="setExportDateRange('all')" style="padding: 8px 15px; background: #90caf9; color: #1565c0; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+							הכל
+						</button>
+					</div>
+					<div id="exportStatus" style="margin-top: 15px; font-size: 13px; color: #666;"></div>
+				</div>
+				
 				
 				<!-- ניהול נתונים -->
 				<div class="form-section">
@@ -7854,6 +7884,7 @@
 				'PaymentVisitLink': ['ID', 'payment_id', 'visit_id', 'amount_allocated'],
 				'Tasks': ['ID', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date'],
 				'Expenses': ['ID', 'date', 'amount', 'description', 'category', 'expense_type', 'client_id', 'client_name', 'visit_id', 'vendor_name', 'vendor_type', 'payment_method', 'receipt_number', 'notes']
+				'ExportVisitsClassic': ['year', 'month', 'day', 'customer', 'full_address', 'contact_person', 'treatment', 'date', 'work_done', 'duration', 'amount', 'paid', 'expense', 'notes', 'export_date']
 			};
 			
 			const headers = headersMap[sheetName];
@@ -7915,6 +7946,7 @@
 				await addHeadersToSheet('TelegramIncomes');    
 				await addHeadersToSheet('Tasks');
 				await addHeadersToSheet('Expenses');
+				await addHeadersToSheet('ExportVisitsClassic');
 
 				// הוספת כותרות ל-SystemSettings
 				await gapi.client.sheets.spreadsheets.values.update({
@@ -13580,7 +13612,7 @@
 				return;
 			}
 			
-			// מיפוי ימים לא ינדקס השבוע (0=ראשון, 1=שני...)
+			// מיפוי ימים לאינדקס השבוע (0=ראשון, 1=שני...)
 			const dayToNumber = {
 				'א': 0,
 				'ב': 1,
@@ -19643,6 +19675,154 @@
 			displayExpenses();
 		}
 
+
+		// קביעת טווח תאריכים לייצוא
+		function setExportDateRange(range) {
+			const fromInput = document.getElementById('exportFromDate');
+			const toInput = document.getElementById('exportToDate');
+			
+			const today = new Date();
+			const currentYear = today.getFullYear();
+			
+			switch (range) {
+				case 'year':
+					fromInput.value = `${currentYear}-01-01`;
+					toInput.value = today.toISOString().split('T')[0];
+					break;
+				case 'lastYear':
+					fromInput.value = `${currentYear - 1}-01-01`;
+					toInput.value = `${currentYear - 1}-12-31`;
+					break;
+				case 'all':
+					fromInput.value = '';
+					toInput.value = '';
+					break;
+			}
+		}
+
+		// ייצוא טיפולים במבנה קלאסי
+		async function exportVisitsClassic() {
+			if (!access_token || !SPREADSHEET_ID) {
+				showToast('נדרש חיבור לענן לייצוא', 'error');
+				return;
+			}
+			
+			const fromDate = document.getElementById('exportFromDate')?.value || '';
+			const toDate = document.getElementById('exportToDate')?.value || '';
+			const statusDiv = document.getElementById('exportStatus');
+			
+			// סינון טיפולים לפי טווח תאריכים
+			let filteredVisits = [...visits];
+			
+			if (fromDate) {
+				filteredVisits = filteredVisits.filter(v => v.date >= fromDate);
+			}
+			if (toDate) {
+				filteredVisits = filteredVisits.filter(v => v.date <= toDate);
+			}
+			
+			// מיון לפי תאריך
+			filteredVisits.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+			
+			if (filteredVisits.length === 0) {
+				showToast('אין טיפולים בטווח התאריכים שנבחר', 'warning');
+				return;
+			}
+			
+			if (statusDiv) {
+				statusDiv.innerHTML = `⏳ מייצא ${filteredVisits.length} טיפולים...`;
+			}
+			
+			showToast(`📤 מייצא ${filteredVisits.length} טיפולים...`, 'info');
+			
+			try {
+				// וודא שהגיליון קיים
+				await addHeadersToSheet('ExportVisitsClassic');
+				
+				// המרת סטטוס תשלום
+				const paidStatusMap = {
+					'0': 'לא',
+					'1': 'כן',
+					'2': 'ללא תשלום',
+					'3': 'חלקי'
+				};
+				
+				// תאריך הייצוא
+				const exportDate = new Date().toISOString().split('T')[0];
+				
+				// בניית הנתונים לייצוא
+				const exportData = filteredVisits.map(visit => {
+					const visitDate = new Date(visit.date);
+					const year = visitDate.getFullYear();
+					const month = visitDate.getMonth() + 1;
+					const day = visitDate.getDate();
+					
+					// מציאת פרטי הלקוח
+					const client = locations.find(loc => loc.ID === visit.location_id) || {};
+					
+					// המרת משך זמן לשעות
+					const durationHours = visit.duration_minutes 
+						? (parseFloat(visit.duration_minutes) / 60).toFixed(2)
+						: '';
+					
+					// המרת סטטוס תשלום
+					const paidStatus = paidStatusMap[visit.paid] || visit.paid || '';
+					
+					return [
+						year,
+						month,
+						day,
+						visit.location_name || '',
+						client.full_address || visit.location_name || '',
+						client.contact_person || '',
+						visit.visit_type || '',
+						visit.date || '',
+						visit.work_done || '',
+						durationHours,
+						visit.amount || '',
+						paidStatus,
+						visit.expense || '',
+						visit.notes || '',
+						exportDate
+					];
+				});
+				
+				// מחיקת נתונים קיימים (שורה 2 ואילך)
+				await gapi.client.sheets.spreadsheets.values.clear({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'ExportVisitsClassic!A2:O'
+				});
+				
+				// כתיבת הנתונים החדשים
+				if (exportData.length > 0) {
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: 'ExportVisitsClassic!A2',
+						valueInputOption: 'RAW',
+						resource: { values: exportData }
+					});
+				}
+				
+				// שמירת זמן הייצוא
+				localStorage.setItem('lastExportTime', new Date().toISOString());
+				
+				if (statusDiv) {
+					const rangeText = fromDate || toDate 
+						? `(${fromDate || 'התחלה'} עד ${toDate || 'היום'})`
+						: '(כל הטיפולים)';
+					statusDiv.innerHTML = `✅ יוצאו ${filteredVisits.length} טיפולים ${rangeText} - ${new Date().toLocaleString('he-IL')}`;
+				}
+				
+				showToast(`✅ יוצאו ${filteredVisits.length} טיפולים בהצלחה!`, 'success');
+				
+			} catch (error) {
+				console.error('❌ שגיאה בייצוא:', error);
+				if (statusDiv) {
+					statusDiv.innerHTML = `❌ שגיאה בייצוא: ${error.message}`;
+				}
+				showToast('❌ שגיאה בייצוא', 'error');
+			}
+		}
 
 
 
