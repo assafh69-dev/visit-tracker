@@ -2446,7 +2446,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3275,20 +3275,24 @@
 				</div>
 				
 				<!-- Expense Stats -->
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-bottom: 20px;">
 					<div style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
 						<div style="font-size: 24px; font-weight: bold;" id="totalExpensesAmount">0 ₪</div>
 						<div style="font-size: 12px; opacity: 0.9;">סה"כ הוצאות</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;" id="workerExpensesAmount">0 ₪</div>
+						<div style="font-size: 12px; opacity: 0.9;">👷 פועל/עובד</div>
 					</div>
 					<div style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
 						<div style="font-size: 24px; font-weight: bold;" id="generalExpensesAmount">0 ₪</div>
 						<div style="font-size: 12px; opacity: 0.9;">הוצאות כלליות</div>
 					</div>
-					<div style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+					<div style="background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
 						<div style="font-size: 24px; font-weight: bold;" id="clientExpensesAmount">0 ₪</div>
 						<div style="font-size: 12px; opacity: 0.9;">הוצאות לקוחות</div>
 					</div>
-					<div style="background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+					<div style="background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
 						<div style="font-size: 24px; font-weight: bold;" id="expensesCount">0</div>
 						<div style="font-size: 12px; opacity: 0.9;">מספר הוצאות</div>
 					</div>
@@ -19275,15 +19279,18 @@
 		// עדכון סטטיסטיקות הוצאות
 		function updateExpenseStats(filteredExpenses) {
 			const total = filteredExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
-			const general = filteredExpenses.filter(exp => exp.expense_type !== 'client').reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+			const worker = filteredExpenses.filter(exp => exp.category === 'worker').reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+			const general = filteredExpenses.filter(exp => exp.expense_type !== 'client' && exp.category !== 'worker').reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
 			const client = filteredExpenses.filter(exp => exp.expense_type === 'client').reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
 			
 			const totalEl = document.getElementById('totalExpensesAmount');
+			const workerEl = document.getElementById('workerExpensesAmount');
 			const generalEl = document.getElementById('generalExpensesAmount');
 			const clientEl = document.getElementById('clientExpensesAmount');
 			const countEl = document.getElementById('expensesCount');
 			
 			if (totalEl) totalEl.textContent = `${total.toFixed(0)} ₪`;
+			if (workerEl) workerEl.textContent = `${worker.toFixed(0)} ₪`;
 			if (generalEl) generalEl.textContent = `${general.toFixed(0)} ₪`;
 			if (clientEl) clientEl.textContent = `${client.toFixed(0)} ₪`;
 			if (countEl) countEl.textContent = filteredExpenses.length;
