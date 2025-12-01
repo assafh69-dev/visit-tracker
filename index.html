@@ -2470,7 +2470,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3242,10 +3242,26 @@
 					<span style="font-size: 13px; color: #333;">✅ הושלמו: <strong style="color: #27ae60;" id="statsCompleted">0</strong></span>
 				</div>
 				
-				<!-- Tasks Container -->
-				<div id="tasksContainer">
-					<!-- Will be populated by displayTasks() -->
-				</div>
+				<!-- Tasks Table -->
+					<div class="table-container" style="overflow-x: auto;">
+						<table id="tasksTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+							<thead style="background: #9b59b6; color: white;">
+								<tr>
+									<th style="padding: 12px; text-align: right;">סטטוס</th>
+									<th style="padding: 12px; text-align: right;">היקף</th>
+									<th style="padding: 12px; text-align: right;">סוג</th>
+									<th style="padding: 12px; text-align: right;">לקוח</th>
+									<th style="padding: 12px; text-align: right;">תיאור</th>
+									<th style="padding: 12px; text-align: right;">תאריך יעד</th>
+									<th style="padding: 12px; text-align: right;">עלות משוערת</th>
+									<th style="padding: 12px; text-align: center;">פעולות</th>
+								</tr>
+							</thead>
+							<tbody id="tasksTableBody">
+								<!-- Will be populated by displayTasks() -->
+							</tbody>
+						</table>
+					</div>
 			</section>
 			
 			<!-- Expenses Section -->
