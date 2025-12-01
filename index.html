@@ -2446,7 +2446,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3286,7 +3286,7 @@
 				
 				<!-- Filters -->
 				<div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-					<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+					<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px;">
 						<input type="text" id="expenseSearchText" onkeyup="displayExpenses()" placeholder="🔍 חיפוש בתיאור..." style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; min-width: 150px;">
 						<input type="text" id="expenseSearchVendor" onkeyup="displayExpenses()" placeholder="🏪 חיפוש שם/עסק..." style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; min-width: 150px;">
 						<select id="expenseTypeFilter" onchange="updateExpenseCategoryFilter(); displayExpenses()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
@@ -3300,6 +3300,14 @@
 							<option value="">כל הקטגוריות</option>
 						</select>
 						<input type="month" id="expenseMonthFilter" onchange="displayExpenses()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
+					</div>
+					<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+						<span style="font-size: 12px; color: #666;">תקופה:</span>
+						<button onclick="setExpenseDateFilter('today')" style="padding: 5px 10px; background: #e3f2fd; color: #1976d2; border: 1px solid #90caf9; border-radius: 5px; cursor: pointer; font-size: 12px;">היום</button>
+						<button onclick="setExpenseDateFilter('week')" style="padding: 5px 10px; background: #e3f2fd; color: #1976d2; border: 1px solid #90caf9; border-radius: 5px; cursor: pointer; font-size: 12px;">השבוע</button>
+						<button onclick="setExpenseDateFilter('month')" style="padding: 5px 10px; background: #e3f2fd; color: #1976d2; border: 1px solid #90caf9; border-radius: 5px; cursor: pointer; font-size: 12px;">החודש</button>
+						<button onclick="setExpenseDateFilter('year')" style="padding: 5px 10px; background: #e3f2fd; color: #1976d2; border: 1px solid #90caf9; border-radius: 5px; cursor: pointer; font-size: 12px;">השנה</button>
+						<button onclick="clearExpenseFilters()" style="padding: 5px 10px; background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; border-radius: 5px; cursor: pointer; font-size: 12px;">🗑️ נקה הכל</button>
 					</div>
 				</div>
 				
@@ -19222,7 +19230,32 @@
 				filtered = filtered.filter(exp => exp.category === categoryFilter);
 			}
 			
-			if (monthFilter) {
+			// סינון לפי תקופה
+			if (window.expensePeriodFilter) {
+				const today = new Date();
+				today.setHours(0, 0, 0, 0);
+				
+				filtered = filtered.filter(exp => {
+					if (!exp.date) return false;
+					const expDate = new Date(exp.date);
+					expDate.setHours(0, 0, 0, 0);
+					
+					switch (window.expensePeriodFilter) {
+						case 'today':
+							return expDate.getTime() === today.getTime();
+						case 'week':
+							const weekAgo = new Date(today);
+							weekAgo.setDate(today.getDate() - 7);
+							return expDate >= weekAgo && expDate <= today;
+						case 'month':
+							return expDate.getMonth() === today.getMonth() && expDate.getFullYear() === today.getFullYear();
+						case 'year':
+							return expDate.getFullYear() === today.getFullYear();
+						default:
+							return true;
+					}
+				});
+			} else if (monthFilter) {
 				filtered = filtered.filter(exp => exp.date && exp.date.startsWith(monthFilter));
 			}
 			
@@ -19304,6 +19337,44 @@
 			
 			container.innerHTML = html;
 		}
+
+
+		// סינון הוצאות לפי תקופה
+		function setExpenseDateFilter(period) {
+			const monthFilter = document.getElementById('expenseMonthFilter');
+			const today = new Date();
+			const year = today.getFullYear();
+			const month = String(today.getMonth() + 1).padStart(2, '0');
+			
+			switch (period) {
+				case 'today':
+				case 'week':
+				case 'month':
+					monthFilter.value = `${year}-${month}`;
+					break;
+				case 'year':
+					monthFilter.value = '';
+					break;
+			}
+			
+			// שמירת התקופה לסינון מדויק יותר
+			window.expensePeriodFilter = period;
+			displayExpenses();
+		}
+
+		// ניקוי כל הפילטרים
+		function clearExpenseFilters() {
+			document.getElementById('expenseSearchText').value = '';
+			document.getElementById('expenseSearchVendor').value = '';
+			document.getElementById('expenseTypeFilter').value = '';
+			document.getElementById('expenseCategoryFilter').value = '';
+			document.getElementById('expenseMonthFilter').value = '';
+			window.expensePeriodFilter = null;
+			
+			updateExpenseCategoryFilter();
+			displayExpenses();
+		}
+
 
 		// עדכון סטטיסטיקות הוצאות
 		function updateExpenseStats(filteredExpenses) {
