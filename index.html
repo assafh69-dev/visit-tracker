@@ -2446,7 +2446,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3084,6 +3084,19 @@
 					<div id="exportStatus" style="margin-top: 15px; font-size: 13px; color: #666;"></div>
 				</div>
 				
+				<!-- דוחות -->
+				<div style="background: #f3e5f5; border: 2px solid #9c27b0; border-radius: 12px; padding: 20px; margin-top: 20px;">
+					<h3 style="margin: 0 0 15px 0; color: #7b1fa2;">📊 דוחות וסטטיסטיקות</h3>
+					<p style="color: #7b1fa2; font-size: 14px; margin-bottom: 15px;">
+						צפייה בנתונים מסוכמים לפי תקופות
+					</p>
+					<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+						<button onclick="showYearlyIncomeReport()" style="padding: 12px 20px; background: #9c27b0; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+							📈 סיכום הכנסות שנתי
+						</button>
+					</div>
+				</div>
+				
 				
 				<!-- ניהול נתונים -->
 				<div class="form-section">
@@ -3291,6 +3304,7 @@
 						</select>
 						<select id="expenseCategoryFilter" onchange="displayExpenses()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
 							<option value="">כל הקטגוריות</option>
+							<option value="worker">👷 פועל/עובד</option>
 							<option value="fuel">⛽ דלק ושמנים</option>
 							<option value="equipment">🔧 ציוד וכלים</option>
 							<option value="materials">🧪 חומרים</option>
@@ -17103,6 +17117,7 @@
 
 		// קטגוריות הוצאות
 		const EXPENSE_CATEGORIES = {
+			'worker': { name: 'פועל/עובד', icon: '👷' },
 			'fuel': { name: 'דלק ושמנים', icon: '⛽' },
 			'equipment': { name: 'ציוד וכלים', icon: '🔧' },
 			'materials': { name: 'חומרים', icon: '🧪' },
@@ -19321,6 +19336,7 @@
 							<div>
 								<label style="display: block; margin-bottom: 5px; font-weight: 600;">קטגוריה</label>
 								<select id="expenseCategory" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="worker">👷 פועל/עובד</option>
 									<option value="fuel">⛽ דלק ושמנים</option>
 									<option value="equipment">🔧 ציוד וכלים</option>
 									<option value="materials">🧪 חומרים</option>
@@ -19512,6 +19528,7 @@
 							<div>
 								<label style="display: block; margin-bottom: 5px; font-weight: 600;">קטגוריה</label>
 								<select id="editExpenseCategory" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="worker" ${expense.category === 'worker' ? 'selected' : ''}>👷 פועל/עובד</option>
 									<option value="fuel" ${expense.category === 'fuel' ? 'selected' : ''}>⛽ דלק ושמנים</option>
 									<option value="equipment" ${expense.category === 'equipment' ? 'selected' : ''}>🔧 ציוד וכלים</option>
 									<option value="materials" ${expense.category === 'materials' ? 'selected' : ''}>🧪 חומרים</option>
@@ -19824,6 +19841,248 @@
 			}
 		}
 
+
+		// דוח סיכום הכנסות שנתי
+		function showYearlyIncomeReport() {
+			// מציאת טווח השנים בנתונים
+			const years = [...new Set(visits.map(v => {
+				if (!v.date) return null;
+				return new Date(v.date).getFullYear();
+			}).filter(y => y !== null))].sort((a, b) => b - a);
+			
+			if (years.length === 0) {
+				showToast('אין נתונים להצגה', 'warning');
+				return;
+			}
+			
+			const currentYear = new Date().getFullYear();
+			const defaultYear = years.includes(currentYear) ? currentYear : years[0];
+			
+			// בניית אפשרויות שנים
+			const yearOptions = years.map(y => 
+				`<option value="${y}" ${y === defaultYear ? 'selected' : ''}>${y}</option>`
+			).join('');
+			
+			const modalHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 800px; width: 95vw; max-height: 90vh; overflow-y: auto;">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+						<h3 style="margin: 0; color: #9c27b0;">📈 סיכום הכנסות שנתי</h3>
+						<button onclick="closeAnyModal()" style="background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
+					</div>
+					
+					<!-- בחירת שנה -->
+					<div style="margin-bottom: 20px; text-align: center;">
+						<label style="font-size: 14px; margin-left: 10px;">בחר שנה:</label>
+						<select id="reportYear" onchange="updateYearlyIncomeReport()" style="padding: 10px 20px; font-size: 16px; border-radius: 8px; border: 2px solid #9c27b0;">
+							${yearOptions}
+						</select>
+					</div>
+					
+					<!-- תוכן הדוח -->
+					<div id="yearlyReportContent">
+						<!-- יתמלא על ידי updateYearlyIncomeReport -->
+					</div>
+				</div>
+			`;
+			
+			const container = document.getElementById('modalContainer');
+			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
+			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
+			container.onclick = closeAnyModal;
+			
+			// הצגת הדוח לשנה הנבחרת
+			updateYearlyIncomeReport();
+		}
+
+		// עדכון תוכן דוח הכנסות שנתי
+		function updateYearlyIncomeReport() {
+			const year = parseInt(document.getElementById('reportYear').value);
+			const contentDiv = document.getElementById('yearlyReportContent');
+			
+			if (!contentDiv) return;
+			
+			// סינון טיפולים לשנה הנבחרת
+			const yearVisits = visits.filter(v => {
+				if (!v.date) return false;
+				return new Date(v.date).getFullYear() === year;
+			});
+			
+			// סינון הוצאות לשנה הנבחרת
+			const yearExpenses = expenses.filter(exp => {
+				if (!exp.date) return false;
+				return new Date(exp.date).getFullYear() === year;
+			});
+			
+			// חישוב נתונים לכל חודש
+			const monthlyData = [];
+			const monthNames = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+			
+			for (let month = 0; month < 12; month++) {
+				// טיפולים בחודש
+				const monthVisits = yearVisits.filter(v => new Date(v.date).getMonth() === month);
+				
+				// הוצאות בחודש
+				const monthExpenses = yearExpenses.filter(exp => new Date(exp.date).getMonth() === month);
+				
+				// חישובים
+				const visitsCount = monthVisits.length;
+				const totalMinutes = monthVisits.reduce((sum, v) => sum + (parseFloat(v.duration_minutes) || 0), 0);
+				const totalHours = totalMinutes / 60;
+				const totalIncome = monthVisits.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
+				const visitExpenses = monthVisits.reduce((sum, v) => sum + (parseFloat(v.expense) || 0), 0);
+				
+				// הוצאות פועל מטבלת Expenses
+				const workerExpenses = monthExpenses
+					.filter(exp => exp.category === 'worker')
+					.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+				
+				// הוצאות אחרות מטבלת Expenses (לא פועל)
+				const otherExpenses = monthExpenses
+					.filter(exp => exp.category !== 'worker')
+					.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+				
+				// סה"כ הוצאות = הוצאות מטיפולים + הוצאות אחרות (לא כולל פועל)
+				const totalOtherExpenses = visitExpenses + otherExpenses;
+				
+				// נטו = הכנסה - פועל - הוצאות אחרות
+				const netIncome = totalIncome - workerExpenses - totalOtherExpenses;
+				
+				// ממוצע לטיפול
+				const avgPerVisit = visitsCount > 0 ? totalIncome / visitsCount : 0;
+				
+				monthlyData.push({
+					month: month + 1,
+					monthName: monthNames[month],
+					visitsCount,
+					totalHours,
+					totalIncome,
+					workerExpenses,
+					otherExpenses: totalOtherExpenses,
+					netIncome,
+					avgPerVisit
+				});
+			}
+			
+			// חישוב סיכומים שנתיים
+			const yearlyTotals = {
+				visitsCount: monthlyData.reduce((sum, m) => sum + m.visitsCount, 0),
+				totalHours: monthlyData.reduce((sum, m) => sum + m.totalHours, 0),
+				totalIncome: monthlyData.reduce((sum, m) => sum + m.totalIncome, 0),
+				workerExpenses: monthlyData.reduce((sum, m) => sum + m.workerExpenses, 0),
+				otherExpenses: monthlyData.reduce((sum, m) => sum + m.otherExpenses, 0),
+				netIncome: monthlyData.reduce((sum, m) => sum + m.netIncome, 0)
+			};
+			yearlyTotals.avgPerVisit = yearlyTotals.visitsCount > 0 ? yearlyTotals.totalIncome / yearlyTotals.visitsCount : 0;
+			
+			// חישוב ממוצעים חודשיים (רק חודשים עם פעילות)
+			const activeMonths = monthlyData.filter(m => m.visitsCount > 0).length;
+			const monthlyAvg = activeMonths > 0 ? yearlyTotals.netIncome / activeMonths : 0;
+			
+			// בניית HTML
+			let html = `
+				<!-- סיכום שנתי -->
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px;">
+					<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;">${yearlyTotals.visitsCount}</div>
+						<div style="font-size: 11px; opacity: 0.9;">טיפולים</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;">${yearlyTotals.totalHours.toFixed(0)}</div>
+						<div style="font-size: 11px; opacity: 0.9;">שעות</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;">${yearlyTotals.totalIncome.toLocaleString()}</div>
+						<div style="font-size: 11px; opacity: 0.9;">הכנסה ₪</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;">${yearlyTotals.workerExpenses.toLocaleString()}</div>
+						<div style="font-size: 11px; opacity: 0.9;">עלות פועל ₪</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: #333; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;">${yearlyTotals.otherExpenses.toLocaleString()}</div>
+						<div style="font-size: 11px;">הוצאות אחרות ₪</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;">${yearlyTotals.netIncome.toLocaleString()}</div>
+						<div style="font-size: 11px; opacity: 0.9;">נטו ₪</div>
+					</div>
+				</div>
+				
+				<!-- ממוצעים -->
+				<div style="background: #f5f5f5; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px;">
+					<div style="text-align: center;">
+						<div style="font-size: 20px; font-weight: bold; color: #9c27b0;">${yearlyTotals.avgPerVisit.toFixed(0)} ₪</div>
+						<div style="font-size: 12px; color: #666;">ממוצע לטיפול</div>
+					</div>
+					<div style="text-align: center;">
+						<div style="font-size: 20px; font-weight: bold; color: #9c27b0;">${monthlyAvg.toFixed(0)} ₪</div>
+						<div style="font-size: 12px; color: #666;">ממוצע נטו לחודש</div>
+					</div>
+					<div style="text-align: center;">
+						<div style="font-size: 20px; font-weight: bold; color: #9c27b0;">${activeMonths}</div>
+						<div style="font-size: 12px; color: #666;">חודשים פעילים</div>
+					</div>
+				</div>
+				
+				<!-- טבלה חודשית -->
+				<div style="overflow-x: auto;">
+					<table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+						<thead>
+							<tr style="background: #9c27b0; color: white;">
+								<th style="padding: 10px; text-align: right;">חודש</th>
+								<th style="padding: 10px; text-align: center;">טיפולים</th>
+								<th style="padding: 10px; text-align: center;">שעות</th>
+								<th style="padding: 10px; text-align: center;">הכנסה</th>
+								<th style="padding: 10px; text-align: center;">פועל</th>
+								<th style="padding: 10px; text-align: center;">הוצאות</th>
+								<th style="padding: 10px; text-align: center;">נטו</th>
+								<th style="padding: 10px; text-align: center;">ממוצע/טיפול</th>
+							</tr>
+						</thead>
+						<tbody>
+			`;
+			
+			// שורות החודשים (מ-12 ל-1)
+			for (let i = 11; i >= 0; i--) {
+				const m = monthlyData[i];
+				const rowBg = m.visitsCount === 0 ? '#f5f5f5' : (i % 2 === 0 ? '#fff' : '#fafafa');
+				const textColor = m.visitsCount === 0 ? '#999' : '#333';
+				
+				html += `
+					<tr style="background: ${rowBg}; color: ${textColor};">
+						<td style="padding: 8px; font-weight: 600;">${m.monthName}</td>
+						<td style="padding: 8px; text-align: center;">${m.visitsCount || '-'}</td>
+						<td style="padding: 8px; text-align: center;">${m.totalHours > 0 ? m.totalHours.toFixed(1) : '-'}</td>
+						<td style="padding: 8px; text-align: center; color: #2196F3; font-weight: 600;">${m.totalIncome > 0 ? m.totalIncome.toLocaleString() : '-'}</td>
+						<td style="padding: 8px; text-align: center; color: #e91e63;">${m.workerExpenses > 0 ? m.workerExpenses.toLocaleString() : '-'}</td>
+						<td style="padding: 8px; text-align: center; color: #ff5722;">${m.otherExpenses > 0 ? m.otherExpenses.toLocaleString() : '-'}</td>
+						<td style="padding: 8px; text-align: center; color: #4caf50; font-weight: 600;">${m.netIncome !== 0 ? m.netIncome.toLocaleString() : '-'}</td>
+						<td style="padding: 8px; text-align: center;">${m.avgPerVisit > 0 ? m.avgPerVisit.toFixed(0) : '-'}</td>
+					</tr>
+				`;
+			}
+			
+			// שורת סיכום
+			html += `
+						</tbody>
+						<tfoot>
+							<tr style="background: #9c27b0; color: white; font-weight: bold;">
+								<td style="padding: 10px;">סה"כ ${year}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.visitsCount}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.totalHours.toFixed(1)}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.totalIncome.toLocaleString()}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.workerExpenses.toLocaleString()}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.otherExpenses.toLocaleString()}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.netIncome.toLocaleString()}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.avgPerVisit.toFixed(0)}</td>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			`;
+			
+			contentDiv.innerHTML = html;
+		}
 
 
    </script>
