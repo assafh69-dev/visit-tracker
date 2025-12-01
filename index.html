@@ -401,6 +401,30 @@
 				text-align: center;
 			}
 		}
+		
+		/***********************/
+		
+		.filter-quick-btn {
+			background: #e3f2fd;
+			color: #1976d2;
+			border: 1px solid #90caf9;
+			padding: 6px 12px;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 12px;
+			transition: all 0.2s ease;
+		}
+
+		.filter-quick-btn:hover {
+			background: #bbdefb;
+		}
+
+		.filter-quick-btn.active {
+			background: #1976d2;
+			color: white;
+		}
+		
+		
 		/***********************/
 
 		/* Submit Button מעוצב */
@@ -2446,7 +2470,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3157,111 +3181,70 @@
 					</div>
 				</div>
 				
-				<!-- Tasks Filters -->
-				<div class="filters-panel" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-					<div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
-						<!-- Status Filter -->
-						<div style="flex: 1; min-width: 150px;">
-							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">סטטוס:</label>
-							<select id="filterTaskStatus" onchange="displayTasks()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-								<option value="">הכל</option>
-								<option value="pending">ממתין</option>
-								<option value="in_progress">בתהליך</option>
-								<option value="completed">הושלם</option>
-								<option value="cancelled">בוטל</option>
-							</select>
-						</div>
-						
-						<!-- Scope Filter -->
-						<div style="flex: 1; min-width: 150px;">
-							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">היקף:</label>
-							<select id="filterTaskScope" onchange="displayTasks()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-								<option value="">הכל</option>
-								<option value="client">👤 ללקוח</option>
-								<option value="all">👥 גורפת</option>
-								<option value="personal">🔧 עצמית</option>
-							</select>
-						</div>
-
-						<!-- Type Filter -->
-						<div style="flex: 1; min-width: 150px;">
-							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">נושא:</label>
-							<select id="filterTaskType" onchange="displayTasks()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-								<option value="">הכל</option>
-								<option value="pest_control">🪲 הדברה</option>
-								<option value="planting">🌱 שתילה</option>
-								<option value="tree_trimming">✂️ גיזום עצים</option>
-								<option value="upgrade">🡠 שדרוג גינה</option>
-								<option value="repair">🔧 תיקון</option>
-								<option value="other">📦 אחר</option>
-							</select>
-						</div>
-						
-						<!-- Client Filter -->
-						<div style="flex: 1; min-width: 200px;">
-							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">לקוח:</label>
-							<input type="text" id="filterTaskClient" placeholder="🔍 חיפוש לקוח..." 
-								   onkeyup="displayTasks()" 
-								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-						</div>
-						
-						<!-- Date Range -->
-						<div style="flex: 1; min-width: 150px;">
-							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">מתאריך:</label>
-							<input type="date" id="filterTaskDateFrom" onchange="displayTasks()" 
-								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-						</div>
-						
-						<div style="flex: 1; min-width: 150px;">
-							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">עד תאריך:</label>
-							<input type="date" id="filterTaskDateTo" onchange="displayTasks()" 
-								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-						</div>
-						
-						<!-- Clear Filters -->
-						<div style="align-self: flex-end;">
-							<button onclick="clearTaskFilters()" style="padding: 8px 15px; background: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer;">
-								🗑️ נקה
-							</button>
+				<!-- Tasks Filter Panel - Collapsible -->
+				<div class="filters-container">
+					<div class="filter-header" onclick="toggleFilterPanel('tasksFilterContent')">
+						<h3>🔍 סינון משימות</h3>
+						<button type="button" class="filter-toggle-btn" onclick="event.stopPropagation(); toggleFilterPanel('tasksFilterContent')">🔼 כווץ</button>
+					</div>
+					<div id="tasksFilterContent" class="filter-content">
+						<div class="filter-panel-unified" style="border: none; margin: 0; border-radius: 0 0 8px 8px;">
+							<div class="filter-row-unified">
+								<div class="filter-group-unified medium">
+									<label>סטטוס:</label>
+									<select id="filterTaskStatus" onchange="displayTasks()">
+										<option value="">הכל</option>
+										<option value="pending">ממתין</option>
+										<option value="in_progress">בתהליך</option>
+										<option value="completed">הושלם</option>
+										<option value="cancelled">בוטל</option>
+									</select>
+								</div>
+								<div class="filter-group-unified medium">
+									<label>סוג משימה:</label>
+									<select id="filterTaskType" onchange="displayTasks()">
+										<option value="">הכל</option>
+										<option value="pest_control">🪲 הדברה</option>
+										<option value="planting">🌱 שתילה</option>
+										<option value="tree_trimming">✂️ גיזום עצים</option>
+										<option value="upgrade">🏡 שדרוג גינה</option>
+										<option value="repair">🔧 תיקון</option>
+										<option value="other">📦 אחר</option>
+									</select>
+								</div>
+								<div class="filter-group-unified">
+									<label>חיפוש לקוח:</label>
+									<input type="text" id="filterTaskClient" placeholder="🔍 חיפוש לקוח..." onkeyup="displayTasks()">
+								</div>
+							</div>
+							<div class="filter-row-unified">
+								<div class="filter-group-unified compact">
+									<label>מתאריך:</label>
+									<input type="date" id="filterTaskDateFrom" onchange="displayTasks()">
+								</div>
+								<div class="filter-group-unified compact">
+									<label>עד תאריך:</label>
+									<input type="date" id="filterTaskDateTo" onchange="displayTasks()">
+								</div>
+								<div class="filter-group-unified small">
+									<button onclick="clearTaskFilters()" class="filter-clear-btn">🗑️ נקה סינון</button>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
 				
-				<!-- Tasks Stats -->
-				<div id="tasksStats" style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
-					<div style="background: #fff3cd; padding: 10px 20px; border-radius: 8px; border-right: 4px solid #ffc107;">
-						<div style="font-size: 12px; color: #856404;">ממתינות</div>
-						<div style="font-size: 24px; font-weight: bold; color: #856404;" id="statsPending">0</div>
-					</div>
-					<div style="background: #cce5ff; padding: 10px 20px; border-radius: 8px; border-right: 4px solid #007bff;">
-						<div style="font-size: 12px; color: #004085;">בתהליך</div>
-						<div style="font-size: 24px; font-weight: bold; color: #004085;" id="statsInProgress">0</div>
-					</div>
-					<div style="background: #d4edda; padding: 10px 20px; border-radius: 8px; border-right: 4px solid #28a745;">
-						<div style="font-size: 12px; color: #155724;">הושלמו</div>
-						<div style="font-size: 24px; font-weight: bold; color: #155724;" id="statsCompleted">0</div>
-					</div>
+				<!-- Tasks Stats Bar -->
+				<div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; border: 1px solid #e0e0e0;">
+					<span style="font-size: 13px; color: #333;">📋 מוצגות: <strong style="color: #666;" id="tasksCount">0</strong></span>
+					<span style="font-size: 13px; color: #333;">⏳ ממתינות: <strong style="color: #f39c12;" id="statsPending">0</strong></span>
+					<span style="font-size: 13px; color: #333;">🔄 בתהליך: <strong style="color: #3498db;" id="statsInProgress">0</strong></span>
+					<span style="font-size: 13px; color: #333;">✅ הושלמו: <strong style="color: #27ae60;" id="statsCompleted">0</strong></span>
 				</div>
 				
-				<!-- Tasks Table -->
-				<div class="table-container" style="overflow-x: auto;">
-					<table id="tasksTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-						<thead style="background: #9b59b6; color: white;">
-							<tr>
-								<th style="padding: 12px; text-align: right;">סטטוס</th>
-								<th style="padding: 12px; text-align: right;">היקף</th>
-								<th style="padding: 12px; text-align: right;">נושא</th>
-								<th style="padding: 12px; text-align: right;">לקוח</th>
-								<th style="padding: 12px; text-align: right;">תיאור</th>
-								<th style="padding: 12px; text-align: right;">תאריך יעד</th>
-								<th style="padding: 12px; text-align: right;">עלות משוערת</th>
-								<th style="padding: 12px; text-align: center;">פעולות</th>
-							</tr>
-						</thead>
-						<tbody id="tasksTableBody">
-							<!-- Will be populated by displayTasks() -->
-						</tbody>
-					</table>
+				<!-- Tasks Container -->
+				<div id="tasksContainer">
+					<!-- Will be populated by displayTasks() -->
 				</div>
 			</section>
 			
@@ -3274,7 +3257,61 @@
 					</button>
 				</div>
 				
-				<!-- Expense Stats -->
+				<!-- Expenses Filter Panel - Collapsible -->
+				<div class="filters-container">
+					<div class="filter-header" onclick="toggleFilterPanel('expensesFilterContent')">
+						<h3>🔍 סינון הוצאות</h3>
+						<button type="button" class="filter-toggle-btn" onclick="event.stopPropagation(); toggleFilterPanel('expensesFilterContent')">🔼 כווץ</button>
+					</div>
+					<div id="expensesFilterContent" class="filter-content">
+						<div class="filter-panel-unified" style="border: none; margin: 0; border-radius: 0 0 8px 8px;">
+							<div class="filter-row-unified">
+								<div class="filter-group-unified">
+									<label>חיפוש בתיאור:</label>
+									<input type="text" id="expenseSearchText" onkeyup="displayExpenses()" placeholder="🔍 חיפוש בתיאור...">
+								</div>
+								<div class="filter-group-unified">
+									<label>חיפוש שם/עסק:</label>
+									<input type="text" id="expenseSearchVendor" onkeyup="displayExpenses()" placeholder="🏪 חיפוש שם/עסק...">
+								</div>
+							</div>
+							<div class="filter-row-unified">
+								<div class="filter-group-unified medium">
+									<label>סוג:</label>
+									<select id="expenseTypeFilter" onchange="updateExpenseCategoryFilter(); displayExpenses()">
+										<option value="">כל הסוגים</option>
+										<option value="general">📦 כללי</option>
+										<option value="client">👤 לקוח</option>
+										<option value="vehicle">🚗 רכב</option>
+										<option value="worker">👷 עובדים</option>
+									</select>
+								</div>
+								<div class="filter-group-unified medium">
+									<label>קטגוריה:</label>
+									<select id="expenseCategoryFilter" onchange="displayExpenses()">
+										<option value="">כל הקטגוריות</option>
+									</select>
+								</div>
+								<div class="filter-group-unified compact">
+									<label>חודש:</label>
+									<input type="month" id="expenseMonthFilter" onchange="displayExpenses()">
+								</div>
+							</div>
+							<div class="filter-row-unified" style="margin-top: 10px;">
+								<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+									<span style="font-size: 12px; color: #666;">תקופה:</span>
+									<button onclick="setExpenseDateFilter('today')" class="filter-quick-btn">היום</button>
+									<button onclick="setExpenseDateFilter('week')" class="filter-quick-btn">השבוע</button>
+									<button onclick="setExpenseDateFilter('month')" class="filter-quick-btn">החודש</button>
+									<button onclick="setExpenseDateFilter('year')" class="filter-quick-btn">השנה</button>
+									<button onclick="clearExpenseFilters()" class="filter-clear-btn">🗑️ נקה הכל</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Expense Stats Bar -->
 				<div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; border: 1px solid #e0e0e0;">
 					<span style="font-size: 13px; color: #333;">📋 מוצגות: <strong style="color: #666;" id="expensesCount">0</strong></span>
 					<span style="font-size: 13px; color: #333;">💰 סה"כ: <strong style="color: #e74c3c;" id="totalExpensesAmount">0 ₪</strong></span>
@@ -3282,33 +3319,6 @@
 					<span style="font-size: 13px; color: #333;">🚗 רכב: <strong style="color: #3498db;" id="vehicleExpensesAmount">0 ₪</strong></span>
 					<span style="font-size: 13px; color: #333;">📦 כללי: <strong style="color: #27ae60;" id="generalExpensesAmount">0 ₪</strong></span>
 					<span style="font-size: 13px; color: #333;">👤 לקוחות: <strong style="color: #f39c12;" id="clientExpensesAmount">0 ₪</strong></span>
-				</div>
-				
-				<!-- Filters -->
-				<div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-					<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px;">
-						<input type="text" id="expenseSearchText" onkeyup="displayExpenses()" placeholder="🔍 חיפוש בתיאור..." style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; min-width: 150px;">
-						<input type="text" id="expenseSearchVendor" onkeyup="displayExpenses()" placeholder="🏪 חיפוש שם/עסק..." style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; min-width: 150px;">
-						<select id="expenseTypeFilter" onchange="updateExpenseCategoryFilter(); displayExpenses()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
-							<option value="">כל הסוגים</option>
-							<option value="general">📦 כללי</option>
-							<option value="client">👤 לקוח</option>
-							<option value="vehicle">🚗 רכב</option>
-							<option value="worker">👷 עובדים</option>
-						</select>
-						<select id="expenseCategoryFilter" onchange="displayExpenses()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
-							<option value="">כל הקטגוריות</option>
-						</select>
-						<input type="month" id="expenseMonthFilter" onchange="displayExpenses()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
-					</div>
-					<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-						<span style="font-size: 12px; color: #666;">תקופה:</span>
-						<button onclick="setExpenseDateFilter('today')" style="padding: 5px 10px; background: #e3f2fd; color: #1976d2; border: 1px solid #90caf9; border-radius: 5px; cursor: pointer; font-size: 12px;">היום</button>
-						<button onclick="setExpenseDateFilter('week')" style="padding: 5px 10px; background: #e3f2fd; color: #1976d2; border: 1px solid #90caf9; border-radius: 5px; cursor: pointer; font-size: 12px;">השבוע</button>
-						<button onclick="setExpenseDateFilter('month')" style="padding: 5px 10px; background: #e3f2fd; color: #1976d2; border: 1px solid #90caf9; border-radius: 5px; cursor: pointer; font-size: 12px;">החודש</button>
-						<button onclick="setExpenseDateFilter('year')" style="padding: 5px 10px; background: #e3f2fd; color: #1976d2; border: 1px solid #90caf9; border-radius: 5px; cursor: pointer; font-size: 12px;">השנה</button>
-						<button onclick="clearExpenseFilters()" style="padding: 5px 10px; background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; border-radius: 5px; cursor: pointer; font-size: 12px;">🗑️ נקה הכל</button>
-					</div>
 				</div>
 				
 				<!-- Expenses List -->
@@ -17208,7 +17218,11 @@
 			
 			// Update stats
 			updateTasksStats();
-			
+
+			// עדכון מספר משימות מוצגות
+			const tasksCountEl = document.getElementById('tasksCount');
+			if (tasksCountEl) tasksCountEl.textContent = filteredTasks.length;
+
 			// Render table
 			if (filteredTasks.length === 0) {
 				tbody.innerHTML = `
