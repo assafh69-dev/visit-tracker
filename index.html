@@ -2446,7 +2446,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3275,27 +3275,19 @@
 				</div>
 				
 				<!-- Expense Stats -->
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-bottom: 20px;">
-					<div style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
-						<div style="font-size: 24px; font-weight: bold;" id="totalExpensesAmount">0 ₪</div>
-						<div style="font-size: 12px; opacity: 0.9;">סה"כ הוצאות</div>
-					</div>
-					<div style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
-						<div style="font-size: 24px; font-weight: bold;" id="workerExpensesAmount">0 ₪</div>
-						<div style="font-size: 12px; opacity: 0.9;">👷 פועל/עובד</div>
-					</div>
-					<div style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
-						<div style="font-size: 24px; font-weight: bold;" id="generalExpensesAmount">0 ₪</div>
-						<div style="font-size: 12px; opacity: 0.9;">הוצאות כלליות</div>
-					</div>
-					<div style="background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
-						<div style="font-size: 24px; font-weight: bold;" id="clientExpensesAmount">0 ₪</div>
-						<div style="font-size: 12px; opacity: 0.9;">הוצאות לקוחות</div>
-					</div>
-					<div style="background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
-						<div style="font-size: 24px; font-weight: bold;" id="expensesCount">0</div>
-						<div style="font-size: 12px; opacity: 0.9;">מספר הוצאות</div>
-					</div>
+				<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center;">
+					<span style="background: #e74c3c; color: white; padding: 6px 12px; border-radius: 15px; font-size: 13px;">
+						💰 סה"כ: <strong id="totalExpensesAmount">0 ₪</strong>
+					</span>
+					<span style="background: #9b59b6; color: white; padding: 6px 12px; border-radius: 15px; font-size: 13px;">
+						👷 פועל: <strong id="workerExpensesAmount">0 ₪</strong>
+					</span>
+					<span style="background: #3498db; color: white; padding: 6px 12px; border-radius: 15px; font-size: 13px;">
+						🏢 כלליות: <strong id="generalExpensesAmount">0 ₪</strong>
+					</span>
+					<span style="background: #1abc9c; color: white; padding: 6px 12px; border-radius: 15px; font-size: 13px;">
+						👤 לקוחות: <strong id="clientExpensesAmount">0 ₪</strong>
+					</span>
 				</div>
 				
 				<!-- Filters -->
