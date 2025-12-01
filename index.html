@@ -2470,7 +2470,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3198,6 +3198,15 @@
 										<option value="in_progress">בתהליך</option>
 										<option value="completed">הושלם</option>
 										<option value="cancelled">בוטל</option>
+									</select>
+								</div>
+								<div class="filter-group-unified medium">
+									<label>היקף:</label>
+									<select id="filterTaskScope" onchange="displayTasks()">
+										<option value="">הכל</option>
+										<option value="client">👤 ללקוח</option>
+										<option value="all">👥 גורפת</option>
+										<option value="personal">🔧 עצמית</option>
 									</select>
 								</div>
 								<div class="filter-group-unified medium">
