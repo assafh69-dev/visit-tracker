@@ -2446,7 +2446,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -5607,8 +5607,7 @@
 				if (weeks && !isNaN(weeks)) {
 					const currentNext = new Date(location.next_visit);
 					const newNext = new Date(currentNext.getTime() + (parseInt(weeks) * 7 * 24 * 60 * 60 * 1000));
-					location.next_visit= newNext.toISOString().split('T')[0];
-
+					location.next_visit = `${newNext.getFullYear()}-${String(newNext.getMonth() + 1).padStart(2, '0')}-${String(newNext.getDate()).padStart(2, '0')}`;
 					loadPlanningData();
 					showSuccess(`טיפול נדחה ב-${weeks} שבועות`);
 				}
@@ -11157,8 +11156,7 @@
 					nextDate.setDate(lastDate.getDate() + intervalDays);
 					
 					// פורמט התאריך ל-YYYY-MM-DD
-					const nextVisitDate = nextDate.toISOString().split('T')[0];
-					
+					const nextVisitDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;	
 					// עדכון האובייקט המקומי
 					location.last_visit = lastVisitDate;
 					location.next_visit = nextVisitDate;
@@ -11264,7 +11262,7 @@
 					nextDate.setDate(lastDate.getDate() + intervalDays);
 					
 					// פורמט התאריך ל-YYYY-MM-DD
-					const nextVisitDate = nextDate.toISOString().split('T')[0];
+					const nextVisitDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
 					location.next_visit = nextVisitDate;
 					
 					console.log(`📅 עודכן לקוח ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
@@ -13668,7 +13666,6 @@
 			const targetDayIndex = dayIndexMap[allowedDay] ?? 0;
 			
 			const today = new Date();
-			today.setHours(12, 0, 0, 0); // קביעה לשעה 12 בצהריים למניעת בעיות אזור זמן
 			const todayIndex = today.getDay();
 			
 			// חישוב ההפרש
@@ -13679,7 +13676,12 @@
 			
 			const nextDate = new Date(today);
 			nextDate.setDate(today.getDate() + daysDiff);
-			const nextDateStr = nextDate.toISOString().split('T')[0];
+			
+			// פורמט תאריך מקומי (לא UTC)
+			const year = nextDate.getFullYear();
+			const month = String(nextDate.getMonth() + 1).padStart(2, '0');
+			const day = String(nextDate.getDate()).padStart(2, '0');
+			const nextDateStr = `${year}-${month}-${day}`;
 			
 			client.next_visit = nextDateStr;
 			saveToLocalStorage();
