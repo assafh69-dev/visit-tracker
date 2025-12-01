@@ -2446,7 +2446,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4084,7 +4084,7 @@
 				localStorage.setItem('payment_links_data', JSON.stringify(paymentVisitLinks));
 				localStorage.setItem('incomes_data', JSON.stringify(incomes));
 				localStorage.setItem('tasks_data', JSON.stringify(tasks));
-				localStorage.setItem('expenses', JSON.stringify(expenses));
+				localStorage.setItem('expenses_data', JSON.stringify(expenses));
 				
 				console.log('Data saved to local storage');
 			} catch (error) {
