@@ -2446,7 +2446,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3275,19 +3275,12 @@
 				</div>
 				
 				<!-- Expense Stats -->
-				<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center;">
-					<span style="background: #e74c3c; color: white; padding: 6px 12px; border-radius: 15px; font-size: 13px;">
-						💰 סה"כ: <strong id="totalExpensesAmount">0 ₪</strong>
-					</span>
-					<span style="background: #9b59b6; color: white; padding: 6px 12px; border-radius: 15px; font-size: 13px;">
-						👷 פועל: <strong id="workerExpensesAmount">0 ₪</strong>
-					</span>
-					<span style="background: #3498db; color: white; padding: 6px 12px; border-radius: 15px; font-size: 13px;">
-						🏢 כלליות: <strong id="generalExpensesAmount">0 ₪</strong>
-					</span>
-					<span style="background: #1abc9c; color: white; padding: 6px 12px; border-radius: 15px; font-size: 13px;">
-						👤 לקוחות: <strong id="clientExpensesAmount">0 ₪</strong>
-					</span>
+				<div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; border: 1px solid #e0e0e0;">
+					<span style="font-size: 13px; color: #333;">📋 מוצגות: <strong style="color: #666;" id="expensesCount">0</strong></span>
+					<span style="font-size: 13px; color: #333;">💰 סה"כ: <strong style="color: #e74c3c;" id="totalExpensesAmount">0 ₪</strong></span>
+					<span style="font-size: 13px; color: #333;">👷 פועל: <strong style="color: #9b59b6;" id="workerExpensesAmount">0 ₪</strong></span>
+					<span style="font-size: 13px; color: #333;">🏢 כלליות: <strong style="color: #3498db;" id="generalExpensesAmount">0 ₪</strong></span>
+					<span style="font-size: 13px; color: #333;">👤 לקוחות: <strong style="color: #1abc9c;" id="clientExpensesAmount">0 ₪</strong></span>
 				</div>
 				
 				<!-- Filters -->
