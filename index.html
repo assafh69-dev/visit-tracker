@@ -2470,7 +2470,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3659,6 +3659,9 @@
 				
 				// Update all UI components
 				updateAllUIComponents();
+
+				// Save to localStorage after loading from cloud
+				saveToLocalStorage();
 				
 				// Success feedback
 				hideLoading();
@@ -10727,9 +10730,9 @@
 			showModal(modalHTML);
 			
 			// שמירת הלקוח הנבחר אם יש
-			if (clientId) {
-				window.selectedPaymentClientId = clientId;
-				loadOpenVisitsForPayment(clientId);
+			if (selectedClientId) {
+				window.selectedPaymentClientId = selectedClientId;
+				loadOpenVisitsForPayment(selectedClientId);
 			}
 			
 			// הוספת event listener לשינוי אמצעי תשלום
