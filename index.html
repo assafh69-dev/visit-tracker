@@ -2470,7 +2470,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -14631,6 +14631,7 @@
 				
 				// רענון תצוגות
 				loadPlanningData();
+				loadTodayTreatments();
 				if (typeof applyVisitFilters === 'function') {
 					applyVisitFilters();
 				}
@@ -16214,7 +16215,8 @@
 
 		// Load and display today's treatments in the work day section
 		function loadTodayTreatments() {
-			const today = new Date().toISOString().split('T')[0];
+			const now = new Date();
+			const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 			const todayVisits = visits.filter(visit => visit.date === today)
 				.sort((a, b) => {
 					const timeA = a.start_time || '23:59';
@@ -16303,8 +16305,27 @@
 					const amount = visit.amount || 0;
 					const workDone = visit.work_done || 'ללא תיאור';
 					
+					// Check payment status
+					const paidAmount = getVisitPaidAmount(visit.ID);
+					const isPaid = paidAmount >= amount && amount > 0;
+					const isPartialPaid = paidAmount > 0 && paidAmount < amount;
+					
+					// Payment button or status indicator
+					let paymentHtml = '';
+					if (isPaid) {
+						paymentHtml = `<span style="color: #27ae60; font-size: 14px;" title="שולם">✅</span>`;
+					} else if (isPartialPaid) {
+						paymentHtml = `<button onclick="showAddPaymentModal(null, '${visit.ID}')"
+								style="padding: 6px 10px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
+								title="שולם חלקית: ${paidAmount}₪">½💰</button>`;
+					} else if (amount > 0) {
+						paymentHtml = `<button onclick="showAddPaymentModal(null, '${visit.ID}')"
+								style="padding: 6px 10px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
+								title="תשלום">💰</button>`;
+					}
+					
 					return `
-						<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 8px;">
+						<div style="background: ${isPaid ? '#e8f5e9' : '#f8f9fa'}; padding: 10px; border-radius: 5px; margin-bottom: 8px;">
 							<div style="display: flex; justify-content: space-between; align-items: center;">
 								<div style="flex: 1;">
 									<div style="font-weight: bold; color: #2c3e50;">${clientName}</div>
@@ -16318,9 +16339,7 @@
 									<button onclick="showVisitForm('${visit.ID}')" 
 											style="padding: 6px 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
 											title="עריכת טיפול">✏️</button>
-									<button onclick="showAddPaymentModal(null, '${visit.ID}')"
-											style="padding: 6px 10px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
-											title="תשלום">💰</button>
+									${paymentHtml}
 								</div>
 							</div>
 						</div>
@@ -18900,7 +18919,7 @@
 					<div style="font-size: 48px; margin-bottom: 15px;">🧾</div>
 					<h3 style="margin: 0 0 10px 0; color: #2c3e50;">להפיק קבלה?</h3>
 					<p style="color: #666; margin-bottom: 20px;">
-						תשלום ${payment.amount} ₪ מ${payment.location_name}
+						תשלום ${payment.amount} ₪ מ${payment.client_name}
 					</p>
 					<div style="display: flex; gap: 10px; justify-content: center;">
 						<button onclick="createReceiptFromPayment('${payment.ID}'); closeAnyModal();" 
