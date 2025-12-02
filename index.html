@@ -2470,7 +2470,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4977,7 +4977,7 @@
 		function completePlanningVisit(clientId) {
 			showSection('visit');
 			document.getElementById('locationSelect').value = clientId;
-			document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
+			document.getElementById('visitDate').value = getLocalDateString();
 			
 			const client = locations.find(loc => loc.ID === clientId);
 			if (client && client.scheduled_time) {
@@ -4996,7 +4996,7 @@
 				const currentNextVisit = new Date(client.next_visit);
 				const postponedDate = new Date(currentNextVisit.getTime() + (parseInt(weeks) * 7 * 24 * 60 * 60 * 1000));
 				
-				client.next_visit = postponedDate.toISOString().split('T')[0];
+				client.next_visit = getLocalDateString(postponedDate);
 				client.temp_addition = 0;
 				
 				saveToLocalStorage();
@@ -5052,7 +5052,7 @@
 		function startImmediateVisit(clientId) {
 			showSection('visit');
 			document.getElementById('locationSelect').value = clientId;
-			document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
+			document.getElementById('visitDate').value = getLocalDateString();
 			document.getElementById('visitTime').value = new Date().toTimeString().slice(0,5);
 		}
 
@@ -5752,7 +5752,7 @@
 			showEditModal(modalHTML);
 			
 			// Set default date
-			document.getElementById('locationNextVisit').value = new Date().toISOString().split('T')[0];
+			document.getElementById('locationNextVisit').value = getLocalDateString();
 		}
 
         async function handleLocationSubmit(event) {
@@ -6622,7 +6622,7 @@
 			// הגדרות ראשוניות
 			setTimeout(() => {
 				// הגדרת תאריך היום
-				document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
+				document.getElementById('receiptDate').value = getLocalDateString();
 				
 				// טעינת לקוחות לבחירה
 				const receiptLocation = document.getElementById('receiptLocation');
@@ -6711,6 +6711,11 @@
        function closeModal(modalId) {
            document.getElementById(modalId).style.display = 'none';
        }
+
+		// Get today's date in local timezone as YYYY-MM-DD string
+		function getLocalDateString(date = new Date()) {
+			return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+		}
 
        function formatDate(dateString) {
            const date = new Date(dateString);
@@ -7020,7 +7025,7 @@
 				const response = await gapi.client.sheets.spreadsheets.create({
 					resource: {
 						properties: {
-							title: `import_table_${new Date().toISOString().split('T')[0]}`
+							title: `import_table_${getLocalDateString()}`
 						},
 						sheets: [{
 						properties: { title: 'Locations' },
@@ -7443,8 +7448,8 @@
 			const dateToInput = document.getElementById('filterDateTo');
 			
 			if (dateFromInput && dateToInput) {
-				dateFromInput.value = lastMonth.toISOString().split('T')[0];
-				dateToInput.value = today.toISOString().split('T')[0];
+				dateFromInput.value = getLocalDateString(lastMonth);
+				dateToInput.value = getLocalDateString(today);
 			}
 		}
 
@@ -9078,7 +9083,7 @@
 			}
 			
 			// ✅ UPDATED: Mark as paid with today's date
-			const today = new Date().toISOString().split('T')[0];
+			const today = getLocalDateString();
 			let updatedCount = 0;
 			
 			visits.forEach(visit => {
@@ -10632,7 +10637,7 @@
 					<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 20px;">
 						<div class="form-group">
 							<label style="display: block; margin-bottom: 8px; font-weight: bold;">תאריך:</label>
-							<input type="date" id="paymentDate" value="${new Date().toISOString().split('T')[0]}" 
+							<input type="date" id="paymentDate" value="${getLocalDateString()}" 
 								style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
 						</div>
 						<div class="form-group">
@@ -13445,7 +13450,7 @@
 					// צור תשלום אחד עבור כל החובות
 					const payment = {
 						ID: generateID(),
-						date: new Date().toISOString().split('T')[0],
+						date: getLocalDateString(),
 						time: new Date().toTimeString().substr(0, 5),
 						amount: totalDebt,
 						payment_method: 'cash',
@@ -13767,7 +13772,7 @@
 
 		// הגדרת תאריך היום לכל שדות התאריך
 		function setTodayAsDefault() {
-			const today = new Date().toISOString().split('T')[0];
+			const today = getLocalDateString();
 			document.querySelectorAll('.planning-date-input').forEach(input => {
 				if (!input.value) {
 					input.value = today;
@@ -13846,7 +13851,7 @@
 			// המתן רגע קצר כדי לוודא שהמודל נסגר
 			setTimeout(() => {
 				// בדיקה האם יש כבר טיפול היום ללקוח
-				const today = new Date().toISOString().split('T')[0];
+				const today = getLocalDateString();
 				const existingTodayVisit = visits.find(visit => 
 					visit.location_id === clientId && 
 					visit.date === today
@@ -14347,7 +14352,7 @@
 			setTimeout(() => {
 				if (!isEdit) {
 					// מצב יצירה - הגדר תאריך היום
-					document.getElementById('visitFormDate').value = new Date().toISOString().split('T')[0];
+					document.getElementById('visitFormDate').value = getLocalDateString();
 					loadVisitFormClientOptions();
 					
 					// אם יש לקוח נבחר מראש - מלא אותו
@@ -15602,7 +15607,7 @@
 					income.notes || '',
 					income.raw_text || '',
 					income.imported_from || 'manual',
-					income.import_date || new Date().toISOString().split('T')[0],
+					income.import_date || getLocalDateString(),
 					income.matched_to_visit || false
 				]);
 				
@@ -16219,8 +16224,7 @@
 
 		// Load and display today's treatments in the work day section
 		function loadTodayTreatments() {
-			const now = new Date();
-			const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+			const today = getLocalDateString();
 			const todayVisits = visits.filter(visit => visit.date === today)
 				.sort((a, b) => {
 					const timeA = a.start_time || '23:59';
@@ -17392,7 +17396,8 @@
 
 		// Show add task modal
 		function showAddTaskModal(preSelectedClientId = null) {
-			const today = new Date().toISOString().split('T')[0];
+			const now = new Date();
+			const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 			
 			const modalHTML = `
 				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 550px; width: 90vw; max-height: 90vh; overflow-y: auto; position: relative;">
@@ -17625,7 +17630,7 @@
 				recurring: document.getElementById('taskRecurring').checked,
 				recurring_interval: document.getElementById('taskRecurringInterval')?.value || '',
 				status: taskId ? (tasks.find(t => t.ID === taskId)?.status || 'pending') : 'pending',
-				created_date: taskId ? (tasks.find(t => t.ID === taskId)?.created_date || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
+				created_date: taskId ? (tasks.find(t => t.ID === taskId)?.created_date || getLocalDateString()) : getLocalDateString(),
 				completed_date: ''
 			};
 			
@@ -17703,7 +17708,7 @@
 			task.status = newStatus;
 			
 			if (newStatus === 'completed') {
-				task.completed_date = new Date().toISOString().split('T')[0];
+				task.completed_date = getLocalDateString();
 			}
 			
 			saveToLocalStorage();
@@ -17734,7 +17739,7 @@
 			);
 			
 			task.status = 'completed';
-			task.completed_date = new Date().toISOString().split('T')[0];
+			task.completed_date = getLocalDateString();
 			
 			saveToLocalStorage();
 			displayTasks();
@@ -17794,8 +17799,8 @@
 				...originalTask,
 				ID: 'TASK_' + Date.now(),
 				status: 'pending',
-				due_date: nextDate.toISOString().split('T')[0],
-				created_date: new Date().toISOString().split('T')[0],
+				due_date: getLocalDateString(nextDate),
+				created_date: getLocalDateString(),
 				completed_date: ''
 			};
 			
@@ -17954,8 +17959,8 @@
 
 		// Show schedule client modal
 		function showScheduleClientModal() {
-			const today = new Date().toISOString().split('T')[0];
-			const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+			const today = getLocalDateString();
+			const tomorrow = getLocalDateString(new Date(Date.now() + 86400000));
 			
 			const modalHTML = `
 				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 90vw; max-height: 90vh; overflow-y: auto; position: relative;">
@@ -18168,7 +18173,7 @@
 					recurring: false,
 					recurring_interval: '',
 					status: 'pending',
-					created_date: new Date().toISOString().split('T')[0],
+					created_date: getLocalDateString(),
 					completed_date: ''
 				};
 				
@@ -18204,8 +18209,8 @@
 			
 			// Get client's first visit date for default range
 			const clientVisits = visits.filter(v => v.location_id === clientId).sort((a, b) => a.date.localeCompare(b.date));
-			const firstVisitDate = clientVisits.length > 0 ? clientVisits[0].date : new Date().toISOString().split('T')[0];
-			const today = new Date().toISOString().split('T')[0];
+			const firstVisitDate = clientVisits.length > 0 ? clientVisits[0].date : getLocalDateString();
+			const today = getLocalDateString();
 			
 			const modalHTML = `
 				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 90vw; position: relative;">
@@ -18831,7 +18836,7 @@
 			
 			const yesterday = new Date(today);
 			yesterday.setDate(yesterday.getDate() - 1);
-			const yesterdayStr = yesterday.toISOString().split('T')[0];
+			const yesterdayStr = getLocalDateString(yesterday);
 			
 			// מצא לקוחות שתאריך הטיפול הבא שלהם היה אתמול
 			const missedYesterday = locations.filter(loc => {
@@ -18861,7 +18866,7 @@
 			
 			// בדיקה אם כבר הצגנו היום
 			const lastShown = localStorage.getItem('yesterdayMissedShown');
-			const todayStr = new Date().toISOString().split('T')[0];
+			const todayStr = getLocalDateString();
 			if (lastShown === todayStr) return;
 			
 			// שמירה שהצגנו היום
@@ -19486,7 +19491,7 @@
 
 		// הצגת מודל הוספת הוצאה
 		function showAddExpenseModal(clientId = '', clientName = '') {
-			const today = new Date().toISOString().split('T')[0];
+			const today = getLocalDateString();
 			const defaultType = clientId ? 'client' : 'general';
 			
 			// בניית רשימת לקוחות
@@ -19946,7 +19951,7 @@
 			switch (range) {
 				case 'year':
 					fromInput.value = `${currentYear}-01-01`;
-					toInput.value = today.toISOString().split('T')[0];
+					toInput.value = getLocalDateString(today);
 					break;
 				case 'lastYear':
 					fromInput.value = `${currentYear - 1}-01-01`;
@@ -20007,7 +20012,7 @@
 				};
 				
 				// תאריך הייצוא
-				const exportDate = new Date().toISOString().split('T')[0];
+				const exportDate = getLocalDateString();
 				
 				// בניית הנתונים לייצוא
 				const exportData = filteredVisits.map(visit => {
