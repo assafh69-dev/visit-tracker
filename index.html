@@ -2470,7 +2470,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4474,7 +4474,11 @@
 			planningClients.sort((a, b) => {
 				switch (currentPlanningView) {
 					case 'daily':
-						// מיון לפי שעה מועדפת אם קיימת, אחרת לפי שם
+						// קודם מי שמתוכנן להיום (daysDiff === 0), אחר כך מאחרים (daysDiff < 0)
+						const aIsToday = a.daysDiff === 0 ? 0 : 1;
+						const bIsToday = b.daysDiff === 0 ? 0 : 1;
+						if (aIsToday !== bIsToday) return aIsToday - bIsToday;
+						// בתוך אותה קבוצה - לפי שם
 						return (a.name || '').localeCompare(b.name || '');
 						
 					case 'weekly':
@@ -4824,6 +4828,9 @@
 		function renderClientRow(client) {
 			const nextVisitFormatted = formatDate(client.next_visit);
 			
+			// בדיקה אם הלקוח מאחר
+			const isOverdue = client.daysDiff < 0 || client.daysOverdue > 0;
+
 			// Find last treatment date for this client
 			const clientVisits = visits.filter(visit => visit.location_id === client.ID);
 			const lastTreatmentDate = clientVisits.length > 0 
@@ -4863,7 +4870,7 @@
 					<div class="planning-row-main">
 						<!-- שם הלקוח - גדול ובולט -->
 						<div class="planning-client-header">
-							<div class="planning-client-name-large">👤 ${client.name}</div>
+							<div class="planning-client-name-large" style="${isOverdue ? 'color: #e74c3c;' : ''}">👤 ${client.name}</div>
 						</div>
 						
 						<!-- תאריכים - גדולים ובולטים -->
@@ -10604,7 +10611,7 @@
 					<!-- בחירת לקוח -->
 					<div class="form-group" style="margin-bottom: 20px;">
 						<label style="display: block; margin-bottom: 8px; font-weight: bold;">לקוח:</label>
-						${clientId ? 
+						${selectedClientId ? 
 							`<input type="text" value="${selectedClientName}" disabled style="width: 100%; padding: 10px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px;">` :
 							`<input type="text" 
 								id="paymentClientSearch" 
