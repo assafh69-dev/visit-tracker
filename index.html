@@ -2485,7 +2485,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3991,6 +3991,16 @@
 			if (paymentVisitLinks.length > 0) {
 				showToast(`שומר ${paymentVisitLinks.length} קישורי תשלום בבת אחת...`, 'info', 2000);
 				savePromises.push(savePaymentVisitLinksBatch(paymentVisitLinks));
+			}
+			
+			if (tasks.length > 0) {
+				showToast(`שומר ${tasks.length} משימות בבת אחת...`, 'info', 2000);
+				savePromises.push(saveTasksToSheets());
+			}
+			
+			if (expenses.length > 0) {
+				showToast(`שומר ${expenses.length} הוצאות בבת אחת...`, 'info', 2000);
+				savePromises.push(saveExpensesBatch(expenses));
 			}
 			
 			// המתנה לכל השמירות במקביל
@@ -8806,7 +8816,7 @@
 				}
 				
 				// שמור לענן
-				await saveAllToSheetsOptimized();
+				await saveAllToSheets();
 				
 				hideLoading();
 				closeAnyModal();
@@ -8873,43 +8883,6 @@
 			return Date.now() + Math.random().toString(36).substr(2, 9);
 		}
 	   
-	   
-	   async function saveAllToSheetsOptimized() {
-			if (!await validateToken()) {
-				showToast('נדרש חיבור לענן', 'warning');
-				return false;
-			}
-			
-			try {
-				await checkAndFixTableStructure();
-				
-				// שמירת כל הטבלאות
-				const locationSuccess = locations.length > 0 ? await saveLocationsBatch(locations) : true;
-				const visitSuccess = visits.length > 0 ? await saveVisitsBatch(visits) : true;
-				const receiptSuccess = receipts.length > 0 ? await saveReceiptsBatch(receipts) : true;
-				const incomeSuccess = incomes.length > 0 ? await saveIncomesBatch(incomes) : true;
-				const paymentSuccess = payments.length > 0 ? await savePaymentsBatch(payments) : true;
-				const linkSuccess = paymentVisitLinks.length > 0 ? await savePaymentVisitLinksBatch(paymentVisitLinks) : true;
-				const tasksSuccess = tasks.length > 0 ? await saveTasksToSheets() : true;
-				const expensesSuccess = expenses.length > 0 ? await saveExpensesBatch(expenses) : true;
-
-				const allSaved = locationSuccess && visitSuccess && receiptSuccess && incomeSuccess && paymentSuccess && linkSuccess && tasksSuccess && expensesSuccess;
-							
-
-			if (allSaved) {
-					showToast('✅ כל הנתונים נשמרו בהצלחה', 'success');
-				} else {
-					showToast('⚠️ חלק מהנתונים לא נשמרו', 'warning');
-				}
-				
-				return allSaved;
-				
-			} catch (error) {
-				console.error('Error saving all data:', error);
-				showToast('שגיאה בשמירת נתונים', 'error');
-				return false;
-			}
-		}
 	   
 	   // פונקציה להצגת חובות
 		function displayDebts() {
@@ -13541,11 +13514,11 @@
 					
 					// שמירה בענן
 					if (access_token && SPREADSHEET_ID) {
-						await saveAllToSheetsOptimized();
+						await saveAllToSheets();
 						
 						// שמור את כל הקישורים
 						for (const link of paymentVisitLinks.filter(l => l.payment_id === payment.ID)) {
-							await saveAllToSheetsOptimized();
+							await saveAllToSheets();
 						}
 					}
 					
@@ -17892,36 +17865,8 @@
 			if (!access_token || !SPREADSHEET_ID) return;
 			
 			try {
-			// Check if Tasks sheet exists, create if not
-			const spreadsheet = await gapi.client.sheets.spreadsheets.get({
-				spreadsheetId: SPREADSHEET_ID
-			});
-			
-			const tasksSheet = spreadsheet.result.sheets.find(s => s.properties.title === 'Tasks');
-			
-			if (!tasksSheet) {
-				// Create Tasks sheet
-				await gapi.client.sheets.spreadsheets.batchUpdate({
-					spreadsheetId: SPREADSHEET_ID,
-					resource: {
-						requests: [{
-							addSheet: {
-								properties: { title: 'Tasks' }
-							}
-						}]
-					}
-				});
-				
-				// Add headers
-				await gapi.client.sheets.spreadsheets.values.update({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Tasks!A1:P1',
-					valueInputOption: 'RAW',
-					resource: {
-						values: [['ID', 'scope', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date']]
-					}
-				});
-			}
+			// Ensure Tasks sheet exists with headers
+			await addHeadersToSheet('Tasks');
 			
 			// Clear existing data (except header)
 				await gapi.client.sheets.spreadsheets.values.clear({
