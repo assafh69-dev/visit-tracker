@@ -2485,7 +2485,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4931,7 +4931,7 @@
 						<!-- שורה תחתונה: כפתורי תאריך + לוח שנה -->
 						<div class="planning-date-row">
 							<button class="week-btn-mobile" onclick="setNextAllowedDayThisWeek('${client.ID}', '${client.allowed_day}')" title="היום הקרוב בשבוע">
-								⬅
+								⏬
 							</button>
 							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע הבא">
 								1W+
@@ -7676,11 +7676,14 @@
 				saveToLocalStorage();
 				
 				// עדכון תאריכי טיפול של הלקוח
-				if (locationId) {
-					await updateSingleLocationTreatmentDates(locationId);
-				}
-				
-				showToast('טיפול נמחק בהצלחה!', 'success');
+			if (locationId) {
+				await updateSingleLocationTreatmentDates(locationId);
+			}
+			
+			// רענון טיפולים של היום
+			loadTodayTreatments();
+			
+			showToast('טיפול נמחק בהצלחה!', 'success');
 			}
 		}
 	   
@@ -7946,7 +7949,7 @@
 			
 			try {
 				// בדיקת כותרות בכל גיליון - כולל החדשים
-				const sheetsToCheck = ['Locations', 'Visits', 'Receipts', 'TelegramVisits', 'TelegramIncomes', 'Payments', 'PaymentVisitLink', 'Tasks'];
+				const sheetsToCheck = ['Locations', 'Visits', 'Receipts', 'TelegramVisits', 'TelegramIncomes', 'Payments', 'PaymentVisitLink', 'Tasks', 'Expenses'];
 				
 				for (const sheetName of sheetsToCheck) {
 					try {
@@ -7983,7 +7986,7 @@
 				'TelegramIncomes': ['message_id', 'date', 'text', 'processed', 'receipt_id'],
 				'Payments': ['ID', 'date', 'time', 'amount', 'payment_method', 'source_type', 'client_id', 'client_name', 'notes', 'status', 'created_at', 'reference', 'check_date', 'bank_account', 'payment_details', 'receipt_id'],
 				'PaymentVisitLink': ['ID', 'payment_id', 'visit_id', 'amount_allocated'],
-				'Tasks': ['ID', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date'],
+				'Tasks': ['ID', 'scope', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date'],
 				'Expenses': ['ID', 'date', 'amount', 'description', 'category', 'expense_type', 'client_id', 'client_name', 'visit_id', 'vendor_name', 'vendor_type', 'payment_method', 'receipt_number', 'notes'],
 				'ExportVisitsClassic': ['year', 'month', 'day', 'customer', 'full_address', 'contact_person', 'treatment', 'date', 'work_done', 'duration', 'amount', 'paid', 'expense', 'notes', 'export_date']
 			};
@@ -9175,6 +9178,7 @@
 			// Refresh displays
 			displayDebts();
 			filterVisits();
+			loadTodayTreatments();
 		}
 
 
@@ -9532,9 +9536,10 @@
 				}
 				
 				// Refresh displays
-				if (typeof displayDebts === 'function') displayDebts();
-				if (typeof displayPayments === 'function') displayPayments();
-				if (typeof displayVisits === 'function') displayVisits();
+			if (typeof displayDebts === 'function') displayDebts();
+			if (typeof displayPayments === 'function') displayPayments();
+			if (typeof displayVisits === 'function') displayVisits();
+			loadTodayTreatments();
 				
 			} catch (error) {
 				console.error('Error executing payment link:', error);
@@ -10496,17 +10501,20 @@
 					exp.notes || ''
 				]);
 				
-				// Add header row
-				const header = ['ID', 'date', 'amount', 'description', 'category', 'expense_type', 'client_id', 'client_name', 'visit_id', 'vendor_name', 'vendor_type', 'payment_method', 'receipt_number', 'notes'];
-				
-				await gapi.client.sheets.spreadsheets.values.update({
-					spreadsheetId: SPREADSHEET_ID,
-					range: 'Expenses!A1',
-					valueInputOption: 'RAW',
-					resource: {
-						values: [header, ...values]
-					}
-				});
+				]);
+			
+			// Ensure Expenses sheet exists with headers
+			await addHeadersToSheet('Expenses');
+			
+			// Write data starting from row 2 (after header)
+			await gapi.client.sheets.spreadsheets.values.update({
+				spreadsheetId: SPREADSHEET_ID,
+				range: 'Expenses!A2',
+				valueInputOption: 'RAW',
+				resource: {
+					values: values
+				}
+			});
 				
 				console.log('✅ Expenses saved to cloud');
 				return true;
@@ -11156,6 +11164,9 @@
 				if (typeof applyPaymentFilters === 'function') {
 					applyPaymentFilters();
 				}
+				
+				// רענון טיפולים של היום
+				loadTodayTreatments();
 				
 				// שאלה להפקת קבלה
 				setTimeout(() => {
@@ -17883,38 +17894,10 @@
 			if (!access_token || !SPREADSHEET_ID) return;
 			
 			try {
-				// Check if Tasks sheet exists, create if not
-				const spreadsheet = await gapi.client.sheets.spreadsheets.get({
-					spreadsheetId: SPREADSHEET_ID
-				});
-				
-				const tasksSheet = spreadsheet.result.sheets.find(s => s.properties.title === 'Tasks');
-				
-				if (!tasksSheet) {
-					// Create Tasks sheet
-					await gapi.client.sheets.spreadsheets.batchUpdate({
-						spreadsheetId: SPREADSHEET_ID,
-						resource: {
-							requests: [{
-								addSheet: {
-									properties: { title: 'Tasks' }
-								}
-							}]
-						}
-					});
-					
-					// Add headers
-					await gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: SPREADSHEET_ID,
-						range: 'Tasks!A1:P1',
-						valueInputOption: 'RAW',
-						resource: {
-							values: [['ID', 'scope', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date']]
-						}
-					});
-				}
-				
-				// Clear existing data (except header)
+			// Ensure Tasks sheet exists with headers
+			await addHeadersToSheet('Tasks');
+			
+			// Clear existing data (except header)
 				await gapi.client.sheets.spreadsheets.values.clear({
 					spreadsheetId: SPREADSHEET_ID,
 					range: 'Tasks!A2:P1000'
