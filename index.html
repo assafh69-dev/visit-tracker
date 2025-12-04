@@ -2485,7 +2485,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -16415,6 +16415,13 @@
 					const typeInfo = typeof TASK_TYPES !== 'undefined' && TASK_TYPES[task.type] ? TASK_TYPES[task.type] : { icon: '📦', label: task.type || 'אחר' };
 					const statusInfo = typeof TASK_STATUSES !== 'undefined' && TASK_STATUSES[task.status] ? TASK_STATUSES[task.status] : { icon: '⏳', label: 'ממתין' };
 					
+					// Calculate task age (days since created)
+					const createdDate = task.created_date ? new Date(task.created_date) : null;
+					const today = new Date();
+					const taskAge = createdDate ? Math.floor((today - createdDate) / (1000 * 60 * 60 * 24)) : 0;
+					const ageText = taskAge === 0 ? 'חדש' : taskAge === 1 ? 'יום אחד' : `${taskAge} ימים`;
+					const ageColor = taskAge > 7 ? '#e74c3c' : taskAge > 3 ? '#f39c12' : '#27ae60';
+					
 					return `
 						<div style="background: white; padding: 10px; border-radius: 5px; margin-bottom: 8px; border-left: 4px solid #9b59b6;">
 							<div style="display: flex; justify-content: space-between; align-items: center;">
@@ -16426,25 +16433,38 @@
 									<div style="font-size: 11px; color: #9b59b6; margin-top: 3px;">
 										${statusInfo.icon} ${statusInfo.label}
 										${task.estimated_cost ? ' • ₪' + task.estimated_cost : ''}
+										<span style="color: ${ageColor}; margin-right: 8px;">⏱️ ${ageText}</span>
 									</div>
 								</div>
-								<div style="display: flex; gap: 5px;">
-									${task.status === 'pending' ? `
-										<button onclick="updateTaskStatus('${task.ID}', 'in_progress')" 
-												style="padding: 6px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-											▶️ התחל
+								<div style="display: flex; flex-direction: column; gap: 4px;">
+									<div style="display: flex; gap: 4px;">
+										${task.status === 'pending' ? `
+											<button onclick="updateTaskStatus('${task.ID}', 'in_progress')" 
+													style="padding: 6px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+												▶️ התחל
+											</button>
+										` : ''}
+										${task.status === 'in_progress' ? `
+											<button onclick="completeTask('${task.ID}')" 
+													style="padding: 6px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+												✅ סיים
+											</button>
+										` : ''}
+										<button onclick="showEditTaskModal('${task.ID}')" 
+												style="padding: 6px 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+											✏️
 										</button>
-									` : ''}
-									${task.status === 'in_progress' ? `
-										<button onclick="completeTask('${task.ID}')" 
-												style="padding: 6px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-											✅ סיים
+									</div>
+									<div style="display: flex; gap: 4px;">
+										<button onclick="postponeTask('${task.ID}', 1)" 
+												style="padding: 4px 8px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
+											+1D
 										</button>
-									` : ''}
-									<button onclick="showEditTaskModal('${task.ID}')" 
-											style="padding: 6px 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-										✏️
-									</button>
+										<button onclick="postponeTask('${task.ID}', 7)" 
+												style="padding: 4px 8px; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
+											+1W
+										</button>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -17805,6 +17825,44 @@
 				}
 			}
 		}
+
+
+		// Postpone task by X days
+		async function postponeTask(taskId, days) {
+			const task = tasks.find(t => t.ID === taskId);
+			if (!task) {
+				showToast('משימה לא נמצאה', 'error');
+				return;
+			}
+			
+			// Calculate new due date
+			const currentDue = task.due_date ? new Date(task.due_date) : new Date();
+			currentDue.setDate(currentDue.getDate() + days);
+			const newDueDate = currentDue.toISOString().split('T')[0];
+			
+			// Update task
+			task.due_date = newDueDate;
+			
+			// Save locally
+			saveToLocalStorage();
+			
+			// Refresh display
+			loadTodayTreatments();
+			displayTasks();
+			
+			// Save to cloud
+			if (access_token && SPREADSHEET_ID) {
+				try {
+					await saveTasksToSheets();
+				} catch (error) {
+					console.error('Error saving task to cloud:', error);
+				}
+			}
+			
+			const dayText = days === 1 ? 'יום' : days === 7 ? 'שבוע' : `${days} ימים`;
+			showToast(`📅 המשימה נדחתה ב${dayText} → ${formatDate(newDueDate)}`, 'success');
+		}
+
 
 		// Create next recurring task
 		function createNextRecurringTask(originalTask) {
