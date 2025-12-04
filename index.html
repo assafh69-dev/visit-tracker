@@ -2123,12 +2123,27 @@
 			
 			.profile-btn-mobile {
 				padding: 8px 12px;
-				background: #007bff !important;
-				color: white !important;
-				border: none;
+				background: white !important;
+				color: #007bff !important;
+				border: 2px solid #007bff !important;
 				border-radius: 5px;
 				font-size: 16px;
 				cursor: pointer;
+			}
+			
+			.calendar-btn-mobile {
+				padding: 8px 12px;
+				background: #f8f9fa;
+				color: #333;
+				border: 1px solid #ddd;
+				border-radius: 5px;
+				font-size: 16px;
+				cursor: pointer;
+			}
+			
+			.calendar-btn-mobile:active {
+				transform: scale(0.95);
+				background: #e9ecef;
 			}
 			
 			.active-checkbox-mobile {
@@ -2470,7 +2485,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4900,30 +4915,33 @@
 							}
 						</div>
 
-						<!-- כפתורי פעולה -->
+						<!-- שורה עליונה: פרופיל, פעיל, התחל טיפול -->
 						<div class="planning-actions-row">
-							<button class="week-btn-mobile" onclick="setNextAllowedDayThisWeek('${client.ID}', '${client.allowed_day}')" title="היום הקרוב">
-								⏬
-							</button>
-							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
-								1W+
-							</button>
-							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 2)" title="שבועיים">
-								2W+
-							</button>
 							<button class="profile-btn-mobile" onclick="showClientProfile('${client.ID}')" title="פרופיל">
 								👤
 							</button>
 							<label class="active-checkbox-mobile" title="פעיל">
 								<input type="checkbox" ${client.active === '1' ? 'checked' : ''} onchange="toggleClientActive('${client.ID}', this.checked ? '1' : '0')">
 							</label>
-						</div>
-
-						<!-- בחירת תאריך והתחלה -->
-						<div class="planning-date-row">
-							<input type="date" class="planning-date-input-mobile" value="" onchange="updateClientNextVisit('${client.ID}', this.value)" id="dateInput_${client.ID}">
 							<button class="start-treatment-btn-mobile" onclick="startTreatment('${client.ID}')" title="התחל טיפול">
 								▶️
+							</button>
+						</div>
+
+						<!-- שורה תחתונה: כפתורי תאריך + לוח שנה -->
+						<div class="planning-date-row">
+							<button class="week-btn-mobile" onclick="setNextAllowedDayThisWeek('${client.ID}', '${client.allowed_day}')" title="היום הקרוב בשבוע">
+								⬅
+							</button>
+							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע הבא">
+								1W+
+							</button>
+							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 2)" title="עוד שבועיים">
+								2W+
+							</button>
+							<input type="date" id="dateInput_${client.ID}" style="display:none;" onchange="updateClientNextVisit('${client.ID}', this.value)">
+							<button class="calendar-btn-mobile" onclick="document.getElementById('dateInput_${client.ID}').showPicker()" title="בחר תאריך">
+								📅
 							</button>
 						</div>
 					</div>
@@ -6437,6 +6455,12 @@
 			
 			console.log(`✅ editLocation second: ('${locationId}')`);
 			
+			// Calculate last treatment date from actual visits
+			const clientVisits = visits.filter(visit => visit.location_id === locationId);
+			const lastTreatmentDate = clientVisits.length > 0 
+				? clientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
+				: location.last_visit || '';
+			
 			// צור חלון עריכה
 			const editModalHTML = `
 				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90vw; max-height: 80vh; overflow-y: auto; position: relative;">
@@ -6507,7 +6531,7 @@
 						
 						<div class="form-group">
 							<label>טיפול אחרון:</label>
-							<input type="date" id="editLocationLastVisit" value="${location.last_visit || ''}" readonly style="background: #f8f9fa;">
+							<input type="date" id="editLocationLastVisit" value="${lastTreatmentDate}" readonly style="background: #f8f9fa;">
 						</div>
 
 						<div class="form-group">
@@ -7640,12 +7664,22 @@
 			}
 		}
 
-		function deleteVisit(visitId) {
+		async function deleteVisit(visitId) {
 			console.log(`✅ deleteVisit ('${visitId}') `);
 			if (confirm('האם אתה בטוח שברצונך למחוק את הטיפול?')) {
+				// שמור את location_id לפני המחיקה
+				const visitToDelete = visits.find(v => v.ID == visitId);
+				const locationId = visitToDelete?.location_id;
+				
 				visits = visits.filter(visit => visit.ID != visitId);
 				applyVisitFilters(); // רענן תצוגה
 				saveToLocalStorage();
+				
+				// עדכון תאריכי טיפול של הלקוח
+				if (locationId) {
+					await updateSingleLocationTreatmentDates(locationId);
+				}
+				
 				showToast('טיפול נמחק בהצלחה!', 'success');
 			}
 		}
@@ -7700,8 +7734,11 @@
 				const laborCost = baseCost + workersCost;
 				const totalCost = laborCost + expense;
 				
-				// עדכן את שדה הסכום
-				document.getElementById('amount').value = Math.round(totalCost);
+				// עדכן את שדה הסכום רק אם ריק
+				const amountField = document.getElementById('amount');
+				if (!amountField.value || amountField.value === '0') {
+					amountField.value = Math.round(totalCost);
+				}
 				
 				// הצג פירוט מפורט יותר
 				let breakdown = `${hours.toFixed(2)} שעות × ₪${costSettings.hourlyRate} = ₪${Math.round(baseCost)}`;
@@ -8760,7 +8797,12 @@
 				loadReceiptsTable();
 				loadFilterOptions();
 				
-				// שמור לעלנן
+				// עדכון תאריכי טיפול
+				if (importedCount > 0) {
+					await calculateTreatmentDates();
+				}
+				
+				// שמור לענן
 				await saveAllToSheetsOptimized();
 				
 				hideLoading();
@@ -11329,7 +11371,9 @@
 				
 				// עדכון בגוגל שיטס
 				await updateTreatmentDatesInSheets([location]);
-
+				
+				// שמירה מקומית
+				saveToLocalStorage();
 			}
 		}
 	   
@@ -18992,8 +19036,8 @@
 				book_number: bookNumber.toString(),
 				receipt_number: nextReceiptNum.toString(),
 				date: payment.date,
-				location_id: payment.location_id,
-				location_name: payment.location_name,
+				location_id: payment.client_id || payment.location_id,
+				location_name: payment.client_name || payment.location_name,
 				amount: payment.amount,
 				payment_type: paymentType,
 				notes: `קבלה עבור תשלום ${payment.ID}`,
