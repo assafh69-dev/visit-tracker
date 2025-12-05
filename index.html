@@ -2457,15 +2457,23 @@
 						<button onclick="connectToGoogleSheets()" id="connectBtn" class="connect-btn" style="padding: 8px 16px; font-size: 13px;">
 							התחבר
 						</button>
+						<button onclick="smartSync()" id="syncBtn" class="connect-btn" disabled style="padding: 8px 16px; font-size: 13px; background: #9b59b6; color: white;">
+							🔄 סנכרן
+						</button>
 						<button onclick="saveAllToSheets()" id="saveBtn" class="connect-btn" disabled style="padding: 8px 16px; font-size: 13px;">
-							שמור
+							שמור ❗
 						</button>
 						<button onclick="loadAllFromSheets()" id="loadBtn" class="connect-btn" disabled style="padding: 8px 16px; font-size: 13px;">
-							טען
+							טען ❗
 						</button>
 						<button onclick="disconnectFromCloud()" class="connect-btn" style="padding: 8px 16px; font-size: 13px; background: #e74c3c; color: white;">
 							התנתק
 						</button>
+					</div>
+					
+					<!-- Sync Status Indicator -->
+					<div id="syncIndicator" style="font-size: 12px; text-align: center; margin-top: 5px;">
+						🔄 טרם בוצע סנכרון
 					</div>
 					
 					<!-- שורה 3: סטטוס -->
@@ -2485,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3422,6 +3430,17 @@
 		let paymentVisitLinks = [];
 		let tasks = [];
 		let expenses = [];
+		
+		// Sync tracking variables
+		let lastSyncTime = localStorage.getItem('lastSyncTime') || null;
+		let pendingChanges = {
+			locations: new Set(),
+			visits: new Set(),
+			receipts: new Set(),
+			payments: new Set(),
+			tasks: new Set(),
+			expenses: new Set()
+		};
         let currentFilter = 'today';
 		
 		// הגדרות עלות
@@ -3490,6 +3509,8 @@
 						document.getElementById('statusText').classList.add('connected');
 						document.getElementById('saveBtn').disabled = false;
 						document.getElementById('loadBtn').disabled = false;
+						document.getElementById('syncBtn').disabled = false;
+						updateSyncIndicator();
 						
 						showToast('התחברת בהצלחה ל-Google Sheets!', 'success');
 						
@@ -4121,12 +4142,13 @@
 					receiptData.amount,
 					receiptData.payment_type || '',
 					receiptData.tax_code || '',
-					receiptData.notes || ''
+					receiptData.notes || '',
+					receiptData.updated_at || new Date().toISOString()
 				]];
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.RECEIPTS}!A:J`,
+					range: `${SHEETS.RECEIPTS}!A:K`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: values }
 				});
@@ -5390,7 +5412,7 @@
 					</td>
 					<td>${location.full_address}</td>
 					<td>
-						<button class="action-btn" onclick="event.stopPropagation(); showClientProfile('${location.ID}')" title="פרופיל" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 10px;">👤</button>
+						<button class="profile-btn-mobile" onclick="event.stopPropagation(); showClientProfile('${location.ID}')" title="פרופיל">👤</button>
 						<button class="action-btn edit-btn" onclick="event.stopPropagation(); editLocation('${location.ID}')">✏️</button>
 						<button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteLocation('${location.ID}')">🗑️</button>
 					</td>
@@ -5611,13 +5633,13 @@
 					visit_type: visitData.visit_type,
 					work_done: visitData.work_done,
 					duration_minutes: visitData.duration_minutes,
-					num_workers: visitData.workers_count || 1,    // ✅ CORRECT mapping!
+					num_workers: visitData.workers_count || 1,
 					start_time: visitData.start_time,
 					end_time: visitData.end_time,
 					amount: visitData.amount,
 					expense: visitData.expense || 0,
-					notes: visitData.notes
-					// ✅ REMOVED: no 'paid' field - this caused the column shift problem
+					notes: visitData.notes,
+					updated_at: new Date().toISOString()
 				};
 
 				// Add to visits array
@@ -5800,9 +5822,10 @@
 				base_amount: parseFloat(document.getElementById('locationAmount').value) || 0,
 				active: document.getElementById('locationActive').value,
 				notes: document.getElementById('locationNotes').value,
-				client_requests: document.getElementById('locationClientRequests').value || '', // שדה חדש
+				client_requests: document.getElementById('locationClientRequests').value || '',
 				last_visit: '',
-				next_visit: document.getElementById('locationNextVisit').value
+				next_visit: document.getElementById('locationNextVisit').value,
+				updated_at: new Date().toISOString()
 			};
            
 		    // בדיקת כפילויות גם לפי ID וגם לפי כתובת
@@ -6691,7 +6714,8 @@
 					location_name: location.name,
 					amount: parseFloat(document.getElementById('receiptAmount').value),
 					payment_type: document.getElementById('receiptPaymentType').value,
-					notes: document.getElementById('receiptNotes').value || ''
+					notes: document.getElementById('receiptNotes').value || '',
+					updated_at: new Date().toISOString()
 				};
 				
 				// בדיקת תקינות
@@ -7989,15 +8013,15 @@
 		// פונקציה חדשה להוספת כותרות לגיליון ספציפי
 		async function addHeadersToSheet(sheetName) {
 			const headersMap = {
-				'Locations': ['ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 'client_requests'],
-				'Visits': ['ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 'duration_minutes', 'num_workers', 'start_time', 'end_time', 'amount', 'paid', 'expense', 'notes'],
-				'Receipts': ['ID', 'book_number', 'receipt_number', 'date', 'location_id', 'location_name', 'amount', 'payment_type', 'notes', 'payment_id'],
+				'Locations': ['ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 'client_requests', 'updated_at'],
+				'Visits': ['ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 'duration_minutes', 'num_workers', 'start_time', 'end_time', 'amount', 'paid', 'expense', 'notes', 'updated_at'],
+				'Receipts': ['ID', 'book_number', 'receipt_number', 'date', 'location_id', 'location_name', 'amount', 'payment_type', 'notes', 'payment_id', 'updated_at'],
 				'TelegramVisits': ['message_id', 'date', 'text', 'processed', 'location_id', 'visit_id'],
 				'TelegramIncomes': ['message_id', 'date', 'text', 'processed', 'receipt_id'],
-				'Payments': ['ID', 'date', 'time', 'amount', 'payment_method', 'source_type', 'client_id', 'client_name', 'notes', 'status', 'created_at', 'reference', 'check_date', 'bank_account', 'payment_details', 'receipt_id'],
+				'Payments': ['ID', 'date', 'time', 'amount', 'payment_method', 'source_type', 'client_id', 'client_name', 'notes', 'status', 'created_at', 'reference', 'check_date', 'bank_account', 'payment_details', 'receipt_id', 'updated_at'],
 				'PaymentVisitLink': ['ID', 'payment_id', 'visit_id', 'amount_allocated'],
-				'Tasks': ['ID', 'scope', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date'],
-				'Expenses': ['ID', 'date', 'amount', 'description', 'category', 'expense_type', 'client_id', 'client_name', 'visit_id', 'vendor_name', 'vendor_type', 'payment_method', 'receipt_number', 'notes'],
+				'Tasks': ['ID', 'scope', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date', 'updated_at'],
+				'Expenses': ['ID', 'date', 'amount', 'description', 'category', 'expense_type', 'client_id', 'client_name', 'visit_id', 'vendor_name', 'vendor_type', 'payment_method', 'receipt_number', 'notes', 'updated_at'],
 				'ExportVisitsClassic': ['year', 'month', 'day', 'customer', 'full_address', 'contact_person', 'treatment', 'date', 'work_done', 'duration', 'amount', 'paid', 'expense', 'notes', 'export_date']
 			};
 			
@@ -8884,6 +8908,389 @@
 		}
 	   
 	   
+	   // ========== SYNC HELPER FUNCTIONS ==========
+		
+		// Mark record as updated (call this whenever a record changes)
+		function markAsUpdated(record) {
+			record.updated_at = new Date().toISOString();
+			return record;
+		}
+		
+		// Track pending change for sync
+		function trackChange(type, id) {
+			if (pendingChanges[type]) {
+				pendingChanges[type].add(id);
+				updateSyncIndicator();
+			}
+		}
+		
+		// Clear pending changes after successful sync
+		function clearPendingChanges() {
+			Object.keys(pendingChanges).forEach(key => {
+				pendingChanges[key].clear();
+			});
+			updateSyncIndicator();
+		}
+		
+		// Get total pending changes count
+		function getPendingChangesCount() {
+			return Object.values(pendingChanges).reduce((sum, set) => sum + set.size, 0);
+		}
+		
+		// Update sync status indicator
+		function updateSyncIndicator() {
+			const indicator = document.getElementById('syncIndicator');
+			if (!indicator) return;
+			
+			const pendingCount = getPendingChangesCount();
+			const lastSync = localStorage.getItem('lastSyncTime');
+			
+			let html = '';
+			if (pendingCount > 0) {
+				html = `<span style="color: #f39c12;">⚠️ ${pendingCount} שינויים ממתינים</span>`;
+			} else if (lastSync) {
+				const date = new Date(lastSync);
+				html = `<span style="color: #27ae60;">✅ סונכרן: ${date.toLocaleString('he-IL')}</span>`;
+			} else {
+				html = `<span style="color: #95a5a6;">🔄 טרם בוצע סנכרון</span>`;
+			}
+			indicator.innerHTML = html;
+		}
+		
+		// Compare two records by updated_at
+		function isNewer(record1, record2) {
+			const date1 = record1.updated_at ? new Date(record1.updated_at) : new Date(0);
+			const date2 = record2.updated_at ? new Date(record2.updated_at) : new Date(0);
+			return date1 > date2;
+		}
+		
+		// Merge two arrays by ID, keeping newer records
+		function mergeByIdAndDate(localArray, cloudArray) {
+			const merged = new Map();
+			const stats = { uploaded: 0, downloaded: 0, unchanged: 0 };
+			
+			// Add all cloud records to map
+			cloudArray.forEach(record => {
+				if (record.ID) {
+					merged.set(record.ID, { source: 'cloud', record });
+				}
+			});
+			
+			// Process local records
+			localArray.forEach(localRecord => {
+				if (!localRecord.ID) return;
+				
+				const existing = merged.get(localRecord.ID);
+				
+				if (!existing) {
+					// Only in local - will be uploaded
+					merged.set(localRecord.ID, { source: 'local', record: localRecord });
+					stats.uploaded++;
+				} else {
+					// Exists in both - compare dates
+					if (isNewer(localRecord, existing.record)) {
+						merged.set(localRecord.ID, { source: 'local', record: localRecord });
+						stats.uploaded++;
+					} else if (isNewer(existing.record, localRecord)) {
+						stats.downloaded++;
+					} else {
+						stats.unchanged++;
+					}
+				}
+			});
+			
+			// Count cloud-only records
+			cloudArray.forEach(record => {
+				if (record.ID && !localArray.find(l => l.ID === record.ID)) {
+					stats.downloaded++;
+				}
+			});
+			
+			return {
+				records: Array.from(merged.values()).map(v => v.record),
+				stats
+			};
+		}
+	   
+	   
+	   // ========== SMART SYNC FUNCTION ==========
+		
+		async function smartSync() {
+			if (!await validateToken()) {
+				showToast('נדרש חיבור לענן לסנכרון', 'warning');
+				return false;
+			}
+			
+			const syncBtn = document.getElementById('syncBtn');
+			if (syncBtn) {
+				syncBtn.disabled = true;
+				syncBtn.innerHTML = '🔄 מסנכרן...';
+			}
+			
+			showLoading('מבצע סנכרון חכם...');
+			
+			const totalStats = {
+				uploaded: 0,
+				downloaded: 0,
+				unchanged: 0
+			};
+			
+			try {
+				// Sync Locations
+				console.log('🔄 Syncing Locations...');
+				const locationsStats = await syncTable('Locations', locations, loadLocationsFromSheetsRaw, saveLocationsBatch);
+				locations = locationsStats.mergedData;
+				Object.keys(totalStats).forEach(k => totalStats[k] += locationsStats.stats[k]);
+				
+				// Sync Visits
+				console.log('🔄 Syncing Visits...');
+				const visitsStats = await syncTable('Visits', visits, loadVisitsFromSheetsRaw, saveVisitsBatch);
+				visits = visitsStats.mergedData;
+				Object.keys(totalStats).forEach(k => totalStats[k] += visitsStats.stats[k]);
+				
+				// Sync Receipts
+				console.log('🔄 Syncing Receipts...');
+				const receiptsStats = await syncTable('Receipts', receipts, loadReceiptsFromSheetsRaw, saveReceiptsBatch);
+				receipts = receiptsStats.mergedData;
+				Object.keys(totalStats).forEach(k => totalStats[k] += receiptsStats.stats[k]);
+				
+				// Sync Payments
+				console.log('🔄 Syncing Payments...');
+				const paymentsStats = await syncTable('Payments', payments, loadPaymentsFromSheetsRaw, savePaymentsBatch);
+				payments = paymentsStats.mergedData;
+				Object.keys(totalStats).forEach(k => totalStats[k] += paymentsStats.stats[k]);
+				
+				// Sync Tasks
+				console.log('🔄 Syncing Tasks...');
+				const tasksStats = await syncTable('Tasks', tasks, loadTasksFromSheetsRaw, saveTasksToSheets);
+				tasks = tasksStats.mergedData;
+				Object.keys(totalStats).forEach(k => totalStats[k] += tasksStats.stats[k]);
+				
+				// Sync Expenses
+				console.log('🔄 Syncing Expenses...');
+				const expensesStats = await syncTable('Expenses', expenses, loadExpensesFromSheetsRaw, saveExpensesBatch);
+				expenses = expensesStats.mergedData;
+				Object.keys(totalStats).forEach(k => totalStats[k] += expensesStats.stats[k]);
+				
+				// Save merged data locally
+				saveToLocalStorage();
+				
+				// Update last sync time
+				const now = new Date().toISOString();
+				localStorage.setItem('lastSyncTime', now);
+				lastSyncTime = now;
+				
+				// Clear pending changes
+				clearPendingChanges();
+				
+				// Update UI
+				updateAllUIComponents();
+				updateSyncIndicator();
+				
+				hideLoading();
+				
+				// Show summary
+				const summary = `✅ סנכרון הושלם!\n📤 הועלו: ${totalStats.uploaded}\n📥 הורדו: ${totalStats.downloaded}\n⏸️ ללא שינוי: ${totalStats.unchanged}`;
+				showToast(summary, 'success', 5000);
+				console.log('📊 Sync Summary:', totalStats);
+				
+				if (syncBtn) {
+					syncBtn.disabled = false;
+					syncBtn.innerHTML = '🔄 סנכרן';
+				}
+				
+				return true;
+				
+			} catch (error) {
+				console.error('❌ Sync error:', error);
+				hideLoading();
+				showToast('שגיאה בסנכרון: ' + error.message, 'error');
+				
+				if (syncBtn) {
+					syncBtn.disabled = false;
+					syncBtn.innerHTML = '🔄 סנכרן';
+				}
+				
+				return false;
+			}
+		}
+		
+		// Generic sync function for a single table
+		async function syncTable(tableName, localData, loadFromCloudFn, saveToCloudFn) {
+			try {
+				// Load from cloud
+				const cloudData = await loadFromCloudFn();
+				
+				// Merge
+				const { records, stats } = mergeByIdAndDate(localData, cloudData);
+				
+				// Ensure all records have updated_at
+				records.forEach(r => {
+					if (!r.updated_at) {
+						r.updated_at = new Date().toISOString();
+					}
+				});
+				
+				// Save merged data to cloud
+				if (tableName === 'Tasks') {
+					// Tasks uses different save pattern
+					tasks = records;
+					await saveToCloudFn();
+				} else if (tableName === 'Expenses') {
+					await saveToCloudFn(records);
+				} else {
+					await saveToCloudFn(records);
+				}
+				
+				console.log(`✅ ${tableName}: ↑${stats.uploaded} ↓${stats.downloaded} =${stats.unchanged}`);
+				
+				return { mergedData: records, stats };
+				
+			} catch (error) {
+				console.error(`❌ Error syncing ${tableName}:`, error);
+				return { mergedData: localData, stats: { uploaded: 0, downloaded: 0, unchanged: localData.length } };
+			}
+		}
+	   
+	   
+	   // ========== RAW LOAD FUNCTIONS (for sync) ==========
+		
+		async function loadLocationsFromSheetsRaw() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Locations!A:Q'
+				});
+				
+				const rows = response.result.values || [];
+				if (rows.length <= 1) return [];
+				
+				const headers = rows[0];
+				return rows.slice(1).map(row => {
+					const obj = {};
+					headers.forEach((h, i) => obj[h] = row[i] || '');
+					return obj;
+				});
+			} catch (error) {
+				console.error('Error loading locations raw:', error);
+				return [];
+			}
+		}
+		
+		async function loadVisitsFromSheetsRaw() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Visits!A:O'
+				});
+				
+				const rows = response.result.values || [];
+				if (rows.length <= 1) return [];
+				
+				const headers = rows[0];
+				return rows.slice(1).map(row => {
+					const obj = {};
+					headers.forEach((h, i) => obj[h] = row[i] || '');
+					return obj;
+				});
+			} catch (error) {
+				console.error('Error loading visits raw:', error);
+				return [];
+			}
+		}
+		
+		async function loadReceiptsFromSheetsRaw() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Receipts!A:K'
+				});
+				
+				const rows = response.result.values || [];
+				if (rows.length <= 1) return [];
+				
+				const headers = rows[0];
+				return rows.slice(1).map(row => {
+					const obj = {};
+					headers.forEach((h, i) => obj[h] = row[i] || '');
+					return obj;
+				});
+			} catch (error) {
+				console.error('Error loading receipts raw:', error);
+				return [];
+			}
+		}
+		
+		async function loadPaymentsFromSheetsRaw() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Payments!A:Q'
+				});
+				
+				const rows = response.result.values || [];
+				if (rows.length <= 1) return [];
+				
+				const headers = rows[0];
+				return rows.slice(1).map(row => {
+					const obj = {};
+					headers.forEach((h, i) => obj[h] = row[i] || '');
+					return obj;
+				});
+			} catch (error) {
+				console.error('Error loading payments raw:', error);
+				return [];
+			}
+		}
+		
+		async function loadTasksFromSheetsRaw() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Tasks!A:Q'
+				});
+				
+				const rows = response.result.values || [];
+				if (rows.length <= 1) return [];
+				
+				const headers = rows[0];
+				return rows.slice(1).map(row => {
+					const obj = {};
+					headers.forEach((h, i) => obj[h] = row[i] || '');
+					return obj;
+				});
+			} catch (error) {
+				console.error('Error loading tasks raw:', error);
+				return [];
+			}
+		}
+		
+		async function loadExpensesFromSheetsRaw() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Expenses!A:O'
+				});
+				
+				const rows = response.result.values || [];
+				if (rows.length <= 1) return [];
+				
+				const headers = rows[0];
+				return rows.slice(1).map(row => {
+					const obj = {};
+					headers.forEach((h, i) => obj[h] = row[i] || '');
+					return obj;
+				});
+			} catch (error) {
+				console.error('Error loading expenses raw:', error);
+				return [];
+			}
+		}
+		
+		
+	   
+	   ///=====================================================================
+	   
 	   // פונקציה להצגת חובות
 		function displayDebts() {
 			const container = document.getElementById('debtsContainer');
@@ -8993,8 +9400,7 @@
 						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
 							<h3 style="margin: 0; color: #2c3e50;">${debt.clientName}</h3>
 							<button onclick="event.stopPropagation(); showClientProfile('${debt.clientId}')" 
-									class="action-btn" 
-									style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 10px;"
+									class="profile-btn-mobile" 
 									title="פרופיל לקוח">
 								👤
 							</button>
@@ -10207,12 +10613,13 @@
 					loc.notes || '',
 					loc.last_visit || '',
 					loc.next_visit || '',
-					loc.client_requests || ''  // שדה חסר!
+					loc.client_requests || '',
+					loc.updated_at || new Date().toISOString()
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `Locations!A2:P${locationValues.length + 1}`,
+					range: `Locations!A2:Q${locationValues.length + 1}`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: locationValues }
 				});
@@ -10224,6 +10631,7 @@
 				return false;
 			}
 		}
+
 
 		// שמירה מקבצית של ביקורים
 		async function saveVisitsBatch(visitsToSave) {
@@ -10246,12 +10654,13 @@
 					visit.amount || 0,
 					visit.paid || '0',
 					visit.expense || 0,
-					visit.notes || ''
+					visit.notes || '',
+					visit.updated_at || new Date().toISOString()
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `Visits!A2:N${values.length + 1}`,
+					range: `Visits!A2:O${values.length + 1}`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values }
 				});
@@ -10376,12 +10785,13 @@
 					receipt.amount,
 					receipt.payment_type,
 					receipt.notes,
-					receipt.payment_id || ''
+					receipt.payment_id || '',
+					receipt.updated_at || new Date().toISOString()
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.RECEIPTS}!A:I`,
+					range: `${SHEETS.RECEIPTS}!A:K`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { 
 						values: values,
@@ -10421,13 +10831,14 @@
 					payment.check_date || '',
 					payment.bank_account || '',
 					payment.payment_details || '',
-					payment.receipt_id || ''
+					payment.receipt_id || '',
+					payment.updated_at || new Date().toISOString()
 				]);
 				
-				// ✅ Clear existing data first (עדכון טווח ל-P)
+				// ✅ Clear existing data first (עדכון טווח ל-Q)
 				await gapi.client.sheets.spreadsheets.values.clear({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Payments!A2:P'
+					range: 'Payments!A2:Q'
 				});
 				
 				// ✅ Then write new data
@@ -10457,6 +10868,9 @@
 			try {
 				console.log('💰 saveExpensesBatch called with', expensesArray.length, 'expenses');
 				
+				// Ensure Expenses sheet exists with headers
+				await addHeadersToSheet('Expenses');
+				
 				const values = expensesArray.map(exp => [
 					exp.ID,
 					exp.date,
@@ -10471,21 +10885,19 @@
 					exp.vendor_type || 'other',
 					exp.payment_method || 'cash',
 					exp.receipt_number || '',
-					exp.notes || ''
+					exp.notes || '',
+					exp.updated_at || new Date().toISOString()
 				]);
-			
-			// Ensure Expenses sheet exists with headers
-			await addHeadersToSheet('Expenses');
-			
-			// Write data starting from row 2 (after header)
-			await gapi.client.sheets.spreadsheets.values.update({
-				spreadsheetId: SPREADSHEET_ID,
-				range: 'Expenses!A2',
-				valueInputOption: 'RAW',
-				resource: {
-					values: values
-				}
-			});
+				
+				// Write data starting from row 2 (after header)
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Expenses!A2',
+					valueInputOption: 'RAW',
+					resource: {
+						values: values
+					}
+				});
 				
 				console.log('✅ Expenses saved to cloud');
 				return true;
@@ -11017,7 +11429,8 @@
 					reference: reference || '',
 					check_date: checkDate || '',
 					bank_account: '',
-					payment_details: ''
+					payment_details: '',
+					updated_at: new Date().toISOString()
 				};
 				
 				// הוסף לרשימת התשלומים
@@ -14578,7 +14991,8 @@
 						amount: amount,
 						paid: visits[visitIndex].paid || '0',
 						expense: expense,
-						notes: notes
+						notes: notes,
+						updated_at: new Date().toISOString()
 					};
 					
 					// שמירה מקומית
@@ -14627,7 +15041,8 @@
 						amount: amount,
 						paid: '0',
 						expense: expense,
-						notes: notes
+						notes: notes,
+						updated_at: new Date().toISOString()
 					};
 					
 					// הוספה למערך
@@ -17677,7 +18092,8 @@
 				recurring_interval: document.getElementById('taskRecurringInterval')?.value || '',
 				status: taskId ? (tasks.find(t => t.ID === taskId)?.status || 'pending') : 'pending',
 				created_date: taskId ? (tasks.find(t => t.ID === taskId)?.created_date || getLocalDateString()) : getLocalDateString(),
-				completed_date: ''
+				completed_date: '',
+				updated_at: new Date().toISOString()
 			};
 			
 			if (taskId) {
@@ -17923,13 +18339,13 @@
 			if (!access_token || !SPREADSHEET_ID) return;
 			
 			try {
-			// Ensure Tasks sheet exists with headers
-			await addHeadersToSheet('Tasks');
-			
-			// Clear existing data (except header)
+				// Ensure Tasks sheet exists with headers
+				await addHeadersToSheet('Tasks');
+				
+				// Clear existing data (except header)
 				await gapi.client.sheets.spreadsheets.values.clear({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Tasks!A2:P1000'
+					range: 'Tasks!A2:Q1000'
 				});
 				
 				// Write tasks
@@ -17950,7 +18366,8 @@
 						t.recurring_interval,
 						t.status,
 						t.created_date,
-						t.completed_date
+						t.completed_date,
+						t.updated_at || new Date().toISOString()
 					]);
 					
 					await gapi.client.sheets.spreadsheets.values.update({
@@ -19087,6 +19504,13 @@
 				return false;
 			}
 			
+			// Update status to show backup in progress
+			const statusDiv = document.getElementById('backupStatus');
+			if (statusDiv) {
+				statusDiv.innerHTML = '⏳ גיבוי הנתונים מתבצע כעת. המתן...';
+				statusDiv.style.color = '#007bff';
+			}
+			
 			showToast('💾 יוצר גיבוי...', 'info');
 			
 			try {
@@ -19739,6 +20163,7 @@
 				payment_method: document.getElementById('expensePaymentMethod').value,
 				receipt_number: document.getElementById('expenseReceiptNumber').value,
 				notes: document.getElementById('expenseNotes').value
+				updated_at: new Date().toISOString()
 			};
 			
 			expenses.push(newExpense);
