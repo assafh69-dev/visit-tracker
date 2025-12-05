@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -9399,6 +9399,12 @@
 						<!-- שורה 1: שם + פרופיל -->
 						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
 							<h3 style="margin: 0; color: #2c3e50;">${debt.clientName}</h3>
+							<button onclick="event.stopPropagation(); showBalanceReportModal('${debt.clientId}')" 
+										class="action-btn" 
+										style="background: #9b59b6; color: white; padding: 5px 8px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer;"
+										title="דוח מאזן">
+									📄
+							</button>
 							<button onclick="event.stopPropagation(); showClientProfile('${debt.clientId}')" 
 									class="profile-btn-mobile" 
 									title="פרופיל לקוח">
@@ -9428,12 +9434,6 @@
 										style="background: #3498db; color: white; padding: 5px 8px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer;"
 										title="סמן הכל כשולם">
 									✓
-								</button>
-								<button onclick="event.stopPropagation(); showBalanceReportModal('${debt.clientId}')" 
-										class="action-btn" 
-										style="background: #9b59b6; color: white; padding: 5px 8px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer;"
-										title="דוח מאזן">
-									📄
 								</button>
 							</div>
 						</div>
