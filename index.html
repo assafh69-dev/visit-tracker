@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -13782,7 +13782,7 @@
 
 		// הגדרת השעה הנוכחית
 		// Update the existing setCurrentTime function to handle edit form
-		function setCurrentTime(timeInputId) {
+		function setCurrentTime(timeInputId, isEditMode = false) {
 			const now = new Date();
 			const hours = String(now.getHours()).padStart(2, '0');
 			const minutes = String(now.getMinutes()).padStart(2, '0');
@@ -13792,7 +13792,7 @@
 			
 			// חישוב משך וסכום אוטומטי
 			calculateVisitFormDuration();
-			calculateVisitFormCost();
+			calculateVisitFormCost(isEditMode);
 			
 			showToast(`שעה נוכחית: ${currentTime}`, 'info');
 		}
@@ -14455,15 +14455,15 @@
 								<div>
 									<label for="visitFormStartTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת התחלה:</label>
 									<div style="display: flex; gap: 6px;">
-										<input type="time" id="visitFormStartTime" value="${isEdit ? (visitData.start_time || '') : ''}" onchange="calculateVisitFormDuration(); calculateVisitFormCost();" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-										<button type="button" onclick="setCurrentTime('visitFormStartTime')" title="שעה נוכחית" style="padding: 8px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; line-height: 1; min-width: 40px; flex-shrink: 0;">🕐</button>								
+										<input type="time" id="visitFormStartTime" value="${isEdit ? (visitData.start_time || '') : ''}" onchange="calculateVisitFormDuration(); calculateVisitFormCost(${isEdit});" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+										<button type="button" onclick="setCurrentTime('visitFormStartTime', ${isEdit})" title="שעה נוכחית" style="padding: 8px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; line-height: 1; min-width: 40px; flex-shrink: 0;">🕐</button>								
 									</div>
 								</div>
 								<div>
 									<label for="visitFormEndTime" style="display: block; margin-bottom: 5px; font-size: 13px; color: #666;">שעת סיום:</label>
 									<div style="display: flex; gap: 6px;">
-										<input type="time" id="visitFormEndTime" value="${isEdit ? (visitData.end_time || '') : ''}" onchange="calculateVisitFormDuration(); calculateVisitFormCost();" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-										<button type="button" onclick="setCurrentTime('visitFormEndTime')" title="שעה נוכחית" style="padding: 8px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; line-height: 1; min-width: 40px; flex-shrink: 0;">🕐</button>
+										<input type="time" id="visitFormEndTime" value="${isEdit ? (visitData.end_time || '') : ''}" onchange="calculateVisitFormDuration(); calculateVisitFormCost(${isEdit});" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+										<button type="button" onclick="setCurrentTime('visitFormEndTime', ${isEdit})" title="שעה נוכחית" style="padding: 8px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; line-height: 1; min-width: 40px; flex-shrink: 0;">🕐</button>
 									</div>
 								</div>
 							</div>
@@ -14474,22 +14474,26 @@
 							<input type="hidden" id="visitFormCalculatedHours" value="${isEdit ? (((visitData.duration_minutes || 0) / 60).toFixed(2)) : 0}">
 						</div>
 						
-						<!-- עלות ועובדים -->
-						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-							<div class="form-group" style="margin: 0;">
-								<label for="visitFormAmount" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💰 סכום:</label>
-								<input type="number" id="visitFormAmount" step="0.01" min="0" value="${isEdit ? (visitData.amount || 0) : ''}" placeholder="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-								<div id="visitFormCalculatedAmount" style="font-size: 14px; color: #27ae60; font-weight: bold; margin-top: 5px;"></div>
-							</div>
-							
+						<!-- עובדים והוצאה -->
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
 							<div class="form-group" style="margin: 0;">
 								<label for="visitFormNumWorkers" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">👷 עובדים:</label>
-								<input type="number" id="visitFormNumWorkers" min="1" value="${isEdit ? (visitData.num_workers || 1) : 1}" onchange="calculateVisitFormCost()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+								<input type="number" id="visitFormNumWorkers" min="1" value="${isEdit ? (visitData.num_workers || 1) : 1}" onchange="calculateVisitFormCost(${isEdit})" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
 							</div>
 							
 							<div class="form-group" style="margin: 0;">
 								<label for="visitFormExpense" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💸 הוצאה:</label>
-								<input type="number" id="visitFormExpense" step="0.01" min="0" value="${isEdit ? (visitData.expense || 0) : 0}" placeholder="0" onchange="calculateVisitFormCost()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+								<input type="number" id="visitFormExpense" step="0.01" min="0" value="${isEdit ? (visitData.expense || 0) : 0}" placeholder="0" onchange="calculateVisitFormCost(${isEdit})" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+							</div>
+						</div>
+						
+						<!-- סכום -->
+						<div class="form-group" style="margin: 0;">
+							<label for="visitFormAmount" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💰 סכום:</label>
+							<input type="number" id="visitFormAmount" step="0.01" min="0" value="${isEdit ? (visitData.amount || 0) : ''}" placeholder="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+							<div style="display: flex; align-items: center; gap: 8px; margin-top: 5px;">
+								<div id="visitFormCalculatedAmount" style="font-size: 14px; color: #27ae60; font-weight: bold;"></div>
+								<button type="button" onclick="copyCalculatedToAmount()" style="background: #27ae60; color: white; border: none; border-radius: 4px; width: 28px; height: 28px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;" title="העתק לשדה סכום">⬆️</button>
 							</div>
 						</div>
 						
@@ -14555,14 +14559,14 @@
 								clientIdInput.value = preSelectedClientId;
 								
 								// חישוב עלות אוטומטי
-								calculateVisitFormCost();
+								calculateVisitFormCost(false);
 							}
 						}
 					}
 				} else {
 					// מצב עריכה - חישוב ערכים
 					calculateVisitFormDuration();
-					calculateVisitFormCost();
+					calculateVisitFormCost(true);
 				}
 			}, 100);
 		}
@@ -14617,7 +14621,7 @@
 			}
 		}
 
-		function calculateVisitFormCost() {
+		function calculateVisitFormCost(isEditMode = false) {
 			// קריאת משך זמן
 			let totalMinutes = 0;
 			const manualField = document.getElementById('visitFormDurationMinutes');
@@ -14641,10 +14645,16 @@
 					calculatedDiv.textContent = `מחושב: ${Math.round(totalCost)}₪`;
 				}
 				
-				// הזן לשדה סכום אם הוא ריק או 0
+				// במצב יצירה - עדכן תמיד. במצב עריכה - רק אם ריק
 				const amountField = document.getElementById('visitFormAmount');
-				if (amountField && (!amountField.value || amountField.value === '0' || amountField.value === '')) {
-					amountField.value = Math.round(totalCost);
+				if (amountField) {
+					if (!isEditMode) {
+						// מצב יצירה - עדכן תמיד
+						amountField.value = Math.round(totalCost);
+					} else if (!amountField.value || amountField.value === '0' || amountField.value === '') {
+						// מצב עריכה - עדכן רק אם ריק
+						amountField.value = Math.round(totalCost);
+					}
 				}
 				
 				console.log(`💰 עלות מחושבת: ${Math.round(totalCost)}₪ (${hours.toFixed(2)} שעות × ${numWorkers} עובדים + ${expense}₪ הוצאות)`);
@@ -14653,6 +14663,21 @@
 				const calculatedDiv = document.getElementById('visitFormCalculatedAmount');
 				if (calculatedDiv) {
 					calculatedDiv.textContent = '';
+				}
+			}
+		}
+		
+		// העתקת סכום מחושב לשדה סכום
+		function copyCalculatedToAmount() {
+			const calculatedDiv = document.getElementById('visitFormCalculatedAmount');
+			const amountField = document.getElementById('visitFormAmount');
+			
+			if (calculatedDiv && amountField) {
+				// חילוץ המספר מהטקסט "מחושב: 400₪"
+				const match = calculatedDiv.textContent.match(/(\d+)/);
+				if (match) {
+					amountField.value = match[1];
+					showToast('הסכום הועתק', 'success');
 				}
 			}
 		}
