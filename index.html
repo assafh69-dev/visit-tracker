@@ -401,6 +401,30 @@
 				text-align: center;
 			}
 		}
+		
+		/***********************/
+		
+		.filter-quick-btn {
+			background: #e3f2fd;
+			color: #1976d2;
+			border: 1px solid #90caf9;
+			padding: 6px 12px;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 12px;
+			transition: all 0.2s ease;
+		}
+
+		.filter-quick-btn:hover {
+			background: #bbdefb;
+		}
+
+		.filter-quick-btn.active {
+			background: #1976d2;
+			color: white;
+		}
+		
+		
 		/***********************/
 
 		/* Submit Button מעוצב */
@@ -2099,12 +2123,27 @@
 			
 			.profile-btn-mobile {
 				padding: 8px 12px;
-				background: #007bff !important;
-				color: white !important;
-				border: none;
+				background: white !important;
+				color: #007bff !important;
+				border: 2px solid #007bff !important;
 				border-radius: 5px;
 				font-size: 16px;
 				cursor: pointer;
+			}
+			
+			.calendar-btn-mobile {
+				padding: 8px 12px;
+				background: #f8f9fa;
+				color: #333;
+				border: 1px solid #ddd;
+				border-radius: 5px;
+				font-size: 16px;
+				cursor: pointer;
+			}
+			
+			.calendar-btn-mobile:active {
+				transform: scale(0.95);
+				background: #e9ecef;
 			}
 			
 			.active-checkbox-mobile {
@@ -2418,15 +2457,23 @@
 						<button onclick="connectToGoogleSheets()" id="connectBtn" class="connect-btn" style="padding: 8px 16px; font-size: 13px;">
 							התחבר
 						</button>
-						<button onclick="saveAllToSheets()" id="saveBtn" class="connect-btn" disabled style="padding: 8px 16px; font-size: 13px;">
-							שמור
-						</button>
-						<button onclick="loadAllFromSheets()" id="loadBtn" class="connect-btn" disabled style="padding: 8px 16px; font-size: 13px;">
-							טען
+						<button onclick="smartSync()" id="syncBtn" class="connect-btn" disabled style="padding: 8px 16px; font-size: 13px; background: #9b59b6; color: white;">
+							🔄 סנכרן
 						</button>
 						<button onclick="disconnectFromCloud()" class="connect-btn" style="padding: 8px 16px; font-size: 13px; background: #e74c3c; color: white;">
 							התנתק
 						</button>
+						<button onclick="saveAllToSheets()" id="saveBtn" class="connect-btn" disabled style="padding: 8px 16px; font-size: 13px;">
+							שמור ❗
+						</button>
+						<button onclick="loadAllFromSheets()" id="loadBtn" class="connect-btn" disabled style="padding: 8px 16px; font-size: 13px;">
+							טען ❗
+						</button>
+					</div>
+					
+					<!-- Sync Status Indicator -->
+					<div id="syncIndicator" style="font-size: 12px; text-align: center; margin-top: 5px;">
+						🔄 טרם בוצע סנכרון
 					</div>
 					
 					<!-- שורה 3: סטטוס -->
@@ -2446,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3055,6 +3102,49 @@
 					<div id="backupStatus" style="margin-top: 15px; font-size: 13px; color: #666;"></div>
 				</div>
 				
+				<!-- ייצוא נתונים -->
+				<div style="background: #e3f2fd; border: 2px solid #2196f3; border-radius: 12px; padding: 20px; margin-top: 20px;">
+					<h3 style="margin: 0 0 15px 0; color: #1565c0;">📤 ייצוא נתונים</h3>
+					<p style="color: #1565c0; font-size: 14px; margin-bottom: 15px;">
+						ייצוא טיפולים לגיליון בפורמט המקורי (תואם לאקסל הישן)
+					</p>
+					<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px;">
+						<label style="font-size: 14px; color: #333;">מתאריך:</label>
+						<input type="date" id="exportFromDate" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+						<label style="font-size: 14px; color: #333;">עד תאריך:</label>
+						<input type="date" id="exportToDate" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+					</div>
+					<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+						<button onclick="exportVisitsClassic()" style="padding: 12px 20px; background: #2196f3; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+							📤 ייצוא טיפולים (מבנה קלאסי)
+						</button>
+						<button onclick="setExportDateRange('year')" style="padding: 8px 15px; background: #90caf9; color: #1565c0; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+							השנה
+						</button>
+						<button onclick="setExportDateRange('lastYear')" style="padding: 8px 15px; background: #90caf9; color: #1565c0; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+							שנה שעברה
+						</button>
+						<button onclick="setExportDateRange('all')" style="padding: 8px 15px; background: #90caf9; color: #1565c0; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+							הכל
+						</button>
+					</div>
+					<div id="exportStatus" style="margin-top: 15px; font-size: 13px; color: #666;"></div>
+				</div>
+				
+				<!-- דוחות -->
+				<div style="background: #f3e5f5; border: 2px solid #9c27b0; border-radius: 12px; padding: 20px; margin-top: 20px;">
+					<h3 style="margin: 0 0 15px 0; color: #7b1fa2;">📊 דוחות וסטטיסטיקות</h3>
+					<p style="color: #7b1fa2; font-size: 14px; margin-bottom: 15px;">
+						צפייה בנתונים מסוכמים לפי תקופות
+					</p>
+					<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+						<button onclick="showYearlyIncomeReport()" style="padding: 12px 20px; background: #9c27b0; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+							📈 סיכום הכנסות שנתי
+						</button>
+					</div>
+				</div>
+				
+				
 				<!-- ניהול נתונים -->
 				<div class="form-section">
 					<h3>🗂️ ניהול נתונים</h3>
@@ -3114,112 +3204,97 @@
 					</div>
 				</div>
 				
-				<!-- Tasks Filters -->
-				<div class="filters-panel" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-					<div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
-						<!-- Status Filter -->
-						<div style="flex: 1; min-width: 150px;">
-							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">סטטוס:</label>
-							<select id="filterTaskStatus" onchange="displayTasks()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-								<option value="">הכל</option>
-								<option value="pending">ממתין</option>
-								<option value="in_progress">בתהליך</option>
-								<option value="completed">הושלם</option>
-								<option value="cancelled">בוטל</option>
-							</select>
-						</div>
-						
-						<!-- Scope Filter -->
-						<div style="flex: 1; min-width: 150px;">
-							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">היקף:</label>
-							<select id="filterTaskScope" onchange="displayTasks()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-								<option value="">הכל</option>
-								<option value="client">👤 ללקוח</option>
-								<option value="all">👥 גורפת</option>
-								<option value="personal">🔧 עצמית</option>
-							</select>
-						</div>
-
-						<!-- Type Filter -->
-						<div style="flex: 1; min-width: 150px;">
-							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">נושא:</label>
-							<select id="filterTaskType" onchange="displayTasks()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-								<option value="">הכל</option>
-								<option value="pest_control">🪲 הדברה</option>
-								<option value="planting">🌱 שתילה</option>
-								<option value="tree_trimming">✂️ גיזום עצים</option>
-								<option value="upgrade">🡠 שדרוג גינה</option>
-								<option value="repair">🔧 תיקון</option>
-								<option value="other">📦 אחר</option>
-							</select>
-						</div>
-						
-						<!-- Client Filter -->
-						<div style="flex: 1; min-width: 200px;">
-							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">לקוח:</label>
-							<input type="text" id="filterTaskClient" placeholder="🔍 חיפוש לקוח..." 
-								   onkeyup="displayTasks()" 
-								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-						</div>
-						
-						<!-- Date Range -->
-						<div style="flex: 1; min-width: 150px;">
-							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">מתאריך:</label>
-							<input type="date" id="filterTaskDateFrom" onchange="displayTasks()" 
-								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-						</div>
-						
-						<div style="flex: 1; min-width: 150px;">
-							<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">עד תאריך:</label>
-							<input type="date" id="filterTaskDateTo" onchange="displayTasks()" 
-								   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-						</div>
-						
-						<!-- Clear Filters -->
-						<div style="align-self: flex-end;">
-							<button onclick="clearTaskFilters()" style="padding: 8px 15px; background: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer;">
-								🗑️ נקה
-							</button>
+				<!-- Tasks Filter Panel - Collapsible -->
+				<div class="filters-container">
+					<div class="filter-header" onclick="toggleFilterPanel('tasksFilterContent')">
+						<h3>🔍 סינון משימות</h3>
+						<button type="button" class="filter-toggle-btn" onclick="event.stopPropagation(); toggleFilterPanel('tasksFilterContent')">🔼 כווץ</button>
+					</div>
+					<div id="tasksFilterContent" class="filter-content">
+						<div class="filter-panel-unified" style="border: none; margin: 0; border-radius: 0 0 8px 8px;">
+							<div class="filter-row-unified">
+								<div class="filter-group-unified medium">
+									<label>סטטוס:</label>
+									<select id="filterTaskStatus" onchange="displayTasks()">
+										<option value="">הכל</option>
+										<option value="pending">ממתין</option>
+										<option value="in_progress">בתהליך</option>
+										<option value="completed">הושלם</option>
+										<option value="cancelled">בוטל</option>
+									</select>
+								</div>
+								<div class="filter-group-unified medium">
+									<label>היקף:</label>
+									<select id="filterTaskScope" onchange="displayTasks()">
+										<option value="">הכל</option>
+										<option value="client">👤 ללקוח</option>
+										<option value="all">👥 גורפת</option>
+										<option value="personal">🔧 עצמית</option>
+									</select>
+								</div>
+								<div class="filter-group-unified medium">
+									<label>סוג משימה:</label>
+									<select id="filterTaskType" onchange="displayTasks()">
+										<option value="">הכל</option>
+										<option value="pest_control">🪲 הדברה</option>
+										<option value="planting">🌱 שתילה</option>
+										<option value="tree_trimming">✂️ גיזום עצים</option>
+										<option value="upgrade">🏡 שדרוג גינה</option>
+										<option value="repair">🔧 תיקון</option>
+										<option value="irrigation">💧 השקייה</option>
+										<option value="other">📦 אחר</option>
+									</select>
+								</div>
+								<div class="filter-group-unified">
+									<label>חיפוש לקוח:</label>
+									<input type="text" id="filterTaskClient" placeholder="🔍 חיפוש לקוח..." onkeyup="displayTasks()">
+								</div>
+							</div>
+							<div class="filter-row-unified">
+								<div class="filter-group-unified compact">
+									<label>מתאריך:</label>
+									<input type="date" id="filterTaskDateFrom" onchange="displayTasks()">
+								</div>
+								<div class="filter-group-unified compact">
+									<label>עד תאריך:</label>
+									<input type="date" id="filterTaskDateTo" onchange="displayTasks()">
+								</div>
+								<div class="filter-group-unified small">
+									<button onclick="clearTaskFilters()" class="filter-clear-btn">🗑️ נקה סינון</button>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
 				
-				<!-- Tasks Stats -->
-				<div id="tasksStats" style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
-					<div style="background: #fff3cd; padding: 10px 20px; border-radius: 8px; border-right: 4px solid #ffc107;">
-						<div style="font-size: 12px; color: #856404;">ממתינות</div>
-						<div style="font-size: 24px; font-weight: bold; color: #856404;" id="statsPending">0</div>
-					</div>
-					<div style="background: #cce5ff; padding: 10px 20px; border-radius: 8px; border-right: 4px solid #007bff;">
-						<div style="font-size: 12px; color: #004085;">בתהליך</div>
-						<div style="font-size: 24px; font-weight: bold; color: #004085;" id="statsInProgress">0</div>
-					</div>
-					<div style="background: #d4edda; padding: 10px 20px; border-radius: 8px; border-right: 4px solid #28a745;">
-						<div style="font-size: 12px; color: #155724;">הושלמו</div>
-						<div style="font-size: 24px; font-weight: bold; color: #155724;" id="statsCompleted">0</div>
-					</div>
+				<!-- Tasks Stats Bar -->
+				<div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; border: 1px solid #e0e0e0;">
+					<span style="font-size: 13px; color: #333;">📋 מוצגות: <strong style="color: #666;" id="tasksCount">0</strong></span>
+					<span style="font-size: 13px; color: #333;">⏳ ממתינות: <strong style="color: #f39c12;" id="statsPending">0</strong></span>
+					<span style="font-size: 13px; color: #333;">🔄 בתהליך: <strong style="color: #3498db;" id="statsInProgress">0</strong></span>
+					<span style="font-size: 13px; color: #333;">✅ הושלמו: <strong style="color: #27ae60;" id="statsCompleted">0</strong></span>
 				</div>
 				
 				<!-- Tasks Table -->
-				<div class="table-container" style="overflow-x: auto;">
-					<table id="tasksTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-						<thead style="background: #9b59b6; color: white;">
-							<tr>
-								<th style="padding: 12px; text-align: right;">סטטוס</th>
-								<th style="padding: 12px; text-align: right;">היקף</th>
-								<th style="padding: 12px; text-align: right;">נושא</th>
-								<th style="padding: 12px; text-align: right;">לקוח</th>
-								<th style="padding: 12px; text-align: right;">תיאור</th>
-								<th style="padding: 12px; text-align: right;">תאריך יעד</th>
-								<th style="padding: 12px; text-align: right;">עלות משוערת</th>
-								<th style="padding: 12px; text-align: center;">פעולות</th>
-							</tr>
-						</thead>
-						<tbody id="tasksTableBody">
-							<!-- Will be populated by displayTasks() -->
-						</tbody>
-					</table>
-				</div>
+					<div class="table-container" style="overflow-x: auto;">
+						<table id="tasksTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+							<thead style="background: #9b59b6; color: white;">
+								<tr>
+									<th style="padding: 12px; text-align: right;">סטטוס</th>
+									<th style="padding: 12px; text-align: right;">היקף</th>
+									<th style="padding: 12px; text-align: right;">סוג</th>
+									<th style="padding: 12px; text-align: right;">לקוח</th>
+									<th style="padding: 12px; text-align: right;">תיאור</th>
+									<th style="padding: 12px; text-align: right;">תאריך יעד</th>
+									<th style="padding: 12px; text-align: right;">עלות משוערת</th>
+									<th style="padding: 12px; text-align: center;">פעולות</th>
+								</tr>
+							</thead>
+							<tbody id="tasksTableBody">
+								<!-- Will be populated by displayTasks() -->
+							</tbody>
+						</table>
+					</div>
 			</section>
 			
 			<!-- Expenses Section -->
@@ -3231,46 +3306,68 @@
 					</button>
 				</div>
 				
-				<!-- Expense Stats -->
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
-					<div style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
-						<div style="font-size: 24px; font-weight: bold;" id="totalExpensesAmount">0 ₪</div>
-						<div style="font-size: 12px; opacity: 0.9;">סה"כ הוצאות</div>
+				<!-- Expenses Filter Panel - Collapsible -->
+				<div class="filters-container">
+					<div class="filter-header" onclick="toggleFilterPanel('expensesFilterContent')">
+						<h3>🔍 סינון הוצאות</h3>
+						<button type="button" class="filter-toggle-btn" onclick="event.stopPropagation(); toggleFilterPanel('expensesFilterContent')">🔼 כווץ</button>
 					</div>
-					<div style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
-						<div style="font-size: 24px; font-weight: bold;" id="generalExpensesAmount">0 ₪</div>
-						<div style="font-size: 12px; opacity: 0.9;">הוצאות כלליות</div>
-					</div>
-					<div style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
-						<div style="font-size: 24px; font-weight: bold;" id="clientExpensesAmount">0 ₪</div>
-						<div style="font-size: 12px; opacity: 0.9;">הוצאות לקוחות</div>
-					</div>
-					<div style="background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
-						<div style="font-size: 24px; font-weight: bold;" id="expensesCount">0</div>
-						<div style="font-size: 12px; opacity: 0.9;">מספר הוצאות</div>
+					<div id="expensesFilterContent" class="filter-content">
+						<div class="filter-panel-unified" style="border: none; margin: 0; border-radius: 0 0 8px 8px;">
+							<div class="filter-row-unified">
+								<div class="filter-group-unified">
+									<label>חיפוש בתיאור:</label>
+									<input type="text" id="expenseSearchText" onkeyup="displayExpenses()" placeholder="🔍 חיפוש בתיאור...">
+								</div>
+								<div class="filter-group-unified">
+									<label>חיפוש שם/עסק:</label>
+									<input type="text" id="expenseSearchVendor" onkeyup="displayExpenses()" placeholder="🏪 חיפוש שם/עסק...">
+								</div>
+							</div>
+							<div class="filter-row-unified">
+								<div class="filter-group-unified medium">
+									<label>סוג:</label>
+									<select id="expenseTypeFilter" onchange="updateExpenseCategoryFilter(); displayExpenses()">
+										<option value="">כל הסוגים</option>
+										<option value="general">📦 כללי</option>
+										<option value="client">👤 לקוח</option>
+										<option value="vehicle">🚗 רכב</option>
+										<option value="worker">👷 עובדים</option>
+									</select>
+								</div>
+								<div class="filter-group-unified medium">
+									<label>קטגוריה:</label>
+									<select id="expenseCategoryFilter" onchange="displayExpenses()">
+										<option value="">כל הקטגוריות</option>
+									</select>
+								</div>
+								<div class="filter-group-unified compact">
+									<label>חודש:</label>
+									<input type="month" id="expenseMonthFilter" onchange="displayExpenses()">
+								</div>
+							</div>
+							<div class="filter-row-unified" style="margin-top: 10px;">
+								<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+									<span style="font-size: 12px; color: #666;">תקופה:</span>
+									<button onclick="setExpenseDateFilter('today')" class="filter-quick-btn">היום</button>
+									<button onclick="setExpenseDateFilter('week')" class="filter-quick-btn">השבוע</button>
+									<button onclick="setExpenseDateFilter('month')" class="filter-quick-btn">החודש</button>
+									<button onclick="setExpenseDateFilter('year')" class="filter-quick-btn">השנה</button>
+									<button onclick="clearExpenseFilters()" class="filter-clear-btn">🗑️ נקה הכל</button>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
-				
-				<!-- Filters -->
-				<div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-					<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-						<select id="expenseTypeFilter" onchange="displayExpenses()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
-							<option value="">כל הסוגים</option>
-							<option value="general">כללי</option>
-							<option value="client">לקוח</option>
-						</select>
-						<select id="expenseCategoryFilter" onchange="displayExpenses()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
-							<option value="">כל הקטגוריות</option>
-							<option value="fuel">⛽ דלק ושמנים</option>
-							<option value="equipment">🔧 ציוד וכלים</option>
-							<option value="materials">🧪 חומרים</option>
-							<option value="vehicle">🚗 רכב</option>
-							<option value="tools">🔨 כלי עבודה</option>
-							<option value="parts">⚙️ חלקי חילוף</option>
-							<option value="other">📦 אחר</option>
-						</select>
-						<input type="month" id="expenseMonthFilter" onchange="displayExpenses()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
-					</div>
+
+				<!-- Expense Stats Bar -->
+				<div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; border: 1px solid #e0e0e0;">
+					<span style="font-size: 13px; color: #333;">📋 מוצגות: <strong style="color: #666;" id="expensesCount">0</strong></span>
+					<span style="font-size: 13px; color: #333;">💰 סה"כ: <strong style="color: #e74c3c;" id="totalExpensesAmount">0 ₪</strong></span>
+					<span style="font-size: 13px; color: #333;">👷 עובדים: <strong style="color: #9b59b6;" id="workerExpensesAmount">0 ₪</strong></span>
+					<span style="font-size: 13px; color: #333;">🚗 רכב: <strong style="color: #3498db;" id="vehicleExpensesAmount">0 ₪</strong></span>
+					<span style="font-size: 13px; color: #333;">📦 כללי: <strong style="color: #27ae60;" id="generalExpensesAmount">0 ₪</strong></span>
+					<span style="font-size: 13px; color: #333;">👤 לקוחות: <strong style="color: #f39c12;" id="clientExpensesAmount">0 ₪</strong></span>
 				</div>
 				
 				<!-- Expenses List -->
@@ -3333,6 +3430,17 @@
 		let paymentVisitLinks = [];
 		let tasks = [];
 		let expenses = [];
+		
+		// Sync tracking variables
+		let lastSyncTime = localStorage.getItem('lastSyncTime') || null;
+		let pendingChanges = {
+			locations: new Set(),
+			visits: new Set(),
+			receipts: new Set(),
+			payments: new Set(),
+			tasks: new Set(),
+			expenses: new Set()
+		};
         let currentFilter = 'today';
 		
 		// הגדרות עלות
@@ -3401,6 +3509,8 @@
 						document.getElementById('statusText').classList.add('connected');
 						document.getElementById('saveBtn').disabled = false;
 						document.getElementById('loadBtn').disabled = false;
+						document.getElementById('syncBtn').disabled = false;
+						updateSyncIndicator();
 						
 						showToast('התחברת בהצלחה ל-Google Sheets!', 'success');
 						
@@ -3586,6 +3696,9 @@
 				
 				// Update all UI components
 				updateAllUIComponents();
+
+				// Save to localStorage after loading from cloud
+				saveToLocalStorage();
 				
 				// Success feedback
 				hideLoading();
@@ -3901,6 +4014,16 @@
 				savePromises.push(savePaymentVisitLinksBatch(paymentVisitLinks));
 			}
 			
+			if (tasks.length > 0) {
+				showToast(`שומר ${tasks.length} משימות בבת אחת...`, 'info', 2000);
+				savePromises.push(saveTasksToSheets());
+			}
+			
+			if (expenses.length > 0) {
+				showToast(`שומר ${expenses.length} הוצאות בבת אחת...`, 'info', 2000);
+				savePromises.push(saveExpensesBatch(expenses));
+			}
+			
 			// המתנה לכל השמירות במקביל
 			await Promise.all(savePromises);
 			
@@ -4019,12 +4142,13 @@
 					receiptData.amount,
 					receiptData.payment_type || '',
 					receiptData.tax_code || '',
-					receiptData.notes || ''
+					receiptData.notes || '',
+					receiptData.updated_at || new Date().toISOString()
 				]];
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.RECEIPTS}!A:J`,
+					range: `${SHEETS.RECEIPTS}!A:K`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: values }
 				});
@@ -4046,7 +4170,7 @@
 				localStorage.setItem('payment_links_data', JSON.stringify(paymentVisitLinks));
 				localStorage.setItem('incomes_data', JSON.stringify(incomes));
 				localStorage.setItem('tasks_data', JSON.stringify(tasks));
-				localStorage.setItem('expenses', JSON.stringify(expenses));
+				localStorage.setItem('expenses_data', JSON.stringify(expenses));
 				
 				console.log('Data saved to local storage');
 			} catch (error) {
@@ -4401,7 +4525,11 @@
 			planningClients.sort((a, b) => {
 				switch (currentPlanningView) {
 					case 'daily':
-						// מיון לפי שעה מועדפת אם קיימת, אחרת לפי שם
+						// קודם מי שמתוכנן להיום (daysDiff === 0), אחר כך מאחרים (daysDiff < 0)
+						const aIsToday = a.daysDiff === 0 ? 0 : 1;
+						const bIsToday = b.daysDiff === 0 ? 0 : 1;
+						if (aIsToday !== bIsToday) return aIsToday - bIsToday;
+						// בתוך אותה קבוצה - לפי שם
 						return (a.name || '').localeCompare(b.name || '');
 						
 					case 'weekly':
@@ -4467,14 +4595,20 @@
 			}
 			
 			if (planningClients.length === 0) {
+				// בתצוגה יומית - עדיין צריך לבדוק אם יש מאחרים
+				if (currentPlanningView === 'daily') {
+					renderRegularPlanningList();
+					return;
+				}
+				
+				// בתצוגה שבועית - עדיין צריך לבדוק אם יש מאחרים
+				if (currentPlanningView === 'weekly' || currentPlanningView === 'next_week') {
+					renderWeeklyPlanningByDays();
+					return;
+				}
+				
 				let emptyMessage = '';
 				switch (currentPlanningView) {
-					case 'daily':
-						emptyMessage = '<h3>😊 אין לקוחות מתוכננים להיום</h3><p>כל הטיפולים מעודכנים!</p>';
-						break;
-					case 'weekly':
-						emptyMessage = '<h3>📅 אין לקוחות מתוכננים השבוע</h3><p>תכנון נקי לשבוע הקרוב!</p>';
-						break;
 					case 'overdue':
 						emptyMessage = '<h3>✅ אין לקוחות מאחרים</h3><p>כל הטיפולים במועדם!</p>';
 						break;
@@ -4745,6 +4879,9 @@
 		function renderClientRow(client) {
 			const nextVisitFormatted = formatDate(client.next_visit);
 			
+			// בדיקה אם הלקוח מאחר
+			const isOverdue = client.daysDiff < 0 || client.daysOverdue > 0;
+
 			// Find last treatment date for this client
 			const clientVisits = visits.filter(visit => visit.location_id === client.ID);
 			const lastTreatmentDate = clientVisits.length > 0 
@@ -4784,7 +4921,7 @@
 					<div class="planning-row-main">
 						<!-- שם הלקוח - גדול ובולט -->
 						<div class="planning-client-header">
-							<div class="planning-client-name-large">👤 ${client.name}</div>
+							<div class="planning-client-name-large" style="${isOverdue ? 'color: #e74c3c;' : ''}">👤 ${client.name}</div>
 						</div>
 						
 						<!-- תאריכים - גדולים ובולטים -->
@@ -4810,30 +4947,33 @@
 							}
 						</div>
 
-						<!-- כפתורי פעולה -->
+						<!-- שורה עליונה: פרופיל, פעיל, התחל טיפול -->
 						<div class="planning-actions-row">
-							<button class="week-btn-mobile" onclick="setNextAllowedDayThisWeek('${client.ID}', '${client.allowed_day}')" title="היום הקרוב">
-								⏬
-							</button>
-							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע קרוב">
-								1W+
-							</button>
-							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 2)" title="שבועיים">
-								2W+
-							</button>
 							<button class="profile-btn-mobile" onclick="showClientProfile('${client.ID}')" title="פרופיל">
 								👤
 							</button>
 							<label class="active-checkbox-mobile" title="פעיל">
 								<input type="checkbox" ${client.active === '1' ? 'checked' : ''} onchange="toggleClientActive('${client.ID}', this.checked ? '1' : '0')">
 							</label>
-						</div>
-
-						<!-- בחירת תאריך והתחלה -->
-						<div class="planning-date-row">
-							<input type="date" class="planning-date-input-mobile" value="" onchange="updateClientNextVisit('${client.ID}', this.value)" id="dateInput_${client.ID}">
 							<button class="start-treatment-btn-mobile" onclick="startTreatment('${client.ID}')" title="התחל טיפול">
 								▶️
+							</button>
+						</div>
+
+						<!-- שורה תחתונה: כפתורי תאריך + לוח שנה -->
+						<div class="planning-date-row">
+							<button class="week-btn-mobile" onclick="setNextAllowedDayThisWeek('${client.ID}', '${client.allowed_day}')" title="היום הקרוב בשבוע">
+								⏬
+							</button>
+							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 1)" title="שבוע הבא">
+								1W+
+							</button>
+							<button class="week-btn-mobile" onclick="setNextAllowedDay('${client.ID}', '${client.allowed_day}', 2)" title="עוד שבועיים">
+								2W+
+							</button>
+							<input type="date" id="dateInput_${client.ID}" style="display:none;" onchange="updateClientNextVisit('${client.ID}', this.value)">
+							<button class="calendar-btn-mobile" onclick="document.getElementById('dateInput_${client.ID}').showPicker()" title="בחר תאריך">
+								📅
 							</button>
 						</div>
 					</div>
@@ -4887,7 +5027,7 @@
 		function completePlanningVisit(clientId) {
 			showSection('visit');
 			document.getElementById('locationSelect').value = clientId;
-			document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
+			document.getElementById('visitDate').value = getLocalDateString();
 			
 			const client = locations.find(loc => loc.ID === clientId);
 			if (client && client.scheduled_time) {
@@ -4906,7 +5046,7 @@
 				const currentNextVisit = new Date(client.next_visit);
 				const postponedDate = new Date(currentNextVisit.getTime() + (parseInt(weeks) * 7 * 24 * 60 * 60 * 1000));
 				
-				client.next_visit = postponedDate.toISOString().split('T')[0];
+				client.next_visit = getLocalDateString(postponedDate);
 				client.temp_addition = 0;
 				
 				saveToLocalStorage();
@@ -4962,7 +5102,7 @@
 		function startImmediateVisit(clientId) {
 			showSection('visit');
 			document.getElementById('locationSelect').value = clientId;
-			document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
+			document.getElementById('visitDate').value = getLocalDateString();
 			document.getElementById('visitTime').value = new Date().toTimeString().slice(0,5);
 		}
 
@@ -5272,7 +5412,7 @@
 					</td>
 					<td>${location.full_address}</td>
 					<td>
-						<button class="action-btn" onclick="event.stopPropagation(); showClientProfile('${location.ID}')" title="פרופיל" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 10px;">👤</button>
+						<button class="profile-btn-mobile" onclick="event.stopPropagation(); showClientProfile('${location.ID}')" title="פרופיל">👤</button>
 						<button class="action-btn edit-btn" onclick="event.stopPropagation(); editLocation('${location.ID}')">✏️</button>
 						<button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteLocation('${location.ID}')">🗑️</button>
 					</td>
@@ -5363,8 +5503,7 @@
             }
         }
 
-        		
-		
+	
 		function postponeVisit(locationId) {
 			const location = locations.find(g => g.ID == locationId);
 			if (location) {
@@ -5372,8 +5511,7 @@
 				if (weeks && !isNaN(weeks)) {
 					const currentNext = new Date(location.next_visit);
 					const newNext = new Date(currentNext.getTime() + (parseInt(weeks) * 7 * 24 * 60 * 60 * 1000));
-					location.next_visit= newNext.toISOString().split('T')[0];
-
+					location.next_visit = `${newNext.getFullYear()}-${String(newNext.getMonth() + 1).padStart(2, '0')}-${String(newNext.getDate()).padStart(2, '0')}`;
 					loadPlanningData();
 					showSuccess(`טיפול נדחה ב-${weeks} שבועות`);
 				}
@@ -5466,7 +5604,7 @@
 			showEditModal(modalHTML);
 			
 			// Set default date
-			document.getElementById('locationNextVisit').value = new Date().toISOString().split('T')[0];
+			document.getElementById('locationNextVisit').value = getLocalDateString();
 		}
 
         async function handleLocationSubmit(event) {
@@ -5486,9 +5624,10 @@
 				base_amount: parseFloat(document.getElementById('locationAmount').value) || 0,
 				active: document.getElementById('locationActive').value,
 				notes: document.getElementById('locationNotes').value,
-				client_requests: document.getElementById('locationClientRequests').value || '', // שדה חדש
+				client_requests: document.getElementById('locationClientRequests').value || '',
 				last_visit: '',
-				next_visit: document.getElementById('locationNextVisit').value
+				next_visit: document.getElementById('locationNextVisit').value,
+				updated_at: new Date().toISOString()
 			};
            
 		    // בדיקת כפילויות גם לפי ID וגם לפי כתובת
@@ -6151,6 +6290,12 @@
 			
 			console.log(`✅ editLocation second: ('${locationId}')`);
 			
+			// Calculate last treatment date from actual visits
+			const clientVisits = visits.filter(visit => visit.location_id === locationId);
+			const lastTreatmentDate = clientVisits.length > 0 
+				? clientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
+				: location.last_visit || '';
+			
 			// צור חלון עריכה
 			const editModalHTML = `
 				<div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90vw; max-height: 80vh; overflow-y: auto; position: relative;">
@@ -6221,7 +6366,7 @@
 						
 						<div class="form-group">
 							<label>טיפול אחרון:</label>
-							<input type="date" id="editLocationLastVisit" value="${location.last_visit || ''}" readonly style="background: #f8f9fa;">
+							<input type="date" id="editLocationLastVisit" value="${lastTreatmentDate}" readonly style="background: #f8f9fa;">
 						</div>
 
 						<div class="form-group">
@@ -6336,7 +6481,7 @@
 			// הגדרות ראשוניות
 			setTimeout(() => {
 				// הגדרת תאריך היום
-				document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
+				document.getElementById('receiptDate').value = getLocalDateString();
 				
 				// טעינת לקוחות לבחירה
 				const receiptLocation = document.getElementById('receiptLocation');
@@ -6371,7 +6516,8 @@
 					location_name: location.name,
 					amount: parseFloat(document.getElementById('receiptAmount').value),
 					payment_type: document.getElementById('receiptPaymentType').value,
-					notes: document.getElementById('receiptNotes').value || ''
+					notes: document.getElementById('receiptNotes').value || '',
+					updated_at: new Date().toISOString()
 				};
 				
 				// בדיקת תקינות
@@ -6425,6 +6571,11 @@
        function closeModal(modalId) {
            document.getElementById(modalId).style.display = 'none';
        }
+
+		// Get today's date in local timezone as YYYY-MM-DD string
+		function getLocalDateString(date = new Date()) {
+			return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+		}
 
        function formatDate(dateString) {
            const date = new Date(dateString);
@@ -6734,7 +6885,7 @@
 				const response = await gapi.client.sheets.spreadsheets.create({
 					resource: {
 						properties: {
-							title: `import_table_${new Date().toISOString().split('T')[0]}`
+							title: `import_table_${getLocalDateString()}`
 						},
 						sheets: [{
 						properties: { title: 'Locations' },
@@ -7157,8 +7308,8 @@
 			const dateToInput = document.getElementById('filterDateTo');
 			
 			if (dateFromInput && dateToInput) {
-				dateFromInput.value = lastMonth.toISOString().split('T')[0];
-				dateToInput.value = today.toISOString().split('T')[0];
+				dateFromInput.value = getLocalDateString(lastMonth);
+				dateToInput.value = getLocalDateString(today);
 			}
 		}
 
@@ -7349,13 +7500,26 @@
 			}
 		}
 
-		function deleteVisit(visitId) {
+		async function deleteVisit(visitId) {
 			console.log(`✅ deleteVisit ('${visitId}') `);
 			if (confirm('האם אתה בטוח שברצונך למחוק את הטיפול?')) {
+				// שמור את location_id לפני המחיקה
+				const visitToDelete = visits.find(v => v.ID == visitId);
+				const locationId = visitToDelete?.location_id;
+				
 				visits = visits.filter(visit => visit.ID != visitId);
 				applyVisitFilters(); // רענן תצוגה
 				saveToLocalStorage();
-				showToast('טיפול נמחק בהצלחה!', 'success');
+				
+				// עדכון תאריכי טיפול של הלקוח
+			if (locationId) {
+				await updateSingleLocationTreatmentDates(locationId);
+			}
+			
+			// רענון טיפולים של היום
+			loadTodayTreatments();
+			
+			showToast('טיפול נמחק בהצלחה!', 'success');
 			}
 		}
 	   
@@ -7569,7 +7733,7 @@
 			
 			try {
 				// בדיקת כותרות בכל גיליון - כולל החדשים
-				const sheetsToCheck = ['Locations', 'Visits', 'Receipts', 'TelegramVisits', 'TelegramIncomes', 'Payments', 'PaymentVisitLink', 'Tasks'];
+				const sheetsToCheck = ['Locations', 'Visits', 'Receipts', 'TelegramVisits', 'TelegramIncomes', 'Payments', 'PaymentVisitLink', 'Tasks', 'Expenses'];
 				
 				for (const sheetName of sheetsToCheck) {
 					try {
@@ -7599,15 +7763,16 @@
 		// פונקציה חדשה להוספת כותרות לגיליון ספציפי
 		async function addHeadersToSheet(sheetName) {
 			const headersMap = {
-				'Locations': ['ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 'client_requests'],
-				'Visits': ['ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 'duration_minutes', 'num_workers', 'start_time', 'end_time', 'amount', 'paid', 'expense', 'notes'],
-				'Receipts': ['ID', 'book_number', 'receipt_number', 'date', 'location_id', 'location_name', 'amount', 'payment_type', 'notes', 'payment_id'],
+				'Locations': ['ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 'client_requests', 'updated_at'],
+				'Visits': ['ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 'duration_minutes', 'num_workers', 'start_time', 'end_time', 'amount', 'paid', 'expense', 'notes', 'updated_at'],
+				'Receipts': ['ID', 'book_number', 'receipt_number', 'date', 'location_id', 'location_name', 'amount', 'payment_type', 'notes', 'payment_id', 'updated_at'],
 				'TelegramVisits': ['message_id', 'date', 'text', 'processed', 'location_id', 'visit_id'],
 				'TelegramIncomes': ['message_id', 'date', 'text', 'processed', 'receipt_id'],
-				'Payments': ['ID', 'date', 'time', 'amount', 'payment_method', 'source_type', 'client_id', 'client_name', 'notes', 'status', 'created_at', 'reference', 'check_date', 'bank_account', 'payment_details', 'receipt_id'],
+				'Payments': ['ID', 'date', 'time', 'amount', 'payment_method', 'source_type', 'client_id', 'client_name', 'notes', 'status', 'created_at', 'reference', 'check_date', 'bank_account', 'payment_details', 'receipt_id', 'updated_at'],
 				'PaymentVisitLink': ['ID', 'payment_id', 'visit_id', 'amount_allocated'],
-				'Tasks': ['ID', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date'],
-				'Expenses': ['ID', 'date', 'amount', 'description', 'category', 'expense_type', 'client_id', 'client_name', 'visit_id', 'vendor_name', 'vendor_type', 'payment_method', 'receipt_number', 'notes']
+				'Tasks': ['ID', 'scope', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date', 'updated_at'],
+				'Expenses': ['ID', 'date', 'amount', 'description', 'category', 'expense_type', 'client_id', 'client_name', 'visit_id', 'vendor_name', 'vendor_type', 'payment_method', 'receipt_number', 'notes', 'updated_at'],
+				'ExportVisitsClassic': ['year', 'month', 'day', 'customer', 'full_address', 'contact_person', 'treatment', 'date', 'work_done', 'duration', 'amount', 'paid', 'expense', 'notes', 'export_date']
 			};
 			
 			const headers = headersMap[sheetName];
@@ -7669,6 +7834,7 @@
 				await addHeadersToSheet('TelegramIncomes');    
 				await addHeadersToSheet('Tasks');
 				await addHeadersToSheet('Expenses');
+				await addHeadersToSheet('ExportVisitsClassic');
 
 				// הוספת כותרות ל-SystemSettings
 				await gapi.client.sheets.spreadsheets.values.update({
@@ -8418,8 +8584,13 @@
 				loadReceiptsTable();
 				loadFilterOptions();
 				
-				// שמור לעלנן
-				await saveAllToSheetsOptimized();
+				// עדכון תאריכי טיפול
+				if (importedCount > 0) {
+					await calculateTreatmentDates();
+				}
+				
+				// שמור לענן
+				await saveAllToSheets();
 				
 				hideLoading();
 				closeAnyModal();
@@ -8487,42 +8658,388 @@
 		}
 	   
 	   
-	   async function saveAllToSheetsOptimized() {
+	   // ========== SYNC HELPER FUNCTIONS ==========
+		
+		// Mark record as updated (call this whenever a record changes)
+		function markAsUpdated(record) {
+			record.updated_at = new Date().toISOString();
+			return record;
+		}
+		
+		// Track pending change for sync
+		function trackChange(type, id) {
+			if (pendingChanges[type]) {
+				pendingChanges[type].add(id);
+				updateSyncIndicator();
+			}
+		}
+		
+		// Clear pending changes after successful sync
+		function clearPendingChanges() {
+			Object.keys(pendingChanges).forEach(key => {
+				pendingChanges[key].clear();
+			});
+			updateSyncIndicator();
+		}
+		
+		// Get total pending changes count
+		function getPendingChangesCount() {
+			return Object.values(pendingChanges).reduce((sum, set) => sum + set.size, 0);
+		}
+		
+		// Update sync status indicator
+		function updateSyncIndicator() {
+			const indicator = document.getElementById('syncIndicator');
+			if (!indicator) return;
+			
+			const pendingCount = getPendingChangesCount();
+			const lastSync = localStorage.getItem('lastSyncTime');
+			
+			let html = '';
+			if (pendingCount > 0) {
+				html = `<span style="color: #f39c12;">⚠️ ${pendingCount} שינויים ממתינים</span>`;
+			} else if (lastSync) {
+				const date = new Date(lastSync);
+				html = `<span style="color: #27ae60;">✅ סונכרן: ${date.toLocaleString('he-IL')}</span>`;
+			} else {
+				html = `<span style="color: #95a5a6;">🔄 טרם בוצע סנכרון</span>`;
+			}
+			indicator.innerHTML = html;
+		}
+		
+		// Compare two records by updated_at
+		function isNewer(record1, record2) {
+			const date1 = record1.updated_at ? new Date(record1.updated_at) : new Date(0);
+			const date2 = record2.updated_at ? new Date(record2.updated_at) : new Date(0);
+			return date1 > date2;
+		}
+		
+		// Merge two arrays by ID, keeping newer records
+		function mergeByIdAndDate(localArray, cloudArray) {
+			const merged = new Map();
+			const stats = { uploaded: 0, downloaded: 0, unchanged: 0 };
+			
+			// Add all cloud records to map
+			cloudArray.forEach(record => {
+				if (record.ID) {
+					merged.set(record.ID, { source: 'cloud', record });
+				}
+			});
+			
+			// Process local records
+			localArray.forEach(localRecord => {
+				if (!localRecord.ID) return;
+				
+				const existing = merged.get(localRecord.ID);
+				
+				if (!existing) {
+					// Only in local - will be uploaded
+					merged.set(localRecord.ID, { source: 'local', record: localRecord });
+					stats.uploaded++;
+				} else {
+					// Exists in both - compare dates
+					if (isNewer(localRecord, existing.record)) {
+						merged.set(localRecord.ID, { source: 'local', record: localRecord });
+						stats.uploaded++;
+					} else if (isNewer(existing.record, localRecord)) {
+						stats.downloaded++;
+					} else {
+						stats.unchanged++;
+					}
+				}
+			});
+			
+			// Count cloud-only records
+			cloudArray.forEach(record => {
+				if (record.ID && !localArray.find(l => l.ID === record.ID)) {
+					stats.downloaded++;
+				}
+			});
+			
+			return {
+				records: Array.from(merged.values()).map(v => v.record),
+				stats
+			};
+		}
+	   
+	   
+	   // ========== SMART SYNC FUNCTION ==========
+		
+		async function smartSync() {
 			if (!await validateToken()) {
-				showToast('נדרש חיבור לענן', 'warning');
+				showToast('נדרש חיבור לענן לסנכרון', 'warning');
 				return false;
 			}
 			
+			const syncBtn = document.getElementById('syncBtn');
+			if (syncBtn) {
+				syncBtn.disabled = true;
+				syncBtn.innerHTML = '🔄 מסנכרן...';
+			}
+			
+			showLoading('מבצע סנכרון חכם...');
+			
+			const totalStats = {
+				uploaded: 0,
+				downloaded: 0,
+				unchanged: 0
+			};
+			
 			try {
-				await checkAndFixTableStructure();
+				// Sync Locations
+				console.log('🔄 Syncing Locations...');
+				const locationsStats = await syncTable('Locations', locations, loadLocationsFromSheetsRaw, saveLocationsBatch);
+				locations = locationsStats.mergedData;
+				Object.keys(totalStats).forEach(k => totalStats[k] += locationsStats.stats[k]);
 				
-				// שמירת כל הטבלאות
-				const locationSuccess = locations.length > 0 ? await saveLocationsBatch(locations) : true;
-				const visitSuccess = visits.length > 0 ? await saveVisitsBatch(visits) : true;
-				const receiptSuccess = receipts.length > 0 ? await saveReceiptsBatch(receipts) : true;
-				const incomeSuccess = incomes.length > 0 ? await saveIncomesBatch(incomes) : true;
-				const paymentSuccess = payments.length > 0 ? await savePaymentsBatch(payments) : true;
-				const linkSuccess = paymentVisitLinks.length > 0 ? await savePaymentVisitLinksBatch(paymentVisitLinks) : true;
-				const tasksSuccess = tasks.length > 0 ? await saveTasksToSheets() : true;
-				const expensesSuccess = expenses.length > 0 ? await saveExpensesBatch(expenses) : true;
-
-				const allSaved = locationSuccess && visitSuccess && receiptSuccess && incomeSuccess && paymentSuccess && linkSuccess && tasksSuccess && expensesSuccess;
-							
-
-			if (allSaved) {
-					showToast('✅ כל הנתונים נשמרו בהצלחה', 'success');
-				} else {
-					showToast('⚠️ חלק מהנתונים לא נשמרו', 'warning');
+				// Sync Visits
+				console.log('🔄 Syncing Visits...');
+				const visitsStats = await syncTable('Visits', visits, loadVisitsFromSheetsRaw, saveVisitsBatch);
+				visits = visitsStats.mergedData;
+				Object.keys(totalStats).forEach(k => totalStats[k] += visitsStats.stats[k]);
+				
+				// Sync Receipts
+				console.log('🔄 Syncing Receipts...');
+				const receiptsStats = await syncTable('Receipts', receipts, loadReceiptsFromSheetsRaw, saveReceiptsBatch);
+				receipts = receiptsStats.mergedData;
+				Object.keys(totalStats).forEach(k => totalStats[k] += receiptsStats.stats[k]);
+				
+				// Sync Payments
+				console.log('🔄 Syncing Payments...');
+				const paymentsStats = await syncTable('Payments', payments, loadPaymentsFromSheetsRaw, savePaymentsBatch);
+				payments = paymentsStats.mergedData;
+				Object.keys(totalStats).forEach(k => totalStats[k] += paymentsStats.stats[k]);
+				
+				// Sync Tasks
+				console.log('🔄 Syncing Tasks...');
+				const tasksStats = await syncTable('Tasks', tasks, loadTasksFromSheetsRaw, saveTasksToSheets);
+				tasks = tasksStats.mergedData;
+				Object.keys(totalStats).forEach(k => totalStats[k] += tasksStats.stats[k]);
+				
+				// Sync Expenses
+				console.log('🔄 Syncing Expenses...');
+				const expensesStats = await syncTable('Expenses', expenses, loadExpensesFromSheetsRaw, saveExpensesBatch);
+				expenses = expensesStats.mergedData;
+				Object.keys(totalStats).forEach(k => totalStats[k] += expensesStats.stats[k]);
+				
+				// Save merged data locally
+				saveToLocalStorage();
+				
+				// Update last sync time
+				const now = new Date().toISOString();
+				localStorage.setItem('lastSyncTime', now);
+				lastSyncTime = now;
+				
+				// Clear pending changes
+				clearPendingChanges();
+				
+				// Update UI
+				updateAllUIComponents();
+				updateSyncIndicator();
+				
+				hideLoading();
+				
+				// Show summary
+				const summary = `✅ סנכרון הושלם!\n📤 הועלו: ${totalStats.uploaded}\n📥 הורדו: ${totalStats.downloaded}\n⏸️ ללא שינוי: ${totalStats.unchanged}`;
+				showToast(summary, 'success', 5000);
+				console.log('📊 Sync Summary:', totalStats);
+				
+				if (syncBtn) {
+					syncBtn.disabled = false;
+					syncBtn.innerHTML = '🔄 סנכרן';
 				}
 				
-				return allSaved;
+				return true;
 				
 			} catch (error) {
-				console.error('Error saving all data:', error);
-				showToast('שגיאה בשמירת נתונים', 'error');
+				console.error('❌ Sync error:', error);
+				hideLoading();
+				showToast('שגיאה בסנכרון: ' + error.message, 'error');
+				
+				if (syncBtn) {
+					syncBtn.disabled = false;
+					syncBtn.innerHTML = '🔄 סנכרן';
+				}
+				
 				return false;
 			}
 		}
+		
+		// Generic sync function for a single table
+		async function syncTable(tableName, localData, loadFromCloudFn, saveToCloudFn) {
+			try {
+				// Load from cloud
+				const cloudData = await loadFromCloudFn();
+				
+				// Merge
+				const { records, stats } = mergeByIdAndDate(localData, cloudData);
+				
+				// Ensure all records have updated_at
+				records.forEach(r => {
+					if (!r.updated_at) {
+						r.updated_at = new Date().toISOString();
+					}
+				});
+				
+				// Save merged data to cloud
+				if (tableName === 'Tasks') {
+					// Tasks uses different save pattern
+					tasks = records;
+					await saveToCloudFn();
+				} else if (tableName === 'Expenses') {
+					await saveToCloudFn(records);
+				} else {
+					await saveToCloudFn(records);
+				}
+				
+				console.log(`✅ ${tableName}: ↑${stats.uploaded} ↓${stats.downloaded} =${stats.unchanged}`);
+				
+				return { mergedData: records, stats };
+				
+			} catch (error) {
+				console.error(`❌ Error syncing ${tableName}:`, error);
+				return { mergedData: localData, stats: { uploaded: 0, downloaded: 0, unchanged: localData.length } };
+			}
+		}
+	   
+	   
+	   // ========== RAW LOAD FUNCTIONS (for sync) ==========
+		
+		async function loadLocationsFromSheetsRaw() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Locations!A:Q'
+				});
+				
+				const rows = response.result.values || [];
+				if (rows.length <= 1) return [];
+				
+				const headers = rows[0];
+				return rows.slice(1).map(row => {
+					const obj = {};
+					headers.forEach((h, i) => obj[h] = row[i] || '');
+					return obj;
+				});
+			} catch (error) {
+				console.error('Error loading locations raw:', error);
+				return [];
+			}
+		}
+		
+		async function loadVisitsFromSheetsRaw() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Visits!A:O'
+				});
+				
+				const rows = response.result.values || [];
+				if (rows.length <= 1) return [];
+				
+				const headers = rows[0];
+				return rows.slice(1).map(row => {
+					const obj = {};
+					headers.forEach((h, i) => obj[h] = row[i] || '');
+					return obj;
+				});
+			} catch (error) {
+				console.error('Error loading visits raw:', error);
+				return [];
+			}
+		}
+		
+		async function loadReceiptsFromSheetsRaw() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Receipts!A:K'
+				});
+				
+				const rows = response.result.values || [];
+				if (rows.length <= 1) return [];
+				
+				const headers = rows[0];
+				return rows.slice(1).map(row => {
+					const obj = {};
+					headers.forEach((h, i) => obj[h] = row[i] || '');
+					return obj;
+				});
+			} catch (error) {
+				console.error('Error loading receipts raw:', error);
+				return [];
+			}
+		}
+		
+		async function loadPaymentsFromSheetsRaw() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Payments!A:Q'
+				});
+				
+				const rows = response.result.values || [];
+				if (rows.length <= 1) return [];
+				
+				const headers = rows[0];
+				return rows.slice(1).map(row => {
+					const obj = {};
+					headers.forEach((h, i) => obj[h] = row[i] || '');
+					return obj;
+				});
+			} catch (error) {
+				console.error('Error loading payments raw:', error);
+				return [];
+			}
+		}
+		
+		async function loadTasksFromSheetsRaw() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Tasks!A:Q'
+				});
+				
+				const rows = response.result.values || [];
+				if (rows.length <= 1) return [];
+				
+				const headers = rows[0];
+				return rows.slice(1).map(row => {
+					const obj = {};
+					headers.forEach((h, i) => obj[h] = row[i] || '');
+					return obj;
+				});
+			} catch (error) {
+				console.error('Error loading tasks raw:', error);
+				return [];
+			}
+		}
+		
+		async function loadExpensesFromSheetsRaw() {
+			try {
+				const response = await gapi.client.sheets.spreadsheets.values.get({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Expenses!A:O'
+				});
+				
+				const rows = response.result.values || [];
+				if (rows.length <= 1) return [];
+				
+				const headers = rows[0];
+				return rows.slice(1).map(row => {
+					const obj = {};
+					headers.forEach((h, i) => obj[h] = row[i] || '');
+					return obj;
+				});
+			} catch (error) {
+				console.error('Error loading expenses raw:', error);
+				return [];
+			}
+		}
+		
+		
+	   
+	   ///=====================================================================
 	   
 	   // פונקציה להצגת חובות
 		function displayDebts() {
@@ -8633,8 +9150,7 @@
 						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
 							<h3 style="margin: 0; color: #2c3e50;">${debt.clientName}</h3>
 							<button onclick="event.stopPropagation(); showClientProfile('${debt.clientId}')" 
-									class="action-btn" 
-									style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 10px;"
+									class="profile-btn-mobile" 
 									title="פרופיל לקוח">
 								👤
 							</button>
@@ -8650,22 +9166,22 @@
 									</span>
 								` : ''}
 							</div>
-							<div style="display: flex; gap: 5px; flex-wrap: wrap;">
+							<div style="display: flex; gap: 3px; flex-wrap: nowrap;">
 								<button onclick="event.stopPropagation(); showAddPaymentModal('${debt.clientId}')" 
 										class="action-btn" 
-										style="background: #27ae60; color: white; padding: 5px 8px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer;"
+										style="background: #27ae60; color: white; padding: 5px 6px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer;"
 										title="רישום תשלום">
 									💳
 								</button>
 								<button onclick="event.stopPropagation(); markAllDebtsPaid('${debt.clientId}')" 
 										class="action-btn" 
-										style="background: #3498db; color: white; padding: 5px 8px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer;"
+										style="background: #3498db; color: white; padding: 5px 6px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer;"
 										title="סמן הכל כשולם">
 									✓
 								</button>
 								<button onclick="event.stopPropagation(); showBalanceReportModal('${debt.clientId}')" 
 										class="action-btn" 
-										style="background: #9b59b6; color: white; padding: 5px 8px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer;"
+										style="background: #9b59b6; color: white; padding: 5px 6px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer;"
 										title="דוח מאזן">
 									📄
 								</button>
@@ -8741,7 +9257,7 @@
 			}
 			
 			// ✅ UPDATED: Mark as paid with today's date
-			const today = new Date().toISOString().split('T')[0];
+			const today = getLocalDateString();
 			let updatedCount = 0;
 			
 			visits.forEach(visit => {
@@ -8791,6 +9307,7 @@
 			// Refresh displays
 			displayDebts();
 			filterVisits();
+			loadTodayTreatments();
 		}
 
 
@@ -9148,9 +9665,10 @@
 				}
 				
 				// Refresh displays
-				if (typeof displayDebts === 'function') displayDebts();
-				if (typeof displayPayments === 'function') displayPayments();
-				if (typeof displayVisits === 'function') displayVisits();
+			if (typeof displayDebts === 'function') displayDebts();
+			if (typeof displayPayments === 'function') displayPayments();
+			if (typeof displayVisits === 'function') displayVisits();
+			loadTodayTreatments();
 				
 			} catch (error) {
 				console.error('Error executing payment link:', error);
@@ -9845,12 +10363,13 @@
 					loc.notes || '',
 					loc.last_visit || '',
 					loc.next_visit || '',
-					loc.client_requests || ''  // שדה חסר!
+					loc.client_requests || '',
+					loc.updated_at || new Date().toISOString()
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `Locations!A2:P${locationValues.length + 1}`,
+					range: `Locations!A2:Q${locationValues.length + 1}`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: locationValues }
 				});
@@ -9862,6 +10381,7 @@
 				return false;
 			}
 		}
+
 
 		// שמירה מקבצית של ביקורים
 		async function saveVisitsBatch(visitsToSave) {
@@ -9884,12 +10404,13 @@
 					visit.amount || 0,
 					visit.paid || '0',
 					visit.expense || 0,
-					visit.notes || ''
+					visit.notes || '',
+					visit.updated_at || new Date().toISOString()
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `Visits!A2:N${values.length + 1}`,
+					range: `Visits!A2:O${values.length + 1}`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values }
 				});
@@ -10014,12 +10535,13 @@
 					receipt.amount,
 					receipt.payment_type,
 					receipt.notes,
-					receipt.payment_id || ''
+					receipt.payment_id || '',
+					receipt.updated_at || new Date().toISOString()
 				]);
 				
 				await gapi.client.sheets.spreadsheets.values.append({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.RECEIPTS}!A:I`,
+					range: `${SHEETS.RECEIPTS}!A:K`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { 
 						values: values,
@@ -10059,13 +10581,14 @@
 					payment.check_date || '',
 					payment.bank_account || '',
 					payment.payment_details || '',
-					payment.receipt_id || ''
+					payment.receipt_id || '',
+					payment.updated_at || new Date().toISOString()
 				]);
 				
-				// ✅ Clear existing data first (עדכון טווח ל-P)
+				// ✅ Clear existing data first (עדכון טווח ל-Q)
 				await gapi.client.sheets.spreadsheets.values.clear({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Payments!A2:P'
+					range: 'Payments!A2:Q'
 				});
 				
 				// ✅ Then write new data
@@ -10095,6 +10618,9 @@
 			try {
 				console.log('💰 saveExpensesBatch called with', expensesArray.length, 'expenses');
 				
+				// Ensure Expenses sheet exists with headers
+				await addHeadersToSheet('Expenses');
+				
 				const values = expensesArray.map(exp => [
 					exp.ID,
 					exp.date,
@@ -10109,18 +10635,17 @@
 					exp.vendor_type || 'other',
 					exp.payment_method || 'cash',
 					exp.receipt_number || '',
-					exp.notes || ''
+					exp.notes || '',
+					exp.updated_at || new Date().toISOString()
 				]);
 				
-				// Add header row
-				const header = ['ID', 'date', 'amount', 'description', 'category', 'expense_type', 'client_id', 'client_name', 'visit_id', 'vendor_name', 'vendor_type', 'payment_method', 'receipt_number', 'notes'];
-				
+				// Write data starting from row 2 (after header)
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Expenses!A1',
+					range: 'Expenses!A2',
 					valueInputOption: 'RAW',
 					resource: {
-						values: [header, ...values]
+						values: values
 					}
 				});
 				
@@ -10278,7 +10803,7 @@
 					<!-- בחירת לקוח -->
 					<div class="form-group" style="margin-bottom: 20px;">
 						<label style="display: block; margin-bottom: 8px; font-weight: bold;">לקוח:</label>
-						${clientId ? 
+						${selectedClientId ? 
 							`<input type="text" value="${selectedClientName}" disabled style="width: 100%; padding: 10px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px;">` :
 							`<input type="text" 
 								id="paymentClientSearch" 
@@ -10295,7 +10820,7 @@
 					<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 20px;">
 						<div class="form-group">
 							<label style="display: block; margin-bottom: 8px; font-weight: bold;">תאריך:</label>
-							<input type="date" id="paymentDate" value="${new Date().toISOString().split('T')[0]}" 
+							<input type="date" id="paymentDate" value="${getLocalDateString()}" 
 								style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
 						</div>
 						<div class="form-group">
@@ -10394,9 +10919,9 @@
 			showModal(modalHTML);
 			
 			// שמירת הלקוח הנבחר אם יש
-			if (clientId) {
-				window.selectedPaymentClientId = clientId;
-				loadOpenVisitsForPayment(clientId);
+			if (selectedClientId) {
+				window.selectedPaymentClientId = selectedClientId;
+				loadOpenVisitsForPayment(selectedClientId);
 			}
 			
 			// הוספת event listener לשינוי אמצעי תשלום
@@ -10654,7 +11179,8 @@
 					reference: reference || '',
 					check_date: checkDate || '',
 					bank_account: '',
-					payment_details: ''
+					payment_details: '',
+					updated_at: new Date().toISOString()
 				};
 				
 				// הוסף לרשימת התשלומים
@@ -10773,6 +11299,9 @@
 					applyPaymentFilters();
 				}
 				
+				// רענון טיפולים של היום
+				loadTodayTreatments();
+				
 				// שאלה להפקת קבלה
 				setTimeout(() => {
 					showReceiptPrompt(payment);
@@ -10871,8 +11400,7 @@
 					nextDate.setDate(lastDate.getDate() + intervalDays);
 					
 					// פורמט התאריך ל-YYYY-MM-DD
-					const nextVisitDate = nextDate.toISOString().split('T')[0];
-					
+					const nextVisitDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;	
 					// עדכון האובייקט המקומי
 					location.last_visit = lastVisitDate;
 					location.next_visit = nextVisitDate;
@@ -10978,7 +11506,7 @@
 					nextDate.setDate(lastDate.getDate() + intervalDays);
 					
 					// פורמט התאריך ל-YYYY-MM-DD
-					const nextVisitDate = nextDate.toISOString().split('T')[0];
+					const nextVisitDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
 					location.next_visit = nextVisitDate;
 					
 					console.log(`📅 עודכן לקוח ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
@@ -10988,7 +11516,9 @@
 				
 				// עדכון בגוגל שיטס
 				await updateTreatmentDatesInSheets([location]);
-
+				
+				// שמירה מקומית
+				saveToLocalStorage();
 			}
 		}
 	   
@@ -13109,7 +13639,7 @@
 					// צור תשלום אחד עבור כל החובות
 					const payment = {
 						ID: generateID(),
-						date: new Date().toISOString().split('T')[0],
+						date: getLocalDateString(),
 						time: new Date().toTimeString().substr(0, 5),
 						amount: totalDebt,
 						payment_method: 'cash',
@@ -13147,11 +13677,11 @@
 					
 					// שמירה בענן
 					if (access_token && SPREADSHEET_ID) {
-						await saveAllToSheetsOptimized();
+						await saveAllToSheets();
 						
 						// שמור את כל הקישורים
 						for (const link of paymentVisitLinks.filter(l => l.payment_id === payment.ID)) {
-							await saveAllToSheetsOptimized();
+							await saveAllToSheets();
 						}
 					}
 					
@@ -13353,9 +13883,9 @@
 			const daysUntilTargetDay = (targetDayOfWeek - today.getDay() + 7) % 7;
 			const targetDate = new Date(today);
 			
-			// אם היום המועדף הוא היום - קח אותו בשבוע הבא
-			if (daysUntilTargetDay === 0 && weeksAhead === 1) {
-				targetDate.setDate(today.getDate() + 7);
+			// אם היום המועדף הוא היום - הוסף שבוע נוסף
+			if (daysUntilTargetDay === 0) {
+				targetDate.setDate(today.getDate() + (weeksAhead * 7));
 			} else {
 				// אחרת - קח היום המועדף + שבועות נוספים
 				targetDate.setDate(today.getDate() + daysUntilTargetDay + ((weeksAhead - 1) * 7));
@@ -13382,7 +13912,6 @@
 			const targetDayIndex = dayIndexMap[allowedDay] ?? 0;
 			
 			const today = new Date();
-			today.setHours(12, 0, 0, 0); // קביעה לשעה 12 בצהריים למניעת בעיות אזור זמן
 			const todayIndex = today.getDay();
 			
 			// חישוב ההפרש
@@ -13393,7 +13922,12 @@
 			
 			const nextDate = new Date(today);
 			nextDate.setDate(today.getDate() + daysDiff);
-			const nextDateStr = nextDate.toISOString().split('T')[0];
+			
+			// פורמט תאריך מקומי (לא UTC)
+			const year = nextDate.getFullYear();
+			const month = String(nextDate.getMonth() + 1).padStart(2, '0');
+			const day = String(nextDate.getDate()).padStart(2, '0');
+			const nextDateStr = `${year}-${month}-${day}`;
 			
 			client.next_visit = nextDateStr;
 			saveToLocalStorage();
@@ -13427,7 +13961,7 @@
 
 		// הגדרת תאריך היום לכל שדות התאריך
 		function setTodayAsDefault() {
-			const today = new Date().toISOString().split('T')[0];
+			const today = getLocalDateString();
 			document.querySelectorAll('.planning-date-input').forEach(input => {
 				if (!input.value) {
 					input.value = today;
@@ -13471,6 +14005,9 @@
 				filteredData = filteredData.filter(location => location.active === activeFilter);
 			}
 			
+			// מיון לפי שם
+			filteredData.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+
 			return filteredData;
 		}
 
@@ -13503,7 +14040,7 @@
 			// המתן רגע קצר כדי לוודא שהמודל נסגר
 			setTimeout(() => {
 				// בדיקה האם יש כבר טיפול היום ללקוח
-				const today = new Date().toISOString().split('T')[0];
+				const today = getLocalDateString();
 				const existingTodayVisit = visits.find(visit => 
 					visit.location_id === clientId && 
 					visit.date === today
@@ -14004,7 +14541,7 @@
 			setTimeout(() => {
 				if (!isEdit) {
 					// מצב יצירה - הגדר תאריך היום
-					document.getElementById('visitFormDate').value = new Date().toISOString().split('T')[0];
+					document.getElementById('visitFormDate').value = getLocalDateString();
 					loadVisitFormClientOptions();
 					
 					// אם יש לקוח נבחר מראש - מלא אותו
@@ -14210,7 +14747,8 @@
 						amount: amount,
 						paid: visits[visitIndex].paid || '0',
 						expense: expense,
-						notes: notes
+						notes: notes,
+						updated_at: new Date().toISOString()
 					};
 					
 					// שמירה מקומית
@@ -14259,7 +14797,8 @@
 						amount: amount,
 						paid: '0',
 						expense: expense,
-						notes: notes
+						notes: notes,
+						updated_at: new Date().toISOString()
 					};
 					
 					// הוספה למערך
@@ -14298,6 +14837,7 @@
 				
 				// רענון תצוגות
 				loadPlanningData();
+				loadTodayTreatments();
 				if (typeof applyVisitFilters === 'function') {
 					applyVisitFilters();
 				}
@@ -15264,7 +15804,7 @@
 					income.notes || '',
 					income.raw_text || '',
 					income.imported_from || 'manual',
-					income.import_date || new Date().toISOString().split('T')[0],
+					income.import_date || getLocalDateString(),
 					income.matched_to_visit || false
 				]);
 				
@@ -15881,7 +16421,7 @@
 
 		// Load and display today's treatments in the work day section
 		function loadTodayTreatments() {
-			const today = new Date().toISOString().split('T')[0];
+			const today = getLocalDateString();
 			const todayVisits = visits.filter(visit => visit.date === today)
 				.sort((a, b) => {
 					const timeA = a.start_time || '23:59';
@@ -15970,8 +16510,27 @@
 					const amount = visit.amount || 0;
 					const workDone = visit.work_done || 'ללא תיאור';
 					
+					// Check payment status
+					const paidAmount = getVisitPaidAmount(visit.ID);
+					const isPaid = paidAmount >= amount && amount > 0;
+					const isPartialPaid = paidAmount > 0 && paidAmount < amount;
+					
+					// Payment button or status indicator
+					let paymentHtml = '';
+					if (isPaid) {
+						paymentHtml = `<span style="color: #27ae60; font-size: 14px;" title="שולם">✅</span>`;
+					} else if (isPartialPaid) {
+						paymentHtml = `<button onclick="showAddPaymentModal(null, '${visit.ID}')"
+								style="padding: 6px 10px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
+								title="שולם חלקית: ${paidAmount}₪">½💰</button>`;
+					} else if (amount > 0) {
+						paymentHtml = `<button onclick="showAddPaymentModal(null, '${visit.ID}')"
+								style="padding: 6px 10px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
+								title="תשלום">💰</button>`;
+					}
+					
 					return `
-						<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 8px;">
+						<div style="background: ${isPaid ? '#e8f5e9' : '#f8f9fa'}; padding: 10px; border-radius: 5px; margin-bottom: 8px;">
 							<div style="display: flex; justify-content: space-between; align-items: center;">
 								<div style="flex: 1;">
 									<div style="font-weight: bold; color: #2c3e50;">${clientName}</div>
@@ -15985,9 +16544,7 @@
 									<button onclick="showVisitForm('${visit.ID}')" 
 											style="padding: 6px 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
 											title="עריכת טיפול">✏️</button>
-									<button onclick="showAddPaymentModal(null, '${visit.ID}')"
-											style="padding: 6px 10px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
-											title="תשלום">💰</button>
+									${paymentHtml}
 								</div>
 							</div>
 						</div>
@@ -16009,7 +16566,7 @@
 					return `
 						<div style="background: #e9ecef; padding: 10px; border-radius: 5px; margin-bottom: 8px;">
 							<div style="font-weight: bold; color: #495057;">${clientName}</div>
-							<button onclick="showVisitForm('${visit.ID}')"
+							<button onclick="editVisit('${visit.ID}')" 
 									style="margin-top: 5px; padding: 6px 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
 								▶️ התחל טיפול
 							</button>
@@ -16029,6 +16586,13 @@
 					const typeInfo = typeof TASK_TYPES !== 'undefined' && TASK_TYPES[task.type] ? TASK_TYPES[task.type] : { icon: '📦', label: task.type || 'אחר' };
 					const statusInfo = typeof TASK_STATUSES !== 'undefined' && TASK_STATUSES[task.status] ? TASK_STATUSES[task.status] : { icon: '⏳', label: 'ממתין' };
 					
+					// Calculate task age (days since created)
+					const createdDate = task.created_date ? new Date(task.created_date) : null;
+					const today = new Date();
+					const taskAge = createdDate ? Math.floor((today - createdDate) / (1000 * 60 * 60 * 24)) : 0;
+					const ageText = taskAge === 0 ? 'חדש' : taskAge === 1 ? 'יום אחד' : `${taskAge} ימים`;
+					const ageColor = taskAge > 7 ? '#e74c3c' : taskAge > 3 ? '#f39c12' : '#27ae60';
+					
 					return `
 						<div style="background: white; padding: 10px; border-radius: 5px; margin-bottom: 8px; border-left: 4px solid #9b59b6;">
 							<div style="display: flex; justify-content: space-between; align-items: center;">
@@ -16040,25 +16604,38 @@
 									<div style="font-size: 11px; color: #9b59b6; margin-top: 3px;">
 										${statusInfo.icon} ${statusInfo.label}
 										${task.estimated_cost ? ' • ₪' + task.estimated_cost : ''}
+										<span style="color: ${ageColor}; margin-right: 8px;">⏱️ ${ageText}</span>
 									</div>
 								</div>
-								<div style="display: flex; gap: 5px;">
-									${task.status === 'pending' ? `
-										<button onclick="updateTaskStatus('${task.ID}', 'in_progress')" 
-												style="padding: 6px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-											▶️ התחל
+								<div style="display: flex; flex-direction: column; gap: 4px;">
+									<div style="display: flex; gap: 4px;">
+										${task.status === 'pending' ? `
+											<button onclick="updateTaskStatus('${task.ID}', 'in_progress')" 
+													style="padding: 6px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+												▶️ התחל
+											</button>
+										` : ''}
+										${task.status === 'in_progress' ? `
+											<button onclick="completeTask('${task.ID}')" 
+													style="padding: 6px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+												✅ סיים
+											</button>
+										` : ''}
+										<button onclick="showEditTaskModal('${task.ID}')" 
+												style="padding: 6px 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+											✏️
 										</button>
-									` : ''}
-									${task.status === 'in_progress' ? `
-										<button onclick="completeTask('${task.ID}')" 
-												style="padding: 6px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-											✅ סיים
+									</div>
+									<div style="display: flex; gap: 4px;">
+										<button onclick="postponeTask('${task.ID}', 1)" 
+												style="padding: 4px 8px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
+											+1D
 										</button>
-									` : ''}
-									<button onclick="showEditTaskModal('${task.ID}')" 
-											style="padding: 6px 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-										✏️
-									</button>
+										<button onclick="postponeTask('${task.ID}', 7)" 
+												style="padding: 4px 8px; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
+											+1W
+										</button>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -16818,6 +17395,7 @@
 			'tree_trimming': { icon: '✂️', label: 'גיזום עצים', color: '#f39c12' },
 			'upgrade': { icon: '🏡', label: 'שדרוג גינה', color: '#9b59b6' },
 			'repair': { icon: '🔧', label: 'תיקון', color: '#3498db' },
+			'irrigation': { icon: '💧', label: 'השקייה', color: '#00bcd4' },
 			'other': { icon: '📦', label: 'אחר', color: '#95a5a6' }
 		};
 
@@ -16829,15 +17407,39 @@
 			'cancelled': { icon: '❌', label: 'בוטל', color: '#dc3545', bg: '#f8d7da' }
 		};
 
-		// קטגוריות הוצאות
-		const EXPENSE_CATEGORIES = {
-			'fuel': { name: 'דלק ושמנים', icon: '⛽' },
-			'equipment': { name: 'ציוד וכלים', icon: '🔧' },
-			'materials': { name: 'חומרים', icon: '🧪' },
+		// סוגי הוצאות (רמה עליונה)
+		const EXPENSE_TYPES = {
+			'general': { name: 'כללי', icon: '📦' },
+			'client': { name: 'לקוח', icon: '👤' },
 			'vehicle': { name: 'רכב', icon: '🚗' },
-			'tools': { name: 'כלי עבודה', icon: '🔨' },
-			'parts': { name: 'חלקי חילוף', icon: '⚙️' },
-			'other': { name: 'אחר', icon: '📦' }
+			'worker': { name: 'עובדים', icon: '👷' }
+		};
+
+		// קטגוריות לפי סוג
+		const EXPENSE_CATEGORIES = {
+			'general': {
+				'fuel': { name: 'דלק ושמנים', icon: '⛽' },
+				'equipment': { name: 'ציוד וחומרים', icon: '🔧' },
+				'tools': { name: 'כלי עבודה', icon: '🔨' },
+				'other': { name: 'אחר', icon: '📦' }
+			},
+			'client': {
+				'materials': { name: 'חומרים', icon: '🧪' },
+				'parts': { name: 'חלקים', icon: '⚙️' },
+				'nursery': { name: 'משתלה', icon: '🌱' },
+				'other': { name: 'אחר', icon: '📦' }
+			},
+			'vehicle': {
+				'garage': { name: 'מוסך', icon: '🔧' },
+				'insurance': { name: 'ביטוחים', icon: '📋' },
+				'fuel': { name: 'דלק', icon: '⛽' },
+				'other': { name: 'אחר', icon: '📦' }
+			},
+			'worker': {
+				'payment': { name: 'תשלום', icon: '💵' },
+				'food': { name: 'מזון', icon: '🍔' },
+				'other': { name: 'אחר', icon: '📦' }
+			}
 		};
 
 		// סוגי ספקים
@@ -16847,6 +17449,7 @@
 			'gas_station': { name: 'תחנת דלק', icon: '⛽' },
 			'online': { name: 'רכישה מקוונת', icon: '💻' },
 			'nursery': { name: 'משתלה', icon: '🌱' },
+			'person': { name: 'אדם', icon: '👤' },
 			'other': { name: 'אחר', icon: '📍' }
 		};
 
@@ -16895,7 +17498,11 @@
 			
 			// Update stats
 			updateTasksStats();
-			
+
+			// עדכון מספר משימות מוצגות
+			const tasksCountEl = document.getElementById('tasksCount');
+			if (tasksCountEl) tasksCountEl.textContent = filteredTasks.length;
+
 			// Render table
 			if (filteredTasks.length === 0) {
 				tbody.innerHTML = `
@@ -17006,7 +17613,8 @@
 
 		// Show add task modal
 		function showAddTaskModal(preSelectedClientId = null) {
-			const today = new Date().toISOString().split('T')[0];
+			const now = new Date();
+			const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 			
 			const modalHTML = `
 				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 550px; width: 90vw; max-height: 90vh; overflow-y: auto; position: relative;">
@@ -17050,6 +17658,7 @@
 								<option value="tree_trimming">✂️ גיזום עצים</option>
 								<option value="upgrade">🏡 שדרוג גינה</option>
 								<option value="repair">🔧 תיקון</option>
+								<option value="irrigation">💧 השקייה</option>
 								<option value="other">📦 אחר</option>
 							</select>
 						</div>
@@ -17238,8 +17847,9 @@
 				recurring: document.getElementById('taskRecurring').checked,
 				recurring_interval: document.getElementById('taskRecurringInterval')?.value || '',
 				status: taskId ? (tasks.find(t => t.ID === taskId)?.status || 'pending') : 'pending',
-				created_date: taskId ? (tasks.find(t => t.ID === taskId)?.created_date || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
-				completed_date: ''
+				created_date: taskId ? (tasks.find(t => t.ID === taskId)?.created_date || getLocalDateString()) : getLocalDateString(),
+				completed_date: '',
+				updated_at: new Date().toISOString()
 			};
 			
 			if (taskId) {
@@ -17316,7 +17926,7 @@
 			task.status = newStatus;
 			
 			if (newStatus === 'completed') {
-				task.completed_date = new Date().toISOString().split('T')[0];
+				task.completed_date = getLocalDateString();
 			}
 			
 			saveToLocalStorage();
@@ -17347,7 +17957,7 @@
 			);
 			
 			task.status = 'completed';
-			task.completed_date = new Date().toISOString().split('T')[0];
+			task.completed_date = getLocalDateString();
 			
 			saveToLocalStorage();
 			displayTasks();
@@ -17388,6 +17998,44 @@
 			}
 		}
 
+
+		// Postpone task by X days
+		async function postponeTask(taskId, days) {
+			const task = tasks.find(t => t.ID === taskId);
+			if (!task) {
+				showToast('משימה לא נמצאה', 'error');
+				return;
+			}
+			
+			// Calculate new due date
+			const currentDue = task.due_date ? new Date(task.due_date) : new Date();
+			currentDue.setDate(currentDue.getDate() + days);
+			const newDueDate = currentDue.toISOString().split('T')[0];
+			
+			// Update task
+			task.due_date = newDueDate;
+			
+			// Save locally
+			saveToLocalStorage();
+			
+			// Refresh display
+			loadTodayTreatments();
+			displayTasks();
+			
+			// Save to cloud
+			if (access_token && SPREADSHEET_ID) {
+				try {
+					await saveTasksToSheets();
+				} catch (error) {
+					console.error('Error saving task to cloud:', error);
+				}
+			}
+			
+			const dayText = days === 1 ? 'יום' : days === 7 ? 'שבוע' : `${days} ימים`;
+			showToast(`📅 המשימה נדחתה ב${dayText} → ${formatDate(newDueDate)}`, 'success');
+		}
+
+
 		// Create next recurring task
 		function createNextRecurringTask(originalTask) {
 			const intervalDays = {
@@ -17407,8 +18055,8 @@
 				...originalTask,
 				ID: 'TASK_' + Date.now(),
 				status: 'pending',
-				due_date: nextDate.toISOString().split('T')[0],
-				created_date: new Date().toISOString().split('T')[0],
+				due_date: getLocalDateString(nextDate),
+				created_date: getLocalDateString(),
 				completed_date: ''
 			};
 			
@@ -17447,41 +18095,13 @@
 			if (!access_token || !SPREADSHEET_ID) return;
 			
 			try {
-				// Check if Tasks sheet exists, create if not
-				const spreadsheet = await gapi.client.sheets.spreadsheets.get({
-					spreadsheetId: SPREADSHEET_ID
-				});
-				
-				const tasksSheet = spreadsheet.result.sheets.find(s => s.properties.title === 'Tasks');
-				
-				if (!tasksSheet) {
-					// Create Tasks sheet
-					await gapi.client.sheets.spreadsheets.batchUpdate({
-						spreadsheetId: SPREADSHEET_ID,
-						resource: {
-							requests: [{
-								addSheet: {
-									properties: { title: 'Tasks' }
-								}
-							}]
-						}
-					});
-					
-					// Add headers
-					await gapi.client.sheets.spreadsheets.values.update({
-						spreadsheetId: SPREADSHEET_ID,
-						range: 'Tasks!A1:P1',
-						valueInputOption: 'RAW',
-						resource: {
-							values: [['ID', 'scope', 'client_id', 'client_name', 'type', 'description', 'due_date', 'priority', 'estimated_cost', 'equipment', 'notes', 'recurring', 'recurring_interval', 'status', 'created_date', 'completed_date']]
-						}
-					});
-				}
+				// Ensure Tasks sheet exists with headers
+				await addHeadersToSheet('Tasks');
 				
 				// Clear existing data (except header)
 				await gapi.client.sheets.spreadsheets.values.clear({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Tasks!A2:P1000'
+					range: 'Tasks!A2:Q1000'
 				});
 				
 				// Write tasks
@@ -17502,7 +18122,8 @@
 						t.recurring_interval,
 						t.status,
 						t.created_date,
-						t.completed_date
+						t.completed_date,
+						t.updated_at || new Date().toISOString()
 					]);
 					
 					await gapi.client.sheets.spreadsheets.values.update({
@@ -17567,8 +18188,8 @@
 
 		// Show schedule client modal
 		function showScheduleClientModal() {
-			const today = new Date().toISOString().split('T')[0];
-			const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+			const today = getLocalDateString();
+			const tomorrow = getLocalDateString(new Date(Date.now() + 86400000));
 			
 			const modalHTML = `
 				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 90vw; max-height: 90vh; overflow-y: auto; position: relative;">
@@ -17631,6 +18252,7 @@
 								<option value="tree_trimming">✂️ גיזום עצים</option>
 								<option value="upgrade">🏡 שדרוג גינה</option>
 								<option value="repair">🔧 תיקון</option>
+								<option value="irrigation">💧 השקייה</option>
 								<option value="other">📦 אחר</option>
 							</select>
 						</div>
@@ -17780,7 +18402,7 @@
 					recurring: false,
 					recurring_interval: '',
 					status: 'pending',
-					created_date: new Date().toISOString().split('T')[0],
+					created_date: getLocalDateString(),
 					completed_date: ''
 				};
 				
@@ -17816,8 +18438,8 @@
 			
 			// Get client's first visit date for default range
 			const clientVisits = visits.filter(v => v.location_id === clientId).sort((a, b) => a.date.localeCompare(b.date));
-			const firstVisitDate = clientVisits.length > 0 ? clientVisits[0].date : new Date().toISOString().split('T')[0];
-			const today = new Date().toISOString().split('T')[0];
+			const firstVisitDate = clientVisits.length > 0 ? clientVisits[0].date : getLocalDateString();
+			const today = getLocalDateString();
 			
 			const modalHTML = `
 				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 90vw; position: relative;">
@@ -18443,7 +19065,7 @@
 			
 			const yesterday = new Date(today);
 			yesterday.setDate(yesterday.getDate() - 1);
-			const yesterdayStr = yesterday.toISOString().split('T')[0];
+			const yesterdayStr = getLocalDateString(yesterday);
 			
 			// מצא לקוחות שתאריך הטיפול הבא שלהם היה אתמול
 			const missedYesterday = locations.filter(loc => {
@@ -18473,7 +19095,7 @@
 			
 			// בדיקה אם כבר הצגנו היום
 			const lastShown = localStorage.getItem('yesterdayMissedShown');
-			const todayStr = new Date().toISOString().split('T')[0];
+			const todayStr = getLocalDateString();
 			if (lastShown === todayStr) return;
 			
 			// שמירה שהצגנו היום
@@ -18538,7 +19160,7 @@
 					<div style="font-size: 48px; margin-bottom: 15px;">🧾</div>
 					<h3 style="margin: 0 0 10px 0; color: #2c3e50;">להפיק קבלה?</h3>
 					<p style="color: #666; margin-bottom: 20px;">
-						תשלום ${payment.amount} ₪ מ${payment.location_name}
+						תשלום ${payment.amount} ₪ מ${payment.client_name}
 					</p>
 					<div style="display: flex; gap: 10px; justify-content: center;">
 						<button onclick="createReceiptFromPayment('${payment.ID}'); closeAnyModal();" 
@@ -18599,8 +19221,8 @@
 				book_number: bookNumber.toString(),
 				receipt_number: nextReceiptNum.toString(),
 				date: payment.date,
-				location_id: payment.location_id,
-				location_name: payment.location_name,
+				location_id: payment.client_id || payment.location_id,
+				location_name: payment.client_name || payment.location_name,
 				amount: payment.amount,
 				payment_type: paymentType,
 				notes: `קבלה עבור תשלום ${payment.ID}`,
@@ -18636,6 +19258,13 @@
 			if (!access_token || !SPREADSHEET_ID) {
 				showToast('נדרש חיבור לענן ליצירת גיבוי', 'error');
 				return false;
+			}
+			
+			// Update status to show backup in progress
+			const statusDiv = document.getElementById('backupStatus');
+			if (statusDiv) {
+				statusDiv.innerHTML = '⏳ גיבוי הנתונים מתבצע כעת. המתן...';
+				statusDiv.style.color = '#007bff';
 			}
 			
 			showToast('💾 יוצר גיבוי...', 'info');
@@ -18900,12 +19529,22 @@
 			if (!container) return;
 			
 			// Get filters
+			const searchText = document.getElementById('expenseSearchText')?.value?.toLowerCase() || '';
+			const searchVendor = document.getElementById('expenseSearchVendor')?.value?.toLowerCase() || '';
 			const typeFilter = document.getElementById('expenseTypeFilter')?.value || '';
 			const categoryFilter = document.getElementById('expenseCategoryFilter')?.value || '';
 			const monthFilter = document.getElementById('expenseMonthFilter')?.value || '';
 			
 			// Filter expenses
 			let filtered = [...expenses];
+			
+			if (searchText) {
+				filtered = filtered.filter(exp => (exp.description || '').toLowerCase().includes(searchText));
+			}
+			
+			if (searchVendor) {
+				filtered = filtered.filter(exp => (exp.vendor_name || '').toLowerCase().includes(searchVendor));
+			}
 			
 			if (typeFilter) {
 				filtered = filtered.filter(exp => exp.expense_type === typeFilter);
@@ -18915,7 +19554,32 @@
 				filtered = filtered.filter(exp => exp.category === categoryFilter);
 			}
 			
-			if (monthFilter) {
+			// סינון לפי תקופה
+			if (window.expensePeriodFilter) {
+				const today = new Date();
+				today.setHours(0, 0, 0, 0);
+				
+				filtered = filtered.filter(exp => {
+					if (!exp.date) return false;
+					const expDate = new Date(exp.date);
+					expDate.setHours(0, 0, 0, 0);
+					
+					switch (window.expensePeriodFilter) {
+						case 'today':
+							return expDate.getTime() === today.getTime();
+						case 'week':
+							const weekAgo = new Date(today);
+							weekAgo.setDate(today.getDate() - 7);
+							return expDate >= weekAgo && expDate <= today;
+						case 'month':
+							return expDate.getMonth() === today.getMonth() && expDate.getFullYear() === today.getFullYear();
+						case 'year':
+							return expDate.getFullYear() === today.getFullYear();
+						default:
+							return true;
+					}
+				});
+			} else if (monthFilter) {
 				filtered = filtered.filter(exp => exp.date && exp.date.startsWith(monthFilter));
 			}
 			
@@ -18932,13 +19596,21 @@
 			}
 			
 			const html = filtered.map(exp => {
-				const category = EXPENSE_CATEGORIES[exp.category] || EXPENSE_CATEGORIES['other'];
-				const vendor = VENDOR_TYPES[exp.vendor_type] || VENDOR_TYPES['other'];
+				const expType = EXPENSE_TYPES[exp.expense_type] || EXPENSE_TYPES['general'];
+				const categories = EXPENSE_CATEGORIES[exp.expense_type] || EXPENSE_CATEGORIES['general'];
+				const category = categories[exp.category] || { name: exp.category, icon: '📦' };
 				const payment = PAYMENT_METHODS[exp.payment_method] || PAYMENT_METHODS['cash'];
-				const isClient = exp.expense_type === 'client';
+				
+				const typeColors = {
+					'general': '#27ae60',
+					'client': '#f39c12',
+					'vehicle': '#3498db',
+					'worker': '#9b59b6'
+				};
+				const borderColor = typeColors[exp.expense_type] || '#999';
 				
 				return `
-					<div style="background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; margin-bottom: 10px; border-right: 4px solid ${isClient ? '#9b59b6' : '#3498db'};">
+					<div style="background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; margin-bottom: 10px; border-right: 4px solid ${borderColor};">
 						<div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
 							<div style="flex: 1; min-width: 200px;">
 								<div style="font-size: 16px; font-weight: 600; color: #333; margin-bottom: 5px;">
@@ -18946,10 +19618,15 @@
 								</div>
 								<div style="font-size: 13px; color: #666;">
 									📅 ${formatDate(exp.date)}
-									${exp.vendor_name ? ` | ${vendor.icon} ${exp.vendor_name}` : ''}
+									<span style="background: ${borderColor}; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-right: 8px;">${expType.icon} ${expType.name}</span>
 								</div>
-								${isClient && exp.client_name ? `
-									<div style="font-size: 12px; color: #9b59b6; margin-top: 5px;">
+								${exp.vendor_name ? `
+									<div style="font-size: 12px; color: #888; margin-top: 5px;">
+										🏪 ${exp.vendor_name}
+									</div>
+								` : ''}
+								${exp.expense_type === 'client' && exp.client_name ? `
+									<div style="font-size: 12px; color: #f39c12; margin-top: 5px;">
 										👤 ${exp.client_name}
 									</div>
 								` : ''}
@@ -18985,18 +19662,62 @@
 			container.innerHTML = html;
 		}
 
+
+		// סינון הוצאות לפי תקופה
+		function setExpenseDateFilter(period) {
+			const monthFilter = document.getElementById('expenseMonthFilter');
+			const today = new Date();
+			const year = today.getFullYear();
+			const month = String(today.getMonth() + 1).padStart(2, '0');
+			
+			switch (period) {
+				case 'today':
+				case 'week':
+				case 'month':
+					monthFilter.value = `${year}-${month}`;
+					break;
+				case 'year':
+					monthFilter.value = '';
+					break;
+			}
+			
+			// שמירת התקופה לסינון מדויק יותר
+			window.expensePeriodFilter = period;
+			displayExpenses();
+		}
+
+		// ניקוי כל הפילטרים
+		function clearExpenseFilters() {
+			document.getElementById('expenseSearchText').value = '';
+			document.getElementById('expenseSearchVendor').value = '';
+			document.getElementById('expenseTypeFilter').value = '';
+			document.getElementById('expenseCategoryFilter').value = '';
+			document.getElementById('expenseMonthFilter').value = '';
+			window.expensePeriodFilter = null;
+			
+			updateExpenseCategoryFilter();
+			displayExpenses();
+		}
+
+
 		// עדכון סטטיסטיקות הוצאות
 		function updateExpenseStats(filteredExpenses) {
 			const total = filteredExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
-			const general = filteredExpenses.filter(exp => exp.expense_type !== 'client').reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+			const worker = filteredExpenses.filter(exp => exp.expense_type === 'worker').reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+			const vehicle = filteredExpenses.filter(exp => exp.expense_type === 'vehicle').reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+			const general = filteredExpenses.filter(exp => exp.expense_type === 'general').reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
 			const client = filteredExpenses.filter(exp => exp.expense_type === 'client').reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
 			
 			const totalEl = document.getElementById('totalExpensesAmount');
+			const workerEl = document.getElementById('workerExpensesAmount');
+			const vehicleEl = document.getElementById('vehicleExpensesAmount');
 			const generalEl = document.getElementById('generalExpensesAmount');
 			const clientEl = document.getElementById('clientExpensesAmount');
 			const countEl = document.getElementById('expensesCount');
 			
 			if (totalEl) totalEl.textContent = `${total.toFixed(0)} ₪`;
+			if (workerEl) workerEl.textContent = `${worker.toFixed(0)} ₪`;
+			if (vehicleEl) vehicleEl.textContent = `${vehicle.toFixed(0)} ₪`;
 			if (generalEl) generalEl.textContent = `${general.toFixed(0)} ₪`;
 			if (clientEl) clientEl.textContent = `${client.toFixed(0)} ₪`;
 			if (countEl) countEl.textContent = filteredExpenses.length;
@@ -19006,8 +19727,8 @@
 
 		// הצגת מודל הוספת הוצאה
 		function showAddExpenseModal(clientId = '', clientName = '') {
-			const today = new Date().toISOString().split('T')[0];
-			const isClientExpense = clientId ? true : false;
+			const today = getLocalDateString();
+			const defaultType = clientId ? 'client' : 'general';
 			
 			// בניית רשימת לקוחות
 			const clientOptions = locations
@@ -19044,31 +19765,27 @@
 								   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
 						</div>
 						
-						<!-- קטגוריה וסוג -->
+						<!-- סוג וקטגוריה -->
 						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
 							<div>
-								<label style="display: block; margin-bottom: 5px; font-weight: 600;">קטגוריה</label>
-								<select id="expenseCategory" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-									<option value="fuel">⛽ דלק ושמנים</option>
-									<option value="equipment">🔧 ציוד וכלים</option>
-									<option value="materials">🧪 חומרים</option>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סוג</label>
+								<select id="expenseType" onchange="updateExpenseCategoryOptions(); toggleClientSelectInForm()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="general" ${defaultType === 'general' ? 'selected' : ''}>📦 כללי</option>
+									<option value="client" ${defaultType === 'client' ? 'selected' : ''}>👤 לקוח</option>
 									<option value="vehicle">🚗 רכב</option>
-									<option value="tools">🔨 כלי עבודה</option>
-									<option value="parts">⚙️ חלקי חילוף</option>
-									<option value="other" selected>📦 אחר</option>
+									<option value="worker">👷 עובדים</option>
 								</select>
 							</div>
 							<div>
-								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סוג הוצאה</label>
-								<select id="expenseType" onchange="toggleClientSelect()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-									<option value="general" ${!isClientExpense ? 'selected' : ''}>כללי</option>
-									<option value="client" ${isClientExpense ? 'selected' : ''}>לקוח ספציפי</option>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">קטגוריה</label>
+								<select id="expenseCategory" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<!-- יתמלא על ידי updateExpenseCategoryOptions -->
 								</select>
 							</div>
 						</div>
 						
 						<!-- בחירת לקוח (מוסתר בהתחלה) -->
-						<div id="clientSelectContainer" style="margin-bottom: 15px; display: ${isClientExpense ? 'block' : 'none'};">
+						<div id="clientSelectContainer" style="margin-bottom: 15px; display: ${clientId ? 'block' : 'none'};">
 							<label style="display: block; margin-bottom: 5px; font-weight: 600;">לקוח</label>
 							<select id="expenseClientId" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
 								<option value="">בחר לקוח...</option>
@@ -19076,21 +19793,22 @@
 							</select>
 						</div>
 						
-						<!-- ספק -->
+						<!-- שם / בית עסק -->
 						<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 15px;">
 							<div>
-								<label style="display: block; margin-bottom: 5px; font-weight: 600;">שם הספק/בית עסק</label>
-								<input type="text" id="expenseVendorName" placeholder="למשל: מחסני כלי גינון"
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">שם / בית עסק</label>
+								<input type="text" id="expenseVendorName" placeholder="שם העסק או העובד"
 									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
 							</div>
 							<div>
-								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סוג ספק</label>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סוג</label>
 								<select id="expenseVendorType" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
 									<option value="store">🏪 חנות</option>
 									<option value="garage">🔧 מוסך</option>
 									<option value="gas_station">⛽ תחנת דלק</option>
 									<option value="online">💻 מקוון</option>
 									<option value="nursery">🌱 משתלה</option>
+									<option value="person">👤 אדם</option>
 									<option value="other">📍 אחר</option>
 								</select>
 							</div>
@@ -19139,6 +19857,33 @@
 			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
 			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
 			container.onclick = closeAnyModal;
+			
+			// עדכון קטגוריות לפי סוג ברירת מחדל
+			updateExpenseCategoryOptions();
+		}
+
+		// עדכון קטגוריות בטופס לפי הסוג שנבחר
+		function updateExpenseCategoryOptions() {
+			const expenseType = document.getElementById('expenseType')?.value || 'general';
+			const categorySelect = document.getElementById('expenseCategory');
+			
+			if (!categorySelect) return;
+			
+			const categories = EXPENSE_CATEGORIES[expenseType] || EXPENSE_CATEGORIES['general'];
+			
+			categorySelect.innerHTML = '';
+			for (const [key, value] of Object.entries(categories)) {
+				categorySelect.innerHTML += `<option value="${key}">${value.icon} ${value.name}</option>`;
+			}
+		}
+
+		// הצגה/הסתרה של בחירת לקוח בטופס
+		function toggleClientSelectInForm() {
+			const expenseType = document.getElementById('expenseType')?.value;
+			const clientContainer = document.getElementById('clientSelectContainer');
+			if (clientContainer) {
+				clientContainer.style.display = expenseType === 'client' ? 'block' : 'none';
+			}
 		}
 
 		// הצגה/הסתרה של בחירת לקוח
@@ -19173,7 +19918,8 @@
 				vendor_type: document.getElementById('expenseVendorType').value,
 				payment_method: document.getElementById('expensePaymentMethod').value,
 				receipt_number: document.getElementById('expenseReceiptNumber').value,
-				notes: document.getElementById('expenseNotes').value
+				notes: document.getElementById('expenseNotes').value,
+				updated_at: new Date().toISOString()
 			};
 			
 			expenses.push(newExpense);
@@ -19206,6 +19952,12 @@
 				.map(loc => `<option value="${loc.ID}" ${loc.ID === expense.client_id ? 'selected' : ''}>${loc.name}</option>`)
 				.join('');
 			
+			// בניית קטגוריות לפי הסוג
+			const categories = EXPENSE_CATEGORIES[expense.expense_type] || EXPENSE_CATEGORIES['general'];
+			const categoryOptions = Object.entries(categories)
+				.map(([key, value]) => `<option value="${key}" ${expense.category === key ? 'selected' : ''}>${value.icon} ${value.name}</option>`)
+				.join('');
+			
 			const modalHTML = `
 				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 95vw; max-height: 90vh; overflow-y: auto;">
 					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -19235,25 +19987,21 @@
 								   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
 						</div>
 						
-						<!-- קטגוריה וסוג -->
+						<!-- סוג וקטגוריה -->
 						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
 							<div>
-								<label style="display: block; margin-bottom: 5px; font-weight: 600;">קטגוריה</label>
-								<select id="editExpenseCategory" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-									<option value="fuel" ${expense.category === 'fuel' ? 'selected' : ''}>⛽ דלק ושמנים</option>
-									<option value="equipment" ${expense.category === 'equipment' ? 'selected' : ''}>🔧 ציוד וכלים</option>
-									<option value="materials" ${expense.category === 'materials' ? 'selected' : ''}>🧪 חומרים</option>
-									<option value="vehicle" ${expense.category === 'vehicle' ? 'selected' : ''}>🚗 רכב</option>
-									<option value="tools" ${expense.category === 'tools' ? 'selected' : ''}>🔨 כלי עבודה</option>
-									<option value="parts" ${expense.category === 'parts' ? 'selected' : ''}>⚙️ חלקי חילוף</option>
-									<option value="other" ${expense.category === 'other' ? 'selected' : ''}>📦 אחר</option>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סוג</label>
+								<select id="editExpenseType" onchange="updateEditExpenseCategoryOptions(); toggleEditClientSelectInForm()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									<option value="general" ${expense.expense_type === 'general' ? 'selected' : ''}>📦 כללי</option>
+									<option value="client" ${expense.expense_type === 'client' ? 'selected' : ''}>👤 לקוח</option>
+									<option value="vehicle" ${expense.expense_type === 'vehicle' ? 'selected' : ''}>🚗 רכב</option>
+									<option value="worker" ${expense.expense_type === 'worker' ? 'selected' : ''}>👷 עובדים</option>
 								</select>
 							</div>
 							<div>
-								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סוג הוצאה</label>
-								<select id="editExpenseType" onchange="toggleEditClientSelect()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-									<option value="general" ${!isClientExpense ? 'selected' : ''}>כללי</option>
-									<option value="client" ${isClientExpense ? 'selected' : ''}>לקוח ספציפי</option>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">קטגוריה</label>
+								<select id="editExpenseCategory" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+									${categoryOptions}
 								</select>
 							</div>
 						</div>
@@ -19267,21 +20015,22 @@
 							</select>
 						</div>
 						
-						<!-- ספק -->
+						<!-- שם / בית עסק -->
 						<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 15px;">
 							<div>
-								<label style="display: block; margin-bottom: 5px; font-weight: 600;">שם הספק/בית עסק</label>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">שם / בית עסק</label>
 								<input type="text" id="editExpenseVendorName" value="${expense.vendor_name || ''}"
 									   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
 							</div>
 							<div>
-								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סוג ספק</label>
+								<label style="display: block; margin-bottom: 5px; font-weight: 600;">סוג</label>
 								<select id="editExpenseVendorType" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
 									<option value="store" ${expense.vendor_type === 'store' ? 'selected' : ''}>🏪 חנות</option>
 									<option value="garage" ${expense.vendor_type === 'garage' ? 'selected' : ''}>🔧 מוסך</option>
 									<option value="gas_station" ${expense.vendor_type === 'gas_station' ? 'selected' : ''}>⛽ תחנת דלק</option>
 									<option value="online" ${expense.vendor_type === 'online' ? 'selected' : ''}>💻 מקוון</option>
 									<option value="nursery" ${expense.vendor_type === 'nursery' ? 'selected' : ''}>🌱 משתלה</option>
+									<option value="person" ${expense.vendor_type === 'person' ? 'selected' : ''}>👤 אדם</option>
 									<option value="other" ${expense.vendor_type === 'other' ? 'selected' : ''}>📍 אחר</option>
 								</select>
 							</div>
@@ -19330,6 +20079,30 @@
 			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
 			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
 			container.onclick = closeAnyModal;
+		}
+
+		// עדכון קטגוריות בטופס עריכה
+		function updateEditExpenseCategoryOptions() {
+			const expenseType = document.getElementById('editExpenseType')?.value || 'general';
+			const categorySelect = document.getElementById('editExpenseCategory');
+			
+			if (!categorySelect) return;
+			
+			const categories = EXPENSE_CATEGORIES[expenseType] || EXPENSE_CATEGORIES['general'];
+			
+			categorySelect.innerHTML = '';
+			for (const [key, value] of Object.entries(categories)) {
+				categorySelect.innerHTML += `<option value="${key}">${value.icon} ${value.name}</option>`;
+			}
+		}
+
+		// הצגה/הסתרה של בחירת לקוח בטופס עריכה
+		function toggleEditClientSelectInForm() {
+			const expenseType = document.getElementById('editExpenseType')?.value;
+			const clientContainer = document.getElementById('editClientSelectContainer');
+			if (clientContainer) {
+				clientContainer.style.display = expenseType === 'client' ? 'block' : 'none';
+			}
 		}
 
 		// הצגה/הסתרה של בחירת לקוח בעריכה
@@ -19404,6 +20177,421 @@
 		}
 
 
+		// קביעת טווח תאריכים לייצוא
+		function setExportDateRange(range) {
+			const fromInput = document.getElementById('exportFromDate');
+			const toInput = document.getElementById('exportToDate');
+			
+			const today = new Date();
+			const currentYear = today.getFullYear();
+			
+			switch (range) {
+				case 'year':
+					fromInput.value = `${currentYear}-01-01`;
+					toInput.value = getLocalDateString(today);
+					break;
+				case 'lastYear':
+					fromInput.value = `${currentYear - 1}-01-01`;
+					toInput.value = `${currentYear - 1}-12-31`;
+					break;
+				case 'all':
+					fromInput.value = '';
+					toInput.value = '';
+					break;
+			}
+		}
+
+		// ייצוא טיפולים במבנה קלאסי
+		async function exportVisitsClassic() {
+			if (!access_token || !SPREADSHEET_ID) {
+				showToast('נדרש חיבור לענן לייצוא', 'error');
+				return;
+			}
+			
+			const fromDate = document.getElementById('exportFromDate')?.value || '';
+			const toDate = document.getElementById('exportToDate')?.value || '';
+			const statusDiv = document.getElementById('exportStatus');
+			
+			// סינון טיפולים לפי טווח תאריכים
+			let filteredVisits = [...visits];
+			
+			if (fromDate) {
+				filteredVisits = filteredVisits.filter(v => v.date >= fromDate);
+			}
+			if (toDate) {
+				filteredVisits = filteredVisits.filter(v => v.date <= toDate);
+			}
+			
+			// מיון לפי תאריך
+			filteredVisits.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+			
+			if (filteredVisits.length === 0) {
+				showToast('אין טיפולים בטווח התאריכים שנבחר', 'warning');
+				return;
+			}
+			
+			if (statusDiv) {
+				statusDiv.innerHTML = `⏳ מייצא ${filteredVisits.length} טיפולים...`;
+			}
+			
+			showToast(`📤 מייצא ${filteredVisits.length} טיפולים...`, 'info');
+			
+			try {
+				// וודא שהגיליון קיים
+				await addHeadersToSheet('ExportVisitsClassic');
+				
+				// המרת סטטוס תשלום
+				const paidStatusMap = {
+					'0': 'לא',
+					'1': 'כן',
+					'2': 'ללא תשלום',
+					'3': 'חלקי'
+				};
+				
+				// תאריך הייצוא
+				const exportDate = getLocalDateString();
+				
+				// בניית הנתונים לייצוא
+				const exportData = filteredVisits.map(visit => {
+					const visitDate = new Date(visit.date);
+					const year = visitDate.getFullYear();
+					const month = visitDate.getMonth() + 1;
+					const day = visitDate.getDate();
+					
+					// מציאת פרטי הלקוח
+					const client = locations.find(loc => loc.ID === visit.location_id) || {};
+					
+					// המרת משך זמן לשעות
+					const durationHours = visit.duration_minutes 
+						? (parseFloat(visit.duration_minutes) / 60).toFixed(2)
+						: '';
+					
+					// המרת סטטוס תשלום
+					const paidStatus = paidStatusMap[visit.paid] || visit.paid || '';
+					
+					return [
+						year,
+						month,
+						day,
+						visit.location_name || '',
+						client.full_address || visit.location_name || '',
+						client.contact_person || '',
+						visit.visit_type || '',
+						visit.date || '',
+						visit.work_done || '',
+						durationHours,
+						visit.amount || '',
+						paidStatus,
+						visit.expense || '',
+						visit.notes || '',
+						exportDate
+					];
+				});
+				
+				// מחיקת נתונים קיימים (שורה 2 ואילך)
+				await gapi.client.sheets.spreadsheets.values.clear({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'ExportVisitsClassic!A2:O'
+				});
+				
+				// כתיבת הנתונים החדשים
+				if (exportData.length > 0) {
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: 'ExportVisitsClassic!A2',
+						valueInputOption: 'RAW',
+						resource: { values: exportData }
+					});
+				}
+				
+				// שמירת זמן הייצוא
+				localStorage.setItem('lastExportTime', new Date().toISOString());
+				
+				if (statusDiv) {
+					const rangeText = fromDate || toDate 
+						? `(${fromDate || 'התחלה'} עד ${toDate || 'היום'})`
+						: '(כל הטיפולים)';
+					statusDiv.innerHTML = `✅ יוצאו ${filteredVisits.length} טיפולים ${rangeText} - ${new Date().toLocaleString('he-IL')}`;
+				}
+				
+				showToast(`✅ יוצאו ${filteredVisits.length} טיפולים בהצלחה!`, 'success');
+				
+			} catch (error) {
+				console.error('❌ שגיאה בייצוא:', error);
+				if (statusDiv) {
+					statusDiv.innerHTML = `❌ שגיאה בייצוא: ${error.message}`;
+				}
+				showToast('❌ שגיאה בייצוא', 'error');
+			}
+		}
+
+
+		// דוח סיכום הכנסות שנתי
+		function showYearlyIncomeReport() {
+			// מציאת טווח השנים בנתונים
+			const years = [...new Set(visits.map(v => {
+				if (!v.date) return null;
+				return new Date(v.date).getFullYear();
+			}).filter(y => y !== null))].sort((a, b) => b - a);
+			
+			if (years.length === 0) {
+				showToast('אין נתונים להצגה', 'warning');
+				return;
+			}
+			
+			const currentYear = new Date().getFullYear();
+			const defaultYear = years.includes(currentYear) ? currentYear : years[0];
+			
+			// בניית אפשרויות שנים
+			const yearOptions = years.map(y => 
+				`<option value="${y}" ${y === defaultYear ? 'selected' : ''}>${y}</option>`
+			).join('');
+			
+			const modalHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 800px; width: 95vw; max-height: 90vh; overflow-y: auto;">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+						<h3 style="margin: 0; color: #9c27b0;">📈 סיכום הכנסות שנתי</h3>
+						<button onclick="closeAnyModal()" style="background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
+					</div>
+					
+					<!-- בחירת שנה -->
+					<div style="margin-bottom: 20px; text-align: center;">
+						<label style="font-size: 14px; margin-left: 10px;">בחר שנה:</label>
+						<select id="reportYear" onchange="updateYearlyIncomeReport()" style="padding: 10px 20px; font-size: 16px; border-radius: 8px; border: 2px solid #9c27b0;">
+							${yearOptions}
+						</select>
+					</div>
+					
+					<!-- תוכן הדוח -->
+					<div id="yearlyReportContent">
+						<!-- יתמלא על ידי updateYearlyIncomeReport -->
+					</div>
+				</div>
+			`;
+			
+			const container = document.getElementById('modalContainer');
+			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
+			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
+			container.onclick = closeAnyModal;
+			
+			// הצגת הדוח לשנה הנבחרת
+			updateYearlyIncomeReport();
+		}
+
+		// עדכון תוכן דוח הכנסות שנתי
+		function updateYearlyIncomeReport() {
+			const year = parseInt(document.getElementById('reportYear').value);
+			const contentDiv = document.getElementById('yearlyReportContent');
+			
+			if (!contentDiv) return;
+			
+			// סינון טיפולים לשנה הנבחרת
+			const yearVisits = visits.filter(v => {
+				if (!v.date) return false;
+				return new Date(v.date).getFullYear() === year;
+			});
+			
+			// סינון הוצאות לשנה הנבחרת
+			const yearExpenses = expenses.filter(exp => {
+				if (!exp.date) return false;
+				return new Date(exp.date).getFullYear() === year;
+			});
+			
+			// חישוב נתונים לכל חודש
+			const monthlyData = [];
+			const monthNames = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+			
+			for (let month = 0; month < 12; month++) {
+				// טיפולים בחודש
+				const monthVisits = yearVisits.filter(v => new Date(v.date).getMonth() === month);
+				
+				// הוצאות בחודש
+				const monthExpenses = yearExpenses.filter(exp => new Date(exp.date).getMonth() === month);
+				
+				// חישובים
+				const visitsCount = monthVisits.length;
+				const totalMinutes = monthVisits.reduce((sum, v) => sum + (parseFloat(v.duration_minutes) || 0), 0);
+				const totalHours = totalMinutes / 60;
+				const totalIncome = monthVisits.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
+				const visitExpenses = monthVisits.reduce((sum, v) => sum + (parseFloat(v.expense) || 0), 0);
+				
+				// הוצאות פועל מטבלת Expenses
+				const workerExpenses = monthExpenses
+					.filter(exp => exp.category === 'worker')
+					.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+				
+				// הוצאות אחרות מטבלת Expenses (לא פועל)
+				const otherExpenses = monthExpenses
+					.filter(exp => exp.category !== 'worker')
+					.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+				
+				// סה"כ הוצאות = הוצאות מטיפולים + הוצאות אחרות (לא כולל פועל)
+				const totalOtherExpenses = visitExpenses + otherExpenses;
+				
+				// נטו = הכנסה - פועל - הוצאות אחרות
+				const netIncome = totalIncome - workerExpenses - totalOtherExpenses;
+				
+				// ממוצע לטיפול
+				const avgPerVisit = visitsCount > 0 ? totalIncome / visitsCount : 0;
+				
+				monthlyData.push({
+					month: month + 1,
+					monthName: monthNames[month],
+					visitsCount,
+					totalHours,
+					totalIncome,
+					workerExpenses,
+					otherExpenses: totalOtherExpenses,
+					netIncome,
+					avgPerVisit
+				});
+			}
+			
+			// חישוב סיכומים שנתיים
+			const yearlyTotals = {
+				visitsCount: monthlyData.reduce((sum, m) => sum + m.visitsCount, 0),
+				totalHours: monthlyData.reduce((sum, m) => sum + m.totalHours, 0),
+				totalIncome: monthlyData.reduce((sum, m) => sum + m.totalIncome, 0),
+				workerExpenses: monthlyData.reduce((sum, m) => sum + m.workerExpenses, 0),
+				otherExpenses: monthlyData.reduce((sum, m) => sum + m.otherExpenses, 0),
+				netIncome: monthlyData.reduce((sum, m) => sum + m.netIncome, 0)
+			};
+			yearlyTotals.avgPerVisit = yearlyTotals.visitsCount > 0 ? yearlyTotals.totalIncome / yearlyTotals.visitsCount : 0;
+			
+			// חישוב ממוצעים חודשיים (רק חודשים עם פעילות)
+			const activeMonths = monthlyData.filter(m => m.visitsCount > 0).length;
+			const monthlyAvg = activeMonths > 0 ? yearlyTotals.netIncome / activeMonths : 0;
+			
+			// בניית HTML
+			let html = `
+				<!-- סיכום שנתי -->
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px;">
+					<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;">${yearlyTotals.visitsCount}</div>
+						<div style="font-size: 11px; opacity: 0.9;">טיפולים</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;">${yearlyTotals.totalHours.toFixed(0)}</div>
+						<div style="font-size: 11px; opacity: 0.9;">שעות</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;">${yearlyTotals.totalIncome.toLocaleString()}</div>
+						<div style="font-size: 11px; opacity: 0.9;">הכנסה ₪</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;">${yearlyTotals.workerExpenses.toLocaleString()}</div>
+						<div style="font-size: 11px; opacity: 0.9;">עלות פועל ₪</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: #333; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;">${yearlyTotals.otherExpenses.toLocaleString()}</div>
+						<div style="font-size: 11px;">הוצאות אחרות ₪</div>
+					</div>
+					<div style="background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+						<div style="font-size: 24px; font-weight: bold;">${yearlyTotals.netIncome.toLocaleString()}</div>
+						<div style="font-size: 11px; opacity: 0.9;">נטו ₪</div>
+					</div>
+				</div>
+				
+				<!-- ממוצעים -->
+				<div style="background: #f5f5f5; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px;">
+					<div style="text-align: center;">
+						<div style="font-size: 20px; font-weight: bold; color: #9c27b0;">${yearlyTotals.avgPerVisit.toFixed(0)} ₪</div>
+						<div style="font-size: 12px; color: #666;">ממוצע לטיפול</div>
+					</div>
+					<div style="text-align: center;">
+						<div style="font-size: 20px; font-weight: bold; color: #9c27b0;">${monthlyAvg.toFixed(0)} ₪</div>
+						<div style="font-size: 12px; color: #666;">ממוצע נטו לחודש</div>
+					</div>
+					<div style="text-align: center;">
+						<div style="font-size: 20px; font-weight: bold; color: #9c27b0;">${activeMonths}</div>
+						<div style="font-size: 12px; color: #666;">חודשים פעילים</div>
+					</div>
+				</div>
+				
+				<!-- טבלה חודשית -->
+				<div style="overflow-x: auto;">
+					<table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+						<thead>
+							<tr style="background: #9c27b0; color: white;">
+								<th style="padding: 10px; text-align: right;">חודש</th>
+								<th style="padding: 10px; text-align: center;">טיפולים</th>
+								<th style="padding: 10px; text-align: center;">שעות</th>
+								<th style="padding: 10px; text-align: center;">הכנסה</th>
+								<th style="padding: 10px; text-align: center;">פועל</th>
+								<th style="padding: 10px; text-align: center;">הוצאות</th>
+								<th style="padding: 10px; text-align: center;">נטו</th>
+								<th style="padding: 10px; text-align: center;">ממוצע/טיפול</th>
+							</tr>
+						</thead>
+						<tbody>
+			`;
+			
+			// שורות החודשים (מ-12 ל-1)
+			for (let i = 11; i >= 0; i--) {
+				const m = monthlyData[i];
+				const rowBg = m.visitsCount === 0 ? '#f5f5f5' : (i % 2 === 0 ? '#fff' : '#fafafa');
+				const textColor = m.visitsCount === 0 ? '#999' : '#333';
+				
+				html += `
+					<tr style="background: ${rowBg}; color: ${textColor};">
+						<td style="padding: 8px; font-weight: 600;">${m.monthName}</td>
+						<td style="padding: 8px; text-align: center;">${m.visitsCount || '-'}</td>
+						<td style="padding: 8px; text-align: center;">${m.totalHours > 0 ? m.totalHours.toFixed(1) : '-'}</td>
+						<td style="padding: 8px; text-align: center; color: #2196F3; font-weight: 600;">${m.totalIncome > 0 ? m.totalIncome.toLocaleString() : '-'}</td>
+						<td style="padding: 8px; text-align: center; color: #e91e63;">${m.workerExpenses > 0 ? m.workerExpenses.toLocaleString() : '-'}</td>
+						<td style="padding: 8px; text-align: center; color: #ff5722;">${m.otherExpenses > 0 ? m.otherExpenses.toLocaleString() : '-'}</td>
+						<td style="padding: 8px; text-align: center; color: #4caf50; font-weight: 600;">${m.netIncome !== 0 ? m.netIncome.toLocaleString() : '-'}</td>
+						<td style="padding: 8px; text-align: center;">${m.avgPerVisit > 0 ? m.avgPerVisit.toFixed(0) : '-'}</td>
+					</tr>
+				`;
+			}
+			
+			// שורת סיכום
+			html += `
+						</tbody>
+						<tfoot>
+							<tr style="background: #9c27b0; color: white; font-weight: bold;">
+								<td style="padding: 10px;">סה"כ ${year}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.visitsCount}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.totalHours.toFixed(1)}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.totalIncome.toLocaleString()}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.workerExpenses.toLocaleString()}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.otherExpenses.toLocaleString()}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.netIncome.toLocaleString()}</td>
+								<td style="padding: 10px; text-align: center;">${yearlyTotals.avgPerVisit.toFixed(0)}</td>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			`;
+			
+			contentDiv.innerHTML = html;
+		}
+
+		// עדכון רשימת קטגוריות בפילטר לפי הסוג שנבחר
+		function updateExpenseCategoryFilter() {
+			const typeFilter = document.getElementById('expenseTypeFilter')?.value || '';
+			const categorySelect = document.getElementById('expenseCategoryFilter');
+			
+			if (!categorySelect) return;
+			
+			// איפוס הקטגוריות
+			categorySelect.innerHTML = '<option value="">כל הקטגוריות</option>';
+			
+			if (typeFilter && EXPENSE_CATEGORIES[typeFilter]) {
+				const categories = EXPENSE_CATEGORIES[typeFilter];
+				for (const [key, value] of Object.entries(categories)) {
+					categorySelect.innerHTML += `<option value="${key}">${value.icon} ${value.name}</option>`;
+				}
+			} else {
+				// אם לא נבחר סוג - הצג את כל הקטגוריות
+				for (const [type, categories] of Object.entries(EXPENSE_CATEGORIES)) {
+					for (const [key, value] of Object.entries(categories)) {
+						categorySelect.innerHTML += `<option value="${key}">${value.icon} ${value.name}</option>`;
+					}
+				}
+			}
+		}
 
 
    </script>
