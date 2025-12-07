@@ -4847,15 +4847,15 @@
 				headerHtml = `<div class="day-content-header">${planningClients.length} טיפולים היום - ${formattedDate}</div>`;
 			}
 			
-			let html = headerHtml + planningClients.map(client => renderClientRow(client)).join('');
+			let html = headerHtml;
 			
-			// בתצוגה יומית - הוספת מאחרים דחופים
+			// בתצוגה יומית - הוספת מאחרים דחופים ראשונים
 			if (currentPlanningView === 'daily') {
 				const urgentOverdue = getUrgentOverdueClients();
 				
 				if (urgentOverdue.length > 0) {
 					html += `
-						<div style="margin-top: 20px; background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); border: 2px solid #e74c3c; border-radius: 12px; padding: 15px;">
+						<div style="margin-bottom: 20px; background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); border: 2px solid #e74c3c; border-radius: 12px; padding: 15px;">
 							<h3 style="margin: 0 0 15px 0; color: #c0392b; font-size: 16px; display: flex; align-items: center; gap: 8px;">
 								⚠️ מאחרים דחופים (${urgentOverdue.length})
 								<span style="font-size: 12px; color: #666; font-weight: normal;">מרווח עד 3 חודשים</span>
@@ -4866,7 +4866,50 @@
 						</div>
 					`;
 				}
+				
+				// משימות להיום
+				const todayStr = getLocalDateString();
+				const todayTasks = (typeof tasks !== 'undefined' ? tasks : []).filter(task => 
+					task.due_date === todayStr && 
+					task.status !== 'completed' && 
+					task.status !== 'cancelled'
+				);
+				
+				if (todayTasks.length > 0) {
+					html += `
+						<div style="margin-bottom: 20px; background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border: 2px solid #9b59b6; border-radius: 12px; padding: 15px;">
+							<h3 style="margin: 0 0 15px 0; color: #7b1fa2; font-size: 16px;">
+								📋 משימות להיום (${todayTasks.length})
+							</h3>
+							${todayTasks.map(task => {
+								const typeInfo = typeof TASK_TYPES !== 'undefined' && TASK_TYPES[task.type] ? TASK_TYPES[task.type] : { icon: '📦', label: task.type || 'אחר' };
+								const clientName = task.client_name || 'ללא לקוח';
+								return `
+									<div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+										<div>
+											<div style="font-weight: 600; color: #333;">${typeInfo.icon} ${typeInfo.label}</div>
+											<div style="font-size: 12px; color: #666;">👤 ${clientName}</div>
+											${task.description ? `<div style="font-size: 11px; color: #888; margin-top: 3px;">${task.description}</div>` : ''}
+										</div>
+										<div style="display: flex; gap: 4px; align-items: center;">
+											<input type="date" id="dailyTaskDateInput_${task.ID}" style="display:none;" onchange="updateTaskDueDate('${task.ID}', this.value)">
+											<button onclick="document.getElementById('dailyTaskDateInput_${task.ID}').showPicker()" 
+													style="background: #3498db; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 14px;"
+													title="בחר תאריך">📅</button>
+											<button onclick="showVisitForm(null, '${task.client_id}')" 
+													style="background: #27ae60; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 11px;"
+													title="פתח טיפול">▶️</button>
+										</div>
+									</div>
+								`;
+							}).join('')}
+						</div>
+					`;
+				}
 			}
+			
+			// טיפולים רגילים
+			html += planningClients.map(client => renderClientRow(client)).join('');
 			
 			container.innerHTML = html;
 			setTimeout(setTodayAsDefault, 100);
