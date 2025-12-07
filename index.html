@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2517,7 +2517,8 @@
 					
 			   <!-- מצב יום עבודה -->
 				<div class="work-day-section" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #28a745; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-					<h3 style="margin: 0 0 15px 0; color: #28a745; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+					<h3 onclick="toggleTodaySection()" style="margin: 0 0 15px 0; color: #28a745; font-size: 18px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+						<span id="todaySectionToggle">▼</span>
 						🏃‍♂️ הטיפולים שלי היום
 						<span id="todayWorkStatus" style="font-size: 14px; color: #666; font-weight: normal;"></span>
 					</h3>
@@ -4671,6 +4672,7 @@
 				
 				// חישוב התאריך רק לשבוע נוכחי ושבוע הבא
 				let formattedDate = '';
+				let actualDateStr = '';
 				if (currentPlanningView === 'weekly' || currentPlanningView === 'next_week') {
 					const dayIndex = dayIndexMap[dayName];
 					let daysDiff = dayIndex - todayDayIndex;
@@ -4680,16 +4682,24 @@
 					const dayDate = new Date(today);
 					dayDate.setDate(today.getDate() + daysDiff);
 					formattedDate = dayDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+					actualDateStr = getLocalDateString(dayDate);
 				}
 
 				// מאחרים דחופים ליום זה
 				const overdueForDay = urgentOverdueByDay[dayName] || [];
+				
+				// משימות ליום זה
+				const dayTasks = (typeof tasks !== 'undefined' ? tasks : []).filter(task => 
+					task.due_date === actualDateStr && 
+					task.status !== 'completed' && 
+					task.status !== 'cancelled'
+				);
 
-				return { dayName, clients: dayClients, date: formattedDate, overdueClients: overdueForDay };
+				return { dayName, clients: dayClients, date: formattedDate, overdueClients: overdueForDay, tasks: dayTasks };
 			});
 			
-			// רק ימים עם לקוחות או מאחרים
-			const activeDays = daysData.filter(day => day.clients.length > 0 || day.overdueClients.length > 0);
+			// רק ימים עם לקוחות או מאחרים או משימות
+			const activeDays = daysData.filter(day => day.clients.length > 0 || day.overdueClients.length > 0 || day.tasks.length > 0);
 			
 			if (activeDays.length === 0) {
 				container.innerHTML = '<div class="planning-empty-state"><h3>אין לקוחות להציג</h3></div>';
@@ -4704,10 +4714,11 @@
 							// אם יש יום שנבחר, השתמש בו. אחרת - היום הראשון
 							const isActive = selectedDayTab ? (day.dayName === selectedDayTab) : (index === 0);
 							const hasOverdue = day.overdueClients.length > 0;
+							const hasTasks = day.tasks && day.tasks.length > 0;
 							return `<button class="day-tab-btn ${isActive ? 'active' : ''} ${hasOverdue ? 'has-overdue' : ''}" 
 											 onclick="switchDayTab('${day.dayName}')" 
 											 data-day="${day.dayName}">
-										${day.dayName}${hasOverdue ? ' ⚠️' : ''}
+										${day.dayName}${hasOverdue ? ' ⚠️' : ''}${hasTasks ? ' 📋' : ''}
 									</button>`;
 						}).join('')}
 					</div>
@@ -4728,11 +4739,48 @@
 								`;
 							}
 							
+							// משימות ליום זה
+							let tasksHtml = '';
+							if (day.tasks && day.tasks.length > 0) {
+								tasksHtml = `
+									<div style="margin-bottom: 15px; background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border: 2px solid #9b59b6; border-radius: 10px; padding: 12px;">
+										<div style="font-size: 14px; font-weight: 600; color: #7b1fa2; margin-bottom: 10px;">
+											📋 משימות (${day.tasks.length})
+										</div>
+										${day.tasks.map(task => {
+											const typeInfo = typeof TASK_TYPES !== 'undefined' && TASK_TYPES[task.type] ? TASK_TYPES[task.type] : { icon: '📦', label: task.type || 'אחר' };
+											const clientName = task.client_name || 'ללא לקוח';
+											return `
+												<div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+													<div>
+														<div style="font-weight: 600; color: #333;">${typeInfo.icon} ${typeInfo.label}</div>
+														<div style="font-size: 12px; color: #666;">👤 ${clientName}</div>
+														${task.description ? `<div style="font-size: 11px; color: #888; margin-top: 3px;">${task.description}</div>` : ''}
+													</div>
+													<div style="display: flex; gap: 4px;">
+														<button onclick="postponeTask('${task.ID}', 1)" 
+																style="background: #f39c12; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 11px;"
+																title="דחה יום">+1</button>
+														<button onclick="postponeTask('${task.ID}', 7)" 
+																style="background: #e67e22; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 11px;"
+																title="דחה שבוע">+7</button>
+														<button onclick="showVisitForm(null, '${task.client_id}')" 
+																style="background: #27ae60; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 11px;"
+																title="פתח טיפול">▶️</button>
+													</div>
+												</div>
+											`;
+										}).join('')}
+									</div>
+								`;
+							}
+							
 							return `<div class="day-content ${isActive ? 'active' : ''}" data-day="${day.dayName}">
 										<div class="day-content-header">
-											${day.clients.length} טיפולים ליום ${day.dayName}'${day.date ? ' - ' + day.date : ''}
+											${day.clients.length} טיפולים ליום ${day.dayName}'${day.date ? ' - ' + day.date : ''}${day.tasks && day.tasks.length > 0 ? ` • ${day.tasks.length} משימות` : ''}
 										</div>
 										${overdueHtml}
+										${tasksHtml}
 										${day.clients.map(client => renderClientRow(client)).join('')}
 									</div>`;
 						}).join('')}
@@ -16439,6 +16487,24 @@
 			});
 			
 			console.log('🧪 Test complete - check console output above');
+		}
+
+
+		// Toggle today section collapse/expand
+		function toggleTodaySection() {
+			const container = document.getElementById('todayTreatmentsContainer');
+			const refreshBtn = container.nextElementSibling;
+			const toggleIcon = document.getElementById('todaySectionToggle');
+			
+			if (container.style.display === 'none') {
+				container.style.display = 'block';
+				if (refreshBtn) refreshBtn.style.display = 'block';
+				toggleIcon.textContent = '▼';
+			} else {
+				container.style.display = 'none';
+				if (refreshBtn) refreshBtn.style.display = 'none';
+				toggleIcon.textContent = '▶';
+			}
 		}
 
 
