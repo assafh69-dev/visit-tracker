@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4757,17 +4757,48 @@
 														<div style="font-size: 12px; color: #666;">👤 ${clientName}</div>
 														${task.description ? `<div style="font-size: 11px; color: #888; margin-top: 3px;">${task.description}</div>` : ''}
 													</div>
-													<div style="display: flex; gap: 4px;">
-														<button onclick="postponeTask('${task.ID}', 1)" 
-																style="background: #f39c12; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 11px;"
-																title="דחה יום">+1</button>
-														<button onclick="postponeTask('${task.ID}', 7)" 
-																style="background: #e67e22; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 11px;"
-																title="דחה שבוע">+7</button>
-														<button onclick="showVisitForm(null, '${task.client_id}')" 
-																style="background: #27ae60; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 11px;"
-																title="פתח טיפול">▶️</button>
+													<div style="display: flex; gap: 4px; align-items: center;">
+														<input type="date" id="taskDateInput_${task.ID}" style="display:none;" onchange="updateTaskDueDate('${task.ID}', this.value)">
+														<button onclick="document.getElementById('taskDateInput_${task.ID}').showPicker()" 
+																style="padding: 4px 8px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;"
+																title="בחר תאריך">
+															📅
+														</button>
 													</div>
+												</div>
+											`;
+										}).join('')}
+									</div>
+								`;
+							}
+							
+							// משימות ליום זה
+							let tasksHtml = '';
+							if (day.tasks && day.tasks.length > 0) {
+								tasksHtml = `
+									<div style="margin-bottom: 15px; background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border: 2px solid #9b59b6; border-radius: 10px; padding: 12px;">
+										<div style="font-size: 14px; font-weight: 600; color: #7b1fa2; margin-bottom: 10px;">
+											📋 משימות (${day.tasks.length})
+										</div>
+										${day.tasks.map(task => {
+											const typeInfo = typeof TASK_TYPES !== 'undefined' && TASK_TYPES[task.type] ? TASK_TYPES[task.type] : { icon: '📦', label: task.type || 'אחר' };
+											const clientName = task.client_name || 'ללא לקוח';
+											return `
+												<div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+													<div>
+														<div style="font-weight: 600; color: #333;">${typeInfo.icon} ${typeInfo.label}</div>
+														<div style="font-size: 12px; color: #666;">👤 ${clientName}</div>
+														${task.description ? `<div style="font-size: 11px; color: #888; margin-top: 3px;">${task.description}</div>` : ''}
+													</div>
+													<div style="display: flex; gap: 4px; align-items: center;">
+													<input type="date" id="weeklyTaskDateInput_${task.ID}" style="display:none;" onchange="updateTaskDueDate('${task.ID}', this.value)">
+													<button onclick="document.getElementById('weeklyTaskDateInput_${task.ID}').showPicker()" 
+															style="background: #3498db; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 14px;"
+															title="בחר תאריך">📅</button>
+													<button onclick="showVisitForm(null, '${task.client_id}')" 
+															style="background: #27ae60; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 11px;"
+															title="פתח טיפול">▶️</button>
+												</div>
 												</div>
 											`;
 										}).join('')}
@@ -14840,6 +14871,14 @@
 					
 					showToast('✅ הטיפול עודכן בהצלחה', 'success');
 					
+					// אם הטיפול הושלם (יש שעת סיום) ולא שולם - הצע להוסיף תשלום
+					const updatedVisit = visits[visitIndex];
+					if (updatedVisit.end_time && updatedVisit.paid === '0') {
+						setTimeout(() => {
+							showPaymentPromptAfterVisit(updatedVisit);
+						}, 500);
+					}
+					
 				} else {
 					// ===== מצב יצירה =====
 					
@@ -18125,6 +18164,40 @@
 		}
 
 
+		// עדכון תאריך משימה מלוח שנה
+		async function updateTaskDueDate(taskId, newDate) {
+			const task = tasks.find(t => t.ID === taskId);
+			if (!task) {
+				showToast('משימה לא נמצאה', 'error');
+				return;
+			}
+			
+			task.due_date = newDate;
+			task.updated_at = new Date().toISOString();
+			
+			// שמירה מקומית
+			saveToLocalStorage();
+			
+			// שמירה בענן
+			if (access_token && SPREADSHEET_ID) {
+				try {
+					await updateTaskInSheets(task);
+				} catch (error) {
+					console.error('Error updating task in cloud:', error);
+				}
+			}
+			
+			showToast(`📋 המשימה הועברה ל-${formatDate(newDate)}`, 'success');
+			
+			// רענון תצוגות
+			loadTodayTreatments();
+			loadPlanningData();
+			if (typeof filterTasks === 'function') {
+				filterTasks();
+			}
+		}
+
+
 		// Create next recurring task
 		function createNextRecurringTask(originalTask) {
 			const intervalDays = {
@@ -19241,6 +19314,36 @@
 				</div>
 			`;
 		}
+
+		// שאלה להוספת תשלום אחרי סגירת טיפול
+		function showPaymentPromptAfterVisit(visit) {
+			const modalHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 90vw; text-align: center;">
+					<div style="font-size: 48px; margin-bottom: 15px;">💰</div>
+					<h3 style="margin: 0 0 10px 0; color: #2c3e50;">להוסיף תשלום?</h3>
+					<p style="color: #666; margin-bottom: 20px;">
+						טיפול ב${visit.location_name} הושלם<br>
+						סכום: ${visit.amount} ₪
+					</p>
+					<div style="display: flex; gap: 10px; justify-content: center;">
+						<button onclick="closeAnyModal(); setTimeout(() => showAddPaymentModal('${visit.location_id}'), 100);" 
+								style="padding: 12px 25px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+							✔ כן, הוסף תשלום
+						</button>
+						<button onclick="closeAnyModal();" 
+								style="padding: 12px 25px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+							לא עכשיו
+						</button>
+					</div>
+				</div>
+			`;
+			
+			const container = document.getElementById('modalContainer');
+			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
+			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
+			container.onclick = closeAnyModal;
+		}
+
 
 		// הצגת שאלה להפקת קבלה אחרי תשלום
 		function showReceiptPrompt(payment) {
