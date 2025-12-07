@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4739,38 +4739,6 @@
 								`;
 							}
 							
-							// משימות ליום זה
-							let tasksHtml = '';
-							if (day.tasks && day.tasks.length > 0) {
-								tasksHtml = `
-									<div style="margin-bottom: 15px; background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border: 2px solid #9b59b6; border-radius: 10px; padding: 12px;">
-										<div style="font-size: 14px; font-weight: 600; color: #7b1fa2; margin-bottom: 10px;">
-											📋 משימות (${day.tasks.length})
-										</div>
-										${day.tasks.map(task => {
-											const typeInfo = typeof TASK_TYPES !== 'undefined' && TASK_TYPES[task.type] ? TASK_TYPES[task.type] : { icon: '📦', label: task.type || 'אחר' };
-											const clientName = task.client_name || 'ללא לקוח';
-											return `
-												<div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-													<div>
-														<div style="font-weight: 600; color: #333;">${typeInfo.icon} ${typeInfo.label}</div>
-														<div style="font-size: 12px; color: #666;">👤 ${clientName}</div>
-														${task.description ? `<div style="font-size: 11px; color: #888; margin-top: 3px;">${task.description}</div>` : ''}
-													</div>
-													<div style="display: flex; gap: 4px; align-items: center;">
-														<input type="date" id="taskDateInput_${task.ID}" style="display:none;" onchange="updateTaskDueDate('${task.ID}', this.value)">
-														<button onclick="document.getElementById('taskDateInput_${task.ID}').showPicker()" 
-																style="padding: 4px 8px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;"
-																title="בחר תאריך">
-															📅
-														</button>
-													</div>
-												</div>
-											`;
-										}).join('')}
-									</div>
-								`;
-							}
 							
 							// משימות ליום זה
 							let tasksHtml = '';
