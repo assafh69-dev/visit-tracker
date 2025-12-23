@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -17391,6 +17391,12 @@
 				return notes.includes('יובא מטבלת עזר');
 			});
 			
+			// Find locations with import notes to clean
+			const locationsToCleanNotes = locations.filter(loc => {
+				const notes = (loc.notes || '').trim();
+				return notes.includes('יובא מטבלת עזר');
+			});
+			
 			if (visitsToConvertType.length === 0 && visitsToCleanNotes.length === 0) {
 				showToast('✅ לא נמצאו טיפולים לתיקון', 'success');
 				return;
@@ -17403,6 +17409,11 @@
 			if (visitsToCleanNotes.length > 0) {
 				message += `• ${visitsToCleanNotes.length} טיפולים עם הערה "יובא מטבלת עזר" → ימחק\n`;
 			}
+			
+			if (locationsToCleanNotes.length > 0) {
+				message += `• ${locationsToCleanNotes.length} לקוחות עם הערה "יובא מטבלת עזר" → ימחק\n`;
+			}
+			
 			message += `\nלהמשיך?`;
 			
 			if (!confirm(message)) return;
@@ -17430,6 +17441,12 @@
 					allUpdatedVisits.add(visit);
 				}
 				
+				// Clean locations import notes
+				for (const loc of locationsToCleanNotes) {
+					loc.notes = '';
+					loc.updated_at = new Date().toISOString();
+				}
+				
 				// Save locally
 				saveToLocalStorage();
 				
@@ -17442,7 +17459,7 @@
 				
 				// Save to cloud if connected
 				const updatedArray = Array.from(allUpdatedVisits);
-				if (access_token && SPREADSHEET_ID && updatedArray.length > 0) {
+				if (access_token && SPREADSHEET_ID && (updatedArray.length > 0 || locationsToCleanNotes.length > 0)) {
 					const shouldSaveToCloud = confirm(
 						`נשמר מקומית בהצלחה!\n\n` +
 						`האם לשמור גם לענן?\n` +
@@ -17452,7 +17469,12 @@
 					if (shouldSaveToCloud) {
 						showLoading('שומר לענן...');
 						try {
-							await saveVisitsBatch(updatedArray);
+							if (locationsToCleanNotes.length > 0) {
+								await saveLocationsBatch(locationsToCleanNotes);
+							}
+							if (updatedArray.length > 0) {
+								await saveVisitsBatch(updatedArray);
+							}
 							hideLoading();
 							showToast('✅ נשמר גם בענן!', 'success');
 						} catch (error) {
