@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4976,10 +4976,7 @@
 			const isOverdue = client.daysDiff < 0 || client.daysOverdue > 0;
 
 			// Find last treatment date for this client
-			const clientVisits = visits.filter(visit => visit.location_id === client.ID);
-			const lastTreatmentDate = clientVisits.length > 0 
-				? clientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
-				: '';
+			const lastTreatmentDate = client.last_visit || '';
 			
 			// צבע לתאריך הבא לפי סטטוס
 			let nextDateColor = '#2196F3'; // כחול - ברירת מחדל
@@ -5491,10 +5488,7 @@
 			
 			filteredData.forEach(location => {
 				// Find last treatment date for this client - ONCE!
-				const clientVisits = visits.filter(visit => String(visit.location_id) === String(location.ID));
-				const lastTreatmentDate = clientVisits.length > 0 
-					? clientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
-					: '';
+				const lastTreatmentDate = location.last_visit || '';
 				
 				// Main row
 				const row = document.createElement('tr');
@@ -11568,9 +11562,6 @@
 		}
 		
 		// פונקציה לעדכון תאריכי טיפול עבור לקוח אחד לאחר הוספת ביקור
-		// Verify this function exists and works correctly - it should already be in your code
-		// If it's missing any part, here's the complete correct version:
-
 		async function updateSingleLocationTreatmentDates(locationId) {
 			const location = locations.find(loc => loc.ID === locationId);
 			if (!location) return;
@@ -11579,31 +11570,32 @@
 			const locationVisits = visits.filter(visit => visit.location_id === locationId);
 			
 			if (locationVisits.length > 0) {
-				// מיון לפי תאריך (החדש ביותר ראשון)
-				locationVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
+				// ✅ סנן רק טיפולים מלאים (או ריק שמתייחסים אליו כמלא)
+				const fullVisits = locationVisits.filter(v => !v.visit_type || v.visit_type === 'מלא' || v.visit_type === '');
 				
-				// הטיפול האחרון
-				const lastVisit = locationVisits[0];
-				const lastVisitDate = lastVisit.date;
-				
-				// ✅ עדכון last_visit תמיד
-				location.last_visit = lastVisitDate;
-				
-				// ✅ עדכון next_visit רק אם הטיפול האחרון היה "טיפול מלא"
-				if (!lastVisit.visit_type || lastVisit.visit_type === 'מלא' || lastVisit.visit_type === '') {
+				if (fullVisits.length > 0) {
+					// מיון לפי תאריך (החדש ביותר ראשון)
+					fullVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
+					
+					// הטיפול המלא האחרון
+					const lastFullVisit = fullVisits[0];
+					const lastVisitDate = lastFullVisit.date;
+					
+					// עדכון last_visit לטיפול המלא האחרון
+					location.last_visit = lastVisitDate;
+					
 					// חישוב תאריך הטיפול הבא
 					const lastDate = new Date(lastVisitDate);
-					const intervalDays = (location.interval_weeks || 4) * 7; // ברירת מחדל 4 שבועות
+					const intervalDays = (location.interval_weeks || 4) * 7;
 					const nextDate = new Date(lastDate);
 					nextDate.setDate(lastDate.getDate() + intervalDays);
 					
-					// פורמט התאריך ל-YYYY-MM-DD
 					const nextVisitDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
 					location.next_visit = nextVisitDate;
 					
-					console.log(`📅 עודכן לקוח ${location.name}: טיפול אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
+					console.log(`📅 עודכן לקוח ${location.name}: טיפול מלא אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
 				} else {
-					console.log(`⏸️ תאריך הבא לא עודכן ללקוח ${location.name} - סוג טיפול: ${lastVisit.visit_type}`);
+					console.log(`⏸️ לא נמצאו טיפולים מלאים ללקוח ${location.name}`);
 				}
 				
 				// עדכון בגוגל שיטס
