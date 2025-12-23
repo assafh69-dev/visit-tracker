@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -17375,38 +17375,59 @@
 		}
 
 
-		// Convert visit_type 'כללי' or empty to 'מלא'
+		// Convert visit_type 'כללי' or empty to 'מלא' + clean import notes
 		async function convertVisitTypesToFull() {
-			console.log('🔄 Starting visit type conversion...');
+			console.log('🔄 Starting visit type conversion and notes cleanup...');
 			
-			// Find visits with 'כללי' or empty visit_type
-			const visitsToConvert = visits.filter(visit => {
+			// Find visits to convert (type 'כללי' or empty)
+			const visitsToConvertType = visits.filter(visit => {
 				const visitType = (visit.visit_type || '').trim();
 				return visitType === 'כללי' || visitType === '';
 			});
 			
-			if (visitsToConvert.length === 0) {
-				showToast('✅ לא נמצאו טיפולים להמרה - כולם כבר מוגדרים נכון', 'success');
+			// Find visits with import notes to clean
+			const visitsToCleanNotes = visits.filter(visit => {
+				const notes = (visit.notes || '').trim();
+				return notes === 'יובא מטבלת עזר';
+			});
+			
+			if (visitsToConvertType.length === 0 && visitsToCleanNotes.length === 0) {
+				showToast('✅ לא נמצאו טיפולים לתיקון', 'success');
 				return;
 			}
 			
-			const confirmed = confirm(
-				`🔄 המרת סוג טיפול:\n\n` +
-				`נמצאו ${visitsToConvert.length} טיפולים עם סוג "כללי" או ריק.\n\n` +
-				`להמיר את כולם ל"מלא"?`
-			);
+			let message = `🔄 תיקון נתוני טיפולים:\n\n`;
+			if (visitsToConvertType.length > 0) {
+				message += `• ${visitsToConvertType.length} טיפולים עם סוג "כללי"/ריק → "מלא"\n`;
+			}
+			if (visitsToCleanNotes.length > 0) {
+				message += `• ${visitsToCleanNotes.length} טיפולים עם הערה "יובא מטבלת עזר" → ימחק\n`;
+			}
+			message += `\nלהמשיך?`;
 			
-			if (!confirmed) return;
+			if (!confirm(message)) return;
 			
 			try {
-				showLoading('ממיר סוגי טיפולים...');
+				showLoading('מתקן נתונים...');
 				
 				let convertedCount = 0;
+				let cleanedCount = 0;
+				const allUpdatedVisits = new Set();
 				
-				for (const visit of visitsToConvert) {
+				// Convert visit types
+				for (const visit of visitsToConvertType) {
 					visit.visit_type = 'מלא';
 					visit.updated_at = new Date().toISOString();
 					convertedCount++;
+					allUpdatedVisits.add(visit);
+				}
+				
+				// Clean import notes
+				for (const visit of visitsToCleanNotes) {
+					visit.notes = '';
+					visit.updated_at = new Date().toISOString();
+					cleanedCount++;
+					allUpdatedVisits.add(visit);
 				}
 				
 				// Save locally
@@ -17414,20 +17435,24 @@
 				
 				hideLoading();
 				
-				showToast(`✅ הומרו ${convertedCount} טיפולים ל"מלא"`, 'success');
+				let resultMessage = '✅ ';
+				if (convertedCount > 0) resultMessage += `הומרו ${convertedCount} סוגים. `;
+				if (cleanedCount > 0) resultMessage += `נוקו ${cleanedCount} הערות.`;
+				showToast(resultMessage, 'success');
 				
 				// Save to cloud if connected
-				if (access_token && SPREADSHEET_ID && convertedCount > 0) {
+				const updatedArray = Array.from(allUpdatedVisits);
+				if (access_token && SPREADSHEET_ID && updatedArray.length > 0) {
 					const shouldSaveToCloud = confirm(
 						`נשמר מקומית בהצלחה!\n\n` +
 						`האם לשמור גם לענן?\n` +
-						`(${convertedCount} טיפולים)`
+						`(${updatedArray.length} טיפולים)`
 					);
 					
 					if (shouldSaveToCloud) {
 						showLoading('שומר לענן...');
 						try {
-							await saveVisitsBatch(visitsToConvert);
+							await saveVisitsBatch(updatedArray);
 							hideLoading();
 							showToast('✅ נשמר גם בענן!', 'success');
 						} catch (error) {
@@ -17443,8 +17468,8 @@
 				
 			} catch (error) {
 				hideLoading();
-				console.error('Conversion error:', error);
-				showToast('❌ שגיאה בהמרה', 'error');
+				console.error('Fix error:', error);
+				showToast('❌ שגיאה בתיקון', 'error');
 			}
 		}
 
