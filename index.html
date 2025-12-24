@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.7</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -9085,7 +9085,7 @@
 			try {
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:Q'
+					range: 'Locations!A:S'
 				});
 				
 				const rows = response.result.values || [];
@@ -11610,7 +11610,7 @@
 				// קרא את כל הנתונים הנוכחיים מהטבלה
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:P'
+					range: 'Locations!A:S'
 				});
 				
 				const allRows = response.result.values || [];
@@ -11635,7 +11635,7 @@
 				// שמור את כל הטבלה המעודכנת בקריאה אחת בלבד
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Locations!A:P',
+					range: 'Locations!A:S',
 					valueInputOption: 'USER_ENTERED',
 					resource: {
 						values: updatedRows
