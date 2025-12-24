@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3661,6 +3661,7 @@
 				document.getElementById('statusText').classList.add('connected');
 				document.getElementById('saveBtn').disabled = false;
 				document.getElementById('loadBtn').disabled = false;
+				document.getElementById('syncBtn').disabled = false;
 				
 				// הגדרת רענון אוטומטי
 				setupTokenRefresh();
@@ -6538,7 +6539,7 @@
 		}
 
 
-       async function deleteLocation(locationId) {
+		async function deleteLocation(locationId) {
 			if (confirm('האם אתה בטוח שברצונך למחוק את הלקוח?')) {
 				// מחיקה מקומית
 				locations = locations.filter(g => g.ID != locationId);
@@ -6550,6 +6551,7 @@
 				// מחיקה מהענן
 				if (access_token && SPREADSHEET_ID) {
 					try {
+						// מצא את מספר השורה
 						const response = await gapi.client.sheets.spreadsheets.values.get({
 							spreadsheetId: SPREADSHEET_ID,
 							range: 'Locations!A:A'
@@ -6559,24 +6561,37 @@
 						const rowIndex = rows.findIndex(row => row[0] === locationId);
 						
 						if (rowIndex > 0) {
-							// מחיקת השורה מהגיליון
-							await gapi.client.sheets.spreadsheets.batchUpdate({
-								spreadsheetId: SPREADSHEET_ID,
-								resource: {
-									requests: [{
-										deleteDimension: {
-											range: {
-												sheetId: 0, // Locations is first sheet
-												dimension: 'ROWS',
-												startIndex: rowIndex,
-												endIndex: rowIndex + 1
-											}
-										}
-									}]
-								}
+							// קבל את sheetId של Locations
+							const spreadsheet = await gapi.client.sheets.spreadsheets.get({
+								spreadsheetId: SPREADSHEET_ID
 							});
-							console.log('✅ לקוח נמחק גם מהענן');
-							showToast('לקוח נמחק בהצלחה!', 'success');
+							
+							const locationsSheet = spreadsheet.result.sheets.find(
+								sheet => sheet.properties.title === 'Locations'
+							);
+							
+							if (locationsSheet) {
+								const sheetId = locationsSheet.properties.sheetId;
+								
+								// מחיקת השורה מהגיליון
+								await gapi.client.sheets.spreadsheets.batchUpdate({
+									spreadsheetId: SPREADSHEET_ID,
+									resource: {
+										requests: [{
+											deleteDimension: {
+												range: {
+													sheetId: sheetId,
+													dimension: 'ROWS',
+													startIndex: rowIndex,
+													endIndex: rowIndex + 1
+												}
+											}
+										}]
+									}
+								});
+								console.log('✅ לקוח נמחק גם מהענן');
+								showToast('לקוח נמחק בהצלחה!', 'success');
+							}
 						}
 					} catch (error) {
 						console.error('Error deleting from cloud:', error);
