@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3081,6 +3081,9 @@
 						</button>
 						<button onclick="convertVisitTypesToFull()" class="btn" style="background: linear-gradient(45deg, #17a2b8, #138496); color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);">
 							🔄 המר "כללי" ל"מלא"
+						</button>
+						<button onclick="convertAddressesToFields()" class="btn" style="background: linear-gradient(45deg, #9b59b6, #8e44ad); color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);">
+							📍 פרק כתובות לשדות
 						</button>
 					</div>
 					
@@ -3795,24 +3798,26 @@
 							ID: row[0] || '',
 							name: row[1] || '',
 							full_address: row[2] || '',
-							neighborhood: row[3] || '',
-							city: row[4] || '',
-							contact_person: row[5] || '',
-							phone: row[6] || '',
-							allowed_day: row[7] || '',
-							interval_weeks: row[8] || '',
-							temp_addition: row[9] || 0,
-							base_amount: row[10] || '',
-							active: row[11] || '',
-							notes: row[12] || '',
-							last_visit: row[13] || '',
-							next_visit: row[14] || '',
-							client_requests: row[15] || '' // עמודה P
+							street: row[3] || '',
+							house_number: row[4] || '',
+							neighborhood: row[5] || '',
+							city: row[6] || '',
+							contact_person: row[7] || '',
+							phone: row[8] || '',
+							allowed_day: row[9] || '',
+							interval_weeks: row[10] || '',
+							temp_addition: row[11] || 0,
+							base_amount: row[12] || '',
+							active: row[13] || '',
+							notes: row[14] || '',
+							last_visit: row[15] || '',
+							next_visit: row[16] || '',
+							client_requests: row[17] || '' // עמודה R
 						};
 						
 						// לוג רק לשורות עם client_requests
-						if (row[15]) {
-							console.log(`✅ Row ${index + 1} - ${location.name}: client_requests = "${row[15]}"`);
+						if (row[17]) {
+							console.log(`✅ Row ${index + 1} - ${location.name}: client_requests = "${row[17]}"`);
 						}
 						
 						return location;
@@ -4757,7 +4762,7 @@
 											return `
 												<div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
 													<div>
-														<div style="font-weight: 600; color: #333;">${typeInfo.icon} ${typeInfo.label}</div>
+														<div style="font-weight: 600; color: #333;">${typeInfo.icon} ${clientName}</div>
 														<div style="font-size: 12px; color: #666;">👤 ${clientName}</div>
 														${task.description ? `<div style="font-size: 11px; color: #888; margin-top: 3px;">${task.description}</div>` : ''}
 													</div>
@@ -5624,6 +5629,14 @@
 							<input type="text" id="locationAddress" required>
 						</div>
 						<div class="form-group">
+							<label for="locationStreet">רחוב:</label>
+							<input type="text" id="locationStreet">
+						</div>
+						<div class="form-group">
+							<label for="locationHouseNumber">מספר בית:</label>
+							<input type="text" id="locationHouseNumber">
+						</div>
+						<div class="form-group">
 							<label for="locationNeighborhood">שכונה:</label>
 							<input type="text" id="locationNeighborhood">
 						</div>
@@ -5701,6 +5714,8 @@
 				ID: generateID(),
 				name: document.getElementById('locationName').value,
 				full_address: document.getElementById('locationAddress').value,
+				street: document.getElementById('locationStreet').value || '',
+				house_number: document.getElementById('locationHouseNumber').value || '',
 				neighborhood: document.getElementById('locationNeighborhood').value,
 				city: document.getElementById('locationCity').value,
 				contact_person: document.getElementById('locationContact').value,
@@ -6400,7 +6415,17 @@
 							<label>כתובת מלאה:</label>
 							<input type="text" id="editLocationAddress" value="${location.full_address || ''}" required>
 						</div>
-						
+
+						<div class="form-group">
+							<label>רחוב:</label>
+							<input type="text" id="editLocationStreet" value="${location.street || ''}">
+						</div>
+
+						<div class="form-group">
+							<label>מספר בית:</label>
+							<input type="text" id="editLocationHouseNumber" value="${location.house_number || ''}">
+						</div>
+
 						<div class="form-group">
 							<label>שכונה:</label>
 							<input type="text" id="editLocationNeighborhood" value="${location.neighborhood || ''}">
@@ -7852,7 +7877,7 @@
 		// פונקציה חדשה להוספת כותרות לגיליון ספציפי
 		async function addHeadersToSheet(sheetName) {
 			const headersMap = {
-				'Locations': ['ID', 'name', 'full_address', 'neighborhood', 'city', 'contact_person', 'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 'client_requests', 'updated_at'],
+				'Locations': ['ID', 'name', 'full_address', 'street', 'house_number', 'neighborhood', 'city', 'contact_person', 'phone', 'allowed_day', 'interval_weeks', 'temp_addition', 'base_amount', 'active', 'notes', 'last_visit', 'next_visit', 'client_requests', 'updated_at'],
 				'Visits': ['ID', 'date', 'location_id', 'location_name', 'visit_type', 'work_done', 'duration_minutes', 'num_workers', 'start_time', 'end_time', 'amount', 'paid', 'expense', 'notes', 'updated_at'],
 				'Receipts': ['ID', 'book_number', 'receipt_number', 'date', 'location_id', 'location_name', 'amount', 'payment_type', 'notes', 'payment_id', 'updated_at'],
 				'TelegramVisits': ['message_id', 'date', 'text', 'processed', 'location_id', 'visit_id'],
@@ -10434,28 +10459,30 @@
 			
 			try {
 				const locationValues = locationsArray.map(loc => [
-					loc.ID,
-					loc.name,
-					loc.full_address,
-					loc.neighborhood,
-					loc.city,
-					loc.contact_person,
-					loc.phone,
-					loc.allowed_day,
-					loc.interval_weeks,
-					loc.temp_addition || 0,
-					loc.base_amount,
-					loc.active,
-					loc.notes || '',
-					loc.last_visit || '',
-					loc.next_visit || '',
-					loc.client_requests || '',
-					loc.updated_at || new Date().toISOString()
-				]);
-				
-				await gapi.client.sheets.spreadsheets.values.update({
-					spreadsheetId: SPREADSHEET_ID,
-					range: `Locations!A2:Q${locationValues.length + 1}`,
+				loc.ID,
+				loc.name,
+				loc.full_address,
+				loc.street || '',
+				loc.house_number || '',
+				loc.neighborhood,
+				loc.city,
+				loc.contact_person,
+				loc.phone,
+				loc.allowed_day,
+				loc.interval_weeks,
+				loc.temp_addition || 0,
+				loc.base_amount,
+				loc.active,
+				loc.notes || '',
+				loc.last_visit || '',
+				loc.next_visit || '',
+				loc.client_requests || '',
+				loc.updated_at || new Date().toISOString()
+			]);
+
+			await gapi.client.sheets.spreadsheets.values.update({
+				spreadsheetId: SPREADSHEET_ID,
+				range: `Locations!A2:S${locationValues.length + 1}`,
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: locationValues }
 				});
@@ -12153,6 +12180,8 @@
 					...locations[locationIndex], // שמור נתונים קיימים
 					name: document.getElementById('editLocationName').value,
 					full_address: document.getElementById('editLocationAddress').value,
+					street: document.getElementById('editLocationStreet').value || '',
+					house_number: document.getElementById('editLocationHouseNumber').value || '',
 					neighborhood: document.getElementById('editLocationNeighborhood').value,
 					city: document.getElementById('editLocationCity').value,
 					contact_person: document.getElementById('editLocationContact').value,
@@ -12511,16 +12540,16 @@
 				if (rowIndex > 0) {
 					const rowNumber = rowIndex + 1;
 					const clientRow = [
-						client.ID, client.name, client.full_address, client.neighborhood, client.city,
-						client.contact_person, client.phone, client.allowed_day, client.interval_weeks,
-						client.temp_addition || 0, // ✅ הוסף בדיקה
+						client.ID, client.name, client.full_address, client.street || '', client.house_number || '',
+						client.neighborhood, client.city, client.contact_person, client.phone, client.allowed_day,
+						client.interval_weeks, client.temp_addition || 0,
 						client.base_amount, client.active, client.notes,
 						client.last_visit, client.next_visit, client.client_requests || ''
 					];
-					
+
 					await gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: SPREADSHEET_ID,
-						range: `Locations!A${rowNumber}:P${rowNumber}`,
+						range: `Locations!A${rowNumber}:R${rowNumber}`,
 						valueInputOption: 'USER_ENTERED',
 						resource: { values: [clientRow] }
 					});
@@ -14639,7 +14668,7 @@
 							const searchInput = document.getElementById('visitFormClientSearch');
 							const clientIdInput = document.getElementById('visitFormClientId');
 							if (searchInput && clientIdInput) {
-								searchInput.value = `${client.name} - ${client.full_address}`;
+								searchInput.value = client.name;
 								clientIdInput.value = preSelectedClientId;
 								
 								// חישוב עלות אוטומטי
@@ -16763,14 +16792,10 @@
 										</button>
 									</div>
 									<div style="display: flex; gap: 4px;">
-										<button onclick="postponeTask('${task.ID}', 1)" 
-												style="padding: 4px 8px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
-											+1D
-										</button>
-										<button onclick="postponeTask('${task.ID}', 7)" 
-												style="padding: 4px 8px; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
-											+1W
-										</button>
+										<input type="date" id="taskDateInput_${task.ID}" style="display:none;" onchange="updateTaskDueDate('${task.ID}', this.value)">
+										<button onclick="document.getElementById('taskDateInput_${task.ID}').showPicker()" 
+												style="padding: 4px 8px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;"
+												title="בחר תאריך">📅</button>
 									</div>
 								</div>
 							</div>
@@ -17487,6 +17512,156 @@
 			}
 		}
 
+		// Convert full_address to street, house_number, city fields
+		async function convertAddressesToFields() {
+			console.log('📍 Starting address conversion...');
+			
+			// Find locations with full_address but empty street/house_number
+			const locationsToConvert = locations.filter(loc => {
+				const hasFullAddress = (loc.full_address || '').trim().length > 0;
+				const missingFields = !(loc.street || '').trim() || !(loc.house_number || '').trim();
+				return hasFullAddress && missingFields;
+			});
+			
+			if (locationsToConvert.length === 0) {
+				showToast('✅ לא נמצאו כתובות להמרה', 'success');
+				return;
+			}
+			
+			const confirmed = confirm(
+				`📍 פירוק כתובות לשדות:\n\n` +
+				`נמצאו ${locationsToConvert.length} לקוחות עם כתובת מלאה בלי שדות נפרדים.\n\n` +
+				`הפונקציה תנסה לפרק את הכתובת ל:\n` +
+				`• רחוב\n` +
+				`• מספר בית\n` +
+				`• עיר (אם חסרה)\n\n` +
+				`להמשיך?`
+			);
+			
+			if (!confirmed) return;
+			
+			try {
+				showLoading('מפרק כתובות...');
+				
+				let convertedCount = 0;
+				let failedCount = 0;
+				const results = [];
+				
+				for (const loc of locationsToConvert) {
+					const parsed = parseAddress(loc.full_address);
+					
+					if (parsed.street || parsed.house_number) {
+						if (!loc.street) loc.street = parsed.street;
+						if (!loc.house_number) loc.house_number = parsed.house_number;
+						if (!loc.city && parsed.city) loc.city = parsed.city;
+						loc.updated_at = new Date().toISOString();
+						convertedCount++;
+						results.push({ name: loc.name, success: true, parsed });
+					} else {
+						failedCount++;
+						results.push({ name: loc.name, success: false, address: loc.full_address });
+					}
+				}
+				
+				// Save locally
+				saveToLocalStorage();
+				
+				hideLoading();
+				
+				// Show results
+				let message = `✅ הומרו ${convertedCount} כתובות`;
+				if (failedCount > 0) {
+					message += `\n⚠️ ${failedCount} לא הצליחו (יש לעדכן ידנית)`;
+				}
+				showToast(message, convertedCount > 0 ? 'success' : 'warning');
+				
+				// Log failed ones
+				if (failedCount > 0) {
+					console.log('⚠️ כתובות שלא הומרו:');
+					results.filter(r => !r.success).forEach(r => {
+						console.log(`   ${r.name}: "${r.address}"`);
+					});
+				}
+				
+				// Save to cloud if connected
+				if (access_token && SPREADSHEET_ID && convertedCount > 0) {
+					const shouldSaveToCloud = confirm(
+						`נשמר מקומית בהצלחה!\n\n` +
+						`האם לשמור גם לענן?\n` +
+						`(${convertedCount} לקוחות)`
+					);
+					
+					if (shouldSaveToCloud) {
+						showLoading('שומר לענן...');
+						try {
+							const successLocations = locationsToConvert.filter(loc => loc.street || loc.house_number);
+							await saveLocationsBatch(successLocations);
+							hideLoading();
+							showToast('✅ נשמר גם בענן!', 'success');
+						} catch (error) {
+							hideLoading();
+							console.error('Cloud save error:', error);
+							showToast('⚠️ שגיאה בשמירה לענן', 'warning');
+						}
+					}
+				}
+				
+				// Refresh display
+				if (typeof displayLocations === 'function') displayLocations();
+				
+			} catch (error) {
+				hideLoading();
+				console.error('Conversion error:', error);
+				showToast('❌ שגיאה בהמרה', 'error');
+			}
+		}
+
+		// Parse address string into components
+		function parseAddress(fullAddress) {
+			if (!fullAddress) return { street: '', house_number: '', city: '' };
+			
+			const address = fullAddress.trim();
+			let street = '';
+			let house_number = '';
+			let city = '';
+			
+			// Pattern: "רחוב 123 עיר" or "רחוב 123/4 עיר" or "רחוב 12א עיר"
+			// Try to match: text + number (with optional /X or letter) + optional city
+			const patterns = [
+				// רחוב + מספר + עיר (עם פסיק או רווח)
+				/^(.+?)\s+(\d+[\/\-]?\d*[א-ת]?)\s*[,،]\s*(.+)$/,
+				// רחוב + מספר + עיר (בלי פסיק)
+				/^(.+?)\s+(\d+[\/\-]?\d*[א-ת]?)\s+([א-ת]{2,}.*)$/,
+				// רחוב + מספר בלבד
+				/^(.+?)\s+(\d+[\/\-]?\d*[א-ת]?)$/,
+				// רק טקסט (שם רחוב בלבד)
+				/^([א-ת\s]+)$/
+			];
+			
+			for (const pattern of patterns) {
+				const match = address.match(pattern);
+				if (match) {
+					if (match.length === 4) {
+						// רחוב + מספר + עיר
+						street = match[1].trim();
+						house_number = match[2].trim();
+						city = match[3].trim();
+					} else if (match.length === 3) {
+						// רחוב + מספר
+						street = match[1].trim();
+						house_number = match[2].trim();
+					} else if (match.length === 2) {
+						// רק רחוב
+						street = match[1].trim();
+					}
+					break;
+				}
+			}
+			
+			return { street, house_number, city };
+		}
+
+
 
 		// ✅ Disconnect from cloud
 		function disconnectFromCloud() {
@@ -17654,6 +17829,17 @@
 			'repair': { icon: '🔧', label: 'תיקון', color: '#3498db' },
 			'irrigation': { icon: '💧', label: 'השקייה', color: '#00bcd4' },
 			'other': { icon: '📦', label: 'אחר', color: '#95a5a6' }
+		};
+		
+		// Personal task types (for non-client tasks)
+		const PERSONAL_TASK_TYPES = {
+			'vehicle': { icon: '🚗', label: 'טיפול ברכב', color: '#3498db' },
+			'tools': { icon: '🔧', label: 'תיקון כלים', color: '#e67e22' },
+			'organization': { icon: '📦', label: 'התארגנות', color: '#9b59b6' },
+			'shopping': { icon: '🛒', label: 'קניות', color: '#27ae60' },
+			'quote': { icon: '💰', label: 'הצעה ללקוח', color: '#f39c12' },
+			'office': { icon: '📋', label: 'עבודה משרדית', color: '#1abc9c' },
+			'other': { icon: '📝', label: 'אחר', color: '#95a5a6' }
 		};
 
 		// Task status definitions
@@ -18015,7 +18201,9 @@
 			const clientSection = document.getElementById('taskClientSection');
 			const clientIdInput = document.getElementById('taskClientId');
 			const clientSearchInput = document.getElementById('taskClientSearch');
+			const taskTypeSelect = document.getElementById('taskType');
 			
+			// Show/hide client field
 			if (scope === 'client') {
 				clientSection.style.display = 'block';
 				clientIdInput.required = true;
@@ -18025,6 +18213,23 @@
 				clientIdInput.value = '';
 				clientSearchInput.value = '';
 			}
+			
+			// Update task type options based on scope
+			let options = '<option value="">בחר סוג...</option>';
+			
+			if (scope === 'personal') {
+				// Personal task types
+				for (const [key, type] of Object.entries(PERSONAL_TASK_TYPES)) {
+					options += `<option value="${key}">${type.icon} ${type.label}</option>`;
+				}
+			} else {
+				// Client/All task types
+				for (const [key, type] of Object.entries(TASK_TYPES)) {
+					options += `<option value="${key}">${type.icon} ${type.label}</option>`;
+				}
+			}
+			
+			taskTypeSelect.innerHTML = options;
 		}
 
 
