@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3787,7 +3787,7 @@
 			try {
 				const response = await gapi.client.sheets.spreadsheets.values.get({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.LOCATIONS}!A:P` // וודא שקוראים עד עמודה P
+					range: `${SHEETS.LOCATIONS}!A:S`
 				});
 				
 				const rows = response.result.values;
@@ -12633,23 +12633,23 @@
 						client.neighborhood, client.city, client.contact_person, client.phone, client.allowed_day,
 						client.interval_weeks, client.temp_addition || 0,
 						client.base_amount, client.active, client.notes,
-						client.last_visit, client.next_visit, client.client_requests || ''
+						client.last_visit, client.next_visit, client.client_requests || '',
+						client.updated_at || new Date().toISOString()
 					];
-
 					await gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: SPREADSHEET_ID,
-						range: `Locations!A${rowNumber}:R${rowNumber}`,
+						range: `Locations!A${rowNumber}:S${rowNumber}`,
 						valueInputOption: 'USER_ENTERED',
 						resource: { values: [clientRow] }
 					});
 					
-					console.log('✅ Successfully updated client in cloud'); // לוג להצלחה
+					console.log('✅ Successfully updated client in cloud');
 				} else {
 					throw new Error(`Client with ID ${client.ID} not found in spreadsheet`);
 				}
 			} catch (error) {
 				console.error('Error updating client in cloud:', error);
-				throw error; // ✅ חשוב - העבר את השגיאה הלאה
+				throw error;
 			}
 		}
 	   
