@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.6</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -5624,17 +5624,27 @@
 							<label for="locationName">שם לקוח:</label>
 							<input type="text" id="locationName" required>
 						</div>
+
+						<div style="text-align: center; margin: 5px 0;">
+							<button type="button" onclick="copyAddressToName()" 
+									style="padding: 4px 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
+									title="העתק כתובת לשם לקוח">
+								⬆️ העתק מכתובת
+							</button>
+						</div>
+
 						<div class="form-group">
 							<label for="locationAddress">כתובת מלאה:</label>
-							<input type="text" id="locationAddress" required>
+							<input type="text" id="locationAddress" readonly style="background: #f0f0f0; color: #666;">
+							<small style="color: #888;">מתעדכן אוטומטית מרחוב + מספר בית + עיר</small>
 						</div>
 						<div class="form-group">
 							<label for="locationStreet">רחוב:</label>
-							<input type="text" id="locationStreet">
+							<input type="text" id="locationStreet" onkeyup="updateFullAddressField()">
 						</div>
 						<div class="form-group">
 							<label for="locationHouseNumber">מספר בית:</label>
-							<input type="text" id="locationHouseNumber">
+							<input type="text" id="locationHouseNumber" onkeyup="updateFullAddressField()">
 						</div>
 						<div class="form-group">
 							<label for="locationNeighborhood">שכונה:</label>
@@ -5642,7 +5652,7 @@
 						</div>
 						<div class="form-group">
 							<label for="locationCity">עיר:</label>
-							<input type="text" id="locationCity">
+							<input type="text" id="locationCity" onkeyup="updateFullAddressField()">
 						</div>
 						<div class="form-group">
 							<label for="locationContact">איש קשר:</label>
@@ -5713,7 +5723,11 @@
 			const locationData = {
 				ID: generateID(),
 				name: document.getElementById('locationName').value,
-				full_address: document.getElementById('locationAddress').value,
+				full_address: [
+					document.getElementById('locationStreet').value,
+					document.getElementById('locationHouseNumber').value,
+					document.getElementById('locationCity').value
+				].filter(Boolean).join(' '),
 				street: document.getElementById('locationStreet').value || '',
 				house_number: document.getElementById('locationHouseNumber').value || '',
 				neighborhood: document.getElementById('locationNeighborhood').value,
@@ -6410,10 +6424,19 @@
 							<label>שם הלקוח:</label>
 							<input type="text" id="editLocationName" value="${location.name || ''}" required>
 						</div>
-						
+
+						<div style="text-align: center; margin: 5px 0;">
+							<button type="button" onclick="document.getElementById('editLocationName').value = document.getElementById('editLocationAddress').value" 
+									style="padding: 4px 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
+									title="העתק כתובת לשם לקוח">
+								⬆️ העתק מכתובת
+							</button>
+						</div>
+
 						<div class="form-group">
 							<label>כתובת מלאה:</label>
-							<input type="text" id="editLocationAddress" value="${location.full_address || ''}" required>
+							<input type="text" id="editLocationAddress" value="${location.full_address || ''}" readonly style="background: #f0f0f0; color: #666;">
+							<small style="color: #888;">מתעדכן אוטומטית מרחוב + מספר בית + עיר</small>
 						</div>
 
 						<div class="form-group">
@@ -12179,7 +12202,11 @@
 				const updatedLocation = {
 					...locations[locationIndex], // שמור נתונים קיימים
 					name: document.getElementById('editLocationName').value,
-					full_address: document.getElementById('editLocationAddress').value,
+					full_address: [
+						document.getElementById('editLocationStreet').value,
+						document.getElementById('editLocationHouseNumber').value,
+						document.getElementById('editLocationCity').value
+					].filter(Boolean).join(' '),
 					street: document.getElementById('editLocationStreet').value || '',
 					house_number: document.getElementById('editLocationHouseNumber').value || '',
 					neighborhood: document.getElementById('editLocationNeighborhood').value,
@@ -12384,6 +12411,29 @@
 				neighborhood: '', // ריק למילוי ידני
 				city: city
 			};
+		}
+		
+		
+		// Build full address from fields and copy to name
+		function copyAddressToName() {
+			const fullAddress = buildFullAddress();
+			document.getElementById('locationName').value = fullAddress;
+		}
+
+		// Build full address from street, house_number, city (for new location form)
+		function buildFullAddress() {
+			const street = document.getElementById('locationStreet')?.value || '';
+			const houseNumber = document.getElementById('locationHouseNumber')?.value || '';
+			const city = document.getElementById('locationCity')?.value || '';
+			return [street, houseNumber, city].filter(Boolean).join(' ');
+		}
+
+		// Update full address field when components change
+		function updateFullAddressField() {
+			const addressField = document.getElementById('locationAddress');
+			if (addressField) {
+				addressField.value = buildFullAddress();
+			}
 		}
 		
 		
