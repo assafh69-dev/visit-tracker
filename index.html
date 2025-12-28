@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4234,6 +4234,9 @@
 					costSettings = JSON.parse(savedCostSettings);
 					document.getElementById('hourlyRate').value = costSettings.hourlyRate;
 					document.getElementById('workerCost').value = costSettings.workerCost;
+					if (document.getElementById('newHourlyRate')) {
+						document.getElementById('newHourlyRate').value = costSettings.newHourlyRate || 200;
+					}
 				}
 				
 				console.log('Data loaded from local storage');
@@ -7863,11 +7866,12 @@
 			
 			try {
 				const settingsData = [
-					['Setting', 'Value'],
-					['hourly_rate', costSettings.hourlyRate],
-					['worker_cost', costSettings.workerCost],
-					['last_updated', new Date().toISOString()]
-				];
+				['Setting', 'Value'],
+				['hourly_rate', costSettings.hourlyRate],
+				['worker_cost', costSettings.workerCost],
+				['new_hourly_rate', costSettings.newHourlyRate || 200],
+				['last_updated', new Date().toISOString()]
+			];
 				
 				await gapi.client.sheets.spreadsheets.values.clear({
 					spreadsheetId: SPREADSHEET_ID,
@@ -7876,7 +7880,7 @@
 				
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.SETTINGS}!A1:B4`,
+					range: `${SHEETS.SETTINGS}!A1:B5`,
 					valueInputOption: 'RAW',
 					resource: { values: settingsData }
 				});
@@ -7910,13 +7914,16 @@
 						if (setting === 'worker_cost') {
 							costSettings.workerCost = parseFloat(value) || 50;
 						}
+						if (setting === 'new_hourly_rate') {
+							costSettings.newHourlyRate = parseFloat(value) || 200;
+						}
 					});
 					
 					document.getElementById('hourlyRate').value = costSettings.hourlyRate;
+					document.getElementById('workerCost').value = costSettings.workerCost;
 					if (document.getElementById('newHourlyRate')) {
 						document.getElementById('newHourlyRate').value = costSettings.newHourlyRate || 200;
 					}
-					document.getElementById('workerCost').value = costSettings.workerCost;
 					
 					return true;
 				}
