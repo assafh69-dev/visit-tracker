@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.6</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3201,6 +3201,13 @@
 								<input type="number" id="workerCost" value="50" min="0" onchange="saveCostSettings()">
 							</div>
 						</div>
+						<div style="margin-top: 15px;">
+							<div class="form-group">
+								<label for="defaultWorkDone">תיאור ברירת מחדל לטיפול "מלא":</label>
+								<input type="text" id="defaultWorkDone" value="חרמש גיזום וניקיון" placeholder="לדוגמה: חרמש גיזום וניקיון" onchange="saveCostSettings()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+								<small style="color: #888;">יוזן אוטומטית בשדה "עבודה שבוצעה" בטיפול חדש מסוג "מלא"</small>
+							</div>
+						</div>
 					</div>
 				</div>
 			</section>
@@ -3459,7 +3466,8 @@
 		let costSettings = {
 			hourlyRate: 150,
 			newHourlyRate: 200,
-			workerCost: 50
+			workerCost: 50,
+			defaultWorkDone: 'חרמש גיזום וניקיון'
 		};
 
 
@@ -7864,10 +7872,11 @@
 	   
 
 		// שמירת הגדרות עלות פשוטה יותר
-		function saveCostSettings() {
+function saveCostSettings() {
 			costSettings.hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 150;
 			costSettings.newHourlyRate = parseFloat(document.getElementById('newHourlyRate').value) || 200;
 			costSettings.workerCost = parseFloat(document.getElementById('workerCost').value) || 50;
+			costSettings.defaultWorkDone = document.getElementById('defaultWorkDone').value || '';
 			
 			localStorage.setItem('cost_settings', JSON.stringify(costSettings));
 			
@@ -7907,6 +7916,7 @@
 				['hourly_rate', costSettings.hourlyRate],
 				['worker_cost', costSettings.workerCost],
 				['new_hourly_rate', costSettings.newHourlyRate || 200],
+				['default_work_done', costSettings.defaultWorkDone || ''],
 				['last_updated', new Date().toISOString()]
 			];
 				
@@ -7917,7 +7927,7 @@
 				
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.SETTINGS}!A1:B5`,
+					range: `${SHEETS.SETTINGS}!A1:B6`,
 					valueInputOption: 'RAW',
 					resource: { values: settingsData }
 				});
@@ -7954,12 +7964,18 @@
 						if (setting === 'new_hourly_rate') {
 							costSettings.newHourlyRate = parseFloat(value) || 200;
 						}
+						if (setting === 'default_work_done') {
+							costSettings.defaultWorkDone = value || '';
+						}
 					});
 					
 					document.getElementById('hourlyRate').value = costSettings.hourlyRate;
 					document.getElementById('workerCost').value = costSettings.workerCost;
 					if (document.getElementById('newHourlyRate')) {
 						document.getElementById('newHourlyRate').value = costSettings.newHourlyRate || 200;
+					}
+					if (document.getElementById('defaultWorkDone')) {
+						document.getElementById('defaultWorkDone').value = costSettings.defaultWorkDone || '';
 					}
 					
 					return true;
@@ -14842,7 +14858,7 @@
 						<!-- עבודה שבוצעה -->
 						<div class="form-group" style="margin: 0;">
 							<label for="visitFormWorkDone" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">עבודה שבוצעה:</label>
-							<textarea id="visitFormWorkDone" rows="2" placeholder="תיאור העבודה..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical;">${isEdit ? (visitData.work_done || '') : ''}</textarea>
+							<textarea id="visitFormWorkDone" rows="2" placeholder="תיאור העבודה..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical;">${isEdit ? (visitData.work_done || '') : (costSettings.defaultWorkDone || '')}</textarea>
 						</div>
 						
 						<!-- משך טיפול -->
