@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3192,6 +3192,11 @@
 								<input type="number" id="hourlyRate" value="150" min="0" onchange="saveCostSettings()">
 							</div>
 							<div class="form-group">
+								<label for="newHourlyRate">תעריף חדש לבדיקה (₪):</label>
+								<input type="number" id="newHourlyRate" value="200" min="0" onchange="saveCostSettings()">
+								<small style="color: #888;">לשימוש במחשבון תחזית בפרופיל לקוח</small>
+							</div>
+							<div class="form-group">
 								<label for="workerCost">תוספת לפועל (₪):</label>
 								<input type="number" id="workerCost" value="50" min="0" onchange="saveCostSettings()">
 							</div>
@@ -3453,6 +3458,7 @@
 		// הגדרות עלות
 		let costSettings = {
 			hourlyRate: 150,
+			newHourlyRate: 200,
 			workerCost: 50
 		};
 
@@ -5974,8 +5980,18 @@
 					.filter(v => v.location_id === clientId)
 					.sort((a, b) => b.date.localeCompare(a.date));
 				
+				// Add treatment button
+				html = `
+					<div style="margin-bottom: 15px; text-align: center;">
+						<button onclick="addTreatmentFromProfile('${clientId}')" 
+								style="padding: 12px 24px; background: #3498db; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);">
+							➕ הוסף טיפול
+						</button>
+					</div>
+				`;
+
 				if (clientVisits.length === 0) {
-					html = '<div style="text-align: center; padding: 40px; color: #666;">עדיין אין טיפולים ללקוח זה</div>';
+					html += '<div style="text-align: center; padding: 40px; color: #666;">עדיין אין טיפולים ללקוח זה</div>';
 				} else {
 					html = `
 						<div style="max-height: 400px; overflow-y: auto;">
@@ -6296,11 +6312,67 @@
 								<div style="font-size: 24px; font-weight: bold;">${monthlyArray.length}</div>
 								<div style="font-size: 12px; opacity: 0.9;">חודשים</div>
 							</div>
-						</div>
 					</div>
+				</div>
+				
+				<!-- Price Increase Forecast -->
+				${(() => {
+					const avgMinutesPerVisit = clientVisits.length > 0 
+						? clientVisits.reduce((sum, v) => sum + (parseFloat(v.duration_minutes) || 0), 0) / clientVisits.length 
+						: 0;
+					const avgHoursPerVisit = avgMinutesPerVisit / 60;
+					const avgIncomePerVisit = clientVisits.length > 0 
+						? clientVisits.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0) / clientVisits.length 
+						: 0;
+					const currentRate = costSettings?.hourlyRate || 150;
+					const newRate = costSettings?.newHourlyRate || 200;
+					const recommendedPrice = Math.round(avgHoursPerVisit * newRate / 10) * 10;
+					const priceIncrease = recommendedPrice - avgIncomePerVisit;
+					const increasePercent = avgIncomePerVisit > 0 ? (priceIncrease / avgIncomePerVisit * 100) : 0;
 					
-					<!-- Monthly Table -->
-					<div style="max-height: 350px; overflow-y: auto;">
+					return avgHoursPerVisit > 0 ? `
+						<div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+							<div style="text-align: center; margin-bottom: 15px;">
+								<div style="font-size: 14px; opacity: 0.9;">📈 תחזית העלאת מחיר</div>
+							</div>
+							<div style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+								<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+									<span style="font-size: 13px;">תעריף נוכחי: <strong>${currentRate} ₪/שעה</strong></span>
+									<span style="font-size: 13px;">תעריף חדש: 
+										<input type="number" id="forecastNewRate" value="${newRate}" min="0" 
+											   style="width: 60px; padding: 4px; border: none; border-radius: 4px; text-align: center; font-weight: bold;"
+											   onchange="updateForecastCalculation('${clientId}')"> ₪/שעה
+									</span>
+								</div>
+							</div>
+							<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; text-align: center;">
+								<div style="background: rgba(255,255,255,0.15); padding: 10px; border-radius: 8px;">
+									<div style="font-size: 11px; opacity: 0.9;">⏱️ זמן ממוצע לטיפול</div>
+									<div style="font-size: 20px; font-weight: bold;">
+										<input type="number" id="forecastAvgHours" value="${avgHoursPerVisit.toFixed(1)}" min="0" step="0.5"
+											   style="width: 50px; padding: 4px; border: none; border-radius: 4px; text-align: center; font-weight: bold; font-size: 18px;"
+											   onchange="updateForecastCalculation('${clientId}')"> שעות
+									</div>
+								</div>
+								<div style="background: rgba(255,255,255,0.15); padding: 10px; border-radius: 8px;">
+									<div style="font-size: 11px; opacity: 0.9;">💰 מחיר נוכחי ממוצע</div>
+									<div style="font-size: 20px; font-weight: bold;">${avgIncomePerVisit.toFixed(0)} ₪</div>
+								</div>
+								<div style="background: rgba(255,255,255,0.15); padding: 10px; border-radius: 8px;">
+									<div style="font-size: 11px; opacity: 0.9;">💵 מחיר מומלץ חדש</div>
+									<div style="font-size: 20px; font-weight: bold;" id="forecastRecommendedPrice">${recommendedPrice} ₪</div>
+								</div>
+								<div style="background: rgba(255,255,255,0.15); padding: 10px; border-radius: 8px;">
+									<div style="font-size: 11px; opacity: 0.9;">📈 העלאה נדרשת</div>
+									<div style="font-size: 20px; font-weight: bold;" id="forecastPriceIncrease">${priceIncrease > 0 ? '+' : ''}${priceIncrease.toFixed(0)} ₪ (${increasePercent.toFixed(0)}%)</div>
+								</div>
+							</div>
+						</div>
+					` : '';
+				})()}
+				
+				<!-- Monthly Table -->
+				<div style="max-height: 350px; overflow-y: auto;">
 						<table style="width: 100%; border-collapse: collapse;">
 							<thead style="position: sticky; top: 0; background: #f8f9fa;">
 								<tr style="border-bottom: 2px solid #dee2e6;">
@@ -7754,6 +7826,7 @@
 		// שמירת הגדרות עלות פשוטה יותר
 		function saveCostSettings() {
 			costSettings.hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 150;
+			costSettings.newHourlyRate = parseFloat(document.getElementById('newHourlyRate').value) || 200;
 			costSettings.workerCost = parseFloat(document.getElementById('workerCost').value) || 50;
 			
 			localStorage.setItem('cost_settings', JSON.stringify(costSettings));
@@ -7840,6 +7913,9 @@
 					});
 					
 					document.getElementById('hourlyRate').value = costSettings.hourlyRate;
+					if (document.getElementById('newHourlyRate')) {
+						document.getElementById('newHourlyRate').value = costSettings.newHourlyRate || 200;
+					}
 					document.getElementById('workerCost').value = costSettings.workerCost;
 					
 					return true;
@@ -15083,9 +15159,27 @@
 					}
 				}
 				
+				// בדיקה אם צריך לחזור לפרופיל לקוח
+				if (window.returnToClientProfile) {
+					const returnClientId = window.returnToClientProfile;
+					window.returnToClientProfile = null;
+					closeAnyModal();
+					setTimeout(() => {
+						showClientProfile(returnClientId);
+						setTimeout(() => switchClientProfileTab('treatments', returnClientId), 150);
+					}, 200);
+					// רענון תצוגות ברקע
+					loadPlanningData();
+					loadTodayTreatments();
+					if (typeof applyVisitFilters === 'function') {
+						applyVisitFilters();
+					}
+					return;
+				}
+
 				// סגירת המודאל
 				closeAnyModal();
-				
+
 				// רענון תצוגות
 				loadPlanningData();
 				loadTodayTreatments();
@@ -21222,6 +21316,49 @@
 				}
 			}
 		}
+
+		// Update forecast calculation when user changes values
+		function updateForecastCalculation(clientId) {
+			const newRate = parseFloat(document.getElementById('forecastNewRate')?.value) || 200;
+			const avgHours = parseFloat(document.getElementById('forecastAvgHours')?.value) || 0;
+			
+			// Get current average income
+			const clientVisits = visits.filter(v => v.location_id === clientId);
+			const avgIncomePerVisit = clientVisits.length > 0 
+				? clientVisits.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0) / clientVisits.length 
+				: 0;
+			
+			// Calculate new values
+			const recommendedPrice = Math.round(avgHours * newRate / 10) * 10;
+			const priceIncrease = recommendedPrice - avgIncomePerVisit;
+			const increasePercent = avgIncomePerVisit > 0 ? (priceIncrease / avgIncomePerVisit * 100) : 0;
+			
+			// Update display
+			const recommendedEl = document.getElementById('forecastRecommendedPrice');
+			const increaseEl = document.getElementById('forecastPriceIncrease');
+			
+			if (recommendedEl) {
+				recommendedEl.textContent = `${recommendedPrice} ₪`;
+			}
+			if (increaseEl) {
+				increaseEl.textContent = `${priceIncrease > 0 ? '+' : ''}${priceIncrease.toFixed(0)} ₪ (${increasePercent.toFixed(0)}%)`;
+			}
+		}
+
+
+		// Add treatment from client profile - keeps profile open after
+		function addTreatmentFromProfile(clientId) {
+			// Store that we came from profile
+			window.returnToClientProfile = clientId;
+			
+			// Close profile and open visit form
+			closeAnyModal();
+			setTimeout(() => showVisitForm(null, clientId), 150);
+		}
+
+		// Override or wrap the save function to return to profile
+		const originalSaveVisit = typeof saveVisit === 'function' ? saveVisit : null;
+
 
 
    </script>
