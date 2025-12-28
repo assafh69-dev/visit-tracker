@@ -6118,7 +6118,7 @@
 												<div style="font-size: 13px; color: #666; margin-top: 3px;">${methodText}</div>
 											</div>
 											<div style="text-align: left;">
-												<div style="font-size: 24px; font-weight: bold; color: #27ae60;">₪${payment.amount.toFixed(2)}</div>
+												<div style="font-size: 24px; font-weight: bold; color: #27ae60;">₪${(parseFloat(payment.amount) || 0).toFixed(2)}</div>
 												${linkedVisitsCount > 0 ? 
 													`<div style="font-size: 11px; color: #666; margin-top: 2px;">מקושר: ₪${totalLinked.toFixed(2)}</div>` 
 													: ''}
