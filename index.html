@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6066,7 +6066,7 @@
 				}
 				
 			} else if (tabName === 'payments') {
-				// Payments tab - show actual payments from payments array
+				// Payments tab - redesigned with collapsible rows like treatments
 				const clientPayments = payments
 					.filter(p => p.client_id === clientId)
 					.sort((a, b) => b.date.localeCompare(a.date));
@@ -6086,82 +6086,116 @@
 					const totalPaid = clientPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 					
 					html += `
-						<div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #27ae60;">
+						<div style="background: #e8f5e8; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #27ae60;">
 							<div style="display: flex; justify-content: space-between; align-items: center;">
-								<span style="font-size: 14px; color: #27ae60; font-weight: bold;">סך הכל תשלומים:</span>
-								<span style="font-size: 24px; font-weight: bold; color: #27ae60;">₪${totalPaid.toFixed(2)}</span>
+								<span style="font-size: 14px; color: #27ae60; font-weight: bold;">סה"כ תשלומים:</span>
+								<span style="font-size: 20px; font-weight: bold; color: #27ae60;">₪${totalPaid.toFixed(0)}</span>
 							</div>
 						</div>
 						
 						<div style="max-height: 400px; overflow-y: auto;">
-							${clientPayments.map(payment => {
-								// מצא טיפולים מקושרים
-								const relatedLinks = paymentVisitLinks.filter(link => link.payment_id === payment.ID);
-								const linkedVisitsCount = relatedLinks.length;
-								const totalLinked = relatedLinks.reduce((sum, link) => sum + (link.amount_allocated || 0), 0);
-								
-								// טקסט אמצעי תשלום
-								let methodText = '';
-								switch(payment.payment_method) {
-									case 'cash': methodText = '💵 מזומן'; break;
-									case 'check': methodText = '📝 צ\'ק'; break;
-									case 'transfer': methodText = '🏦 העברה'; break;
-									case 'app': methodText = '📱 אפליקציה'; break;
-									default: methodText = payment.payment_method || '';
-								}
-								
-								return `
-									<div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 12px; background: white;">
-										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-											<div>
-												<div style="font-size: 16px; font-weight: bold; color: #2c3e50;">${formatDate(payment.date)}</div>
-												<div style="font-size: 13px; color: #666; margin-top: 3px;">${methodText}</div>
-											</div>
-											<div style="text-align: left;">
-												<div style="font-size: 24px; font-weight: bold; color: #27ae60;">₪${(parseFloat(payment.amount) || 0).toFixed(2)}</div>
-												${linkedVisitsCount > 0 ? 
-													`<div style="font-size: 11px; color: #666; margin-top: 2px;">מקושר: ₪${totalLinked.toFixed(2)}</div>` 
-													: ''}
-											</div>
-										</div>
+							<table style="width: 100%; border-collapse: collapse;">
+								<thead style="position: sticky; top: 0; background: #f8f9fa;">
+									<tr style="border-bottom: 2px solid #dee2e6;">
+										<th style="padding: 8px; text-align: right;">תאריך</th>
+										<th style="padding: 8px; text-align: center;">אמצעי</th>
+										<th style="padding: 8px; text-align: right;">סכום</th>
+										<th style="padding: 8px; text-align: center;">קישור</th>
+										<th style="padding: 8px; text-align: center;">פעולות</th>
+									</tr>
+								</thead>
+								<tbody>
+									${clientPayments.map((payment, index) => {
+										const relatedLinks = paymentVisitLinks.filter(link => link.payment_id === payment.ID);
+										const linkedVisitsCount = relatedLinks.length;
+										const totalLinked = relatedLinks.reduce((sum, link) => sum + (link.amount_allocated || 0), 0);
+										const unallocated = payment.amount - totalLinked;
 										
-										${payment.reference ? 
-											`<div style="font-size: 12px; color: #666; margin-bottom: 5px;">
-												<strong>אסמכתא:</strong> ${payment.reference}
-											</div>` 
-											: ''}
+										// Method icon
+										let methodIcon = '';
+										switch(payment.payment_method) {
+											case 'cash': methodIcon = '💵'; break;
+											case 'check': methodIcon = '📝'; break;
+											case 'transfer': methodIcon = '🏦'; break;
+											case 'app': methodIcon = '📱'; break;
+											default: methodIcon = '💳';
+										}
 										
-										${payment.check_date ? 
-											`<div style="font-size: 12px; color: #666; margin-bottom: 5px;">
-												<strong>תאריך פירעון:</strong> ${formatDate(payment.check_date)}
-											</div>` 
-											: ''}
+										// Link status badge
+										let linkBadge = '';
+										if (linkedVisitsCount > 0 && unallocated < 1) {
+											linkBadge = '<span style="background: #d4edda; color: #155724; padding: 2px 6px; border-radius: 4px; font-size: 11px;">✔</span>';
+										} else if (linkedVisitsCount > 0) {
+											linkBadge = '<span style="background: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 4px; font-size: 11px;">½</span>';
+										} else {
+											linkBadge = '<span style="background: #f8d7da; color: #721c24; padding: 2px 6px; border-radius: 4px; font-size: 11px;">✗</span>';
+										}
 										
-										${payment.notes ? 
-											`<div style="font-size: 13px; color: #555; background: #f8f9fa; padding: 8px; border-radius: 4px; margin-top: 8px;">
-												💬 ${payment.notes}
-											</div>` 
-											: ''}
+										// Check if there are details to show
+										const hasDetails = payment.reference || payment.check_date || payment.notes || linkedVisitsCount > 0;
 										
-										${linkedVisitsCount > 0 ? 
-											`<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #dee2e6;">
-												<div style="font-size: 12px; color: #666; font-weight: bold; margin-bottom: 5px;">
-													🔗 מקושר ל-${linkedVisitsCount} טיפולים
-												</div>
-											</div>` 
-											: `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #dee2e6; font-size: 12px; color: #f39c12;">
-												⚠️ לא מקושר לטיפולים
-											</div>`}
+										// Build details content
+										let detailsContent = '';
+										if (payment.reference) {
+											detailsContent += '<div style="margin-bottom: 5px;"><strong>אסמכתא:</strong> ' + payment.reference + '</div>';
+										}
+										if (payment.check_date) {
+											detailsContent += '<div style="margin-bottom: 5px;"><strong>תאריך פירעון:</strong> ' + formatDate(payment.check_date) + '</div>';
+										}
+										if (payment.notes) {
+											detailsContent += '<div style="margin-bottom: 5px;"><strong>הערות:</strong> ' + payment.notes + '</div>';
+										}
 										
-										<div style="text-align: center; margin-top: 10px;">
-											<button onclick="showPaymentDetails('${payment.ID}')" 
-													style="padding: 6px 16px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px;">
-												🔍 פרטים מלאים
-											</button>
-										</div>
-									</div>
-								`;
-							}).join('')}
+										// Linked visits
+										if (linkedVisitsCount > 0) {
+											const relatedVisits = relatedLinks.map(link => {
+												const visit = visits.find(v => v.ID === link.visit_id);
+												return visit ? { ...visit, link_id: link.ID, allocated: link.amount_allocated } : null;
+											}).filter(v => v);
+											
+											detailsContent += '<div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc;">';
+											detailsContent += '<strong style="color: #27ae60;">🔗 טיפולים מקושרים:</strong>';
+											relatedVisits.forEach(v => {
+												detailsContent += '<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding: 5px; background: #f0f0f0; border-radius: 4px;">';
+												detailsContent += '<span>' + formatDate(v.date) + ' - ₪' + (v.allocated || 0) + '</span>';
+												detailsContent += '<button onclick="event.stopPropagation(); unlinkPaymentFromVisitInProfile(\\'' + v.link_id + '\\', \\'' + payment.ID + '\\', \\'' + clientId + '\\')" style="background: #e74c3c; color: white; border: none; padding: 2px 8px; border-radius: 3px; cursor: pointer; font-size: 10px;">נתק</button>';
+												detailsContent += '</div>';
+											});
+											detailsContent += '</div>';
+										}
+										
+										return \`
+											<tr style="border-bottom: 1px solid #dee2e6; cursor: \${hasDetails ? 'pointer' : 'default'};" 
+												onclick="\${hasDetails ? "togglePaymentDetails('payment-details-" + index + "')" : ''}">
+												<td style="padding: 8px; font-size: 13px;">\${formatDate(payment.date)}</td>
+												<td style="padding: 8px; text-align: center; font-size: 16px;">\${methodIcon}</td>
+												<td style="padding: 8px; font-weight: bold; color: #27ae60;">\${payment.amount || 0}₪</td>
+												<td style="padding: 8px; text-align: center;">\${linkBadge}</td>
+												<td style="padding: 8px; text-align: center;" onclick="event.stopPropagation();">
+													<button onclick="editPaymentFromProfile('\${payment.ID}', '\${clientId}')" 
+															style="padding: 4px 6px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" 
+															title="ערוך">✏️</button>
+													<button onclick="linkPaymentFromProfile('\${payment.ID}', '\${clientId}')" 
+															style="padding: 4px 6px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 3px;" 
+															title="קשר לטיפולים">🔗</button>
+													\${linkedVisitsCount === 0 ? \`
+														<button onclick="deletePaymentFromProfile('\${payment.ID}', '\${clientId}')" 
+																style="padding: 4px 6px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 3px;" 
+																title="מחק">🗑️</button>
+													\` : ''}
+												</td>
+											</tr>
+											\${hasDetails ? \`
+												<tr id="payment-details-\${index}" style="display: none; background: #f8f9fa;">
+													<td colspan="5" style="padding: 10px 15px; font-size: 12px; color: #666; border-bottom: 1px solid #dee2e6;">
+														\${detailsContent}
+													</td>
+												</tr>
+											\` : ''}
+										\`;
+									}).join('')}
+								</tbody>
+							</table>
 						</div>
 					`;
 				}
@@ -9936,9 +9970,24 @@
 					showToast(`✅ קושרו ${allocations.length} טיפולים (${totalLinked.toFixed(0)} ₪)`, 'success');
 					closeAnyModal();
 					window.currentLinkData = null;
+					
+					// Return to profile if came from there
+					if (window.returnToClientProfile) {
+						const returnClientId = window.returnToClientProfile;
+						const returnToPayments = window.returnToPaymentsTab;
+						window.returnToClientProfile = null;
+						window.returnToPaymentsTab = null;
+						
+						setTimeout(() => {
+							showClientProfile(returnClientId);
+							if (returnToPayments) {
+								setTimeout(() => switchClientProfileTab('payments', returnClientId), 150);
+							}
+						}, 200);
+					}
 				}
 				
-				// Refresh displays
+			// Refresh displays
 			if (typeof displayDebts === 'function') displayDebts();
 			if (typeof displayPayments === 'function') displayPayments();
 			if (typeof displayVisits === 'function') displayVisits();
@@ -15948,6 +15997,21 @@
 				if (typeof displayPayments === 'function') displayPayments();
 				if (typeof displayDebts === 'function') displayDebts();
 				
+				// Return to profile if came from there
+				if (window.returnToClientProfile) {
+					const returnClientId = window.returnToClientProfile;
+					const returnToPayments = window.returnToPaymentsTab;
+					window.returnToClientProfile = null;
+					window.returnToPaymentsTab = null;
+					
+					setTimeout(() => {
+						showClientProfile(returnClientId);
+						if (returnToPayments) {
+							setTimeout(() => switchClientProfileTab('payments', returnClientId), 150);
+						}
+					}, 200);
+				}
+				
 			} catch (error) {
 				console.error('Error saving payment:', error);
 				showToast('❌ שגיאה בשמירת תשלום', 'error');
@@ -18041,6 +18105,96 @@
 			if (row) {
 				row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
 			}
+		}
+
+		// Toggle payment details row in profile
+		function togglePaymentDetails(rowId) {
+			const row = document.getElementById(rowId);
+			if (row) {
+				row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+			}
+		}
+
+		// Edit payment from profile - stays in profile after
+		function editPaymentFromProfile(paymentId, clientId) {
+			const payment = payments.find(p => p.ID === paymentId);
+			if (!payment) {
+				showToast('תשלום לא נמצא', 'error');
+				return;
+			}
+			
+			// Store return info
+			window.returnToClientProfile = clientId;
+			window.returnToPaymentsTab = true;
+			
+			// Close profile and open edit
+			closeAnyModal();
+			setTimeout(() => editPaymentDetails(paymentId), 150);
+		}
+
+		// Link payment to visits from profile
+		function linkPaymentFromProfile(paymentId, clientId) {
+			window.returnToClientProfile = clientId;
+			window.returnToPaymentsTab = true;
+			
+			closeAnyModal();
+			setTimeout(() => showLinkPaymentModalFromPayments(paymentId), 150);
+		}
+
+		// Delete payment from profile
+		function deletePaymentFromProfile(paymentId, clientId) {
+			if (!confirm('האם למחוק את התשלום?')) return;
+			
+			const index = payments.findIndex(p => p.ID === paymentId);
+			if (index === -1) {
+				showToast('תשלום לא נמצא', 'error');
+				return;
+			}
+			
+			payments.splice(index, 1);
+			saveData();
+			showToast('התשלום נמחק', 'success');
+			
+			// Refresh the payments tab
+			switchClientProfileTab('payments', clientId);
+		}
+
+		// Unlink payment from visit - in profile context
+		function unlinkPaymentFromVisitInProfile(linkId, paymentId, clientId) {
+			if (!confirm('האם לנתק את הקישור?')) return;
+			
+			const linkIndex = paymentVisitLinks.findIndex(l => l.ID === linkId);
+			if (linkIndex === -1) {
+				showToast('קישור לא נמצא', 'error');
+				return;
+			}
+			
+			// Get visit to update its paid status
+			const link = paymentVisitLinks[linkIndex];
+			const visit = visits.find(v => v.ID === link.visit_id);
+			
+			// Remove the link
+			paymentVisitLinks.splice(linkIndex, 1);
+			
+			// Update visit paid status
+			if (visit) {
+				const remainingLinks = paymentVisitLinks.filter(l => l.visit_id === visit.ID);
+				const totalPaid = remainingLinks.reduce((sum, l) => sum + (l.amount_allocated || 0), 0);
+				
+				if (totalPaid === 0) {
+					visit.paid = '0';
+				} else if (totalPaid >= visit.amount) {
+					visit.paid = '1';
+				} else {
+					visit.paid = '3';
+				}
+			}
+			
+			saveData();
+			showToast('הקישור נותק', 'success');
+			
+			// Refresh the payments tab
+			switchClientProfileTab('payments', clientId);
 		}
 
 
