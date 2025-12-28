@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.6</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -5803,6 +5803,9 @@
 
 		// ✅ NEW: Show comprehensive client profile modal
 		function showClientProfile(clientId) {
+			// Clear return flag when opening profile directly
+			window.returnToClientProfile = null;
+			
 			const client = locations.find(loc => loc.ID === clientId);
 			if (!client) {
 				showToast('לקוח לא נמצא', 'error');
@@ -17230,6 +17233,16 @@
 				modalElements.forEach(el => el.remove());
 				console.log(`✅ Closed ${modalElements.length} modal(s) by style`);
 				return true;
+			}
+			
+			// Check if we need to return to client profile
+			if (window.returnToClientProfile) {
+				const returnClientId = window.returnToClientProfile;
+				window.returnToClientProfile = null;
+				setTimeout(() => {
+					showClientProfile(returnClientId);
+					setTimeout(() => switchClientProfileTab('treatments', returnClientId), 150);
+				}, 100);
 			}
 			
 			console.warn('⚠️ No modal found to close');
