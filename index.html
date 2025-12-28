@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -9891,6 +9891,12 @@
 				
 				// Create payment-visit links
 				allocations.forEach(allocation => {
+					// Check if visit can still be linked
+					if (!canLinkVisit(allocation.visitId, allocation.allocated)) {
+						console.log(`⏭️ Skipping visit ${allocation.visitId} - already fully paid or invalid`);
+						return; // Skip this allocation
+					}
+					
 					const link = {
 						ID: generateID(),
 						payment_id: payment.ID,
@@ -11524,6 +11530,12 @@
 					const debt = selectedVisit.debt;
 					const amountToAllocate = Math.min(remainingAmount, debt);
 					
+					// Check if visit can still be linked
+					if (!canLinkVisit(visit.ID, amountToAllocate)) {
+						console.log(`⏭️ Skipping visit ${visit.ID} - already fully paid`);
+						return;
+					}
+					
 					// צור קישור
 					const link = {
 						ID: generateID(),
@@ -12065,16 +12077,19 @@
 										
 										payments.push(payment);
 										
-										const link = {
-											ID: generateID(),
-											payment_id: payment.ID,
-											visit_id: visitData.ID,
-											amount_allocated: amount,
-											link_type: 'full_payment',
-											created_at: new Date().toISOString()
-										};
-										
-										paymentVisitLinks.push(link);
+										// Only create link if visit can be linked
+										if (canLinkVisit(visitData.ID, amount)) {
+											const link = {
+												ID: generateID(),
+												payment_id: payment.ID,
+												visit_id: visitData.ID,
+												amount_allocated: amount,
+												link_type: 'full_payment',
+												created_at: new Date().toISOString()
+											};
+											
+											paymentVisitLinks.push(link);
+										}
 									}
 								} else {
 									stats.visits.skipped++;
@@ -13307,6 +13322,30 @@
 			return unpaidVisits;
 		}
 
+		// Check if a visit can be linked (not already fully paid)
+		function canLinkVisit(visitId, amountToAllocate) {
+			const visit = visits.find(v => v.ID === visitId);
+			if (!visit) return false;
+			
+			const visitAmount = parseFloat(visit.amount) || 0;
+			const alreadyPaid = getVisitPaidAmount(visitId);
+			const remainingDebt = visitAmount - alreadyPaid;
+			
+			// Can't link if no debt remaining
+			if (remainingDebt < 0.01) {
+				console.log(`⚠️ Visit ${visitId} already fully paid (${alreadyPaid}/${visitAmount})`);
+				return false;
+			}
+			
+			// Can't link more than the remaining debt
+			if (amountToAllocate > remainingDebt + 0.01) {
+				console.log(`⚠️ Visit ${visitId}: trying to allocate ${amountToAllocate} but only ${remainingDebt} debt remains`);
+				return false;
+			}
+			
+			return true;
+		}
+
 		// Calculate match confidence level
 		function calculateMatchConfidence(payment, visit, amountToAllocate) {
 			let confidence = 1; // Default: ⭐ (low)
@@ -13749,6 +13788,12 @@
 			const newLinks = [];
 			
 			for (const visitMatch of match.matches) {
+				// Check if visit can still be linked
+				if (!canLinkVisit(visitMatch.visit_id, visitMatch.amount_to_allocate)) {
+					console.log(`⏭️ Skipping visit ${visitMatch.visit_id} - already fully paid`);
+					continue;
+				}
+				
 				const link = {
 					ID: generateID(),
 					payment_id: match.payment_id,
@@ -14010,7 +14055,7 @@
 						const paidAmount = getVisitPaidAmount(visit.ID);
 						const debtAmount = parseFloat(visit.amount) - paidAmount;
 						
-						if (debtAmount > 0) {
+						if (debtAmount > 0 && canLinkVisit(visit.ID, debtAmount)) {
 							const link = {
 								ID: generateID(),
 								payment_id: payment.ID,
