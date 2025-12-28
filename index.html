@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.6</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.7</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -17211,6 +17211,8 @@
 			// List of all possible modal IDs
 			const modalIds = ['editModal', 'telegramModal', 'clientModal', 'addTreatmentModal', 'linkPaymentModal', 'modalContainer'];
 			
+			let closed = false;
+			
 			// Try to close by ID
 			for (const id of modalIds) {
 				const modal = document.getElementById(id);
@@ -17223,16 +17225,19 @@
 						modal.remove();
 					}
 					console.log(`✅ Closed modal: ${id}`);
-					return true;
+					closed = true;
+					break;
 				}
 			}
 			
 			// Fallback: find and remove any modal-like element
-			const modalElements = document.querySelectorAll('[style*="position: fixed"][style*="background"]');
-			if (modalElements.length > 0) {
-				modalElements.forEach(el => el.remove());
-				console.log(`✅ Closed ${modalElements.length} modal(s) by style`);
-				return true;
+			if (!closed) {
+				const modalElements = document.querySelectorAll('[style*="position: fixed"][style*="background"]');
+				if (modalElements.length > 0) {
+					modalElements.forEach(el => el.remove());
+					console.log(`✅ Closed ${modalElements.length} modal(s) by style`);
+					closed = true;
+				}
 			}
 			
 			// Check if we need to return to client profile
@@ -17245,10 +17250,14 @@
 				}, 100);
 			}
 			
-			console.warn('⚠️ No modal found to close');
-			return false;
+			if (!closed) {
+				console.warn('⚠️ No modal found to close');
+			}
+			
+			return closed;
 		}
-
+		
+		
 		// Toggle filter panel collapse/expand
 		function toggleFilterPanel(panelId) {
 			const panel = document.getElementById(panelId);
