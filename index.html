@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6158,7 +6158,7 @@
 											relatedVisits.forEach(v => {
 												detailsContent += '<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding: 5px; background: #f0f0f0; border-radius: 4px;">';
 												detailsContent += '<span>' + formatDate(v.date) + ' - ₪' + (v.allocated || 0) + '</span>';
-												detailsContent += '<button onclick="event.stopPropagation(); unlinkPaymentFromVisitInProfile(\\'' + v.link_id + '\\', \\'' + payment.ID + '\\', \\'' + clientId + '\\')" style="background: #e74c3c; color: white; border: none; padding: 2px 8px; border-radius: 3px; cursor: pointer; font-size: 10px;">נתק</button>';
+												detailsContent += '<button onclick="event.stopPropagation(); unlinkPaymentFromVisitInProfile(\u0027' + v.link_id + '\u0027, \u0027' + payment.ID + '\u0027, \u0027' + clientId + '\u0027)" style="background: #e74c3c; color: white; border: none; padding: 2px 8px; border-radius: 3px; cursor: pointer; font-size: 10px;">נתק</button>';
 												detailsContent += '</div>';
 											});
 											detailsContent += '</div>';
