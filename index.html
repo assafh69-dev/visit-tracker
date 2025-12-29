@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.7</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.8</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -19779,12 +19779,11 @@ function saveCostSettings() {
 					paymentsHTML += `
 						<tr style="border-bottom: 1px solid #eee;">
 							<td style="padding: 8px;">${formatDate(payment.date)}</td>
-							<td style="padding: 8px;">${method}</td>
 							<td style="padding: 8px;">₪${amount.toFixed(0)}</td>
+							<td style="padding: 8px;">${method}</td>
 						</tr>
 					`;
-					paymentsTableHTML += `<tr><td>${formatDate(payment.date)}</td><td>${method}</td><td>₪${amount.toFixed(0)}</td></tr>`;
-				});
+					paymentsTableHTML += `<tr><td>${formatDate(payment.date)}</td><td>₪${amount.toFixed(0)}</td><td>${method}</td></tr>`;				});
 			}
 			
 			// Balance text
@@ -19814,7 +19813,7 @@ function saveCostSettings() {
 		<h3>תשלומים שהתקבלו (${clientPayments.length})</h3>
 		<table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
 		<tr style="background-color: #27ae60; color: white;">
-		<th>תאריך</th><th>אמצעי תשלום</th><th>סכום</th>
+		<th>תאריך</th><th>סכום</th><th>אמצעי תשלום</th>
 		</tr>
 		${paymentsTableHTML}
 		<tr style="background-color: #27ae60; color: white; font-weight: bold;">
@@ -19886,8 +19885,8 @@ function saveCostSettings() {
 							<thead>
 								<tr style="background: #f5f5f5;">
 									<th style="padding: 10px; text-align: right;">תאריך</th>
-									<th style="padding: 10px; text-align: right;">אמצעי תשלום</th>
 									<th style="padding: 10px; text-align: right;">סכום</th>
+									<th style="padding: 10px; text-align: right;">אמצעי תשלום</th>
 								</tr>
 							</thead>
 							<tbody>
