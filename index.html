@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -19434,7 +19434,6 @@ function saveCostSettings() {
 		}
 
 
-		// Generate balance report for client - displays in modal with copy as HTML table
 		function generateClientBalanceReport(clientId) {
 			const client = locations.find(loc => loc.ID === clientId);
 			if (!client) {
@@ -19481,8 +19480,8 @@ function saveCostSettings() {
 			let treatmentsTableHTML = '';
 			
 			if (clientVisits.length === 0) {
-				treatmentsHTML = '<tr><td colspan="4" style="text-align: center; padding: 10px; color: #666;">אין טיפולים בתקופה זו</td></tr>';
-				treatmentsTableHTML = '<tr><td colspan="4" style="text-align: center;">אין טיפולים בתקופה זו</td></tr>';
+				treatmentsHTML = '<tr><td colspan="6" style="text-align: center; padding: 10px; color: #666;">אין טיפולים בתקופה זו</td></tr>';
+				treatmentsTableHTML = '<tr><td colspan="6" style="text-align: center;">אין טיפולים בתקופה זו</td></tr>';
 			} else {
 				clientVisits.forEach(visit => {
 					let duration = '-';
@@ -19501,16 +19500,20 @@ function saveCostSettings() {
 					
 					const workDone = visit.work_done || 'טיפול';
 					const amount = parseFloat(visit.amount) || 0;
+					const expense = parseFloat(visit.expense) || 0;
+					const labor = amount - expense;
 					
 					treatmentsHTML += `
 						<tr style="border-bottom: 1px solid #eee;">
 							<td style="padding: 8px;">${formatDate(visit.date)}</td>
 							<td style="padding: 8px;">${workDone}</td>
 							<td style="padding: 8px;">${duration}</td>
+							<td style="padding: 8px;">₪${labor.toFixed(0)}</td>
+							<td style="padding: 8px;">${expense > 0 ? '₪' + expense.toFixed(0) : '-'}</td>
 							<td style="padding: 8px;">₪${amount.toFixed(0)}</td>
 						</tr>
 					`;
-					treatmentsTableHTML += `<tr><td>${formatDate(visit.date)}</td><td>${workDone}</td><td>${duration}</td><td>₪${amount.toFixed(0)}</td></tr>`;
+					treatmentsTableHTML += `<tr><td>${formatDate(visit.date)}</td><td>${workDone}</td><td>${duration}</td><td>₪${labor.toFixed(0)}</td><td>${expense > 0 ? '₪' + expense.toFixed(0) : '-'}</td><td>₪${amount.toFixed(0)}</td></tr>`;
 				});
 			}
 			
@@ -19533,7 +19536,8 @@ function saveCostSettings() {
 							<td style="padding: 8px;">${method}</td>
 						</tr>
 					`;
-					paymentsTableHTML += `<tr><td>${formatDate(payment.date)}</td><td>₪${amount.toFixed(0)}</td><td>${method}</td></tr>`;				});
+					paymentsTableHTML += `<tr><td>${formatDate(payment.date)}</td><td>₪${amount.toFixed(0)}</td><td>${method}</td></tr>`;
+				});
 			}
 			
 			// Balance text
@@ -19571,28 +19575,25 @@ function saveCostSettings() {
 		</tr>
 		</table>
 
-		<h3 style="text-align: center; margin-top: 20px;">סיכום</h3>
-		<table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 50%; margin: 0 auto;">
-		<tr><td>סה"כ טיפולים:</td><td>₪${totalTreatments.toFixed(0)}</td></tr>
-		<tr><td>סה"כ תשלומים:</td><td>₪${totalPayments.toFixed(0)}</td></tr>
-		<tr style="background-color: ${balance > 0 ? '#ffebee' : '#e8f5e9'}; font-weight: bold;">
-		<td colspan="2" style="text-align: center;">${balanceText}</td>
-		</tr>
-		</table>
-
-		<p style="text-align: center; color: #666; margin-top: 20px;">הופק בתאריך: ${new Date().toLocaleDateString('he-IL')}</p>
+		<h3 style="text-align: center; margin-top: 20px; padding: 10px; background-color: ${balance > 0 ? '#ffebee' : '#e8f5e9'}; border-radius: 8px;">
+		${balanceText}
+		</h3>
+		
+		<p style="text-align: center; font-size: 12px; color: #666; margin-top: 15px;">
+		💡 הערה: עבודות מיוחדות (מסור שרשרת, עבודה בגובה וכד') עשויות להיות מתומחרות בתעריף גבוה יותר. עבודה עם פועל נוסף כרוכה בתוספת עלות.
+		</p>
 		</div>
-		`;
-
-			// Build modal HTML
+			`;
+			
+			// Build report HTML for display
 			const reportHTML = `
-				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 700px; width: 95vw; max-height: 85vh; overflow-y: auto; position: relative;">
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 700px; width: 95vw; max-height: 90vh; overflow-y: auto; position: relative;">
 					<button onclick="closeAnyModal()" 
 							style="position: absolute; top: 15px; left: 15px; background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
 					
 					<!-- Header -->
-					<div style="text-align: center; background: linear-gradient(135deg, #9b59b6, #667eea); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-						<h2 style="margin: 0 0 5px 0;">דוח מאזן לקוח</h2>
+					<div style="text-align: center; margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white; border-radius: 10px;">
+						<div style="font-size: 14px; opacity: 0.9;">📄 דוח מאזן לקוח</div>
 						<div style="font-size: 18px; font-weight: bold;">${client.name}</div>
 						<div style="font-size: 13px; opacity: 0.9;">${client.full_address || ''}</div>
 						<div style="font-size: 12px; margin-top: 10px; background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 15px; display: inline-block;">
@@ -19707,7 +19708,7 @@ function saveCostSettings() {
 			const container = document.getElementById('modalContainer');
 			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: block;';
 			container.innerHTML = `
-				<div onclick="closeAnyModal()" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 99999;">
+				<div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 99999;">
 					<div onclick="event.stopPropagation()">
 						${reportHTML}
 					</div>
