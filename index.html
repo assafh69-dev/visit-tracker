@@ -19376,10 +19376,10 @@ function saveCostSettings() {
 				return;
 			}
 			
-			// Get client's first visit date for default range
-			const clientVisits = visits.filter(v => v.location_id === clientId).sort((a, b) => a.date.localeCompare(b.date));
-			const firstVisitDate = clientVisits.length > 0 ? clientVisits[0].date : getLocalDateString();
+			// Default range: January 1st of current year to today
 			const today = getLocalDateString();
+			const currentYear = new Date().getFullYear();
+			const startOfYear = `${currentYear}-01-01`;
 			
 			const modalHTML = `
 				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 90vw; position: relative;">
@@ -19399,7 +19399,7 @@ function saveCostSettings() {
 					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
 						<div>
 							<label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">מתאריך:</label>
-							<input type="date" id="reportDateFrom" value="${firstVisitDate}"
+							<input type="date" id="reportDateFrom" value="${startOfYear}"
 								   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
 						</div>
 						<div>
