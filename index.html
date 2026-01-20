@@ -4241,11 +4241,15 @@
 					expenses = JSON.parse(savedExpenses);
 				}
 				if (savedCostSettings) {
-					costSettings = JSON.parse(savedCostSettings);
+					const savedSettings = JSON.parse(savedCostSettings);
+					costSettings = { ...costSettings, ...savedSettings };
 					document.getElementById('hourlyRate').value = costSettings.hourlyRate;
 					document.getElementById('workerCost').value = costSettings.workerCost;
 					if (document.getElementById('newHourlyRate')) {
 						document.getElementById('newHourlyRate').value = costSettings.newHourlyRate || 200;
+					}
+					if (document.getElementById('defaultWorkDone')) {
+						document.getElementById('defaultWorkDone').value = costSettings.defaultWorkDone || '';
 					}
 				}
 				
@@ -7874,7 +7878,7 @@
 	   
 
 		// שמירת הגדרות עלות פשוטה יותר
-function saveCostSettings() {
+		function saveCostSettings() {
 			costSettings.hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 150;
 			costSettings.newHourlyRate = parseFloat(document.getElementById('newHourlyRate').value) || 200;
 			costSettings.workerCost = parseFloat(document.getElementById('workerCost').value) || 50;
