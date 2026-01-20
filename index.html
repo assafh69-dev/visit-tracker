@@ -7971,6 +7971,7 @@ function saveCostSettings() {
 						}
 					});
 					
+					// עדכון הממשק
 					document.getElementById('hourlyRate').value = costSettings.hourlyRate;
 					document.getElementById('workerCost').value = costSettings.workerCost;
 					if (document.getElementById('newHourlyRate')) {
@@ -7979,6 +7980,9 @@ function saveCostSettings() {
 					if (document.getElementById('defaultWorkDone')) {
 						document.getElementById('defaultWorkDone').value = costSettings.defaultWorkDone || '';
 					}
+					
+					// שמירה ל-localStorage לסנכרון
+					localStorage.setItem('cost_settings', JSON.stringify(costSettings));
 					
 					return true;
 				}
