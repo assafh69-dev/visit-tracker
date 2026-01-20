@@ -9509,11 +9509,6 @@
 										title="רישום תשלום">
 									💳
 								</button>
-								<button onclick="event.stopPropagation(); markAllDebtsPaid('${debt.clientId}')" 
-										style="background: #3498db; color: white; padding: 6px; font-size: 14px; border-radius: 6px; border: none; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;"
-										title="סמן הכל כשולם">
-									✔
-								</button>
 								<button onclick="event.stopPropagation(); showBalanceReportModal('${debt.clientId}')" 
 										style="background: #9b59b6; color: white; padding: 6px; font-size: 14px; border-radius: 6px; border: none; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;"
 										title="דוח מאזן">
@@ -13537,10 +13532,28 @@
 		}
 
 
-		// Find matches for a single payment - OPTIMIZED VERSION
+		// Find matches for a single payment - FIXED VERSION
 		function findPaymentMatchesOptimized(paymentInfo, allUnpaidVisits) {
 			const payment = paymentInfo.payment;
-			const availableAmount = paymentInfo.availableAmount;
+			const availableAmount = parseFloat(paymentInfo.availableAmount) || 0;
+			
+			// === VALIDATION 1: Payment must have valid amount ===
+			if (availableAmount <= 0) {
+				console.log(`⏭️ Skipping payment ${payment.ID.slice(-8)} - no available amount`);
+				return null;
+			}
+			
+			// === VALIDATION 2: Payment must have client_id ===
+			if (!payment.client_id) {
+				console.log(`⏭️ Skipping payment ${payment.ID.slice(-8)} - no client_id`);
+				return null;
+			}
+			
+			// === VALIDATION 3: Payment must have a date ===
+			if (!payment.date) {
+				console.log(`⏭️ Skipping payment ${payment.ID.slice(-8)} - no date`);
+				return null;
+			}
 			
 			// Filter to this client only
 			const clientVisits = allUnpaidVisits.filter(vInfo => 
@@ -13548,21 +13561,18 @@
 			);
 			
 			if (clientVisits.length === 0) {
-				return null; // No matches possible
+				return null; // No unpaid visits for this client
 			}
 			
-			// Filter by date if payment has a date
-			let eligibleVisits = clientVisits;
-			if (payment.date) {
-				// Only visits on or before payment date
-				eligibleVisits = clientVisits.filter(vInfo => 
-					vInfo.visit.date <= payment.date
-				);
-				
-				// If no visits before payment date, use all visits (fallback)
-				if (eligibleVisits.length === 0) {
-					eligibleVisits = clientVisits;
-				}
+			// === CRITICAL FIX: Only visits BEFORE or ON payment date ===
+			// NO FALLBACK - if no visits before payment, return null!
+			const eligibleVisits = clientVisits.filter(vInfo => 
+				vInfo.visit.date && vInfo.visit.date <= payment.date
+			);
+			
+			if (eligibleVisits.length === 0) {
+				console.log(`⏭️ Payment ${payment.ID.slice(-8)} (${payment.date}): No visits before this date`);
+				return null; // Don't link to future visits!
 			}
 			
 			// Sort by date (oldest first)
@@ -14018,112 +14028,6 @@
 			}
 		}
 
-
-
-
-
-////<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-		// פונקציה חדשה לסימון חובות כשולמים
-		async function markAllDebtsPaid(locationId) {
-			const location = locations.find(loc => loc.ID === locationId);
-			if (!location) {
-				showToast('לקוח לא נמצא', 'error');
-				return;
-			}
-			
-			// מצא כל הביקורים הלא שולמים של הלקוח
-			const unpaidVisits = visits.filter(visit => {
-				if (visit.location_id !== locationId || !visit.amount || visit.amount <= 0) {
-					return false;
-				}
-				
-				const paidAmount = getVisitPaidAmount(visit.ID);
-				const debt = parseFloat(visit.amount) - paidAmount;
-				return debt > 0;
-			});
-			
-			if (unpaidVisits.length === 0) {
-				showToast('אין חובות פתוחים ללקוח זה', 'info');
-				return;
-			}
-			
-			const totalDebt = unpaidVisits.reduce((sum, visit) => {
-				const paidAmount = getVisitPaidAmount(visit.ID);
-				return sum + (parseFloat(visit.amount) - paidAmount);
-			}, 0);
-			
-			if (confirm(`לסמן את כל החובות של ${location.name} כמסולקים?\n\nסה"כ: ₪${totalDebt.toLocaleString()}\nמספר טיפולים: ${unpaidVisits.length}`)) {
-				
-				try {
-					showLoading('יוצר תשלום ומעדכן מערכת...');
-					
-					// צור תשלום אחד עבור כל החובות
-					const payment = {
-						ID: generateID(),
-						date: getLocalDateString(),
-						time: new Date().toTimeString().substr(0, 5),
-						amount: totalDebt,
-						payment_method: 'cash',
-						source_type: 'debt_settlement',
-						client_id: locationId,
-						notes: `סילוק חובות - ${unpaidVisits.length} טיפולים`,
-						status: 'completed',
-						created_at: new Date().toISOString()
-					};
-					
-					// הוסף תשלום למערכת
-					payments.push(payment);
-					
-					// צור קישורים לכל הביקורים
-					for (const visit of unpaidVisits) {
-						const paidAmount = getVisitPaidAmount(visit.ID);
-						const debtAmount = parseFloat(visit.amount) - paidAmount;
-						
-						if (debtAmount > 0 && canLinkVisit(visit.ID, debtAmount)) {
-							const link = {
-								ID: generateID(),
-								payment_id: payment.ID,
-								visit_id: visit.ID,
-								amount_allocated: debtAmount,
-								link_type: 'debt_settlement',
-								created_at: new Date().toISOString()
-							};
-							
-							paymentVisitLinks.push(link);
-						}
-					}
-					
-					// שמירה מקומית
-					saveToLocalStorage();
-					
-					// שמירה בענן
-					if (access_token && SPREADSHEET_ID) {
-						await saveAllToSheets();
-						
-						// שמור את כל הקישורים
-						for (const link of paymentVisitLinks.filter(l => l.payment_id === payment.ID)) {
-							await saveAllToSheets();
-						}
-					}
-					
-					hideLoading();
-					
-					// רענון התצוגה
-					displayDebts();
-					
-					showToast(`החובות של ${location.name} סומנו כמסולקים!
-		💰 ₪${totalDebt.toLocaleString()} סולקו
-		📋 ${unpaidVisits.length} טיפולים עודכנו`, 'success', 5000);
-					
-				} catch (error) {
-					hideLoading();
-					console.error('שגיאה בעדכון תשלומים:', error);
-					showToast('שגיאה בעדכון התשלומים', 'error');
-				}
-			}
-		}
 
 
 		// פונקציות לחיפוש לקוחות היברידי
