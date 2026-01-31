@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -9776,14 +9776,14 @@
 								<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">שיטת קישור:</label>
 								<div style="display: flex; gap: 10px;">
 									<label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer;">
-										<input type="radio" name="linkMethod" value="auto" checked onchange="updateLinkPaymentPreviewSingle('${selectedPayment.ID}')" style="margin-left: 8px;">
+										<input type="radio" name="linkMethod" value="auto" checked onchange="updateLinkPaymentPreview()" style="margin-left: 8px;">
 										<div>
 											<div style="font-weight: 600;">🤖 אוטומטי</div>
 											<div style="font-size: 11px; color: #666;">מהישן לחדש</div>
 										</div>
 									</label>
 									<label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer;">
-										<input type="radio" name="linkMethod" value="manual" onchange="updateLinkPaymentPreviewSingle('${selectedPayment.ID}')" style="margin-left: 8px;">
+										<input type="radio" name="linkMethod" value="manual" onchange="updateLinkPaymentPreview()" style="margin-left: 8px;">
 										<div>
 											<div style="font-weight: 600;">✋ ידני</div>
 											<div style="font-size: 11px; color: #666;">בחירה חופשית</div>
@@ -9820,7 +9820,7 @@
 			document.body.appendChild(modalContainer);
 			
 			// Load preview
-			setTimeout(() => updateLinkPaymentPreviewSingle(selectedPayment.ID), 100);
+			setTimeout(() => updateLinkPaymentPreview(), 100);
 		}
 
 		// Helper function to update selected payment
@@ -9841,7 +9841,7 @@
 			window.currentLinkData.availableAmount = availableAmount;
 			
 			// Update preview
-			updateLinkPaymentPreviewSingle(paymentId);
+			updateLinkPaymentPreview();
 		}
 		
 		
@@ -10028,7 +10028,7 @@
 					
 					// Refresh preview
 					setTimeout(() => {
-						updateLinkPaymentPreviewSingle(paymentId);
+						updateLinkPaymentPreview();
 					}, 1000);
 					
 				} else {
