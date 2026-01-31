@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.6</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -10071,8 +10071,10 @@
 		function updateLinkPaymentPreview() {
 			const previewArea = document.getElementById('linkPreviewArea');
 			const executeBtn = document.getElementById('executeLinkBtn');
-			const selectedPaymentId = document.getElementById('selectedPaymentId').value;
-			const linkMethod = document.querySelector('input[name="linkMethod"]:checked').value;
+			const selectedPaymentEl = document.getElementById('selectedPaymentId');
+			const selectedPaymentId = selectedPaymentEl ? selectedPaymentEl.value : (window.currentLinkData?.paymentId || null);
+			const linkMethodEl = document.querySelector('input[name="linkMethod"]:checked');
+			const linkMethod = linkMethodEl ? linkMethodEl.value : 'auto';
 			
 			if (!selectedPaymentId) {
 				previewArea.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">בחר תשלום כדי לראות תצוגה מקדימה</div>';
