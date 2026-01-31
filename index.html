@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6149,7 +6149,7 @@
 												<td style="padding: 8px; font-weight: bold; color: #27ae60;">${visit.amount || 0}₪</td>
 												<td style="padding: 8px;">${paymentBadge}</td>
 												<td style="padding: 8px; text-align: center;" onclick="event.stopPropagation();">
-													<button onclick="closeAnyModal(); setTimeout(() => showVisitForm('${visit.ID}'), 100);" 
+													<button onclick="addTaskFromProfile('${clientId}')"
 															style="padding: 4px 6px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" 
 															title="עריכת טיפול">✏️</button>
 													${paidInfo.status === '0' ? `
@@ -6182,7 +6182,7 @@
 				
 				html = `
 					<div style="margin-bottom: 15px; text-align: center;">
-						<button onclick="showAddPaymentModal('${clientId}')" 
+						<button onclick="addPaymentFromProfile('${clientId}')" 
 								style="padding: 12px 24px; background: #27ae60; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);">
 							➕ הוסף תשלום
 						</button>
@@ -6482,7 +6482,7 @@
 				
 				html = `
 					<div style="margin-bottom: 15px; text-align: center;">
-						<button onclick="closeAnyModal(); setTimeout(() => showAddExpenseModal('${clientId}', '${client.name}'), 100);" 
+						<button onclick="addExpenseFromProfile('${clientId}', '${client.name}')"
 								style="padding: 12px 24px; background: #e74c3c; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold;">
 							➕ הוסף הוצאה ללקוח
 						</button>
@@ -18741,6 +18741,22 @@
 					console.error('Error saving tasks to cloud:', error);
 				}
 			}
+			
+			// Return to profile if came from there
+			if (window.returnToClientProfile) {
+				const returnClientId = window.returnToClientProfile;
+				const returnToTasks = window.returnToTasksTab;
+				window.returnToClientProfile = null;
+				window.returnToTasksTab = null;
+				
+				setTimeout(() => {
+					showClientProfile(returnClientId);
+					if (returnToTasks) {
+						setTimeout(() => switchClientProfileTab('tasks', returnClientId), 150);
+					}
+				}, 200);
+			}
+			
 		}
 
 		// Show edit task modal
@@ -20628,6 +20644,21 @@
 			showToast('✅ הוצאה נשמרה בהצלחה', 'success');
 			closeAnyModal();
 			displayExpenses();
+
+			// Return to profile if came from there
+			if (window.returnToClientProfile) {
+				const returnClientId = window.returnToClientProfile;
+				const returnToExpenses = window.returnToExpensesTab;
+				window.returnToClientProfile = null;
+				window.returnToExpensesTab = null;
+				
+				setTimeout(() => {
+					showClientProfile(returnClientId);
+					if (returnToExpenses) {
+						setTimeout(() => switchClientProfileTab('expenses', returnClientId), 150);
+					}
+				}, 200);
+			}
 		}
 
 
@@ -21333,6 +21364,39 @@
 		// Override or wrap the save function to return to profile
 		const originalSaveVisit = typeof saveVisit === 'function' ? saveVisit : null;
 
+
+		function addPaymentFromProfile(clientId) {
+			// Store that we came from profile
+			window.returnToClientProfile = clientId;
+			window.returnToPaymentsTab = true;
+			
+			// Close profile
+			const modal = document.getElementById('editModal');
+			if (modal) modal.remove();
+			
+			// Open payment form
+			setTimeout(() => showAddPaymentModal(clientId), 150);
+		}
+
+		function addTaskFromProfile(clientId) {
+			window.returnToClientProfile = clientId;
+			window.returnToTasksTab = true;
+			
+			const modal = document.getElementById('editModal');
+			if (modal) modal.remove();
+			
+			setTimeout(() => showAddTaskModal(clientId), 150);
+		}
+
+		function addExpenseFromProfile(clientId, clientName) {
+			window.returnToClientProfile = clientId;
+			window.returnToExpensesTab = true;
+			
+			const modal = document.getElementById('editModal');
+			if (modal) modal.remove();
+			
+			setTimeout(() => showAddExpenseModal(clientId, clientName), 150);
+		}
 
 
    </script>
