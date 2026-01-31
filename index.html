@@ -7062,7 +7062,29 @@
 		
 		function deleteReceipt(receiptId) {
 			if (confirm('האם אתה בטוח שברצונך למחוק את הקבלה?')) {
-				receipts = receipts.filter(r => r.ID != receiptId);
+				// מצא את הקבלה לפני המחיקה
+				const receipt = receipts.find(r => r.ID === receiptId);
+				
+				// נקה את הקישור מהתשלום אם קיים
+				if (receipt && receipt.payment_id) {
+					const payment = payments.find(p => p.ID === receipt.payment_id);
+					if (payment) {
+						payment.receipt_id = '';
+						payment.updated_at = new Date().toISOString();
+					}
+				}
+				
+				// גם חפש תשלום שמצביע לקבלה זו
+				const linkedPayment = payments.find(p => p.receipt_id === receiptId);
+				if (linkedPayment) {
+					linkedPayment.receipt_id = '';
+					linkedPayment.updated_at = new Date().toISOString();
+				}
+				
+				// מחק את הקבלה
+				receipts = receipts.filter(r => r.ID !== receiptId);
+				
+				// עדכון תצוגה ושמירה
 				loadReceiptsTable();
 				loadReceiptFilterOptions();
 				saveToLocalStorage();
@@ -15577,7 +15599,7 @@
 						<button onclick="showPaymentDetails('${payment.ID}')" class="action-btn" style="background: #3498db; color: white;" title="פירוט מלא">🔍</button>
 						${payment.receipt_id 
 							? '<span style="color: #27ae60; font-size: 12px; margin-right: 5px;">🧾</span>' 
-							: `<button onclick="createReceiptFromPayment('${payment.ID}')" style="padding: 4px 8px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 5px;">🧾</button>`
+							: `<button onclick="createReceiptFromPayment('${payment.ID}')" style="padding: 4px 8px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 5px;" title="צור קבלה">🧾</button>`
 						}
 					</td>
 				`;
