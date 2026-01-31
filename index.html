@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2629,6 +2629,13 @@
 										<option value="100">100</option>
 										<option value="200" selected>200</option>
 										<option value="500">500</option>
+									</select>
+								</div>
+								<div class="filter-group-unified small">
+									<label>סדר:</label>
+									<select id="visitSortOrder" onchange="applyVisitFilters()">
+										<option value="desc" selected>חדש → ישן</option>
+										<option value="asc">ישן → חדש</option>
 									</select>
 								</div>
 							</div>
@@ -7490,8 +7497,13 @@
 			// Limit results with null safety
 			const maxResults = parseInt(document.getElementById('maxResults')?.value) || 200;
 			
-			// Sort by date (newest first)
-			filteredVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
+			// Sort by date based on user selection
+			const sortOrder = document.getElementById('visitSortOrder')?.value || 'desc';
+			if (sortOrder === 'desc') {
+				filteredVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
+			} else {
+				filteredVisits.sort((a, b) => new Date(a.date) - new Date(b.date));
+			}
 			
 			// Limit number of results
 			if (filteredVisits.length > maxResults) {
@@ -7517,8 +7529,13 @@
 				return;
 			}
 			
-			// Sort by date descending
-			filteredVisits.sort((a, b) => b.date.localeCompare(a.date));
+			// Sort by date based on user selection
+			const sortOrder2 = document.getElementById('visitSortOrder')?.value || 'desc';
+			if (sortOrder2 === 'desc') {
+				filteredVisits.sort((a, b) => b.date.localeCompare(a.date));
+			} else {
+				filteredVisits.sort((a, b) => a.date.localeCompare(b.date));
+			}
 			
 			const fragment = document.createDocumentFragment();
 			const locationMap = new Map();
