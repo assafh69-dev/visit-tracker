@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -16007,8 +16007,15 @@
 				
 				closeAnyModal();
 				
-				// Refresh displays
-				if (typeof displayPayments === 'function') displayPayments();
+				// Refresh displays - keep current search filter
+				if (typeof displayPayments === 'function') {
+					const currentSearch = document.getElementById('paymentSmartSearch')?.value || '';
+					displayPayments();
+					if (currentSearch) {
+						document.getElementById('paymentSmartSearch').value = currentSearch;
+						filterPaymentsBySmartSearch(currentSearch);
+					}
+				}
 				if (typeof displayDebts === 'function') displayDebts();
 				
 				// Return to profile if came from there
