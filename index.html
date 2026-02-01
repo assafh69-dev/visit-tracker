@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.7</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6149,9 +6149,9 @@
 												<td style="padding: 8px; font-weight: bold; color: #27ae60;">${visit.amount || 0}₪</td>
 												<td style="padding: 8px;">${paymentBadge}</td>
 												<td style="padding: 8px; text-align: center;" onclick="event.stopPropagation();">
-													<button onclick="addTaskFromProfile('${clientId}')"
-															style="padding: 4px 6px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" 
-															title="עריכת טיפול">✏️</button>
+													<button onclick="showVisitForm('${visit.ID}')"
+														style="padding: 4px 6px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" 
+														title="עריכת טיפול">✏️</button>
 													${paidInfo.status === '0' ? `
 														<button onclick="closeAnyModal(); setTimeout(() => showAddPaymentModal('${clientId}'), 100);" 
 																style="padding: 4px 6px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 3px;" 
@@ -9633,8 +9633,8 @@
 					const paidInfo = parsePaidField(visit.paid);
 					
 					// Only update if not already fully paid
-					if (paidInfo.status !== 'paid' && paidInfo.status !== 'no_payment') {
-						visit.paid = `paid:${today}`;
+					iif (paidInfo.status !== '1' && paidInfo.status !== '2') {
+						visit.paid = '1';
 						updatedCount++;
 					}
 				}
@@ -9653,8 +9653,7 @@
 				try {
 					const visitsToUpdate = visits.filter(v => 
 						v.location_id === clientId && 
-						v.paid && 
-						v.paid.startsWith('paid:')
+						v.paid === '1'
 					);
 					
 					const success = await updateMultipleVisitsInSheets(visitsToUpdate);
@@ -9975,9 +9974,9 @@
 						const visitAmount = parseFloat(visit.amount);
 						
 						if (totalPaid >= visitAmount - 0.01) {
-							visit.paid = `paid:${payment.date}`;
+							visit.paid = '1';
 						} else {
-							visit.paid = `partial:${totalPaid.toFixed(2)}`;
+							visit.paid = '3';
 						}
 					}
 				});
@@ -11730,7 +11729,7 @@
 				const visit = visits.find(v => v.ID === link.visit_id);
 				if (visit) {
 					// החזר את הטיפול למצב לא שולם
-					visit.paid = 'unpaid';
+					visit.paid = '0';
 				}
 				
 				// מחק את הקישור
@@ -16067,26 +16066,12 @@
 				}
 				
 				// Update visit paid status
-				if (visit) {
-					const totalPaid = getVisitPaidAmount(visit.ID);
-					const visitAmount = parseFloat(visit.amount);
-					
-					if (totalPaid <= 0) {
-						// No payment at all
-						visit.paid = 'no';
+				if (totalPaid <= 0) {
+						visit.paid = '0';
 					} else if (totalPaid >= visitAmount - 0.01) {
-						// Still fully paid (from other payments)
-						const otherLinks = paymentVisitLinks.filter(l => l.visit_id === visit.ID);
-						if (otherLinks.length > 0) {
-							const lastLink = otherLinks[otherLinks.length - 1];
-							const lastPayment = payments.find(p => p.ID === lastLink.payment_id);
-							visit.paid = `paid:${lastPayment ? lastPayment.date : ''}`;
-						} else {
-							visit.paid = 'no';
-						}
+						visit.paid = '1';
 					} else {
-						// Partial payment
-						visit.paid = `partial:${totalPaid.toFixed(2)}`;
+						visit.paid = '3';
 					}
 				}
 				
