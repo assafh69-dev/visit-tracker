@@ -9633,7 +9633,7 @@
 					const paidInfo = parsePaidField(visit.paid);
 					
 					// Only update if not already fully paid
-					iif (paidInfo.status !== '1' && paidInfo.status !== '2') {
+					if (paidInfo.status !== '1' && paidInfo.status !== '2') {
 						visit.paid = '1';
 						updatedCount++;
 					}
