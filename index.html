@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6149,11 +6149,11 @@
 												<td style="padding: 8px; font-weight: bold; color: #27ae60;">${visit.amount || 0}₪</td>
 												<td style="padding: 8px;">${paymentBadge}</td>
 												<td style="padding: 8px; text-align: center;" onclick="event.stopPropagation();">
-													<button onclick="showVisitForm('${visit.ID}')"
+													<button onclick="editTreatmentFromProfile('${visit.ID}', '${clientId}')"
 														style="padding: 4px 6px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" 
 														title="עריכת טיפול">✏️</button>
 													${paidInfo.status === '0' ? `
-														<button onclick="closeAnyModal(); setTimeout(() => showAddPaymentModal('${clientId}'), 100);" 
+														<button onclick="addPaymentFromTreatmentProfile('${clientId}', '${visit.ID}')"
 																style="padding: 4px 6px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 3px;" 
 																title="תשלום">💰</button>
 													` : ''}
@@ -21353,6 +21353,15 @@
 			// Open visit form
 			setTimeout(() => showVisitForm(null, clientId), 150);
 		}
+		
+		
+		function editTreatmentFromProfile(visitId, clientId) {
+			window.returnToClientProfile = clientId;
+			const modal = document.getElementById('editModal');
+			if (modal) modal.remove();
+			setTimeout(() => showVisitForm(visitId), 150);
+		}
+		
 
 		// Override or wrap the save function to return to profile
 		const originalSaveVisit = typeof saveVisit === 'function' ? saveVisit : null;
@@ -21369,6 +21378,13 @@
 			
 			// Open payment form
 			setTimeout(() => showAddPaymentModal(clientId), 150);
+		}
+		
+		function addPaymentFromTreatmentProfile(clientId, visitId) {
+			window.returnToClientProfile = clientId;
+			const modal = document.getElementById('editModal');
+			if (modal) modal.remove();
+			setTimeout(() => showAddPaymentModal(clientId, visitId), 150);
 		}
 
 		function addTaskFromProfile(clientId) {
