@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6269,7 +6269,7 @@
 				
 				html = `
 					<div style="margin-bottom: 15px; text-align: center;">
-						<button onclick="closeAnyModal(); setTimeout(() => { showAddTaskModal('${clientId}'); }, 100);" 
+						<button onclick="addTaskFromProfile('${clientId}')"
 								style="padding: 12px 24px; background: #9b59b6; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold;">
 							➕ הוסף משימה
 						</button>
