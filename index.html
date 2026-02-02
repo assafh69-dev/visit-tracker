@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -15902,7 +15902,10 @@
 			}
 			
 			// Close current modal
-			closeAnyModal();
+			const existingModal = document.getElementById('telegramModal');
+			if (existingModal) existingModal.remove();
+			const editModalEl = document.getElementById('editModal');
+			if (editModalEl) editModalEl.remove();
 			
 			// Show edit modal
 			const modalContent = `
@@ -18455,7 +18458,7 @@
 			
 			const modalHTML = `
 				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 550px; width: 90vw; max-height: 90vh; overflow-y: auto; position: relative;">
-					<button onclick="closeAnyModal()" style="position: absolute; top: 15px; left: 15px; background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
+					<button onclick="closeTaskAndReturnToProfile()" style="position: absolute; top: 15px; left: 15px; background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
 					
 					<h3 style="margin: 0 0 20px 0; color: #9b59b6; border-bottom: 2px solid #9b59b6; padding-bottom: 10px;">
 						📋 משימה חדשה
@@ -18568,7 +18571,7 @@
 							<button type="submit" style="flex: 1; padding: 12px; background: #9b59b6; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
 								💾 שמור משימה
 							</button>
-							<button type="button" onclick="closeAnyModal()" style="padding: 12px 20px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer;">
+							<button type="button" onclick="closeTaskAndReturnToProfile()" style="padding: 12px 20px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer;">
 								ביטול
 							</button>
 						</div>
@@ -21406,6 +21409,20 @@
 			setTimeout(() => showAddExpenseModal(clientId, clientName), 150);
 		}
 
+
+		function closeTaskAndReturnToProfile() {
+			const modal = document.getElementById('telegramModal');
+			if (modal) modal.remove();
+			
+			if (window.returnToClientProfile) {
+				const returnClientId = window.returnToClientProfile;
+				window.returnToClientProfile = null;
+				setTimeout(() => {
+					showClientProfile(returnClientId);
+					setTimeout(() => switchClientProfileTab('tasks', returnClientId), 150);
+				}, 100);
+			}
+		}
 
    </script>
 </body>
