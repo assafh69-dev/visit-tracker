@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -19870,7 +19870,7 @@
 						תשלום ${payment.amount} ₪ מ${payment.client_name}
 					</p>
 					<div style="display: flex; gap: 10px; justify-content: center;">
-						<button onclick="createReceiptFromPayment('${payment.ID}'); closeAnyModal();" 
+						<button onclick="createReceiptFromPayment('${payment.ID}'); document.getElementById('modalContainer').style.display='none';" 
 								style="padding: 12px 25px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
 							✓ כן, הפק קבלה
 						</button>
