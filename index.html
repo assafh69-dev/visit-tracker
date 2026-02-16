@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.6</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -15231,6 +15231,12 @@
 						}
 					} else {
 						showToast('💾 הטיפול נשמר מקומית - התחבר לענן לשמירה מלאה', 'info');
+					}
+					// אם הטיפול הושלם ולא שולם - הצע להוסיף תשלום
+					if (newVisit.end_time && newVisit.paid === '0') {
+						setTimeout(() => {
+							showPaymentPromptAfterVisit(newVisit);
+						}, 500);
 					}
 				}
 				
