@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.6</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.7</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -14874,12 +14874,15 @@
 						${isEdit ? `
 						<!-- סטטוס תשלום -->
 						<div style="background: ${visitData.paid === '0' ? '#fff3cd' : visitData.paid === '2' ? '#e8f5e9' : '#d4edda'}; padding: 15px; border-radius: 8px; border: 2px solid ${visitData.paid === '0' ? '#ffc107' : visitData.paid === '2' ? '#4caf50' : '#27ae60'};">
-							<div style="display: flex; justify-content: space-between; align-items: center;">
+							<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
 								<div>
 									<span style="font-weight: 600; color: #555;">💳 סטטוס תשלום:</span>
-									<span style="font-weight: bold; margin-right: 10px; color: ${visitData.paid === '0' ? '#856404' : '#155724'};">
-										${visitData.paid === '0' ? '❌ לא שולם' : visitData.paid === '2' ? '🚫 ללא תשלום' : visitData.paid === '3' ? '½ שולם חלקית' : '✅ שולם'}
-									</span>
+									<select id="visitFormPaidStatus" style="margin-right: 10px; padding: 5px 10px; border-radius: 4px; border: 1px solid #ccc;">
+										<option value="0" ${visitData.paid === '0' ? 'selected' : ''}>❌ לא שולם</option>
+										<option value="2" ${visitData.paid === '2' ? 'selected' : ''}>🚫 ללא תשלום</option>
+										<option value="1" ${visitData.paid === '1' ? 'selected' : ''}>✅ שולם</option>
+										<option value="3" ${visitData.paid === '3' ? 'selected' : ''}>½ שולם חלקית</option>
+									</select>
 								</div>
 								${visitData.paid !== '0' && visitData.paid !== '2' ? `
 									<button type="button" onclick="cancelVisitPaidStatus('${visitId}')" style="background: #e74c3c; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
@@ -15139,7 +15142,7 @@
 						start_time: startTime || '',
 						end_time: endTime || '',
 						amount: amount,
-						paid: visits[visitIndex].paid || '0',
+						paid: document.getElementById('visitFormPaidStatus')?.value || visits[visitIndex].paid || '0',
 						expense: expense,
 						notes: notes,
 						updated_at: new Date().toISOString()
