@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.7</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -10846,7 +10846,8 @@
 					return false;
 				}
 				
-				// 2. עדכון רק השורה הזו
+				// 2. עדכון רק השורה הזו - כולל updated_at בעמודה O
+				const updatedAt = visit.updated_at || new Date().toISOString();
 				const values = [[
 					visit.ID || '',
 					visit.date || '',
@@ -10861,12 +10862,13 @@
 					visit.amount || 0,
 					visit.paid || '0',
 					visit.expense || 0,
-					visit.notes || ''
+					visit.notes || '',
+					updatedAt          // ✅ עמודה O - updated_at
 				]];
 				
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `Visits!A${rowIndex}:N${rowIndex}`,
+					range: `Visits!A${rowIndex}:O${rowIndex}`,  // ✅ עד O
 					valueInputOption: 'USER_ENTERED',
 					resource: { values }
 				});
@@ -18027,7 +18029,7 @@
 				return;
 			}
 			
-			// Check if visit has linked payments
+			// בדיקת קישורי תשלום
 			const linkedPayments = paymentVisitLinks.filter(link => link.visit_id === visitId);
 			
 			let confirmMessage = `האם לבטל את סימון "שולם" לטיפול?\n\n`;
@@ -18036,7 +18038,7 @@
 			
 			if (linkedPayments.length > 0) {
 				confirmMessage += `\n⚠️ שים לב: יש ${linkedPayments.length} קישורי תשלום לטיפול זה.\n`;
-				confirmMessage += `הקישורים יישארו, רק הסטטוס ישתנה.`;
+				confirmMessage += `הקישורים יימחקו גם כן.`;
 			}
 			
 			if (!confirm(confirmMessage)) {
@@ -18044,16 +18046,30 @@
 			}
 			
 			try {
-				// Update status to "not paid"
-				visit.paid = '0';
+				// מחיקת קישורי תשלום אם קיימים
+				if (linkedPayments.length > 0) {
+					linkedPayments.forEach(link => {
+						const linkIndex = paymentVisitLinks.findIndex(l => l.ID === link.ID);
+						if (linkIndex > -1) {
+							paymentVisitLinks.splice(linkIndex, 1);
+						}
+					});
+				}
 				
-				// Save locally
+				// עדכון סטטוס לא שולם
+				visit.paid = '0';
+				visit.updated_at = new Date().toISOString();
+				
+				// שמירה מקומית
 				saveToLocalStorage();
 				
-				// Save to cloud if connected
+				// שמירה בענן
 				if (access_token && SPREADSHEET_ID) {
 					try {
-						await updateMultipleVisitsInSheets([visit]);
+						if (linkedPayments.length > 0) {
+							await savePaymentVisitLinksBatch(paymentVisitLinks);
+						}
+						await updateSingleVisitInSheets(visit);
 					} catch (error) {
 						console.error('Error saving to cloud:', error);
 						showToast('⚠️ נשמר מקומית, שגיאה בשמירה לענן', 'warning');
@@ -18062,7 +18078,7 @@
 				
 				showToast('✅ סטטוס התשלום בוטל - הטיפול זמין לקישור מחדש', 'success');
 				
-				// Refresh displays
+				// רענון תצוגה
 				if (typeof displayVisits === 'function') displayVisits();
 				if (typeof displayDebts === 'function') displayDebts();
 				
