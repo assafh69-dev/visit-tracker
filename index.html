@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -19542,7 +19542,8 @@
 			const totalExpenses = clientVisits.reduce((sum, v) => sum + (parseFloat(v.expense) || 0), 0);
 			const totalLabor = totalTreatments - totalExpenses;
 			const totalPayments = clientPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-			const balance = totalTreatments - totalPayments;
+			const totalPaidViaLinks = clientVisits.reduce((sum, v) => sum + getVisitPaidAmount(v.ID), 0);
+			const balance = totalTreatments - totalPaidViaLinks;
 			
 			// Payment method labels
 			const paymentMethods = {
