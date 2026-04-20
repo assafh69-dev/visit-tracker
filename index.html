@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -18225,19 +18225,29 @@
 			// Update visit paid status
 			if (visit) {
 				const remainingLinks = paymentVisitLinks.filter(l => l.visit_id === visit.ID);
-				const totalPaid = remainingLinks.reduce((sum, l) => sum + (l.amount_allocated || 0), 0);
+				const totalPaid = remainingLinks.reduce((sum, l) => sum + (parseFloat(l.amount_allocated) || 0), 0);
 				
 				if (totalPaid === 0) {
 					visit.paid = '0';
-				} else if (totalPaid >= visit.amount) {
+				} else if (totalPaid >= parseFloat(visit.amount) - 0.01) {
 					visit.paid = '1';
 				} else {
 					visit.paid = '3';
 				}
+				visit.updated_at = new Date().toISOString();
 			}
 			
 			saveToLocalStorage();
-			showToast('הקישור נותק', 'success');
+			
+			// Save to cloud
+			if (access_token && SPREADSHEET_ID) {
+				savePaymentVisitLinksBatch(paymentVisitLinks).catch(e => console.error(e));
+				if (visit) {
+					updateSingleVisitInSheets(visit).catch(e => console.error(e));
+				}
+			}
+			
+			showToast('✅ הקישור נותק', 'success');
 			
 			// Refresh the payments tab
 			switchClientProfileTab('payments', clientId);
