@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -19518,9 +19518,23 @@
 				.filter(v => v.location_id === clientId && v.date >= dateFrom && v.date <= dateTo)
 				.sort((a, b) => a.date.localeCompare(b.date));
 			
-			// Get payments in date range
+			// Get payments linked to visits in this report (via paymentVisitLinks)
+			const reportVisitIds = new Set(clientVisits.map(v => v.ID));
+			const relevantLinksByVisit = {};
+			clientVisits.forEach(v => { relevantLinksByVisit[v.ID] = []; });
+			paymentVisitLinks.forEach(link => {
+				if (reportVisitIds.has(link.visit_id)) {
+					relevantLinksByVisit[link.visit_id].push(link);
+				}
+			});
+			
+			// Collect unique payments linked to visits in this report
+			const linkedPaymentIds = new Set();
+			Object.values(relevantLinksByVisit).forEach(links => {
+				links.forEach(link => linkedPaymentIds.add(link.payment_id));
+			});
 			const clientPayments = payments
-				.filter(p => p.client_id === clientId && p.date >= dateFrom && p.date <= dateTo)
+				.filter(p => linkedPaymentIds.has(p.ID))
 				.sort((a, b) => a.date.localeCompare(b.date));
 			
 			// Calculate totals
@@ -19544,8 +19558,8 @@
 			let treatmentsTableHTML = '';
 			
 			if (clientVisits.length === 0) {
-				treatmentsHTML = `<tr><td colspan="${showHours ? 6 : 5}" style="text-align: center; padding: 10px; color: #666;">אין טיפולים בתקופה זו</td></tr>`;
-				treatmentsTableHTML = `<tr><td colspan="${showHours ? 6 : 5}" style="text-align: center;">אין טיפולים בתקופה זו</td></tr>`;
+				treatmentsHTML = `<tr><td colspan="${showHours ? 7 : 6}" style="text-align: center; padding: 10px; color: #666;">אין טיפולים בתקופה זו</td></tr>`;
+				treatmentsTableHTML = `<tr><td colspan="${showHours ? 7 : 6}" style="text-align: center;">אין טיפולים בתקופה זו</td></tr>`;
 			} else {
 				clientVisits.forEach(visit => {
 					let duration = '-';
@@ -19567,6 +19581,10 @@
 					const expense = parseFloat(visit.expense) || 0;
 					const labor = amount - expense;
 					
+					const visitPaid = getVisitPaidAmount(visit.ID);
+					const visitStatus = visitPaid >= amount - 0.01 ? '✅' : visitPaid > 0 ? '½' : '❌';
+					const visitStatusColor = visitPaid >= amount - 0.01 ? '#27ae60' : visitPaid > 0 ? '#f39c12' : '#e74c3c';
+					
 					treatmentsHTML += `
 						<tr style="border-bottom: 1px solid #eee;">
 							<td style="padding: 8px;">${formatDate(visit.date)}</td>
@@ -19575,6 +19593,7 @@
 							<td style="padding: 8px;">₪${labor.toFixed(0)}</td>
 							<td style="padding: 8px;">${expense > 0 ? '₪' + expense.toFixed(0) : '-'}</td>
 							<td style="padding: 8px;">₪${amount.toFixed(0)}</td>
+							<td style="padding: 8px; text-align: center; font-weight: bold; color: ${visitStatusColor};">${visitStatus}</td>
 						</tr>
 					`;
 					treatmentsTableHTML += `<tr><td>${formatDate(visit.date)}</td><td>${workDone}</td>${showHours ? `<td>${duration}</td>` : ''}<td>₪${labor.toFixed(0)}</td><td>${expense > 0 ? '₪' + expense.toFixed(0) : '-'}</td><td>₪${amount.toFixed(0)}</td></tr>`;
@@ -19590,7 +19609,7 @@
 				paymentsTableHTML = '<tr><td colspan="3" style="text-align: center;">אין תשלומים בתקופה זו</td></tr>';
 			} else {
 				clientPayments.forEach(payment => {
-					const method = paymentMethods[payment.method] || payment.method || '-';
+					const method = paymentMethods[payment.payment_method] || payment.payment_method || '-';
 					const amount = parseFloat(payment.amount) || 0;
 					
 					paymentsHTML += `
@@ -19679,6 +19698,7 @@
 									<th style="padding: 10px; text-align: right;">עבודה</th>
 									<th style="padding: 10px; text-align: right;">חומרים</th>
 									<th style="padding: 10px; text-align: right;">סה"כ</th>
+									<th style="padding: 10px; text-align: right;">תשלום</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -19686,10 +19706,11 @@
 							</tbody>
 							<tfoot>
 								<tr style="background: #3498db; color: white; font-weight: bold;">
-									<td colspan="3" style="padding: 10px; text-align: right;">סה"כ:</td>
+									<td colspan="${showHours ? 4 : 3}" style="padding: 10px; text-align: right;">סה"כ:</td>
 									<td style="padding: 10px;">₪${totalLabor.toFixed(0)}</td>
 									<td style="padding: 10px;">₪${totalExpenses.toFixed(0)}</td>
 									<td style="padding: 10px;">₪${totalTreatments.toFixed(0)}</td>
+									<td style="padding: 10px;"></td>
 								</tr>
 							</tfoot>
 						</table>
@@ -19698,7 +19719,7 @@
 					<!-- Payments Section -->
 					<div style="margin-bottom: 20px;">
 						<h3 style="color: #27ae60; border-bottom: 2px solid #27ae60; padding-bottom: 8px; margin-bottom: 10px;">
-							💰 תשלומים שהתקבלו (${clientPayments.length})
+							💰 תשלומים מקושרים לטיפולים אלו (${clientPayments.length})
 						</h3>
 						<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
 							<thead>
@@ -19737,12 +19758,12 @@
 								<div style="font-size: 18px; font-weight: bold; color: #3498db;">₪${totalTreatments.toFixed(0)}</div>
 							</div>
 							<div>
-								<div style="font-size: 12px; color: #666;">סה"כ תשלומים</div>
-								<div style="font-size: 18px; font-weight: bold; color: #27ae60;">₪${totalPayments.toFixed(0)}</div>
+								<div style="font-size: 12px; color: #666;">שולם</div>
+								<div style="font-size: 18px; font-weight: bold; color: #27ae60;">₪${totalPaidViaLinks.toFixed(0)}</div>
 							</div>
 						</div>
 						<div style="font-size: 24px; font-weight: bold; color: ${balance > 0 ? '#e74c3c' : '#27ae60'};">
-							${balanceText}
+							${balance > 0 ? `יתרה לתשלום: ₪${balance.toFixed(0)}` : balance < 0 ? `יתרה לזכות: ₪${Math.abs(balance).toFixed(0)}` : 'מאוזן - אין יתרה'}
 						</div>
 					</div>
 					
