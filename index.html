@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -19465,6 +19465,13 @@
 						</div>
 					</div>
 					
+					<div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+						<label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: #555;">
+							<input type="checkbox" id="reportShowHours" style="width: 18px; height: 18px; cursor: pointer;">
+							הצג עמודת שעות בדוח
+						</label>
+					</div>
+					
 					<div style="display: flex; gap: 10px;">
 						<button onclick="generateClientBalanceReport('${clientId}')" 
 								style="flex: 1; padding: 12px; background: #9b59b6; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
@@ -19497,6 +19504,7 @@
 				return;
 			}
 			
+			const showHours = document.getElementById('reportShowHours')?.checked || false;
 			const dateFrom = document.getElementById('reportDateFrom').value;
 			const dateTo = document.getElementById('reportDateTo').value;
 			
@@ -19536,8 +19544,8 @@
 			let treatmentsTableHTML = '';
 			
 			if (clientVisits.length === 0) {
-				treatmentsHTML = '<tr><td colspan="6" style="text-align: center; padding: 10px; color: #666;">אין טיפולים בתקופה זו</td></tr>';
-				treatmentsTableHTML = '<tr><td colspan="6" style="text-align: center;">אין טיפולים בתקופה זו</td></tr>';
+				treatmentsHTML = `<tr><td colspan="${showHours ? 6 : 5}" style="text-align: center; padding: 10px; color: #666;">אין טיפולים בתקופה זו</td></tr>`;
+				treatmentsTableHTML = `<tr><td colspan="${showHours ? 6 : 5}" style="text-align: center;">אין טיפולים בתקופה זו</td></tr>`;
 			} else {
 				clientVisits.forEach(visit => {
 					let duration = '-';
@@ -19563,13 +19571,13 @@
 						<tr style="border-bottom: 1px solid #eee;">
 							<td style="padding: 8px;">${formatDate(visit.date)}</td>
 							<td style="padding: 8px;">${workDone}</td>
-							<td style="padding: 8px;">${duration}</td>
+							${showHours ? `<td style="padding: 8px;">${duration}</td>` : ''}
 							<td style="padding: 8px;">₪${labor.toFixed(0)}</td>
 							<td style="padding: 8px;">${expense > 0 ? '₪' + expense.toFixed(0) : '-'}</td>
 							<td style="padding: 8px;">₪${amount.toFixed(0)}</td>
 						</tr>
 					`;
-					treatmentsTableHTML += `<tr><td>${formatDate(visit.date)}</td><td>${workDone}</td><td>${duration}</td><td>₪${labor.toFixed(0)}</td><td>${expense > 0 ? '₪' + expense.toFixed(0) : '-'}</td><td>₪${amount.toFixed(0)}</td></tr>`;
+					treatmentsTableHTML += `<tr><td>${formatDate(visit.date)}</td><td>${workDone}</td>${showHours ? `<td>${duration}</td>` : ''}<td>₪${labor.toFixed(0)}</td><td>${expense > 0 ? '₪' + expense.toFixed(0) : '-'}</td><td>₪${amount.toFixed(0)}</td></tr>`;
 				});
 			}
 			
@@ -19667,7 +19675,7 @@
 								<tr style="background: #f5f5f5;">
 									<th style="padding: 10px; text-align: right;">תאריך</th>
 									<th style="padding: 10px; text-align: right;">תיאור</th>
-									<th style="padding: 10px; text-align: right;">משך</th>
+									${showHours ? '<th style="padding: 10px; text-align: right;">משך</th>' : ''}
 									<th style="padding: 10px; text-align: right;">עבודה</th>
 									<th style="padding: 10px; text-align: right;">חומרים</th>
 									<th style="padding: 10px; text-align: right;">סה"כ</th>
