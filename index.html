@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -6181,10 +6181,14 @@
 					.sort((a, b) => b.date.localeCompare(a.date));
 				
 				html = `
-					<div style="margin-bottom: 15px; text-align: center;">
+					<div style="margin-bottom: 15px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
 						<button onclick="addPaymentFromProfile('${clientId}')" 
 								style="padding: 12px 24px; background: #27ae60; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);">
 							➕ הוסף תשלום
+						</button>
+						<button onclick="unlinkAllClientPayments('${clientId}')" 
+								style="padding: 12px 24px; background: #e74c3c; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">
+							🔓 נתק כל הקישורים
 						</button>
 					</div>
 				`;
@@ -18237,6 +18241,63 @@
 			
 			// Refresh the payments tab
 			switchClientProfileTab('payments', clientId);
+		}
+
+
+		// Unlink ALL payment links for a client
+		async function unlinkAllClientPayments(clientId) {
+			const clientVisitIds = visits
+				.filter(v => v.location_id === clientId)
+				.map(v => v.ID);
+			
+			const clientLinks = paymentVisitLinks.filter(link => 
+				clientVisitIds.includes(link.visit_id)
+			);
+			
+			if (clientLinks.length === 0) {
+				showToast('אין קישורים לניתוק', 'info');
+				return;
+			}
+			
+			const client = locations.find(l => l.ID === clientId);
+			if (!confirm(`האם לנתק את כל ${clientLinks.length} הקישורים של ${client?.name}?\n\nסטטוס השולם של הטיפולים יתאפס.`)) return;
+			
+			try {
+				// Remove all client links
+				clientLinks.forEach(link => {
+					const idx = paymentVisitLinks.findIndex(l => l.ID === link.ID);
+					if (idx > -1) paymentVisitLinks.splice(idx, 1);
+				});
+				
+				// Reset paid status for all affected visits
+				const affectedVisits = visits.filter(v => clientVisitIds.includes(v.ID) && v.paid !== '0' && v.paid !== '2');
+				affectedVisits.forEach(v => {
+					v.paid = '0';
+					v.updated_at = new Date().toISOString();
+				});
+				
+				saveToLocalStorage();
+				
+				// Save to cloud
+				if (access_token && SPREADSHEET_ID) {
+					try {
+						await savePaymentVisitLinksBatch(paymentVisitLinks);
+						if (affectedVisits.length > 0) {
+							await Promise.all(affectedVisits.map(v => updateSingleVisitInSheets(v)));
+						}
+					} catch (error) {
+						console.error('Error saving to cloud:', error);
+						showToast('⚠️ נשמר מקומית, שגיאה בשמירה לענן', 'warning');
+					}
+				}
+				
+				showToast(`✅ נותקו ${clientLinks.length} קישורים`, 'success');
+				switchClientProfileTab('payments', clientId);
+				
+			} catch (error) {
+				console.error('Error unlinking all:', error);
+				showToast('❌ שגיאה בניתוק', 'error');
+			}
 		}
 
 
