@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -19607,7 +19607,7 @@
 							<td style="padding: 8px; text-align: center; font-weight: bold; color: ${visitStatusColor};">${visitStatus}</td>
 						</tr>
 					`;
-					treatmentsTableHTML += `<tr><td>${formatDate(visit.date)}</td><td>${workDone}</td>${showHours ? `<td>${duration}</td>` : ''}<td>₪${labor.toFixed(0)}</td><td>${expense > 0 ? '₪' + expense.toFixed(0) : '-'}</td><td>₪${amount.toFixed(0)}</td></tr>`;
+					treatmentsTableHTML += `<tr><td>${formatDate(visit.date)}</td><td>${workDone}</td>${showHours ? `<td>${duration}</td>` : ''}<td>₪${labor.toFixed(0)}</td><td>${expense > 0 ? '₪' + expense.toFixed(0) : '-'}</td><td>${visitStatus}</td><td>₪${amount.toFixed(0)}</td></tr>`;
 				});
 			}
 			
