@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -15056,7 +15056,7 @@
 					}
 				}
 				
-				console.log(`💰 עלות מחושבת: ${Math.round(totalCost)}₪ (${hours.toFixed(2)} שעות × ${numWorkers} עובדים + ${expense}₪ הוצאות)`);
+				// console.log(`💰 עלות מחושבת: ${Math.round(totalCost)}₪ (${hours.toFixed(2)} שעות × ${numWorkers} עובדים + ${expense}₪ הוצאות)`);
 			} else {
 				// אם אין משך זמן - נקה את התצוגה
 				const calculatedDiv = document.getElementById('visitFormCalculatedAmount');
@@ -16052,15 +16052,8 @@
 				
 				closeAnyModal();
 				
-				// Refresh displays - keep current search filter
-				if (typeof displayPayments === 'function') {
-					const currentSearch = document.getElementById('paymentSmartSearch')?.value || '';
-					displayPayments();
-					if (currentSearch) {
-						document.getElementById('paymentSmartSearch').value = currentSearch;
-						handlePaymentSmartSearch(currentSearch);
-					}
-				}
+				// Refresh displays - respect active filters
+				if (typeof applyPaymentFilters === 'function') applyPaymentFilters();
 				if (typeof displayDebts === 'function') displayDebts();
 				
 				// Return to profile if came from there
@@ -16144,8 +16137,8 @@
 				closeAnyModal();
 				setTimeout(() => showPaymentDetails(paymentId), 300);
 				
-				// Refresh
-				if (typeof displayPayments === 'function') displayPayments();
+				// Refresh - respect active client lock
+				if (typeof applyPaymentFilters === 'function') applyPaymentFilters();
 				if (typeof displayDebts === 'function') displayDebts();
 				if (typeof displayVisits === 'function') displayVisits();
 				
@@ -16200,7 +16193,7 @@
 				closeAnyModal();
 				
 				// Refresh
-				if (typeof displayPayments === 'function') displayPayments();
+				if (typeof applyPaymentFilters === 'function') applyPaymentFilters();
 				if (typeof displayDebts === 'function') displayDebts();
 				
 			} catch (error) {
@@ -17557,6 +17550,10 @@
 			const zeroAmountVisits = visits.filter(visit => {
 				const paidInfo = parsePaidField(visit.paid);
 				if (paidInfo.status === '2') return false;
+				
+				// Skip visits already linked to payments
+				const hasLinks = paymentVisitLinks.some(link => link.visit_id === visit.ID);
+				if (hasLinks) return false;
 				
 				const amount = parseFloat(visit.amount) || 0;
 				const duration = parseFloat(visit.duration_minutes) || 0;
