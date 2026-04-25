@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -12776,6 +12776,28 @@
 			loadPlanningDataAdvanced();
 		}
 
+		async function toggleLocationStatus(locationId, activeValue) {
+			const location = locations.find(loc => loc.ID === locationId);
+			if (!location) return;
+			
+			location.active = activeValue;
+			saveToLocalStorage();
+			
+			if (access_token && SPREADSHEET_ID) {
+				try {
+					await updateLocationInCloud(location);
+					showToast(`${location.name} הוגדר כ-${activeValue === '1' ? 'פעיל' : 'לא פעיל'}`, 'success');
+				} catch (error) {
+					showToast('נשמר מקומית, שגיאה בשמירה לענן', 'warning');
+				}
+			} else {
+				showToast(`${location.name} הוגדר כ-${activeValue === '1' ? 'פעיל' : 'לא פעיל'} (מקומי)`, 'success');
+			}
+			
+			// רענון הטבלה
+			filterLocationsTable();
+		}
+
 		// פונקציה להצגת היסטוריית טיפולים
 		function showClientHistory(clientId) {
 			const client = locations.find(loc => loc.ID === clientId);
@@ -20164,7 +20186,7 @@
 				const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 				
 				// רשימת הגיליונות לגיבוי
-				const sheetsToBackup = ['Locations', 'Visits', 'Receipts', 'Payments', 'PaymentVisitLinks', 'Tasks', 'Incomes', 'Expenses'];
+				const sheetsToBackup = ['Locations', 'Visits', 'Receipts', 'Payments', 'PaymentVisitLinks', 'Tasks', 'Expenses'];
 				
 				for (const sheetName of sheetsToBackup) {
 					const backupSheetName = `${sheetName}_Backup`;
@@ -20173,7 +20195,7 @@
 					try {
 						const response = await gapi.client.sheets.spreadsheets.values.get({
 							spreadsheetId: SPREADSHEET_ID,
-							range: `${sheetName}!A:ZZ`
+							range: `${sheetName}!A:AZ`
 						});
 						
 						const values = response.result.values || [];
@@ -20292,7 +20314,7 @@
 			showToast('🔄 משחזר מגיבוי...', 'info');
 			
 			try {
-				const sheetsToRestore = ['Locations', 'Visits', 'Receipts', 'Payments', 'PaymentVisitLinks', 'Tasks', 'Incomes', 'Expenses'];
+				const sheetsToRestore = ['Locations', 'Visits', 'Receipts', 'Payments', 'PaymentVisitLinks', 'Tasks', 'Expenses'];
 				let restoredCount = 0;
 				
 				for (const sheetName of sheetsToRestore) {
@@ -20315,7 +20337,7 @@
 						// ניקוי הגיליון המקורי
 						await gapi.client.sheets.spreadsheets.values.clear({
 							spreadsheetId: SPREADSHEET_ID,
-							range: `${sheetName}!A:ZZ`
+							range: `${sheetName}!A:AZ`
 						});
 						
 						// כתיבת הנתונים מהגיבוי לגיליון המקורי
