@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -13973,9 +13973,9 @@
 				
 				showToast(`✅ הושלם בהצלחה!
 				
-		🔗 ${totalLinks} קישורים נוצרו
-		💰 ${matchesToExecute.length} תשלומים קושרו
-		📋 טיפולים עודכנו`, 'success', 5000);
+				🔗 ${totalLinks} קישורים נוצרו
+				💰 ${matchesToExecute.length} תשלומים קושרו
+				📋 טיפולים עודכנו`, 'success', 5000);
 				
 				// Refresh displays
 				if (typeof applyPaymentFilters === 'function') {
@@ -13988,6 +13988,9 @@
 					displayDebts();
 				}
 				
+				// Show summary report
+				showLinkingSummary(matchesToExecute);
+				
 				// Close modal
 				closeAnyModal();
 				
@@ -13997,6 +14000,81 @@
 				showToast('שגיאה בביצוע קישורים', 'error');
 			}
 		}
+
+
+		// Show linking summary report in a print window
+		function showLinkingSummary(matchesToExecute) {
+			const now = new Date();
+			const dateStr = `${now.getDate()}.${now.getMonth()+1}.${now.getFullYear()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+			
+			const rowsHTML = matchesToExecute.map(match => {
+				const visitsInfo = match.matches.map(vm => {
+					const visit = visits.find(v => v.ID === vm.visit_id);
+					return visit ? `${formatDate(visit.date)} - ${visit.work_done || 'טיפול'} (₪${Math.round(vm.amount_to_allocate)})` : '';
+				}).filter(Boolean).join('<br>');
+				
+				const stars = '⭐'.repeat(match.overall_confidence);
+				
+				return `
+					<tr>
+						<td style="padding: 8px; border-bottom: 1px solid #eee;">${match.client_name}</td>
+						<td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${formatDateSafe(match.payment_date)}</td>
+						<td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">₪${Math.round(match.payment_amount).toLocaleString()}</td>
+						<td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 12px;">${visitsInfo}</td>
+						<td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${stars}</td>
+					</tr>
+				`;
+			}).join('');
+			
+			const totalAmount = matchesToExecute.reduce((sum, m) => sum + m.payment_amount, 0);
+			
+			const printWindow = window.open('', '_blank');
+			printWindow.document.write(`
+				<!DOCTYPE html>
+				<html dir="rtl" lang="he">
+				<head>
+					<meta charset="UTF-8">
+					<title>סיכום קישורים אוטומטיים</title>
+					<style>
+						body { font-family: Arial, sans-serif; padding: 20px; direction: rtl; }
+						h2 { color: #2c3e50; border-bottom: 2px solid #9b59b6; padding-bottom: 8px; }
+						table { width: 100%; border-collapse: collapse; font-size: 13px; }
+						th { background: #9b59b6; color: white; padding: 10px; text-align: right; }
+						tr:nth-child(even) { background: #f9f9f9; }
+						.summary { background: #d4edda; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+						@media print { button { display: none; } }
+					</style>
+				</head>
+				<body>
+					<h2>🔗 סיכום קישורים אוטומטיים</h2>
+					<div class="summary">
+						<strong>תאריך ביצוע:</strong> ${dateStr} &nbsp;|&nbsp;
+						<strong>קישורים:</strong> ${matchesToExecute.length} &nbsp;|&nbsp;
+						<strong>סה"כ סכום:</strong> ₪${Math.round(totalAmount).toLocaleString()}
+					</div>
+					<table>
+						<thead>
+							<tr>
+								<th>לקוח</th>
+								<th>תאריך תשלום</th>
+								<th>סכום</th>
+								<th>טיפולים מקושרים</th>
+								<th>ביטחון</th>
+							</tr>
+						</thead>
+						<tbody>${rowsHTML}</tbody>
+					</table>
+					<div style="text-align: center; margin-top: 20px;">
+						<button onclick="window.print()" style="padding: 10px 25px; background: #9b59b6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px;">
+							🖨️ הדפס / שמור PDF
+						</button>
+					</div>
+				</body>
+				</html>
+			`);
+			printWindow.document.close();
+		}
+
 
 		// Approve all high confidence matches
 		async function approveAllHighConfidence() {
