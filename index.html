@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -13831,57 +13831,60 @@
 				return `
 					<div id="match-${matchId}" style="background: white; border: 2px solid ${confDisplay.color}; border-radius: 8px; padding: 15px; margin-bottom: 12px;">
 						<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-							<div style="flex: 1;">
-								<div style="font-size: 16px; font-weight: bold; color: #2c3e50; margin-bottom: 5px;">
-									💰 ${match.client_name}
+							<div style="flex: 1; display: flex; align-items: flex-start; gap: 10px;">
+								${type === 'high' ? `<input type="checkbox" class="high-confidence-checkbox" data-index="${index}" checked style="width: 20px; height: 20px; margin-top: 3px; cursor: pointer; flex-shrink: 0;">` : ''}
+								<div style="flex: 1;">
+									<div style="font-size: 16px; font-weight: bold; color: #2c3e50; margin-bottom: 5px;">
+										💰 ${match.client_name}
+									</div>
+									<div style="font-size: 13px; color: #666;">
+										תשלום: ${formatDateSafe(match.payment_date)} | ₪${Math.round(match.payment_amount).toLocaleString()}
+									</div>
 								</div>
-								<div style="font-size: 13px; color: #666;">
-									תשלום: ${formatDateSafe(match.payment_date)} | ₪${Math.round(match.payment_amount).toLocaleString()}
+								<div style="text-align: left;">
+									<div style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: ${confDisplay.color}; color: white; border-radius: 20px; font-size: 12px; font-weight: bold;">
+										${confDisplay.stars} ${confDisplay.text}
+									</div>
 								</div>
 							</div>
-							<div style="text-align: left;">
-								<div style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: ${confDisplay.color}; color: white; border-radius: 20px; font-size: 12px; font-weight: bold;">
-									${confDisplay.stars} ${confDisplay.text}
-								</div>
-							</div>
-						</div>
 						
-						<div style="background: #f8f9fa; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-							<div style="font-size: 12px; font-weight: bold; color: #495057; margin-bottom: 8px;">
-								📋 יקושר ל-${match.matches.length} טיפולים:
-							</div>
-							${match.matches.map(m => `
-								<div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e9ecef; font-size: 12px;">
-									<div style="color: #666;">
-										${formatDateSafe(m.visit_date)} - ${m.visit_work}
-									</div>
-									<div style="color: #27ae60; font-weight: bold;">
-										₪${Math.round(m.amount_to_allocate).toLocaleString()}
-									</div>
+							<div style="background: #f8f9fa; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+								<div style="font-size: 12px; font-weight: bold; color: #495057; margin-bottom: 8px;">
+									📋 יקושר ל-${match.matches.length} טיפולים:
 								</div>
-							`).join('')}
-							<div style="display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6; font-weight: bold;">
-								<span>סה"כ לקישור:</span>
-								<span style="color: #27ae60;">₪${Math.round(match.total_allocated).toLocaleString()}</span>
+								${match.matches.map(m => `
+									<div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e9ecef; font-size: 12px;">
+										<div style="color: #666;">
+											${formatDateSafe(m.visit_date)} - ${m.visit_work}
+										</div>
+										<div style="color: #27ae60; font-weight: bold;">
+											₪${Math.round(m.amount_to_allocate).toLocaleString()}
+										</div>
+									</div>
+								`).join('')}
+								<div style="display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 2px solid #dee2e6; font-weight: bold;">
+									<span>סה"כ לקישור:</span>
+									<span style="color: #27ae60;">₪${Math.round(match.total_allocated).toLocaleString()}</span>
+								</div>
+								${match.remaining > 0.01 ? `
+									<div style="display: flex; justify-content: space-between; margin-top: 5px; color: #f39c12;">
+										<span>ישאר לא מקושר:</span>
+										<span style="font-weight: bold;">₪${Math.round(match.remaining).toLocaleString()}</span>
+									</div>
+								` : ''}
 							</div>
-							${match.remaining > 0.01 ? `
-								<div style="display: flex; justify-content: space-between; margin-top: 5px; color: #f39c12;">
-									<span>ישאר לא מקושר:</span>
-									<span style="font-weight: bold;">₪${Math.round(match.remaining).toLocaleString()}</span>
+						
+							${type === 'medium-low' ? `
+								<div style="display: flex; gap: 10px;">
+									<button onclick="approveMatch('${matchId}')" class="btn" style="flex: 1; background: #27ae60; color: white; padding: 8px; font-size: 13px; border: none; border-radius: 6px; cursor: pointer;">
+										✅ אשר
+									</button>
+									<button onclick="skipMatch('${matchId}')" class="btn" style="flex: 1; background: #95a5a6; color: white; padding: 8px; font-size: 13px; border: none; border-radius: 6px; cursor: pointer;">
+										⏭️ דלג
+									</button>
 								</div>
 							` : ''}
 						</div>
-						
-						${type === 'medium-low' ? `
-							<div style="display: flex; gap: 10px;">
-								<button onclick="approveMatch('${matchId}')" class="btn" style="flex: 1; background: #27ae60; color: white; padding: 8px; font-size: 13px; border: none; border-radius: 6px; cursor: pointer;">
-									✅ אשר
-								</button>
-								<button onclick="skipMatch('${matchId}')" class="btn" style="flex: 1; background: #95a5a6; color: white; padding: 8px; font-size: 13px; border: none; border-radius: 6px; cursor: pointer;">
-									⏭️ דלג
-								</button>
-							</div>
-						` : ''}
 					</div>
 				`;
 			}).join('');
@@ -13925,6 +13928,7 @@
 					} else if (newPaidAmount > 0) {
 						visit.paid = '3'; // Partially paid
 					}
+					visit.updated_at = new Date().toISOString();
 				}
 			}
 			
@@ -13957,7 +13961,12 @@
 				if (access_token && SPREADSHEET_ID) {
 					console.log('💾 Saving links to cloud...');
 					await savePaymentVisitLinksBatch(paymentVisitLinks);
-					await saveVisitsBatch(visits);
+					const affectedVisits = matchesToExecute.flatMap(m => 
+						m.matches.map(vm => visits.find(v => v.ID === vm.visit_id))
+					).filter(v => v);
+					if (affectedVisits.length > 0) {
+						await updateMultipleVisitsInSheets(affectedVisits);
+					}
 				}
 				
 				hideLoading();
@@ -13991,21 +14000,69 @@
 
 		// Approve all high confidence matches
 		async function approveAllHighConfidence() {
-			const highConfidenceMatches = window.currentMatches.filter(m => m.overall_confidence === 3);
+			// קבל רק את המסומנים
+			const checkedBoxes = document.querySelectorAll('.high-confidence-checkbox:checked');
+			const checkedIndices = new Set([...checkedBoxes].map(cb => parseInt(cb.dataset.index)));
 			
-			if (highConfidenceMatches.length === 0) {
-				showToast('אין התאמות בביטחון גבוה', 'info');
+			const highConfidenceMatches = window.currentMatches.filter(m => m.overall_confidence === 3);
+			const matchesToApprove = highConfidenceMatches.filter((m, i) => checkedIndices.has(i));
+			
+			if (matchesToApprove.length === 0) {
+				showToast('לא נבחרו התאמות לאישור', 'info');
 				return;
 			}
 			
-			const confirmMsg = `לאשר ${highConfidenceMatches.length} התאמות בביטחון גבוה?
+			// העברת הלא מסומנים לסקירה
+			const uncheckedMatches = highConfidenceMatches.filter((m, i) => !checkedIndices.has(i));
+			if (uncheckedMatches.length > 0) {
+				const reviewContainer = document.getElementById('mediumLowConfidenceMatches');
+				if (reviewContainer) {
+					const existingCount = reviewContainer.querySelectorAll('[id^="match-medium-low"]').length;
+					uncheckedMatches.forEach((match, i) => {
+						const newIndex = existingCount + i;
+						const matchId = `medium-low-${newIndex}`;
+						const confDisplay = getConfidenceDisplay(match.overall_confidence);
+						reviewContainer.innerHTML += `
+							<div id="match-${matchId}" style="background: white; border: 2px solid ${confDisplay.color}; border-radius: 8px; padding: 15px; margin-bottom: 12px; border-right: 4px solid #e67e22;">
+								<div style="font-size: 13px; color: #e67e22; margin-bottom: 8px;">⬇️ הועבר מביטחון גבוה לסקירה</div>
+								<div style="font-size: 16px; font-weight: bold; color: #2c3e50; margin-bottom: 5px;">
+									💰 ${match.client_name}
+								</div>
+								<div style="font-size: 13px; color: #666; margin-bottom: 10px;">
+									סכום: ₪${Math.round(match.payment_amount).toLocaleString()} | 
+									תאריך: ${formatDateSafe(match.payment_date)}
+								</div>
+								<div style="display: flex; gap: 10px;">
+									<button onclick="approveMatchByRef(${window.currentMatches.indexOf(match)})" class="btn" style="flex: 1; background: #27ae60; color: white; padding: 8px; font-size: 13px; border: none; border-radius: 6px; cursor: pointer;">
+										✅ אשר
+									</button>
+									<button onclick="skipMatch('${matchId}')" class="btn" style="flex: 1; background: #95a5a6; color: white; padding: 8px; font-size: 13px; border: none; border-radius: 6px; cursor: pointer;">
+										⏭️ דלג
+									</button>
+								</div>
+							</div>
+						`;
+					});
+				}
+			}
 			
-		זה יקשר אוטומטית תשלומים לטיפולים.`;
-			
+			const confirmMsg = `לאשר ${matchesToApprove.length} התאמות נבחרות?`;
 			if (confirm(confirmMsg)) {
-				await executeMatches(highConfidenceMatches);
+				await executeMatches(matchesToApprove);
 			}
 		}
+		
+		
+		// Approve match by direct reference index in currentMatches
+		async function approveMatchByRef(matchIndex) {
+			const match = window.currentMatches[matchIndex];
+			if (!match) {
+				showToast('התאמה לא נמצאה', 'error');
+				return;
+			}
+			await executeMatches([match]);
+		}
+		
 
 		// Approve single match
 		async function approveMatch(matchId) {
