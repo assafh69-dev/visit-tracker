@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3091,6 +3091,9 @@
 						</button>
 						<button onclick="convertAddressesToFields()" class="btn" style="background: linear-gradient(45deg, #9b59b6, #8e44ad); color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);">
 							📍 פרק כתובות לשדות
+						</button>
+						<button onclick="calculateAndUpdateTreatmentDates()" class="btn" style="background: linear-gradient(45deg, #27ae60, #2ecc71); color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);">
+							📅 עדכן תאריכי טיפול לפי היסטוריה
 						</button>
 					</div>
 					
