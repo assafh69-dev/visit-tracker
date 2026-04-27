@@ -2493,7 +2493,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -11882,6 +11882,62 @@
 				return false;
 			}
 		}
+		
+		
+		// עדכון תאריכי טיפול לכל הלקוחות לפי היסטוריית הטיפולים
+		async function calculateAndUpdateTreatmentDates() {
+			if (!confirm(`עדכון תאריכי טיפול לכל הלקוחות לפי היסטוריית הטיפולים.\n\nזה יחשב מחדש "טיפול אחרון" ו"טיפול הבא" לכל לקוח לפי הטיפולים הקיימים.\n\nהאם להמשיך?`)) return;
+			
+			showLoading('מחשב תאריכי טיפול...');
+			
+			try {
+				const updatedLocations = [];
+				
+				for (const location of locations) {
+					if (location.active !== 'כן' && location.active !== true && location.active !== '1') continue;
+					
+					const locationVisits = visits.filter(v => v.location_id === location.ID);
+					if (locationVisits.length === 0) continue;
+					
+					// רק טיפולים מלאים
+					const fullVisits = locationVisits.filter(v => 
+						!v.visit_type || v.visit_type === 'מלא' || v.visit_type === ''
+					);
+					if (fullVisits.length === 0) continue;
+					
+					// הטיפול המלא האחרון
+					fullVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
+					const lastVisitDate = fullVisits[0].date;
+					
+					// חישוב תאריך הבא
+					const lastDate = new Date(lastVisitDate);
+					const intervalDays = (parseInt(location.interval_weeks) || 4) * 7;
+					const nextDate = new Date(lastDate);
+					nextDate.setDate(lastDate.getDate() + intervalDays);
+					const nextVisitDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth()+1).padStart(2,'0')}-${String(nextDate.getDate()).padStart(2,'0')}`;
+					
+					location.last_visit = lastVisitDate;
+					location.next_visit = nextVisitDate;
+					updatedLocations.push(location);
+				}
+				
+				saveToLocalStorage();
+				
+				if (access_token && SPREADSHEET_ID && updatedLocations.length > 0) {
+					await updateTreatmentDatesInSheets(updatedLocations);
+				}
+				
+				hideLoading();
+				showToast(`✅ עודכנו תאריכי טיפול עבור ${updatedLocations.length} לקוחות`, 'success');
+				refreshPlanningAfterTreatmentUpdate();
+				
+			} catch (error) {
+				hideLoading();
+				console.error('Error:', error);
+				showToast('❌ שגיאה בעדכון תאריכים', 'error');
+			}
+		}
+		
 		
 		// פונקציה לעדכון תאריכי טיפול עבור לקוח אחד לאחר הוספת ביקור
 		async function updateSingleLocationTreatmentDates(locationId) {
