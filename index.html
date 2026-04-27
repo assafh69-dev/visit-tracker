@@ -8451,7 +8451,7 @@
 				date: row[1] || '',
 				location_id: row[2] || '',
 				location_name: row[3] || '',
-				visit_type: row[4] || 'מלא',
+				visit_type: (row[4] === 'כללי' || !row[4]) ? 'מלא' : row[4],
 				work_done: row[5] || '',
 				duration_minutes: parseInt(row[6]) || 0,
 				num_workers: parseInt(row[7]) || 1,
