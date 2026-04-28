@@ -1832,14 +1832,9 @@
 			color: #155724;
 		}
 
-		.visit-type-חלקי {
+		.visit-type-אחר {
 			background: #fff3cd;
 			color: #856404;
-		}
-
-		.visit-type-ביקורת {
-			background: #d1ecf1;
-			color: #0c5460;
 		}
 
 		.visit-type-other {
@@ -2493,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -11900,9 +11895,7 @@
 					if (locationVisits.length === 0) continue;
 					
 					// רק טיפולים מלאים
-					const fullVisits = locationVisits.filter(v => 
-						!v.visit_type || v.visit_type === 'מלא' || v.visit_type === ''
-					);
+					const fullVisits = locationVisits.filter(v => v.visit_type === 'מלא');
 					if (fullVisits.length === 0) continue;
 					
 					// הטיפול המלא האחרון
@@ -11949,7 +11942,7 @@
 			
 			if (locationVisits.length > 0) {
 				// ✅ סנן רק טיפולים מלאים (או ריק שמתייחסים אליו כמלא)
-				const fullVisits = locationVisits.filter(v => !v.visit_type || v.visit_type === 'מלא' || v.visit_type === '');
+				const fullVisits = locationVisits.filter(v => v.visit_type === 'מלא');
 				
 				if (fullVisits.length > 0) {
 					// מיון לפי תאריך (החדש ביותר ראשון)
@@ -15021,14 +15014,10 @@
 									<span style="font-size: 14px;">מלא</span>
 								</label>
 								<label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 15px; border: 2px solid #ddd; border-radius: 6px; transition: all 0.2s;">
-									<input type="radio" name="visitFormType" value="חלקי" ${isEdit && visitData.visit_type === 'חלקי' ? 'checked' : ''} onchange="document.getElementById('visitFormTypeHidden').value=this.value" style="margin: 0;">
-									<span style="font-size: 14px;">חלקי</span>
+									<input type="radio" name="visitFormType" value="אחר" ${isEdit && visitData.visit_type === 'אחר' ? 'checked' : ''} onchange="document.getElementById('visitFormTypeHidden').value=this.value" style="margin: 0;">
+									<span style="font-size: 14px;">אחר</span>
 								</label>
-								<label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 15px; border: 2px solid #ddd; border-radius: 6px; transition: all 0.2s;">
-									<input type="radio" name="visitFormType" value="ביקורת" ${isEdit && visitData.visit_type === 'ביקורת' ? 'checked' : ''} onchange="document.getElementById('visitFormTypeHidden').value=this.value" style="margin: 0;">
-									<span style="font-size: 14px;">ביקורת</span>
-								</label>
-								<input type="hidden" id="visitFormTypeHidden" value="${isEdit ? (visitData.visit_type || 'מלא') : 'מלא'}">
+								<input type="hidden" id="visitFormTypeHidden" value="${isEdit ? (visitData.visit_type === 'מלא' ? 'מלא' : (visitData.visit_type ? 'אחר' : 'מלא')) : 'מלא'}">
 							</div>
 						</div>
 						
@@ -17934,10 +17923,11 @@
 		async function convertVisitTypesToFull() {
 			console.log('🔄 Starting visit type conversion and notes cleanup...');
 			
-			// Find visits to convert (type 'כללי' or empty)
+			// Find visits to convert - all non-standard types
+			const VALID_TYPES = ['מלא', 'אחר'];
 			const visitsToConvertType = visits.filter(visit => {
 				const visitType = (visit.visit_type || '').trim();
-				return visitType === 'כללי' || visitType === '';
+				return !VALID_TYPES.includes(visitType);
 			});
 			
 			// Find visits with import notes to clean
@@ -17981,8 +17971,10 @@
 				const allUpdatedVisits = new Set();
 				
 				// Convert visit types
+				const FULL_TYPES = ['מלא', 'כללי', ''];
 				for (const visit of visitsToConvertType) {
-					visit.visit_type = 'מלא';
+					const currentType = (visit.visit_type || '').trim();
+					visit.visit_type = FULL_TYPES.includes(currentType) ? 'מלא' : 'אחר';
 					visit.updated_at = new Date().toISOString();
 					convertedCount++;
 					allUpdatedVisits.add(visit);
