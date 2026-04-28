@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3152,6 +3152,9 @@
 					<div style="display: flex; gap: 10px; flex-wrap: wrap;">
 						<button onclick="showYearlyIncomeReport()" style="padding: 12px 20px; background: #9c27b0; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
 							📈 סיכום הכנסות שנתי
+						</button>
+						<button onclick="showActiveClientsReport()" style="padding: 12px 20px; background: #2980b9; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+							👥 דוח לקוחות פעילים
 						</button>
 					</div>
 				</div>
@@ -21678,6 +21681,175 @@
 			
 			contentDiv.innerHTML = html;
 		}
+
+		// דוח לקוחות פעילים
+		function showActiveClientsReport() {
+			const activeLocations = locations
+				.filter(loc => loc.active === 'כן' || loc.active === true || loc.active === '1')
+				.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+			
+			if (activeLocations.length === 0) {
+				showToast('אין לקוחות פעילים', 'warning');
+				return;
+			}
+			
+			// צבעים לפי מרווח
+			const intervalColors = {
+				2: '#2196F3',   // כחול - שבועיים
+				4: '#27ae60',   // ירוק - חודש
+				6: '#f39c12',   // כתום - חודש וחצי
+				8: '#9b59b6',   // סגול - חודשיים
+				12: '#e67e22',  // כתום כהה - 3 חודשים
+				16: '#95a5a6',  // אפור - 4 חודשים
+			};
+			
+			function getIntervalColor(weeks) {
+				const w = parseInt(weeks) || 4;
+				return intervalColors[w] || '#7f8c8d';
+			}
+			
+			function getIntervalLabel(weeks) {
+				const w = parseInt(weeks) || 4;
+				const labels = {
+					2: 'שבועיים', 4: 'חודש', 6: 'חודש וחצי',
+					8: 'חודשיים', 12: 'רבעון', 16: '4 חודשים'
+				};
+				return labels[w] || `${w} שבועות`;
+			}
+			
+			// סטטיסטיקות
+			const intervalCounts = {};
+			activeLocations.forEach(loc => {
+				const w = parseInt(loc.interval_weeks) || 4;
+				intervalCounts[w] = (intervalCounts[w] || 0) + 1;
+			});
+			
+			// עלות ממוצעת לשעה כללית
+			const oneYearAgo = new Date();
+			oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+			const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
+			
+			const recentVisits = visits.filter(v => 
+				v.date >= oneYearAgoStr && 
+				parseFloat(v.amount) > 0 && 
+				parseFloat(v.duration_minutes) > 0
+			);
+			const totalIncome = recentVisits.reduce((sum, v) => sum + parseFloat(v.amount), 0);
+			const totalMinutes = recentVisits.reduce((sum, v) => sum + parseFloat(v.duration_minutes), 0);
+			const avgHourlyRate = totalMinutes > 0 ? (totalIncome / totalMinutes * 60) : 0;
+			
+			// בניית שורות הטבלה
+			const rows = activeLocations.map(loc => {
+				const color = getIntervalColor(loc.interval_weeks);
+				const intervalLabel = getIntervalLabel(loc.interval_weeks);
+				
+				// 5 טיפולים אחרונים עם סכום ומשך
+				const locVisits = visits
+					.filter(v => v.location_id === loc.ID && parseFloat(v.amount) > 0 && parseFloat(v.duration_minutes) > 0)
+					.sort((a, b) => b.date.localeCompare(a.date))
+					.slice(0, 5);
+				
+				const avgDuration = locVisits.length > 0
+					? locVisits.reduce((sum, v) => sum + parseFloat(v.duration_minutes), 0) / locVisits.length / 60
+					: null;
+				
+				const avgHourly = locVisits.length > 0
+					? locVisits.reduce((sum, v) => sum + parseFloat(v.amount), 0) / 
+					  locVisits.reduce((sum, v) => sum + parseFloat(v.duration_minutes) / 60, 0)
+					: null;
+				
+				return `
+					<tr style="border-bottom: 1px solid #eee;">
+						<td style="padding: 8px 10px;">${loc.name}</td>
+						<td style="padding: 8px 10px;">${loc.allowed_day || '-'}</td>
+						<td style="padding: 8px 10px;">
+							<span style="background: ${color}22; color: ${color}; border: 1px solid ${color}; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; white-space: nowrap;">
+								${intervalLabel}
+							</span>
+						</td>
+						<td style="padding: 8px 10px;">${parseFloat(loc.base_amount) > 0 ? '₪' + parseFloat(loc.base_amount).toFixed(0) : '-'}</td>
+						<td style="padding: 8px 10px;">${avgDuration !== null ? avgDuration.toFixed(1) + ' שע' : '-'}</td>
+						<td style="padding: 8px 10px;">${avgHourly !== null ? '₪' + avgHourly.toFixed(0) : '-'}</td>
+					</tr>
+				`;
+			}).join('');
+			
+			// בניית שורות סטטיסטיקה לפי מרווח
+			const intervalStatsRows = Object.entries(intervalCounts)
+				.sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+				.map(([weeks, count]) => {
+					const color = getIntervalColor(weeks);
+					const label = getIntervalLabel(weeks);
+					return `<span style="background: ${color}22; color: ${color}; border: 1px solid ${color}; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; margin: 3px;">${label}: ${count}</span>`;
+				}).join('');
+			
+			const reportHTML = `
+				<!DOCTYPE html>
+				<html dir="rtl" lang="he">
+				<head>
+					<meta charset="UTF-8">
+					<meta name="viewport" content="width=device-width, initial-scale=1.0">
+					<title>דוח לקוחות פעילים</title>
+					<style>
+						body { font-family: Arial, sans-serif; padding: 20px; direction: rtl; color: #333; }
+						h2 { color: #2980b9; border-bottom: 2px solid #2980b9; padding-bottom: 8px; }
+						table { width: 100%; border-collapse: collapse; font-size: 13px; }
+						th { background: #2980b9; color: white; padding: 10px; text-align: right; }
+						tr:nth-child(even) { background: #f9f9f9; }
+						.stats-box { background: #eaf4fb; border: 1px solid #2980b9; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+						.stat-item { display: inline-block; margin: 5px 10px; text-align: center; }
+						.stat-value { font-size: 22px; font-weight: bold; color: #2980b9; }
+						.stat-label { font-size: 12px; color: #666; }
+						@media print { button { display: none; } }
+					</style>
+				</head>
+				<body>
+					<h2>👥 דוח לקוחות פעילים</h2>
+					<p style="color: #666; font-size: 13px;">הופק: ${new Date().toLocaleDateString('he-IL')}</p>
+					
+					<div class="stats-box">
+						<div class="stat-item">
+							<div class="stat-value">${activeLocations.length}</div>
+							<div class="stat-label">סה"כ לקוחות פעילים</div>
+						</div>
+						<div class="stat-item">
+							<div class="stat-value">₪${avgHourlyRate.toFixed(0)}</div>
+							<div class="stat-label">עלות ממוצעת לשעה</div>
+						</div>
+						<div style="margin-top: 12px;">
+							<div style="font-size: 13px; color: #555; margin-bottom: 6px;">התפלגות לפי מרווח:</div>
+							${intervalStatsRows}
+						</div>
+					</div>
+					
+					<table>
+						<thead>
+							<tr>
+								<th>שם לקוח</th>
+								<th>יום מועדף</th>
+								<th>מרווח</th>
+								<th>סכום קבוע</th>
+								<th>משך ממוצע</th>
+								<th>עלות לשעה</th>
+							</tr>
+						</thead>
+						<tbody>${rows}</tbody>
+					</table>
+					
+					<div style="text-align: center; margin-top: 25px;">
+						<button onclick="window.print()" style="padding: 12px 30px; background: #2980b9; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold;">
+							🖨️ הדפס / שמור PDF
+						</button>
+					</div>
+				</body>
+				</html>
+			`;
+			
+			const printWindow = window.open('', '_blank');
+			printWindow.document.write(reportHTML);
+			printWindow.document.close();
+		}
+
 
 		// עדכון רשימת קטגוריות בפילטר לפי הסוג שנבחר
 		function updateExpenseCategoryFilter() {
