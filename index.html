@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3230,6 +3230,9 @@
 					<div style="display: flex; gap: 10px; align-items: center;">
 						<button onclick="showAddTaskModal()" class="add-btn" style="background: #9b59b6;">
 							➕ משימה חדשה
+						</button>
+						<button onclick="generateClientTasksReport()" class="add-btn" style="background: #16a085;">
+							📄 דוח PDF
 						</button>
 					</div>
 				</div>
@@ -4774,8 +4777,9 @@
 				// מאחרים דחופים ליום זה
 				const overdueForDay = urgentOverdueByDay[dayName] || [];
 				
-				// משימות ליום זה
+				// משימות ליום זה - רק משימות עצמיות (לא ללקוח, לא גורפות)
 				const dayTasks = (typeof tasks !== 'undefined' ? tasks : []).filter(task => 
+					task.scope === 'self' &&
 					task.due_date === actualDateStr && 
 					task.status !== 'completed'
 				);
@@ -4835,13 +4839,11 @@
 										</div>
 										${day.tasks.map(task => {
 											const typeInfo = typeof TASK_TYPES !== 'undefined' && TASK_TYPES[task.type] ? TASK_TYPES[task.type] : { icon: '📦', label: task.type || 'אחר' };
-											const clientName = task.client_name || 'ללא לקוח';
 											return `
 												<div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
 													<div>
-														<div style="font-weight: 600; color: #333;">${typeInfo.icon} ${clientName}</div>
-														<div style="font-size: 12px; color: #666;">👤 ${clientName}</div>
-														${task.description ? `<div style="font-size: 11px; color: #888; margin-top: 3px;">${task.description}</div>` : ''}
+														<div style="font-weight: 600; color: #333;">${typeInfo.icon} משימה עצמית</div>
+														${task.description ? `<div style="font-size: 13px; color: #555; margin-top: 3px;">${task.description}</div>` : ''}
 													</div>
 													<div style="display: flex; gap: 4px; align-items: center;">
 													<input type="date" id="weeklyTaskDateInput_${task.ID}" style="display:none;" onchange="updateTaskDueDate('${task.ID}', this.value)">
@@ -4952,11 +4954,13 @@
 					`;
 				}
 				
-				// משימות להיום
+				// משימות להיום - משימות עצמיות של היום + משימות עצמיות באיחור
 				const todayStr = getLocalDateString();
 				const todayTasks = (typeof tasks !== 'undefined' ? tasks : []).filter(task => 
-					task.due_date === todayStr && 
-					task.status !== 'completed'
+					task.scope === 'self' &&
+					task.status !== 'completed' &&
+					task.due_date && 
+					task.due_date <= todayStr
 				);
 				
 				if (todayTasks.length > 0) {
@@ -5092,7 +5096,7 @@
 					<div class="planning-row-main">
 						<!-- שם הלקוח - גדול ובולט -->
 						<div class="planning-client-header">
-							<div class="planning-client-name-large" style="${isOverdue ? 'color: #e74c3c;' : ''}">👤 ${client.name}</div>
+							<div class="planning-client-name-large" style="${isOverdue ? 'color: #e74c3c;' : ''}">👤 ${client.name}${(typeof getClientPendingTaskIcons === 'function' && getClientPendingTaskIcons(client.ID)) ? `<span style="margin-right: 6px; font-size: 14px;" title="משימות פתוחות">${getClientPendingTaskIcons(client.ID)}</span>` : ''}</div>
 						</div>
 						
 						<!-- תאריכים - גדולים ובולטים -->
@@ -17192,10 +17196,12 @@
 			const container = document.getElementById('todayTreatmentsContainer');
 			const statusElement = document.getElementById('todayWorkStatus');
 			
-			// Get today's tasks
+			// Get today's tasks - משימות עצמיות של היום + משימות עצמיות באיחור
 			const todayTasks = (typeof tasks !== 'undefined' ? tasks : []).filter(task => 
-				task.due_date === today && 
-				task.status !== 'completed'
+				task.scope === 'self' &&
+				task.status !== 'completed' &&
+				task.due_date && 
+				task.due_date <= today
 			);
 			
 			if (todayVisits.length === 0 && todayTasks.length === 0) {
@@ -19534,6 +19540,133 @@
 				optionsDiv.style.display = 'none';
 			}
 		});
+
+
+		// Generate client tasks PDF report (based on current filters)
+		function generateClientTasksReport() {
+			// Get filter values from the UI
+			const statusFilter = document.getElementById('filterTaskStatus')?.value || '';
+			const typeFilter = document.getElementById('filterTaskType')?.value || '';
+			const clientFilter = document.getElementById('filterTaskClient')?.value?.toLowerCase() || '';
+			const dateFromFilter = document.getElementById('filterTaskDateFrom')?.value || '';
+			const dateToFilter = document.getElementById('filterTaskDateTo')?.value || '';
+			
+			// Filter tasks - ONLY client tasks (not self, not global)
+			let filteredTasks = tasks.filter(task => {
+				if (task.scope !== 'client') return false;
+				if (statusFilter && task.status !== statusFilter) return false;
+				if (typeFilter && task.type !== typeFilter) return false;
+				if (clientFilter && !task.client_name?.toLowerCase().includes(clientFilter)) return false;
+				if (dateFromFilter && task.due_date < dateFromFilter) return false;
+				if (dateToFilter && task.due_date > dateToFilter) return false;
+				return true;
+			});
+			
+			if (filteredTasks.length === 0) {
+				showToast('אין משימות לקוח להצגה בדוח', 'warning');
+				return;
+			}
+			
+			// Sort same as the main display (by due_date ascending, then by status)
+			filteredTasks.sort((a, b) => {
+				const statusOrder = { 'pending': 0, 'completed': 1 };
+				if (statusOrder[a.status] !== statusOrder[b.status]) {
+					return statusOrder[a.status] - statusOrder[b.status];
+				}
+				return new Date(a.due_date) - new Date(b.due_date);
+			});
+			
+			// Build dynamic title based on filters
+			const titleParts = ['דוח משימות לקוח'];
+			if (statusFilter) {
+				const statusLabel = TASK_STATUSES[statusFilter]?.label || statusFilter;
+				titleParts.push(statusLabel);
+			}
+			if (typeFilter) {
+				const typeLabel = TASK_TYPES[typeFilter]?.label || typeFilter;
+				titleParts.push(typeLabel);
+			}
+			const reportTitle = titleParts.join(' - ');
+			
+			// Build table rows
+			const rowsHTML = filteredTasks.map(task => {
+				const typeInfo = TASK_TYPES[task.type] || { icon: '📦', label: task.type || 'אחר' };
+				const statusInfo = TASK_STATUSES[task.status] || { icon: '', label: task.status };
+				const dueDate = task.due_date ? formatDate(task.due_date) : '-';
+				const description = task.description || '-';
+				const clientName = task.client_name || '-';
+				
+				return `
+					<tr>
+						<td>${typeInfo.icon} ${typeInfo.label}</td>
+						<td>${clientName}</td>
+						<td>${description}</td>
+						<td>${dueDate}</td>
+						<td>${statusInfo.icon} ${statusInfo.label}</td>
+					</tr>
+				`;
+			}).join('');
+			
+			// Build summary
+			const pendingCount = filteredTasks.filter(t => t.status === 'pending').length;
+			const completedCount = filteredTasks.filter(t => t.status === 'completed').length;
+			const reportDate = formatDate(getLocalDateString());
+			
+			// Open print window
+			const printWindow = window.open('', '_blank');
+			printWindow.document.write(`
+				<!DOCTYPE html>
+				<html dir="rtl" lang="he">
+				<head>
+					<meta charset="UTF-8">
+					<title>${reportTitle}</title>
+					<style>
+						body { font-family: Arial, sans-serif; padding: 20px; direction: rtl; }
+						h2 { color: #2c3e50; border-bottom: 2px solid #16a085; padding-bottom: 8px; margin-bottom: 5px; }
+						.report-date { color: #666; font-size: 13px; margin-bottom: 15px; }
+						.summary { background: #e8f8f5; border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 14px; }
+						table { width: 100%; border-collapse: collapse; font-size: 13px; }
+						th { background: #16a085; color: white; padding: 10px; text-align: right; }
+						td { padding: 8px 10px; border-bottom: 1px solid #ddd; }
+						tr:nth-child(even) { background: #f9f9f9; }
+						@media print { 
+							button { display: none; } 
+							body { padding: 10px; }
+						}
+					</style>
+				</head>
+				<body>
+					<h2>📋 ${reportTitle}</h2>
+					<div class="report-date">תאריך הפקה: ${reportDate}</div>
+					<div class="summary">
+						<strong>סה"כ משימות:</strong> ${filteredTasks.length}
+						&nbsp;|&nbsp;
+						<strong>⏳ ממתינות:</strong> ${pendingCount}
+						&nbsp;|&nbsp;
+						<strong>✅ הושלמו:</strong> ${completedCount}
+					</div>
+					<table>
+						<thead>
+							<tr>
+								<th>סוג</th>
+								<th>לקוח</th>
+								<th>תיאור</th>
+								<th>תאריך יעד</th>
+								<th>סטטוס</th>
+							</tr>
+						</thead>
+						<tbody>${rowsHTML}</tbody>
+					</table>
+					<div style="text-align: center; margin-top: 25px;">
+						<button onclick="window.print()" style="padding: 10px 25px; background: #16a085; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px;">
+							🖨️ הדפס / שמור PDF
+						</button>
+					</div>
+				</body>
+				</html>
+			`);
+			printWindow.document.close();
+		}
 
 
 		// Delete task
