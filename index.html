@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.4</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4779,7 +4779,7 @@
 				
 				// משימות ליום זה - רק משימות עצמיות (לא ללקוח, לא גורפות)
 				const dayTasks = (typeof tasks !== 'undefined' ? tasks : []).filter(task => 
-					task.scope === 'self' &&
+					task.scope === 'personal' &&
 					task.due_date === actualDateStr && 
 					task.status !== 'completed'
 				);
@@ -4957,7 +4957,7 @@
 				// משימות להיום - משימות עצמיות של היום + משימות עצמיות באיחור
 				const todayStr = getLocalDateString();
 				const todayTasks = (typeof tasks !== 'undefined' ? tasks : []).filter(task => 
-					task.scope === 'self' &&
+					task.scope === 'personal' &&
 					task.status !== 'completed' &&
 					task.due_date && 
 					task.due_date <= todayStr
@@ -17198,7 +17198,7 @@
 			
 			// Get today's tasks - משימות עצמיות של היום + משימות עצמיות באיחור
 			const todayTasks = (typeof tasks !== 'undefined' ? tasks : []).filter(task => 
-				task.scope === 'self' &&
+				task.scope === 'personal' &&
 				task.status !== 'completed' &&
 				task.due_date && 
 				task.due_date <= today
