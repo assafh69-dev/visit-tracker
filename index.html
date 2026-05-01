@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3234,6 +3234,49 @@
 					</div>
 				</div>
 				
+				<!-- Quick Task Panel -->
+				<div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+					<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+						<span style="font-weight: 600; color: #555; font-size: 13px; white-space: nowrap;">⚡ משימה מהירה:</span>
+						
+						<!-- Client search -->
+						<div style="position: relative; flex: 1; min-width: 180px;">
+							<input type="text" id="quickTaskClientSearch" placeholder="🔍 חיפוש לקוח..." 
+								   oninput="quickTaskFilterClients(this.value)" 
+								   onfocus="quickTaskFilterClients(this.value)"
+								   autocomplete="off"
+								   style="width: 100%; padding: 7px 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 13px;">
+							<div id="quickTaskClientOptions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 0 0 5px 5px; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"></div>
+							<input type="hidden" id="quickTaskClientId">
+						</div>
+						
+						<!-- Type icons -->
+						<div style="display: flex; gap: 4px;">
+							<button type="button" onclick="quickTaskSelectType('pest_control', this)" title="הדברה" 
+									style="padding: 6px 9px; background: #f5f5f5; border: 2px solid transparent; border-radius: 5px; cursor: pointer; font-size: 16px;">🪲</button>
+							<button type="button" onclick="quickTaskSelectType('planting', this)" title="שתילה" 
+									style="padding: 6px 9px; background: #f5f5f5; border: 2px solid transparent; border-radius: 5px; cursor: pointer; font-size: 16px;">🌱</button>
+							<button type="button" onclick="quickTaskSelectType('irrigation', this)" title="השקייה" 
+									style="padding: 6px 9px; background: #f5f5f5; border: 2px solid transparent; border-radius: 5px; cursor: pointer; font-size: 16px;">💧</button>
+							<button type="button" onclick="quickTaskSelectType('other', this)" title="אחר" 
+									style="padding: 6px 9px; background: #f5f5f5; border: 2px solid transparent; border-radius: 5px; cursor: pointer; font-size: 16px;">📦</button>
+						</div>
+						<input type="hidden" id="quickTaskType">
+						
+						<!-- Description for "other" -->
+						<input type="text" id="quickTaskDescription" placeholder="תיאור..." 
+							   style="display: none; flex: 1; min-width: 150px; padding: 7px 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 13px;">
+						
+						<!-- Add button -->
+						<button type="button" onclick="quickTaskAdd()" 
+								style="padding: 7px 14px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap;">
+							➕ הוסף
+						</button>
+					</div>
+				</div>
+			
+
+				
 				<!-- Tasks Filter Panel - Collapsible -->
 				<div class="filters-container">
 					<div class="filter-header" onclick="toggleFilterPanel('tasksFilterContent')">
@@ -3248,9 +3291,7 @@
 									<select id="filterTaskStatus" onchange="displayTasks()">
 										<option value="">הכל</option>
 										<option value="pending">ממתין</option>
-										<option value="in_progress">בתהליך</option>
 										<option value="completed">הושלם</option>
-										<option value="cancelled">בוטל</option>
 									</select>
 								</div>
 								<div class="filter-group-unified medium">
@@ -3301,7 +3342,6 @@
 				<div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; border: 1px solid #e0e0e0;">
 					<span style="font-size: 13px; color: #333;">📋 מוצגות: <strong style="color: #666;" id="tasksCount">0</strong></span>
 					<span style="font-size: 13px; color: #333;">⏳ ממתינות: <strong style="color: #f39c12;" id="statsPending">0</strong></span>
-					<span style="font-size: 13px; color: #333;">🔄 בתהליך: <strong style="color: #3498db;" id="statsInProgress">0</strong></span>
 					<span style="font-size: 13px; color: #333;">✅ הושלמו: <strong style="color: #27ae60;" id="statsCompleted">0</strong></span>
 				</div>
 				
@@ -4359,6 +4399,9 @@
 					if (typeof displayTasks === 'function') {
 						displayTasks();
 					}
+					if (typeof quickTaskReset === 'function') {
+						quickTaskReset();
+					}
 					break;
 				case 'expenses':
 					if (typeof displayExpenses === 'function') {
@@ -4734,8 +4777,7 @@
 				// משימות ליום זה
 				const dayTasks = (typeof tasks !== 'undefined' ? tasks : []).filter(task => 
 					task.due_date === actualDateStr && 
-					task.status !== 'completed' && 
-					task.status !== 'cancelled'
+					task.status !== 'completed'
 				);
 
 				return { dayName, clients: dayClients, date: formattedDate, overdueClients: overdueForDay, tasks: dayTasks };
@@ -4914,8 +4956,7 @@
 				const todayStr = getLocalDateString();
 				const todayTasks = (typeof tasks !== 'undefined' ? tasks : []).filter(task => 
 					task.due_date === todayStr && 
-					task.status !== 'completed' && 
-					task.status !== 'cancelled'
+					task.status !== 'completed'
 				);
 				
 				if (todayTasks.length > 0) {
@@ -7518,7 +7559,7 @@
 				filteredVisits = filteredVisits.slice(0, maxResults);
 			}
 			
-			console.log(`✅ נמצאו ${filteredVisits.length} טיפולים מתוך ${visits.length}`);
+			// console.log(`✅ נמצאו ${filteredVisits.length} טיפולים מתוך ${visits.length}`);
 			
 			displayFilteredVisits(filteredVisits);
 			updateTreatmentsStats(filteredVisits);
@@ -7625,7 +7666,7 @@
 			});
 			
 			tbody.appendChild(fragment);
-			console.log(`📊 הוצגו ${filteredVisits.length} טיפולים`);
+			// console.log(`📊 הוצגו ${filteredVisits.length} טיפולים`);
 
 			// Initialize expandable rows for mobile
 			setTimeout(() => {
@@ -17110,8 +17151,7 @@
 			// Get today's tasks
 			const todayTasks = (typeof tasks !== 'undefined' ? tasks : []).filter(task => 
 				task.due_date === today && 
-				task.status !== 'completed' && 
-				task.status !== 'cancelled'
+				task.status !== 'completed'
 			);
 			
 			if (todayVisits.length === 0 && todayTasks.length === 0) {
@@ -17285,17 +17325,11 @@
 								<div style="display: flex; flex-direction: column; gap: 4px;">
 									<div style="display: flex; gap: 4px;">
 										${task.status === 'pending' ? `
-											<button onclick="updateTaskStatus('${task.ID}', 'in_progress')" 
-													style="padding: 6px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-												▶️ התחל
-											</button>
-										` : ''}
-										${task.status === 'in_progress' ? `
-											<button onclick="completeTask('${task.ID}')" 
-													style="padding: 6px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-												✅ סיים
-											</button>
-										` : ''}
+										<button onclick="completeTask('${task.ID}')" 
+												style="padding: 6px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+											✅ סיים
+										</button>
+									` : ''}
 										<button onclick="showEditTaskModal('${task.ID}')" 
 												style="padding: 6px 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
 											✏️
@@ -18553,9 +18587,7 @@
 		// Task status definitions
 		const TASK_STATUSES = {
 			'pending': { icon: '⏳', label: 'ממתין', color: '#ffc107', bg: '#fff3cd' },
-			'in_progress': { icon: '🔄', label: 'בתהליך', color: '#007bff', bg: '#cce5ff' },
-			'completed': { icon: '✅', label: 'הושלם', color: '#28a745', bg: '#d4edda' },
-			'cancelled': { icon: '❌', label: 'בוטל', color: '#dc3545', bg: '#f8d7da' }
+			'completed': { icon: '✅', label: 'הושלם', color: '#28a745', bg: '#d4edda' }
 		};
 
 		// סוגי הוצאות (רמה עליונה)
@@ -18640,7 +18672,7 @@
 			
 			// Sort by due date (closest first), then by status
 			filteredTasks.sort((a, b) => {
-				const statusOrder = { 'in_progress': 0, 'pending': 1, 'completed': 2, 'cancelled': 3 };
+				const statusOrder = { 'pending': 0, 'completed': 1 };
 				if (statusOrder[a.status] !== statusOrder[b.status]) {
 					return statusOrder[a.status] - statusOrder[b.status];
 				}
@@ -18683,8 +18715,8 @@
 				const scopeLabel = scopeLabels[task.scope] || scopeLabels['client'];
 				
 				// Check if overdue
-				const isOverdue = task.status !== 'completed' && task.status !== 'cancelled' && 
-								  new Date(task.due_date) < new Date(new Date().toDateString());
+				const isOverdue = task.status !== 'completed' && 
+                  new Date(task.due_date) < new Date(new Date().toDateString());
 				
 				return `
 					<tr style="border-bottom: 1px solid #eee; ${isOverdue ? 'background: #fff5f5;' : ''}">
@@ -18715,14 +18747,9 @@
 						<td style="padding: 12px; text-align: center;">
 							<div style="display: flex; gap: 5px; justify-content: center;">
 								${task.status === 'pending' ? `
-									<button onclick="updateTaskStatus('${task.ID}', 'in_progress')" 
-											style="padding: 5px 8px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" 
-											title="התחל">▶️</button>
-								` : ''}
-								${task.status === 'in_progress' ? `
 									<button onclick="completeTask('${task.ID}')" 
 											style="padding: 5px 8px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" 
-											title="סיים">✅</button>
+											title="סמן כהושלם">✅</button>
 								` : ''}
 								<button onclick="showEditTaskModal('${task.ID}')" 
 										style="padding: 5px 8px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" 
@@ -18740,15 +18767,12 @@
 		// Update tasks statistics
 		function updateTasksStats() {
 			const pending = tasks.filter(t => t.status === 'pending').length;
-			const inProgress = tasks.filter(t => t.status === 'in_progress').length;
 			const completed = tasks.filter(t => t.status === 'completed').length;
 			
 			const statsPending = document.getElementById('statsPending');
-			const statsInProgress = document.getElementById('statsInProgress');
 			const statsCompleted = document.getElementById('statsCompleted');
 			
 			if (statsPending) statsPending.textContent = pending;
-			if (statsInProgress) statsInProgress.textContent = inProgress;
 			if (statsCompleted) statsCompleted.textContent = completed;
 		}
 
@@ -19286,6 +19310,187 @@
 			
 			showToast(`🔄 נוצרה משימה חוזרת ל-${formatDate(newTask.due_date)}`, 'info');
 		}
+
+
+		// ===== Quick Task Panel =====
+		
+		// Filter clients in quick task search
+		function quickTaskFilterClients(searchValue) {
+			const optionsDiv = document.getElementById('quickTaskClientOptions');
+			if (!optionsDiv) return;
+			
+			const search = (searchValue || '').toLowerCase().trim();
+			const activeClients = locations.filter(c => c.active === '1' || c.active === 1);
+			
+			const filtered = search 
+				? activeClients.filter(c => (c.name || '').toLowerCase().includes(search))
+				: activeClients;
+			
+			const sorted = filtered.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+			
+			if (sorted.length === 0) {
+				optionsDiv.innerHTML = '<div style="padding: 8px; color: #999; font-size: 13px;">אין תוצאות</div>';
+				optionsDiv.style.display = 'block';
+				return;
+			}
+			
+			optionsDiv.innerHTML = sorted.slice(0, 50).map(c => `
+			<div onclick="quickTaskSelectClient('${c.ID}', '${(c.name || '').replace(/'/g, "\\'")}')" 
+				 style="padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 13px;"
+				 onmouseover="this.style.background='#f5f5f5'" 
+				 onmouseout="this.style.background='white'">
+				${c.name}
+			</div>
+			`).join('');
+			optionsDiv.style.display = 'block';
+		}
+		
+		// Select a client from the dropdown
+		function quickTaskSelectClient(clientId, clientName) {
+			document.getElementById('quickTaskClientId').value = clientId;
+			document.getElementById('quickTaskClientSearch').value = clientName;
+			document.getElementById('quickTaskClientOptions').style.display = 'none';
+		}
+		
+		// Select task type (toggle visual selection)
+		function quickTaskSelectType(type, buttonElement) {
+			document.getElementById('quickTaskType').value = type;
+			
+			// Reset all type buttons
+			const allButtons = buttonElement.parentElement.querySelectorAll('button');
+			allButtons.forEach(btn => {
+				btn.style.background = '#f5f5f5';
+				btn.style.borderColor = 'transparent';
+			});
+			
+			// Highlight selected
+			buttonElement.style.background = '#e8f5e9';
+			buttonElement.style.borderColor = '#27ae60';
+			
+			// Show/hide description field for "other"
+			const descField = document.getElementById('quickTaskDescription');
+			if (type === 'other') {
+				descField.style.display = 'block';
+				descField.focus();
+			} else {
+				descField.style.display = 'none';
+				descField.value = '';
+			}
+		}
+		
+		// Add the quick task
+		async function quickTaskAdd() {
+			const clientId = document.getElementById('quickTaskClientId').value;
+			const clientName = document.getElementById('quickTaskClientSearch').value;
+			const type = document.getElementById('quickTaskType').value;
+			const description = document.getElementById('quickTaskDescription').value.trim();
+			
+			// Validation
+			if (!clientId) {
+				showToast('יש לבחור לקוח', 'warning');
+				return;
+			}
+			if (!type) {
+				showToast('יש לבחור סוג משימה', 'warning');
+				return;
+			}
+			if (type === 'other' && !description) {
+				showToast('יש להזין תיאור עבור משימת "אחר"', 'warning');
+				document.getElementById('quickTaskDescription').focus();
+				return;
+			}
+			
+			// Calculate due date (today + 14 days)
+			const dueDate = new Date();
+			dueDate.setDate(dueDate.getDate() + 14);
+			const dueDateStr = getLocalDateString(dueDate);
+			
+			// Create the task
+			const newTask = {
+				ID: 'TASK_' + Date.now(),
+				scope: 'client',
+				client_id: clientId,
+				client_name: clientName,
+				type: type,
+				description: description || '',
+				due_date: dueDateStr,
+				priority: 'normal',
+				estimated_cost: '',
+				equipment: '',
+				notes: '',
+				recurring: false,
+				recurring_interval: '',
+				status: 'pending',
+				created_date: getLocalDateString(),
+				completed_date: '',
+				updated_at: new Date().toISOString()
+			};
+			
+			tasks.push(newTask);
+			saveToLocalStorage();
+			
+			// Reset form (but keep client per user preference)
+			document.getElementById('quickTaskType').value = '';
+			document.getElementById('quickTaskDescription').value = '';
+			document.getElementById('quickTaskDescription').style.display = 'none';
+			
+			// Reset type button styles
+			const typeButtons = document.querySelectorAll('#quickTaskClientOptions ~ div button, [onclick^="quickTaskSelectType"]');
+			typeButtons.forEach(btn => {
+				btn.style.background = '#f5f5f5';
+				btn.style.borderColor = 'transparent';
+			});
+			
+			// Refresh the tasks display
+			displayTasks();
+			updateTasksStats();
+			
+			// Save to cloud
+			if (access_token && SPREADSHEET_ID) {
+				try {
+					await saveTasksToSheets();
+				} catch (error) {
+					console.error('Error saving quick task to cloud:', error);
+				}
+			}
+		}
+		
+		// Reset quick task panel (called on tab switch)
+		function quickTaskReset() {
+			const clientIdEl = document.getElementById('quickTaskClientId');
+			const clientSearchEl = document.getElementById('quickTaskClientSearch');
+			const typeEl = document.getElementById('quickTaskType');
+			const descEl = document.getElementById('quickTaskDescription');
+			const optionsEl = document.getElementById('quickTaskClientOptions');
+			
+			if (clientIdEl) clientIdEl.value = '';
+			if (clientSearchEl) clientSearchEl.value = '';
+			if (typeEl) typeEl.value = '';
+			if (descEl) {
+				descEl.value = '';
+				descEl.style.display = 'none';
+			}
+			if (optionsEl) optionsEl.style.display = 'none';
+			
+			// Reset type button styles
+			const typeButtons = document.querySelectorAll('[onclick^="quickTaskSelectType"]');
+			typeButtons.forEach(btn => {
+				btn.style.background = '#f5f5f5';
+				btn.style.borderColor = 'transparent';
+			});
+		}
+		
+		// Close quick task dropdown when clicking outside
+		document.addEventListener('click', function(event) {
+			const optionsDiv = document.getElementById('quickTaskClientOptions');
+			const searchInput = document.getElementById('quickTaskClientSearch');
+			if (!optionsDiv || !searchInput) return;
+			
+			if (event.target !== searchInput && !optionsDiv.contains(event.target)) {
+				optionsDiv.style.display = 'none';
+			}
+		});
+
 
 		// Delete task
 		async function deleteTask(taskId) {
