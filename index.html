@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2730,14 +2730,8 @@
 							<div style="flex: 0 0 100px;">
 								<label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">מרווח שבועות:</label>
 								<select id="filterInterval" onchange="filterLocationsTable()" 
-										style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-									<option value="">הכל</option>
-									<option value="1">1</option>
-									<option value="2">2</option>
-									<option value="4">4</option>
-									<option value="8">8</option>
-									<option value="12">12</option>
-									<option value="52">52</option>
+											style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+										<option value="">הכל</option>
 								</select>
 							</div>
 							
@@ -4364,6 +4358,9 @@
 					applyVisitFilters();
 					break;
 				case 'locations':
+					if (typeof populateIntervalFilter === 'function') {
+						populateIntervalFilter();
+					}
 					loadLocationsTable();
 					break;
 				case 'receipts':
@@ -5680,6 +5677,43 @@
 			if (hasOther) icons += '📦';
 			
 			return icons;
+		}
+		
+		
+		// Populate interval filter dropdown with unique values from active clients
+		function populateIntervalFilter() {
+			const select = document.getElementById('filterInterval');
+			if (!select) return;
+			
+			// Save currently selected value
+			const currentValue = select.value;
+			
+			// Get unique intervals from active clients
+			const intervals = new Set();
+			locations.forEach(loc => {
+				if (loc.active === '1' || loc.active === 1) {
+					const interval = parseInt(loc.interval_weeks);
+					if (interval && interval > 0) {
+						intervals.add(interval);
+					}
+				}
+			});
+			
+			// Sort ascending
+			const sortedIntervals = Array.from(intervals).sort((a, b) => a - b);
+			
+			// Build options HTML
+			let optionsHTML = '<option value="">הכל</option>';
+			sortedIntervals.forEach(interval => {
+				optionsHTML += `<option value="${interval}">${interval}</option>`;
+			});
+			
+			select.innerHTML = optionsHTML;
+			
+			// Restore previously selected value if it still exists
+			if (currentValue && sortedIntervals.includes(parseInt(currentValue))) {
+				select.value = currentValue;
+			}
 		}
 		
 		// עדכון סטטיסטיקות הלקוחות
