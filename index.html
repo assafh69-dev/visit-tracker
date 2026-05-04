@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -11983,6 +11983,7 @@
 							updatedRows[i][9] = location.allowed_day;   // allowed_day (עמודה 9)
 							updatedRows[i][15] = location.last_visit;   // last_visit (עמודה 15)
 							updatedRows[i][16] = location.next_visit;   // next_visit (עמודה 16)
+							updatedRows[i][18] = location.updated_at;   // updated_at (עמודה 18) - חיוני לסנכרון
 							updatedCount++;
 							break;
 						}
@@ -12092,6 +12093,9 @@
 					
 					const nextVisitDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
 					location.next_visit = nextVisitDate;
+					
+					// עדכון updated_at - חיוני לסנכרון תקין מול הענן
+					location.updated_at = new Date().toISOString();
 					
 					console.log(`📅 עודכן לקוח ${location.name}: טיפול מלא אחרון ${lastVisitDate} → טיפול הבא ${nextVisitDate}`);
 				} else {
