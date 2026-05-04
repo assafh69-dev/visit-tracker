@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -11936,6 +11936,7 @@
 					// עדכון האובייקט המקומי
 					location.last_visit = lastVisitDate;
 					location.next_visit = nextVisitDate;
+					location.updated_at = new Date().toISOString();
 					
 					updatedLocations.push(location);
 					
@@ -12041,6 +12042,7 @@
 					
 					location.last_visit = lastVisitDate;
 					location.next_visit = nextVisitDate;
+					location.updated_at = new Date().toISOString();
 					updatedLocations.push(location);
 				}
 				
