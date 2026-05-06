@@ -2840,7 +2840,7 @@
 					// discoveryDocs: [DISCOVERY_DOC],
 				});
 				gapi_loaded = true;
-				console.log('GAPI client initialized successfully VER 3.5');
+				console.log('GAPI client initialized successfully VER35');
 				
 				// Try to restore previous Google session
 				setTimeout(async () => {
@@ -3864,8 +3864,8 @@
 
         // Initialize page when DOM is loaded
 		document.addEventListener('DOMContentLoaded', function() {
-			// initPinProtection();   // put in remarks to cancel PWD check
-			showApp();
+			initPinProtection();   // put in remarks to cancel PWD check
+			//showApp();
 			initializeGoogleAPIs();
 			
 			// setTimeout(() => { tryAutoConnect(); }, 2000);  // ← Comment this out
