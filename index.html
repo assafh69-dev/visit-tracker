@@ -1372,7 +1372,7 @@
     </style>
 </head>
 <body>
-    <div class="container" id="appContainer" style="display: none;">
+    <div class="container">
 		<div class="toast-container" id="toastContainer"></div>
         <div class="header">
             <h1>📈 מערכת מעקב טרייד מתקדמת</h1>
@@ -1420,6 +1420,13 @@
 				</div>
 				<button class="btn btn-small" onclick="updateFeeSettings()">עדכן עמלות</button>
 			</div>
+			
+			<div class="form-group">
+				<label style="display: flex; align-items: center; gap: 8px;">
+					<input type="checkbox" id="debugImportLogs" onchange="toggleDebugLogs('showImportLogs')">
+					<span>הצג לוגים</span>
+				</label>
+			</div>
 		</div>	
 
         <div class="account-summary">
@@ -1457,35 +1464,41 @@
 		<div style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); padding: 15px 25px; text-align: center; border-bottom: 3px solid #3498db; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
 			
 			<!-- Main Google Buttons -->
-			<div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
-				<button class="btn btn-success" onclick="connectToGoogleSheets()" style="padding: 10px 20px; font-size: 13px; font-weight: bold;">
-					🔗 התחבר
+			<div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+				<button class="btn btn-success" onclick="connectToGoogleSheets()" style="padding: 12px 25px; font-size: 14px; font-weight: bold; min-width: 180px;">
+					🔗 התחבר לGoogle Sheets
+				</button>
+				<button onclick="showHelpModal('googleConnection')" style="background: none; border: 2px solid #27ae60; border-radius: 50%; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #27ae60; font-size: 14px; margin-left: 8px;">?</button>
+				<button class="btn" onclick="saveToGoogleSheets()" style="padding: 12px 25px; font-size: 14px; font-weight: bold; min-width: 150px; background: #4285f4; color: white;">
+					☁️ שמור לענן
+				</button>
+				<button class="btn btn-warning" onclick="loadFromGoogleSheets()" style="padding: 12px 25px; font-size: 14px; font-weight: bold; min-width: 150px;">
+					📥 טען מהענן
+				</button>
+				<button class="btn" onclick="loadSettingsFromCloud().then(success => success ? showToast('הגדרות נטענו מהענן', 'success') : showToast('לא נמצאו הגדרות בענן', 'warning'))" 
+						style="padding: 8px 16px; font-size: 12px; background: #9c27b0; color: white;">
+					⚙️ טען הגדרות
 				</button>
 				<button id="syncBtn" onclick="smartSync()" class="btn" disabled
-						style="padding: 10px 20px; font-size: 13px; font-weight: bold; background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white; opacity: 0.5; cursor: not-allowed;">
+						style="padding: 12px 25px; font-size: 14px; font-weight: bold; min-width: 150px; background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white; opacity: 0.5; cursor: not-allowed;">
 					🔄 סנכרן
 				</button>
-				<button onclick="disconnectFromGoogle()" style="padding: 10px 20px; font-size: 13px; font-weight: bold; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">
-					🔌 התנתק
-				</button>
-				<button onclick="saveToGoogleSheets()" style="padding: 8px 14px; font-size: 12px; background: #4285f4; color: white; border: none; border-radius: 5px; cursor: pointer; opacity: 0.7;">
-					☁️ שמור ❗
-				</button>
-				<button onclick="loadFromGoogleSheets()" style="padding: 8px 14px; font-size: 12px; background: #f39c12; color: white; border: none; border-radius: 5px; cursor: pointer; opacity: 0.7;">
-					📥 טען ❗
-				</button>
-				<button onclick="showHelpModal('googleConnection')" style="background: none; border: 2px solid #27ae60; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #27ae60; font-size: 12px;">?</button>
 			</div>
 			
-			<!-- Sync Indicator -->
-			<div id="syncIndicator" style="font-size: 13px; color: rgba(255,255,255,0.9); margin-top: 8px; text-align: center;">
-				🔄 טרם בוצע סנכרון
+			<!-- Enhanced Status Display -->
+			<div style="display: flex; justify-content: center; align-items: center; gap: 30px; background: rgba(255,255,255,0.1); padding: 12px 20px; border-radius: 25px; backdrop-filter: blur(10px);">
+				<div style="display: flex; align-items: center; gap: 8px;">
+					<div style="width: 12px; height: 12px; border-radius: 50%; background: #dc3545; box-shadow: 0 0 10px rgba(220, 53, 69, 0.5); animation: pulse 2s infinite;" id="statusIndicator"></div>
+					<span id="cloudStatus" style="color: white; font-weight: bold; font-size: 16px;">לא מחובר</span>
+				</div>
+				<div style="color: #ecf0f1; font-size: 14px; font-style: italic;">
+					<span id="lastSaved">אף פעם לא נשמר</span>
+				</div>
 			</div>
 
-			<!-- Status Display -->
-			<div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 8px;">
-				<div style="width: 12px; height: 12px; border-radius: 50%; background: #dc3545; box-shadow: 0 0 10px rgba(220, 53, 69, 0.5); animation: pulse 2s infinite;" id="statusIndicator"></div>
-				<span id="cloudStatus" style="color: white; font-weight: bold; font-size: 14px;">לא מחובר</span>
+			<!-- Sync Indicator -->
+			<div id="syncIndicator" style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 8px; text-align: center;">
+				🔄 טרם בוצע סנכרון
 			</div>
 			
 		</div>
@@ -1500,35 +1513,15 @@
 
         <div class="tabs">
 			<button class="tab active" onclick="showTab(event, 'trades')">טרייד חדש</button>
-			<button class="tab" onclick="showTab(event, 'portfolio')">טריידים</button>
+			<button class="tab" onclick="showTab(event, 'portfolio')">פורטפוליו</button>
 			<button class="tab" onclick="showTab(event, 'stats')">סטטיסטיקות</button>
 			<button class="tab" onclick="showTab(event, 'export')">ייבוא וייצוא</button>
 			<button class="tab" onclick="showTab(event, 'journal')">יומן מסחר</button>
-			<button class="tab" onclick="showTab(event, 'about')">אודות v3.5</button>
+			<button class="tab" onclick="showTab(event, 'about')">אודות v3.0</button>
 		</div>
 
 		<!-- Toast Container -->
 		<div id="toastContainer" class="toast-container"></div>
-
-		<!-- PIN Lock Screen -->
-		<div id="pinLockScreen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); z-index: 99999; justify-content: center; align-items: center;">
-			<div style="background: white; border-radius: 20px; padding: 40px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3); min-width: 300px;">
-				<div style="font-size: 48px; margin-bottom: 15px;">🔐</div>
-				<h2 style="color: #2c3e50; margin-bottom: 10px;">מערכת מעקב טרייד</h2>
-				<p style="color: #666; margin-bottom: 25px; font-size: 14px;">הזן קוד כניסה</p>
-				<input type="password" id="pinInput" maxlength="10" 
-					   style="width: 150px; padding: 12px; font-size: 24px; text-align: center; border: 2px solid #667eea; border-radius: 10px; margin-bottom: 15px; letter-spacing: 8px;"
-					   onkeypress="if(event.key==='Enter') checkPin()">
-				<br>
-				<button onclick="checkPin()" 
-						style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;">
-					כניסה
-				</button>
-				<div id="pinError" style="color: #e74c3c; margin-top: 15px; font-size: 14px; display: none;">
-					❌ קוד שגוי - נסה שוב
-				</div>
-			</div>
-		</div>
 
         <div id="trades" class="tab-content active">
             <div class="form-section">
@@ -2306,26 +2299,6 @@
 					<button onclick="toggleDebugPanel()" style="background: none; border: none; font-size: 16px; cursor: pointer; color: #6c757d;">✖️</button>
 				</div>
 				
-				<!-- PIN Settings -->
-				<div style="margin-bottom: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border: 1px solid #ffc107;">
-					<h4 style="margin-bottom: 10px; color: #856404;">🔐 קוד כניסה לאפליקציה</h4>
-					<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-						<input type="password" id="newPinInput" maxlength="10" placeholder="קוד חדש"
-							   style="padding: 8px; border: 1px solid #ccc; border-radius: 5px; width: 120px; text-align: center; font-size: 16px; letter-spacing: 4px;">
-						<button onclick="savePin()" 
-								style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">
-							שמור קוד
-						</button>
-						<button onclick="clearPin()" 
-								style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">
-							הסר קוד
-						</button>
-					</div>
-					<div id="pinStatus" style="margin-top: 10px; font-size: 13px; color: #666;">
-						סטטוס: <span id="pinStatusText">${localStorage.getItem('app_pin') ? 'קוד מוגדר ✅' : 'אין קוד ❌'}</span>
-					</div>
-				</div>
-				
 				<div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
 					<label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
 						<input type="checkbox" id="debugSystem" checked onchange="toggleDebugCategory('showSystemLogs')">
@@ -2830,6 +2803,14 @@
 			});
 		}
 
+		//async function initializeGapiClient() {
+		//	await gapi.client.init({
+		//		apiKey: 'AIzaSyB25ms_UzbgfY9FnduMwMhGhlvwfVPaTg8',
+		//		discoveryDocs: [DISCOVERY_DOC],
+		//	});
+		//	gapi_loaded = true;
+		//}
+
 
 		async function initializeGapiClient() {
 			try {
@@ -2840,7 +2821,7 @@
 					// discoveryDocs: [DISCOVERY_DOC],
 				});
 				gapi_loaded = true;
-				console.log('GAPI client initialized successfully VER35');
+				console.log('GAPI client initialized successfully VER30');
 				
 				// Try to restore previous Google session
 				setTimeout(async () => {
@@ -2989,309 +2970,6 @@
 				console.error('❌ Error restoring token:', error);
 				localStorage.removeItem('google_token');
 				return false;
-			}
-		}
-		
-		
-		const PIN_AUTH_KEY = 'pin_auth_timestamp';
-		const PIN_KEY = 'app_pin';
-		const PIN_VALID_HOURS = 24;
-
-		function initPinProtection() {
-			const savedPin = localStorage.getItem(PIN_KEY);
-			
-			// No PIN defined - open app freely
-			if (!savedPin) {
-				showApp();
-				return;
-			}
-			
-			// Check if authenticated recently
-			const lastAuth = localStorage.getItem(PIN_AUTH_KEY);
-			if (lastAuth) {
-				const hoursSinceAuth = (Date.now() - parseInt(lastAuth)) / (1000 * 60 * 60);
-				if (hoursSinceAuth < PIN_VALID_HOURS) {
-					showApp();
-					return;
-				}
-			}
-			
-			// Show PIN screen
-			const lockScreen = document.getElementById('pinLockScreen');
-			if (lockScreen) {
-				lockScreen.style.display = 'flex';
-			}
-			
-			// Focus input
-			setTimeout(() => {
-				const pinInput = document.getElementById('pinInput');
-				if (pinInput) pinInput.focus();
-			}, 100);
-		}
-
-		function checkPin() {
-			const savedPin = localStorage.getItem(PIN_KEY);
-			const enteredPin = document.getElementById('pinInput').value;
-			const pinError = document.getElementById('pinError');
-			
-			if (enteredPin === savedPin) {
-				// Save auth timestamp
-				localStorage.setItem(PIN_AUTH_KEY, Date.now().toString());
-				
-				// Hide lock screen
-				document.getElementById('pinLockScreen').style.display = 'none';
-				
-				// Show app
-				showApp();
-			} else {
-				// Show error
-				pinError.style.display = 'block';
-				document.getElementById('pinInput').value = '';
-				document.getElementById('pinInput').focus();
-				
-				setTimeout(() => {
-					pinError.style.display = 'none';
-				}, 3000);
-			}
-		}
-
-		function showApp() {
-			const appContainer = document.getElementById('appContainer');
-			if (appContainer) {
-				appContainer.style.display = 'block';
-			}
-		}
-		
-		
-		function savePin() {
-			const newPin = document.getElementById('newPinInput').value.trim();
-			
-			if (!newPin) {
-				showToast('אנא הזן קוד', 'warning');
-				return;
-			}
-			
-			localStorage.setItem(PIN_KEY, newPin);
-			localStorage.setItem(PIN_AUTH_KEY, Date.now().toString());
-			
-			document.getElementById('newPinInput').value = '';
-			document.getElementById('pinStatusText').textContent = 'קוד מוגדר ✅';
-			
-			showToast('✅ קוד כניסה נשמר בהצלחה', 'success');
-			console.log('✅ PIN saved');
-		}
-
-		function clearPin() {
-			localStorage.removeItem(PIN_KEY);
-			localStorage.removeItem(PIN_AUTH_KEY);
-			
-			document.getElementById('pinStatusText').textContent = 'אין קוד ❌';
-			
-			showToast('🔓 קוד כניסה הוסר', 'warning');
-			console.log('🔓 PIN cleared');
-		}
-		
-		
-		function disconnectFromGoogle() {
-			// Stop token refresh
-			if (tokenRefreshInterval) {
-				clearInterval(tokenRefreshInterval);
-				tokenRefreshInterval = null;
-			}
-			
-			// Clear token
-			access_token = null;
-			localStorage.removeItem('google_token');
-			localStorage.removeItem('lastSyncTime');
-			
-			// Disable sync button
-			const syncBtn = document.getElementById('syncBtn');
-			if (syncBtn) {
-				syncBtn.disabled = true;
-				syncBtn.style.opacity = '0.5';
-				syncBtn.style.cursor = 'not-allowed';
-			}
-			
-			// Update UI
-			updateCloudStatus('⚪ לא מחובר', 'נותק');
-			updateSyncIndicator();
-			
-			const indicator = document.getElementById('statusIndicator');
-			if (indicator) {
-				indicator.style.background = '#dc3545';
-			}
-			
-			showToast('🔌 התנתקת מ-Google Sheets', 'warning');
-			console.log('🔌 Disconnected from Google - token refresh stopped');
-		}
-		
-		
-		function updateSyncIndicator(status) {
-			const indicator = document.getElementById('syncIndicator');
-			if (!indicator) return;
-			
-			const lastSync = localStorage.getItem('lastSyncTime');
-			
-			if (status === 'syncing') {
-				indicator.innerHTML = '<span style="color: #f39c12;">🔄 מסנכרן...</span>';
-			} else if (status === 'done') {
-				const now = new Date();
-				const dateStr = now.toLocaleDateString('he-IL', {day: '2-digit', month: '2-digit', year: 'numeric'});
-				const timeStr = now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'});
-				indicator.innerHTML = `<span style="color: #2ecc71;">✅ סונכרן: ${dateStr} ${timeStr}</span>`;
-				localStorage.setItem('lastSyncTime', now.toISOString());
-			} else if (status === 'error') {
-				indicator.innerHTML = '<span style="color: #e74c3c;">❌ סנכרון נכשל</span>';
-			} else {
-				if (lastSync) {
-					const date = new Date(lastSync);
-					const dateStr = date.toLocaleDateString('he-IL', {day: '2-digit', month: '2-digit', year: 'numeric'});
-					const timeStr = date.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'});
-					indicator.innerHTML = `<span style="color: rgba(255,255,255,0.9);">✅ סונכרן: ${dateStr} ${timeStr}</span>`;
-				} else {
-					indicator.innerHTML = '<span style="color: rgba(255,255,255,0.7);">🔄 טרם בוצע סנכרון</span>';
-				}
-			}
-		}
-		
-		
-		async function smartSync() {
-			if (!access_token || !spreadsheet_id) {
-				showToast('נדרש חיבור לענן לסנכרון', 'warning');
-				return false;
-			}
-			
-			const syncBtn = document.getElementById('syncBtn');
-			if (syncBtn) {
-				syncBtn.disabled = true;
-				syncBtn.style.opacity = '0.5';
-				syncBtn.innerHTML = '🔄 מסנכרן...';
-			}
-			
-			updateSyncIndicator('syncing');
-			updateCloudStatus('🔄 מסנכרן...', 'מסנכרן');
-			
-			try {
-				// Step 1: Load trades from cloud
-				console.log('📥 smartSync: Loading trades from cloud...');
-				const response = await gapi.client.sheets.spreadsheets.values.get({
-					spreadsheetId: spreadsheet_id,
-					range: 'Trades!A2:Z2000'
-				});
-				
-				const values = response.result.values || [];
-				const cloudTrades = values
-					.filter(row => row[1] && row[1].trim())
-					.map(row => {
-						let tradeManagement = {};
-						try {
-							if (row[19] && row[19].trim()) {
-								tradeManagement = JSON.parse(row[19]);
-							}
-						} catch(e) {}
-						
-						return {
-							id: row[0] || '',
-							symbol: row[1] || '',
-							entryDate: row[2] || '',
-							entryPrice: parseFloat(row[3]) || 0,
-							quantity: parseInt(row[4]) || 0,
-							positionType: row[5] || 'Long',
-							initialStop: parseFloat(row[6]) || 0,
-							currentStop: parseFloat(row[7]) || 0,
-							limitPrice: row[8] ? parseFloat(row[8]) : null,
-							exitDate: row[9] || null,
-							exitPrice: row[10] ? parseFloat(row[10]) : null,
-							fees: parseFloat(row[11]) || 0,
-							notes: row[12] || '',
-							createdAt: row[13] || '',
-							lastModified: row[14] || '',
-							tradeId: row[15] || null,
-							tradeManagement: tradeManagement,
-							marketPrice: row[25] || ''
-						};
-					});
-				
-				console.log(`📊 Cloud trades: ${cloudTrades.length}, Local trades: ${trades.length}`);
-				
-				// Step 2: Merge - newer lastModified wins
-				const mergedMap = new Map();
-				let uploaded = 0, downloaded = 0, unchanged = 0;
-				
-				// Add all cloud trades to map
-				cloudTrades.forEach(ct => {
-					if (ct.id) mergedMap.set(ct.id, ct);
-				});
-				
-				// Process local trades - overwrite if newer
-				trades.forEach(lt => {
-					if (!lt.id) return;
-					
-					const cloudTrade = mergedMap.get(lt.id);
-					
-					if (!cloudTrade) {
-						// Only local - will be uploaded
-						mergedMap.set(lt.id, lt);
-						uploaded++;
-					} else {
-						const localDate = lt.lastModified ? new Date(lt.lastModified) : new Date(0);
-						const cloudDate = cloudTrade.lastModified ? new Date(cloudTrade.lastModified) : new Date(0);
-						
-						if (localDate > cloudDate) {
-							mergedMap.set(lt.id, lt);
-							uploaded++;
-						} else if (cloudDate > localDate) {
-							downloaded++;
-						} else {
-							unchanged++;
-						}
-					}
-				});
-				
-				// Count cloud-only trades
-				cloudTrades.forEach(ct => {
-					if (ct.id && !trades.find(lt => lt.id === ct.id)) {
-						downloaded++;
-					}
-				});
-				
-				// Step 3: Apply merged result
-				trades = Array.from(mergedMap.values());
-				
-				// Step 4: Save merged to local
-				saveDataLocally();
-				
-				// Step 5: Save merged to cloud
-				await saveToGoogleSheets();
-				
-				// Step 6: Update UserBackup
-				await saveUserFieldsBackup(trades);
-				
-				// Step 7: Update UI
-				displayTrades();
-				updateAccountDisplay();
-				
-				updateSyncIndicator('done');
-				updateCloudStatus('✅ מסונכרן', 'סונכרן');
-				
-				showToast(`✅ סנכרון הושלם! 📤 ${uploaded} 📥 ${downloaded} ⏸️ ${unchanged}`, 'success');
-				console.log(`📊 Sync - uploaded: ${uploaded}, downloaded: ${downloaded}, unchanged: ${unchanged}`);
-				
-				return true;
-				
-			} catch (error) {
-				console.error('❌ smartSync error:', error);
-				updateSyncIndicator('error');
-				updateCloudStatus('⚠️ שגיאה בסנכרון', 'שגיאה');
-				showToast('❌ שגיאה בסנכרון - נסה שוב', 'error');
-				return false;
-				
-			} finally {
-				if (syncBtn) {
-					syncBtn.disabled = false;
-					syncBtn.style.opacity = '1';
-					syncBtn.innerHTML = '🔄 סנכרן';
-				}
 			}
 		}
 		
@@ -3864,8 +3542,6 @@
 
         // Initialize page when DOM is loaded
 		document.addEventListener('DOMContentLoaded', function() {
-			initPinProtection();   // put in remarks to cancel PWD check
-			//showApp();
 			initializeGoogleAPIs();
 			
 			// setTimeout(() => { tryAutoConnect(); }, 2000);  // ← Comment this out
@@ -6171,7 +5847,7 @@
 		}
 
         function showTab(event, tabName) {
-			// console.log('Switching to tab:', tabName);
+			console.log('Switching to tab:', tabName);
             const tabContents = document.querySelectorAll('.tab-content');
             tabContents.forEach(content => content.classList.remove('active'));
             
@@ -9951,10 +9627,7 @@
 				} else if (status.includes('לא נשמרו')) {
 					indicatorElement.style.background = '#fd7e14'; // Orange
 					indicatorElement.style.boxShadow = '0 0 10px rgba(253, 126, 20, 0.5)';
-				} else if (status.includes('שוחזר') || status.includes('התחבר')) {
-					indicatorElement.style.background = '#28a745'; // Green
-					indicatorElement.style.boxShadow = '0 0 10px rgba(40, 167, 69, 0.5)';
-				} else if (status.includes('לא מחובר') || status.includes('📵') || status.includes('נותק')) {
+				} else if (status.includes('לא מחובר') || status.includes('📵')) {
 					indicatorElement.style.background = '#dc3545'; // Red for disconnected
 					indicatorElement.style.boxShadow = '0 0 10px rgba(220, 53, 69, 0.5)';		
 				} else {
@@ -12782,14 +12455,6 @@
 		function toggleDebugPanel() {
 			const panel = document.getElementById('debugPanel');
 			panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-			
-			// Update PIN status when opening
-			if (panel.style.display === 'block') {
-				const pinStatusText = document.getElementById('pinStatusText');
-				if (pinStatusText) {
-					pinStatusText.textContent = localStorage.getItem(PIN_KEY) ? 'קוד מוגדר ✅' : 'אין קוד ❌';
-				}
-			}
 		}
 
 		function toggleDebugCategory(category) {
