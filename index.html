@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.3</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -8584,7 +8584,8 @@
 				amount: parseFloat(row[10]) || 0,
 				paid: (row[11] === 'כן' || row[11] === 'yes' || row[11] === '1') ? '1' : '0',
 				expense: parseFloat(row[12]) || 0,
-				notes: row[13] || ''
+				notes: row[13] || '',
+				updated_at: new Date().toISOString()
 			};
 		}
 
@@ -10812,8 +10813,7 @@
 			return visits.some(existing => 
 				existing.location_id === newVisit.location_id &&
 				existing.date === newVisit.date &&
-				existing.work_done === newVisit.work_done &&
-				existing.amount === newVisit.amount
+				existing.visit_type === newVisit.visit_type
 			);
 		}
 	   
@@ -10831,7 +10831,7 @@
 			const seen = new Set();
 			
 			visits.forEach(visit => {
-				const key = `${visit.location_id}-${visit.date}-${visit.work_done}-${visit.amount}`;
+				const key = `${visit.location_id}-${visit.date}-${visit.visit_type}`;
 				if (!seen.has(key)) {
 					seen.add(key);
 					uniqueVisits.push(visit);
