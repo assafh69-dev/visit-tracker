@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -2660,7 +2660,7 @@
 				<!-- Treatments Stats Box -->
 				<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
 					<div id="treatmentsStatsBox" style="background: #e8f5e8; border: 1px solid #27ae60; border-radius: 6px; padding: 8px 12px; font-size: 13px; color: #2c3e50;">
-						<span id="treatmentsCount">0</span> טיפולים מוצגים
+						<span id="treatmentsCount">0</span> מתוך <span id="treatmentsTotal2">0</span> טיפולים מוצגים
 						<span style="margin: 0 10px; color: #666;">|</span>
 						<span style="color: #27ae60; font-weight: bold;" id="treatmentsTotal">₪0</span> סה"כ הכנסות
 						<span style="margin: 0 10px; color: #666;">|</span>
@@ -14999,6 +14999,8 @@
 			
 			document.getElementById('treatmentsCount').textContent = count;
 			document.getElementById('treatmentsTotal').textContent = `${Math.round(total)} ₪`;
+			const totalEl = document.getElementById('treatmentsTotal2');
+			if (totalEl) totalEl.textContent = visits.length;
 			document.getElementById('treatmentsPaid').textContent = paidCount;
 			document.getElementById('treatmentsUnpaid').textContent = unpaidCount;
 			
