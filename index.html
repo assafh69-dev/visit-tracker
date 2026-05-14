@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -11959,14 +11959,9 @@
 						/// console.log(`📅 ${location.name}: יום מועדף חושב כ-${location.allowed_day} (לפי ביקור מ-${lastVisitDate})`);
 					}
 					
-					// חישוב תאריך הטיפול הבא
-					const lastDate = new Date(lastVisitDate);
-					const intervalDays = (location.interval_weeks || 4) * 7; // ברירת מחדל 4 שבועות
-					const nextDate = new Date(lastDate);
-					nextDate.setDate(lastDate.getDate() + intervalDays);
-					
-					// פורמט התאריך ל-YYYY-MM-DD
-					const nextVisitDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;	
+					// חישוב תאריך הטיפול הבא - מותאם ליום המועדף של הלקוח
+					const nextVisitDate = calculateNextVisitDate(lastVisitDate, location.interval_weeks, location.allowed_day);
+												
 					// עדכון האובייקט המקומי
 					location.last_visit = lastVisitDate;
 					location.next_visit = nextVisitDate;
@@ -12067,13 +12062,9 @@
 					fullVisits.sort((a, b) => new Date(b.date) - new Date(a.date));
 					const lastVisitDate = fullVisits[0].date;
 					
-					// חישוב תאריך הבא
-					const lastDate = new Date(lastVisitDate);
-					const intervalDays = (parseInt(location.interval_weeks) || 4) * 7;
-					const nextDate = new Date(lastDate);
-					nextDate.setDate(lastDate.getDate() + intervalDays);
-					const nextVisitDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth()+1).padStart(2,'0')}-${String(nextDate.getDate()).padStart(2,'0')}`;
-					
+					// חישוב תאריך הטיפול הבא - מותאם ליום המועדף של הלקוח
+					const nextVisitDate = calculateNextVisitDate(lastVisitDate, location.interval_weeks, location.allowed_day);
+						
 					location.last_visit = lastVisitDate;
 					location.next_visit = nextVisitDate;
 					location.updated_at = new Date().toISOString();
@@ -12097,6 +12088,31 @@
 			}
 		}
 		
+		// מחשב את תאריך הטיפול הבא, מותאם ליום המועדף של הלקוח
+		// אם התאריך המחושב לא נופל ביום המועדף - מקדם אותו ליום המועדף הראשון אחריו
+		function calculateNextVisitDate(lastVisitDate, intervalWeeks, allowedDay) {
+			const lastDate = new Date(lastVisitDate);
+			const intervalDays = (intervalWeeks || 4) * 7;
+			const nextDate = new Date(lastDate);
+			nextDate.setDate(lastDate.getDate() + intervalDays);
+			
+			// אם יש יום מועדף - להתאים את התאריך ליום המועדף הראשון אחרי החישוב
+			if (allowedDay && allowedDay !== '' && allowedDay !== 'כל יום') {
+				const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
+				const targetDayIndex = dayNames.indexOf(allowedDay);
+				
+				if (targetDayIndex !== -1) {
+					const currentDayIndex = nextDate.getDay();
+					let daysToAdd = targetDayIndex - currentDayIndex;
+					if (daysToAdd < 0) daysToAdd += 7; // ליום הבא בשבוע אם עברנו
+					nextDate.setDate(nextDate.getDate() + daysToAdd);
+				}
+			}
+			
+			// פורמט YYYY-MM-DD
+			return `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
+		}
+																								   
 		
 		// פונקציה לעדכון תאריכי טיפול עבור לקוח אחד לאחר הוספת ביקור
 		async function updateSingleLocationTreatmentDates(locationId) {
@@ -12121,13 +12137,8 @@
 					// עדכון last_visit לטיפול המלא האחרון
 					location.last_visit = lastVisitDate;
 					
-					// חישוב תאריך הטיפול הבא
-					const lastDate = new Date(lastVisitDate);
-					const intervalDays = (location.interval_weeks || 4) * 7;
-					const nextDate = new Date(lastDate);
-					nextDate.setDate(lastDate.getDate() + intervalDays);
-					
-					const nextVisitDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
+					// חישוב תאריך הטיפול הבא - מותאם ליום המועדף של הלקוח
+					const nextVisitDate = calculateNextVisitDate(lastVisitDate, location.interval_weeks, location.allowed_day);
 					location.next_visit = nextVisitDate;
 					
 					// עדכון updated_at - חיוני לסנכרון תקין מול הענן
