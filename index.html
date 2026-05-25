@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -10966,13 +10966,21 @@
 				loc.updated_at || new Date().toISOString()
 			]);
 
-			await gapi.client.sheets.spreadsheets.values.update({
+			// ✅ ניקוי הטווח לפני כתיבה - מונע שורות כפולות/עודפות שנשארות בגיליון
+			await gapi.client.sheets.spreadsheets.values.clear({
 				spreadsheetId: SPREADSHEET_ID,
-				range: `Locations!A2:S${locationValues.length + 1}`,
+				range: 'Locations!A2:S'
+			});
+
+			if (locationValues.length > 0) {
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: SPREADSHEET_ID,
+					range: 'Locations!A2',
 					valueInputOption: 'USER_ENTERED',
 					resource: { values: locationValues }
 				});
-				
+			}
+
 				console.log(`✅ Saved ${locationsArray.length} locations to cloud`);
 				return true;
 			} catch (error) {
@@ -11006,14 +11014,22 @@
 					visit.notes || '',
 					visit.updated_at || new Date().toISOString()
 				]);
-				
-				await gapi.client.sheets.spreadsheets.values.update({
+
+				// ✅ ניקוי הטווח לפני כתיבה - מונע שורות כפולות/עודפות שנשארות בגיליון
+				await gapi.client.sheets.spreadsheets.values.clear({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `Visits!A2:O${values.length + 1}`,
-					valueInputOption: 'USER_ENTERED',
-					resource: { values }
+					range: 'Visits!A2:O'
 				});
-				
+
+				if (values.length > 0) {
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: 'Visits!A2',
+						valueInputOption: 'USER_ENTERED',
+						resource: { values }
+					});
+				}
+
 				console.log(`✅ Saved ${visitsToSave.length} visits to cloud (no duplicates)`);
 				return true;
 				
@@ -11110,77 +11126,37 @@
 			if (!await validateToken() || receiptsArray.length === 0) return false;
 			
 			try {
-				// קרא את כל הרשומות הקיימות בענן
-				const response = await gapi.client.sheets.spreadsheets.values.get({
+				// בניית כל הרשומות (סט ייחודי מהמיזוג)
+				const values = receiptsArray.map(receipt => [
+					receipt.ID,
+					receipt.book_number,
+					receipt.receipt_number,
+					formatDateForSheets(receipt.date),
+					receipt.location_id,
+					receipt.location_name,
+					receipt.amount,
+					receipt.payment_type,
+					receipt.notes,
+					receipt.payment_id || '',
+					receipt.updated_at || new Date().toISOString()
+				]);
+
+				// ✅ ניקוי הטווח לפני כתיבה - מונע שורות כפולות/עודפות שנשארות בגיליון
+				await gapi.client.sheets.spreadsheets.values.clear({
 					spreadsheetId: SPREADSHEET_ID,
-					range: `${SHEETS.RECEIPTS}!A:K`
+					range: `${SHEETS.RECEIPTS}!A2:K`
 				});
-				
-				const rows = response.result.values || [];
-				const existingRows = rows.slice(1);
-				
-				// מפה: ID → row index בענן (לעדכון)
-				const idToRowIndex = {};
-				existingRows.forEach((row, idx) => {
-					if (row[0]) idToRowIndex[row[0]] = idx + 2;
-				});
-				
-				// הפרד בין רשומות לעדכון לרשומות חדשות
-				const toUpdate = [];
-				const toAppend = [];
-				
-				receiptsArray.forEach(receipt => {
-					const rowData = [
-						receipt.ID,
-						receipt.book_number,
-						receipt.receipt_number,
-						formatDateForSheets(receipt.date),
-						receipt.location_id,
-						receipt.location_name,
-						receipt.amount,
-						receipt.payment_type,
-						receipt.notes,
-						receipt.payment_id || '',
-						receipt.updated_at || new Date().toISOString()
-					];
-					
-					if (idToRowIndex[receipt.ID]) {
-						toUpdate.push({ rowIndex: idToRowIndex[receipt.ID], data: rowData });
-					} else {
-						toAppend.push(rowData);
-					}
-				});
-				
-				// עדכון רשומות קיימות בבאטץ' אחד
-				if (toUpdate.length > 0) {
-					const batchRequests = toUpdate.map(item => ({
-						range: `${SHEETS.RECEIPTS}!A${item.rowIndex}:K${item.rowIndex}`,
-						values: [item.data]
-					}));
-					
-					await gapi.client.sheets.spreadsheets.values.batchUpdate({
+
+				if (values.length > 0) {
+					await gapi.client.sheets.spreadsheets.values.update({
 						spreadsheetId: SPREADSHEET_ID,
-						resource: {
-							valueInputOption: 'USER_ENTERED',
-							data: batchRequests
-						}
-					});
-				}
-				
-				// הוספת רשומות חדשות
-				if (toAppend.length > 0) {
-					await gapi.client.sheets.spreadsheets.values.append({
-						spreadsheetId: SPREADSHEET_ID,
-						range: `${SHEETS.RECEIPTS}!A:K`,
+						range: `${SHEETS.RECEIPTS}!A2`,
 						valueInputOption: 'USER_ENTERED',
-						resource: { 
-							values: toAppend,
-							majorDimension: 'ROWS'
-						}
+						resource: { values }
 					});
 				}
-				
-				console.log(`✅ Receipts: ${toUpdate.length} updated, ${toAppend.length} added (from ${receiptsArray.length})`);
+
+				console.log(`✅ Saved ${receiptsArray.length} receipts to cloud (no duplicates)`);
 				return true;
 			} catch (error) {
 				console.error('Error in batch save receipts:', error);
@@ -11269,17 +11245,25 @@
 					exp.notes || '',
 					exp.updated_at || new Date().toISOString()
 				]);
-				
-				// Write data starting from row 2 (after header)
-				await gapi.client.sheets.spreadsheets.values.update({
+
+				// ✅ ניקוי הטווח לפני כתיבה - מונע שורות כפולות/עודפות שנשארות בגיליון
+				await gapi.client.sheets.spreadsheets.values.clear({
 					spreadsheetId: SPREADSHEET_ID,
-					range: 'Expenses!A2',
-					valueInputOption: 'RAW',
-					resource: {
-						values: values
-					}
+					range: 'Expenses!A2:O'
 				});
-				
+
+				// Write data starting from row 2 (after header)
+				if (values.length > 0) {
+					await gapi.client.sheets.spreadsheets.values.update({
+						spreadsheetId: SPREADSHEET_ID,
+						range: 'Expenses!A2',
+						valueInputOption: 'RAW',
+						resource: {
+							values: values
+						}
+					});
+				}
+
 				console.log('✅ Expenses saved to cloud');
 				return true;
 			} catch (error) {
