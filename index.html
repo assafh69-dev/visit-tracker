@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -5053,8 +5053,27 @@
 
 		// רינדור שורת לקוח (משותף לשני המצבים)
 		// Update the renderClientRow function to show last treatment date		
+		// חישוב סך החוב הכספי הידוע של לקוח בודד (אותה לוגיקה כמו טאב החובות).
+		// מדלג על טיפולים שסומנו "לא נדרש תשלום" (status '2'), וסוכם רק חוב חיובי.
+		function getClientTotalDebt(clientId) {
+			let totalDebt = 0;
+			visits.forEach(visit => {
+				if (visit.location_id !== clientId) return;
+				const paidInfo = parsePaidField(visit.paid);
+				if (paidInfo.status === '2') return; // לא נדרש תשלום
+				const visitAmount = parseFloat(visit.amount) || 0;
+				const paidAmount = getVisitPaidAmount(visit.ID);
+				const debt = visitAmount - paidAmount;
+				if (debt > 0.01) {
+					totalDebt += debt;
+				}
+			});
+			return totalDebt;
+		}
+
 		function renderClientRow(client) {
 			const nextVisitFormatted = formatDate(client.next_visit);
+			const clientDebt = getClientTotalDebt(client.ID);
 			
 			// בדיקה אם הלקוח מאחר
 			const isOverdue = client.daysDiff < 0 || client.daysOverdue > 0;
@@ -5115,7 +5134,14 @@
 								<span class="date-label">הבא:</span>
 								<span class="date-value" style="color: ${nextDateColor}; font-weight: 600;">${nextVisitFormatted}</span>
 							</div>
-							${client.base_amount > 0 ? 
+							${clientDebt > 0 ?
+								`<div class="planning-date-item">
+									<span class="date-label">חוב:</span>
+									<span class="date-value" style="color: #e74c3c; font-weight: 700;">🔴 ${Math.round(clientDebt)} ₪</span>
+								</div>`
+								: ''
+							}
+							${client.base_amount > 0 ?
 								`<div class="planning-amount-small">💰 ${client.base_amount} ₪</div>` 
 								: ''
 							}
@@ -9228,29 +9254,33 @@
 		function mergeByIdAndDate(localArray, cloudArray) {
 			const merged = new Map();
 			const stats = { uploaded: 0, downloaded: 0, unchanged: 0 };
-			
+			// אבחון: פירוט הרשומות שנספרות כ"הועלו" (ID + updated_at מקומי מול ענן)
+			const uploadedDetails = [];
+
 			// Add all cloud records to map
 			cloudArray.forEach(record => {
 				if (record.ID) {
 					merged.set(record.ID, { source: 'cloud', record });
 				}
 			});
-			
+
 			// Process local records
 			localArray.forEach(localRecord => {
 				if (!localRecord.ID) return;
-				
+
 				const existing = merged.get(localRecord.ID);
-				
+
 				if (!existing) {
 					// Only in local - will be uploaded
 					merged.set(localRecord.ID, { source: 'local', record: localRecord });
 					stats.uploaded++;
+					uploadedDetails.push({ ID: localRecord.ID, local: localRecord.updated_at || '(אין)', cloud: '(לא קיים בענן)', reason: 'מקומי בלבד' });
 				} else {
 					// Exists in both - compare dates
 					if (isNewer(localRecord, existing.record)) {
 						merged.set(localRecord.ID, { source: 'local', record: localRecord });
 						stats.uploaded++;
+						uploadedDetails.push({ ID: localRecord.ID, local: localRecord.updated_at || '(אין)', cloud: existing.record.updated_at || '(אין)', reason: 'מקומי חדש יותר' });
 					} else if (isNewer(existing.record, localRecord)) {
 						stats.downloaded++;
 					} else {
@@ -9258,6 +9288,8 @@
 					}
 				}
 			});
+
+			stats.uploadedDetails = uploadedDetails;
 			
 			// Count cloud-only records
 			cloudArray.forEach(record => {
@@ -9288,7 +9320,10 @@
 			}
 			
 			showLoading('מבצע סנכרון חכם...');
-			
+
+			// אבחון: איפוס לוג ההעלאות לפני הסינכרון
+			window.__syncUploadLog = [];
+
 			const totalStats = {
 				uploaded: 0,
 				downloaded: 0,
@@ -9353,6 +9388,39 @@
 				const summary = `✅ סנכרון הושלם!\n📤 הועלו: ${totalStats.uploaded}\n📥 הורדו: ${totalStats.downloaded}\n⏸️ ללא שינוי: ${totalStats.unchanged}`;
 				showToast(summary, 'success', 5000);
 				console.log('📊 Sync Summary:', totalStats);
+
+				// אבחון: אם היו העלאות - הצג מודל עם פירוט הרשומות (לאיתור סינכרון תקוע)
+				if (totalStats.uploaded > 0 && Array.isArray(window.__syncUploadLog) && window.__syncUploadLog.length > 0) {
+					const rows = window.__syncUploadLog.map(d => `
+						<tr>
+							<td style="border:1px solid #ddd; padding:6px;">${d.table}</td>
+							<td style="border:1px solid #ddd; padding:6px; font-family:monospace; font-size:11px;">${d.ID}</td>
+							<td style="border:1px solid #ddd; padding:6px; font-size:11px;">${d.reason}</td>
+							<td style="border:1px solid #ddd; padding:6px; font-size:11px; word-break:break-all;">${d.local}</td>
+							<td style="border:1px solid #ddd; padding:6px; font-size:11px; word-break:break-all;">${d.cloud}</td>
+						</tr>
+					`).join('');
+					const diagHtml = `
+						<div style="background:white; padding:20px; border-radius:12px; max-width:760px; width:92vw; max-height:80vh; overflow-y:auto; direction:rtl;">
+							<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+								<h3 style="margin:0; color:#e67e22;">🔎 אבחון סינכרון - ${window.__syncUploadLog.length} רשומות הועלו</h3>
+								<button onclick="closeAnyModal()" style="background:#e74c3c; border:none; color:white; font-size:20px; cursor:pointer; width:32px; height:32px; border-radius:50%;">×</button>
+							</div>
+							<p style="font-size:13px; color:#666; margin-bottom:12px;">אם אותן רשומות חוזרות בכל סינכרון - זו הבעיה. השווה את "מקומי" מול "ענן".</p>
+							<table style="width:100%; border-collapse:collapse; font-size:12px;">
+								<tr style="background:#f5f5f5;">
+									<th style="border:1px solid #ddd; padding:6px;">טבלה</th>
+									<th style="border:1px solid #ddd; padding:6px;">ID</th>
+									<th style="border:1px solid #ddd; padding:6px;">סיבה</th>
+									<th style="border:1px solid #ddd; padding:6px;">updated_at מקומי</th>
+									<th style="border:1px solid #ddd; padding:6px;">updated_at ענן</th>
+								</tr>
+								${rows}
+							</table>
+						</div>
+					`;
+					setTimeout(() => showModal(diagHtml), 600);
+				}
 				
 				if (syncBtn) {
 					syncBtn.disabled = false;
@@ -9383,6 +9451,11 @@
 				
 				// Merge
 				const { records, stats } = mergeByIdAndDate(localData, cloudData);
+
+				// אבחון: צירוף פרטי ההעלאות ללוג הגלובלי עם שם הטבלה
+				if (Array.isArray(window.__syncUploadLog) && Array.isArray(stats.uploadedDetails)) {
+					stats.uploadedDetails.forEach(d => window.__syncUploadLog.push({ table: tableName, ...d }));
+				}
 				
 				// Ensure all records have updated_at
 				records.forEach(r => {
