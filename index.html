@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3497,7 +3497,9 @@
 		let paymentVisitLinks = [];
 		let tasks = [];
 		let expenses = [];
-		
+		// דגל למעקב אם המשתמש ערך ידנית את שדה הסכום בטופס הטיפול (מונע דריסה אוטומטית)
+		let visitFormAmountManuallyEdited = false;
+
 		// Sync tracking variables
 		let lastSyncTime = localStorage.getItem('lastSyncTime') || null;
 		let pendingChanges = {
@@ -12096,15 +12098,17 @@
 			const nextDate = new Date(lastDate);
 			nextDate.setDate(lastDate.getDate() + intervalDays);
 			
-			// אם יש יום מועדף - להתאים את התאריך ליום המועדף הראשון אחרי החישוב
+			// אם יש יום מועדף - להתאים את התאריך ליום המועדף הקרוב ביותר (קדימה או אחורה)
 			if (allowedDay && allowedDay !== '' && allowedDay !== 'כל יום') {
 				const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 				const targetDayIndex = dayNames.indexOf(allowedDay);
-				
+
 				if (targetDayIndex !== -1) {
 					const currentDayIndex = nextDate.getDay();
 					let daysToAdd = targetDayIndex - currentDayIndex;
-					if (daysToAdd < 0) daysToAdd += 7; // ליום הבא בשבוע אם עברנו
+					// נרמול לטווח [-3, 3] - היום המועדף הקרוב ביותר
+					if (daysToAdd > 3) daysToAdd -= 7;
+					else if (daysToAdd < -3) daysToAdd += 7;
 					nextDate.setDate(nextDate.getDate() + daysToAdd);
 				}
 			}
@@ -15141,7 +15145,12 @@
 				const location = locations.find(loc => loc.ID === visitData.location_id);
 				locationName = location ? location.name : 'לקוח לא נמצא';
 			}
-			
+
+			// אתחול דגל עריכה ידנית של הסכום:
+			// אם נכנסנו לטיפול עם סכום אמיתי (>0) - נחשיב כאילו נקבע ידנית (לא נדרוס).
+			// אם הסכום 0/ריק - השדה יתעדכן אוטומטית לפי הזמן עד שיוקלד ערך ידני.
+			visitFormAmountManuallyEdited = isEdit && visitData && (parseFloat(visitData.amount) || 0) > 0;
+
 			// Get location ID for warning (edit mode or pre-selected)
 			let locationId = null;
 			if (isEdit && visitData) {
@@ -15251,7 +15260,7 @@
 						<!-- סכום -->
 						<div class="form-group" style="margin: 0;">
 							<label for="visitFormAmount" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💰 סכום:</label>
-							<input type="number" id="visitFormAmount" step="1" min="0" value="${isEdit ? (visitData.amount || 0) : ''}" placeholder="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+							<input type="number" id="visitFormAmount" step="1" min="0" value="${isEdit ? (visitData.amount || 0) : ''}" placeholder="0" oninput="visitFormAmountManuallyEdited = true;" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
 							<div style="display: flex; align-items: center; gap: 8px; margin-top: 5px;">
 								<div id="visitFormCalculatedAmount" style="font-size: 14px; color: #27ae60; font-weight: bold;"></div>
 								<button type="button" onclick="copyCalculatedToAmount()" style="background: #27ae60; color: white; border: none; border-radius: 4px; width: 28px; height: 28px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;" title="העתק לשדה סכום">⬆️</button>
@@ -15426,16 +15435,11 @@
 					calculatedDiv.textContent = `מחושב: ${Math.round(totalCost)}₪`;
 				}
 				
-				// במצב יצירה - עדכן תמיד. במצב עריכה - רק אם ריק
+				// עדכן את השדה אוטומטית כל עוד המשתמש לא ערך אותו ידנית.
+				// כך הערך עוקב אחרי הזמן (שעות + דקות) עד הקלדה ידנית, ואז ננעל.
 				const amountField = document.getElementById('visitFormAmount');
-				if (amountField) {
-					if (!isEditMode) {
-						// מצב יצירה - עדכן תמיד
-						amountField.value = Math.round(totalCost);
-					} else if (!amountField.value || amountField.value === '0' || amountField.value === '') {
-						// מצב עריכה - עדכן רק אם ריק
-						amountField.value = Math.round(totalCost);
-					}
+				if (amountField && !visitFormAmountManuallyEdited) {
+					amountField.value = Math.round(totalCost);
 				}
 				
 				// console.log(`💰 עלות מחושבת: ${Math.round(totalCost)}₪ (${hours.toFixed(2)} שעות × ${numWorkers} עובדים + ${expense}₪ הוצאות)`);
@@ -15458,6 +15462,7 @@
 				const match = calculatedDiv.textContent.match(/(\d+)/);
 				if (match) {
 					amountField.value = match[1];
+					visitFormAmountManuallyEdited = true;
 					showToast('הסכום הועתק', 'success');
 				}
 			}
@@ -19343,6 +19348,7 @@
 						const amountField = document.getElementById('visitFormAmount');
 						if (amountField && task.estimated_cost) {
 							amountField.value = task.estimated_cost;
+							visitFormAmountManuallyEdited = true;
 						}
 					}, 200);
 				}, 100);
