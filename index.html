@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4818,7 +4818,7 @@
 							let overdueHtml = '';
 							if (day.overdueClients.length > 0) {
 								overdueHtml = `
-									<div style="margin-bottom: 15px; background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); border: 2px solid #e74c3c; border-radius: 10px; padding: 12px;">
+									<div style="margin-top: 15px; background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); border: 2px solid #e74c3c; border-radius: 10px; padding: 12px;">
 										<div style="font-size: 14px; font-weight: 600; color: #c0392b; margin-bottom: 10px;">
 											⚠️ מאחרים דחופים (${day.overdueClients.length})
 										</div>
@@ -4864,9 +4864,9 @@
 										<div class="day-content-header">
 											${day.clients.length} טיפולים ליום ${day.dayName}'${day.date ? ' - ' + day.date : ''}${day.tasks && day.tasks.length > 0 ? ` • ${day.tasks.length} משימות` : ''}
 										</div>
-										${overdueHtml}
 										${tasksHtml}
 										${day.clients.map(client => renderClientRow(client)).join('')}
+										${overdueHtml}
 									</div>`;
 						}).join('')}
 					</div>
@@ -4917,8 +4917,7 @@
 						status: 'overdue'
 					};
 				})
-				.sort((a, b) => b.urgencyScore - a.urgencyScore)
-				.slice(0, 5); // מקסימום 5 לכל יום
+				.sort((a, b) => b.urgencyScore - a.urgencyScore); // ללא מגבלת כמות לכל יום
 		}
 
 		// רינדור רגיל (יומי/מאחרות)
@@ -4934,14 +4933,16 @@
 			}
 			
 			let html = headerHtml;
-			
-			// בתצוגה יומית - הוספת מאחרים דחופים ראשונים
+			let overdueHtml = '';
+
+			// בתצוגה יומית - משימות בהתחלה, מאחרים דחופים בסוף
 			if (currentPlanningView === 'daily') {
+				// מאחרים דחופים - נבנים כאן אך יתווספו אחרי הטיפולים הרגילים
 				const urgentOverdue = getUrgentOverdueClients();
-				
+
 				if (urgentOverdue.length > 0) {
-					html += `
-						<div style="margin-bottom: 20px; background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); border: 2px solid #e74c3c; border-radius: 12px; padding: 15px;">
+					overdueHtml = `
+						<div style="margin-top: 20px; background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); border: 2px solid #e74c3c; border-radius: 12px; padding: 15px;">
 							<h3 style="margin: 0 0 15px 0; color: #c0392b; font-size: 16px; display: flex; align-items: center; gap: 8px;">
 								⚠️ מאחרים דחופים (${urgentOverdue.length})
 								<span style="font-size: 12px; color: #666; font-weight: normal;">מרווח עד 3 חודשים</span>
@@ -4952,7 +4953,7 @@
 						</div>
 					`;
 				}
-				
+
 				// משימות להיום - משימות עצמיות של היום + משימות עצמיות באיחור
 				const todayStr = getLocalDateString();
 				const todayTasks = (typeof tasks !== 'undefined' ? tasks : []).filter(task => 
@@ -4995,9 +4996,12 @@
 				}
 			}
 			
-			// טיפולים רגילים
+			// טיפולים רגילים - קודם מי שבאמת התאריך שלו היום
 			html += planningClients.map(client => renderClientRow(client)).join('');
-			
+
+			// מאחרים דחופים - בסוף, אחרי הטיפולים הרגילים
+			html += overdueHtml;
+
 			container.innerHTML = html;
 			setTimeout(setTodayAsDefault, 100);
 		}
@@ -5047,8 +5051,7 @@
 						urgencyScore: daysOverdue / (interval * 7)
 					};
 				})
-				.sort((a, b) => b.urgencyScore - a.urgencyScore) // מיון לפי דחיפות
-				.slice(0, 10); // מקסימום 10 לקוחות
+				.sort((a, b) => b.urgencyScore - a.urgencyScore); // מיון לפי דחיפות - ללא מגבלת כמות
 		}
 
 		// רינדור שורת לקוח (משותף לשני המצבים)
@@ -11063,12 +11066,7 @@
 					}
 				}
 				
-				if (rowIndex === -1) {
-					console.warn(`⚠️ Visit ${visit.ID} not found in Sheets, cannot update`);
-					return false;
-				}
-				
-				// 2. עדכון רק השורה הזו - כולל updated_at בעמודה O
+				// 2. הכנת ערכי השורה - כולל updated_at בעמודה O
 				const updatedAt = visit.updated_at || new Date().toISOString();
 				const values = [[
 					visit.ID || '',
@@ -11087,14 +11085,28 @@
 					visit.notes || '',
 					updatedAt          // ✅ עמודה O - updated_at
 				]];
-				
+
+				// 3. אם השורה לא קיימת - להוסיף בסוף ב-append (ביקור חדש)
+				if (rowIndex === -1) {
+					await gapi.client.sheets.spreadsheets.values.append({
+						spreadsheetId: SPREADSHEET_ID,
+						range: 'Visits!A:O',
+						valueInputOption: 'USER_ENTERED',
+						insertDataOption: 'INSERT_ROWS',
+						resource: { values }
+					});
+					console.log(`✅ Appended new visit ${visit.ID}`);
+					return true;
+				}
+
+				// 4. עדכון השורה הקיימת
 				await gapi.client.sheets.spreadsheets.values.update({
 					spreadsheetId: SPREADSHEET_ID,
 					range: `Visits!A${rowIndex}:O${rowIndex}`,  // ✅ עד O
 					valueInputOption: 'USER_ENTERED',
 					resource: { values }
 				});
-				
+
 				console.log(`✅ Updated visit ${visit.ID} in row ${rowIndex}`);
 				return true;
 				
@@ -15684,11 +15696,11 @@
 					// שמירה מקומית
 					saveToLocalStorage();
 					
-					// שמירה בענן
+					// שמירה בענן - append של שורה אחת בלבד (לא לנקות את כל הגיליון)
 					let cloudSaved = false;
 					if (access_token && SPREADSHEET_ID) {
 						try {
-							cloudSaved = await saveVisitsBatch([newVisit]);
+							cloudSaved = await updateSingleVisitInSheets(newVisit);
 						} catch (error) {
 							console.error('Cloud save failed:', error);
 						}
