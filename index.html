@@ -964,6 +964,34 @@
 				font-size: 13px;
 			}
 
+			/* שורת צ'יפים עם פרטי הלקוח בשורת תכנון */
+			.planning-client-chips {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 5px;
+				margin-bottom: 8px;
+			}
+
+			.planning-chip {
+				display: inline-flex;
+				align-items: center;
+				gap: 3px;
+				background: #eef2f7;
+				color: #34495e;
+				border: 1px solid #dfe6ee;
+				border-radius: 12px;
+				padding: 2px 8px;
+				font-size: 12px;
+				font-weight: 500;
+				white-space: nowrap;
+			}
+
+			.planning-chip-price {
+				background: #e8f5e9;
+				color: #1e7e34;
+				border-color: #cbe7cf;
+			}
+
 			.client-requests {
 				color: #0066cc;
 				margin-bottom: 4px;
@@ -2067,16 +2095,17 @@
 				color: #2c3e50;
 			}
 			
-			/* סכום - קטן */
-			.planning-amount-small {
-				font-size: 12px;
-				color: #999;
-				text-align: center;
-				margin-top: 4px;
-				padding-top: 4px;
-				border-top: 1px solid #e9ecef;
+			/* צ'יפים - דחוסים במובייל */
+			.planning-client-chips {
+				gap: 4px;
+				margin-bottom: 8px;
 			}
-			
+
+			.planning-chip {
+				font-size: 11px;
+				padding: 2px 6px;
+			}
+
 			/* שורת כפתורים - דחוסה */
 			.planning-actions-row {
 				display: flex;
@@ -2488,7 +2517,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -5109,9 +5138,25 @@
 					break;
 				case 'future':
 					statusText = `בעוד ${client.daysDiff} ימים`;
-					break;	
+					break;
 			}
-			
+
+			// צ'יפים עם פרטי הלקוח שנדרשים בשטח (איש קשר, יום, תדירות, מחיר מוסכם)
+			const chips = [];
+			if (client.contact_person) {
+				chips.push(`<span class="planning-chip" title="איש קשר">🧑 ${client.contact_person}</span>`);
+			}
+			if (client.allowed_day) {
+				chips.push(`<span class="planning-chip" title="יום בשבוע">📅 יום ${client.allowed_day}'</span>`);
+			}
+			if (client.interval_weeks) {
+				chips.push(`<span class="planning-chip" title="תדירות">🔁 כל ${client.interval_weeks} שב'</span>`);
+			}
+			if (client.base_amount > 0) {
+				chips.push(`<span class="planning-chip planning-chip-price" title="מחיר מוסכם">💰 ${client.base_amount} ₪</span>`);
+			}
+			const clientChips = chips.length > 0 ? `<div class="planning-client-chips">${chips.join('')}</div>` : '';
+
 			return `
 				<div class="planning-client-row planning-status-${client.status}" data-client-id="${client.ID}">
 					<div class="planning-row-main">
@@ -5144,11 +5189,10 @@
 								</div>`
 								: ''
 							}
-							${client.base_amount > 0 ?
-								`<div class="planning-amount-small">💰 ${client.base_amount} ₪</div>` 
-								: ''
-							}
 						</div>
+
+						<!-- פרטי לקוח מהירים: איש קשר, יום, תדירות, מחיר -->
+						${clientChips}
 
 						<!-- שורה עליונה: פרופיל, פעיל, התחל טיפול -->
 						<div class="planning-actions-row">
@@ -6016,8 +6060,13 @@
 					
 					<!-- Header -->
 					<div style="border-bottom: 3px solid #3498db; padding-bottom: 15px; margin-bottom: 20px;">
-						<h2 style="margin: 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+						<h2 style="margin: 0; color: #2c3e50; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
 							👤 ${client.name}
+							<button onclick="editLocation('${clientId}')"
+									title="ערוך פרטי לקוח"
+									style="padding: 5px 12px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: normal;">
+								✏️ ערוך
+							</button>
 							<span style="font-size: 14px; color: #666; font-weight: normal;">${client.full_address}</span>
 						</h2>
 					</div>
@@ -6070,13 +6119,7 @@
 								style="padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 15px; color: #666;">
 							💰 תשלומים
 						</button>
-						<button onclick="switchClientProfileTab('info')" 
-								class="client-profile-tab" 
-								data-tab="info"
-								style="padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 15px; color: #666;">
-							ℹ️ פרטים
-						</button>
-						<button onclick="switchClientProfileTab('tasks')" 
+						<button onclick="switchClientProfileTab('tasks')"
 								class="client-profile-tab" 
 								data-tab="tasks"
 								style="padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 15px; color: #666;">
@@ -6383,48 +6426,6 @@
 					`;
 				}
 				
-			} else if (tabName === 'info') {
-				// Info tab
-				html = `
-					<div style="display: grid; gap: 15px;">
-						<div>
-							<strong style="color: #666;">כתובת מלאה:</strong>
-							<div style="margin-top: 5px;">${client.full_address}</div>
-						</div>
-						<div>
-							<strong style="color: #666;">איש קשר:</strong>
-							<div style="margin-top: 5px;">${client.contact_person || 'לא צוין'}</div>
-						</div>
-						<div>
-							<strong style="color: #666;">טלפון:</strong>
-							<div style="margin-top: 5px;">${client.phone || 'לא צוין'}</div>
-						</div>
-						<div>
-							<strong style="color: #666;">יום מועדף:</strong>
-							<div style="margin-top: 5px;">${client.allowed_day || 'לא צוין'}</div>
-						</div>
-						<div>
-							<strong style="color: #666;">תדירות (שבועות):</strong>
-							<div style="margin-top: 5px;">${client.interval_weeks || 4} שבועות</div>
-						</div>
-						<div>
-							<strong style="color: #666;">מחיר בסיס:</strong>
-							<div style="margin-top: 5px;">${client.base_amount || 0}₪</div>
-						</div>
-						<div>
-							<strong style="color: #666;">הערות:</strong>
-							<div style="margin-top: 5px; background: #f8f9fa; padding: 10px; border-radius: 5px; min-height: 60px;">
-								${client.notes || 'אין הערות'}
-							</div>
-						</div>
-						<div style="text-align: center; margin-top: 10px;">
-							<button onclick="editLocation('${clientId}')" 
-									style="padding: 8px 20px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer;">
-								✏️ ערוך פרטי לקוח
-							</button>
-						</div>
-					</div>
-				`;
 			} else if (tabName === 'tasks') {
 				// Tasks tab
 				const clientTasks = tasks.filter(t => t.client_id === clientId);
