@@ -2488,7 +2488,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v3.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v3.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -9393,6 +9393,8 @@
 				console.log('📊 Sync Summary:', totalStats);
 
 				// אבחון: אם היו העלאות - הצג מודל עם פירוט הרשומות (לאיתור סינכרון תקוע)
+				// --- מבוטל: הצגת מודל האבחון בזמן סנכרון (הקוד נשמר לשימוש עתידי) ---
+				/*
 				if (totalStats.uploaded > 0 && Array.isArray(window.__syncUploadLog) && window.__syncUploadLog.length > 0) {
 					const rows = window.__syncUploadLog.map(d => `
 						<tr>
@@ -9424,12 +9426,14 @@
 					`;
 					setTimeout(() => showModal(diagHtml), 600);
 				}
-				
+				*/
+				// --- סוף בלוק מבוטל ---
+
 				if (syncBtn) {
 					syncBtn.disabled = false;
 					syncBtn.innerHTML = '🔄 סנכרן';
 				}
-				
+
 				return true;
 				
 			} catch (error) {
@@ -15334,7 +15338,7 @@
 						<!-- סכום -->
 						<div class="form-group" style="margin: 0;">
 							<label for="visitFormAmount" style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">💰 סכום:</label>
-							<input type="number" id="visitFormAmount" step="1" min="0" value="${isEdit ? (visitData.amount || 0) : ''}" placeholder="0" oninput="visitFormAmountManuallyEdited = true;" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+							<input type="text" inputmode="decimal" id="visitFormAmount" value="${isEdit ? (visitData.amount || 0) : ''}" placeholder="0" oninput="visitFormAmountManuallyEdited = true;" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
 							<div style="display: flex; align-items: center; gap: 8px; margin-top: 5px;">
 								<div id="visitFormCalculatedAmount" style="font-size: 14px; color: #27ae60; font-weight: bold;"></div>
 								<button type="button" onclick="copyCalculatedToAmount()" style="background: #27ae60; color: white; border: none; border-radius: 4px; width: 28px; height: 28px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;" title="העתק לשדה סכום">⬆️</button>
