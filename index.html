@@ -2517,7 +2517,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v5.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -4636,10 +4636,12 @@
 					return clients.filter(client => {
 						// בדיקה 1: next_visit השבוע
 						const nextVisitThisWeek = client.daysDiff >= -daysSinceSunday && client.daysDiff <= daysUntilSaturday;
-						
-						// בדיקה 2: last_visit השבוע
+
+						// בדיקה 2: last_visit השבוע.
+						// בשבת לא מציגים טיפולים שכבר בוצעו - השבוע נגמר, והתצוגה
+						// צריכה להתפנות לקראת השבוע הבא.
 						let lastVisitThisWeek = false;
-						if (client.last_visit) {
+						if (client.last_visit && todayDay !== 6) {
 							const lastVisitDate = new Date(client.last_visit);
 							lastVisitDate.setHours(0, 0, 0, 0);
 							const today = new Date();
@@ -4791,6 +4793,42 @@
 
 
 		// רינדור למצב שבועי ומאחרות עם טאבי ימים
+		// לאיזה יום בשבוע לשייך לקוח בתצוגה.
+		// בתצוגות "השבוע"/"הבא" הימים מייצגים תאריכים אמיתיים, ולכן התאריך הוא
+		// שקובע ולא allowed_day (שממילא כבר נלקח בחשבון בחישוב next_visit).
+		// לקוח שכבר טופל השבוע משויך ליום שבו טופל בפועל.
+		// בתצוגות "מאחרים"/"עתידי" אין תאריכים בכותרות, ולכן נשאר קיבוץ לפי היום המועדף.
+		function getPlanningDayForClient(client, viewName) {
+			const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
+
+			if (viewName !== 'weekly' && viewName !== 'next_week') {
+				return client.allowed_day || 'א';
+			}
+
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+
+			// ראשון של השבוע המוצג
+			const weekStart = new Date(today);
+			weekStart.setDate(today.getDate() - today.getDay() + (viewName === 'next_week' ? 7 : 0));
+			const weekEnd = new Date(weekStart);
+			weekEnd.setDate(weekStart.getDate() + 6);
+
+			const dayIfInWeek = (dateStr) => {
+				if (!dateStr) return null;
+				const d = new Date(dateStr);
+				d.setHours(0, 0, 0, 0);
+				if (isNaN(d.getTime())) return null;
+				if (d < weekStart || d > weekEnd) return null;
+				return dayNames[d.getDay()];
+			};
+
+			// טיפול מתוכננן קודם, ואם אין - היום שבו הטיפול בוצע בפועל
+			return dayIfInWeek(client.next_visit)
+				|| dayIfInWeek(client.last_visit)
+				|| (client.allowed_day || 'א');
+		}
+
 		function renderWeeklyPlanningByDays() {
 			const container = document.getElementById('planningCardsContainer');
 			const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
@@ -4810,8 +4848,8 @@
 			}
 
 			const daysData = dayNames.map(dayName => {
-				const dayClients = planningClients.filter(client => 
-					(client.allowed_day || 'א') === dayName
+				const dayClients = planningClients.filter(client =>
+					getPlanningDayForClient(client, currentPlanningView) === dayName
 				);
 				// מיון לקוחות היום
 				dayClients.sort((a, b) => {
