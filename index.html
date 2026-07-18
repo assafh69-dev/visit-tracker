@@ -2517,7 +2517,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v5.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v5.1</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -8188,6 +8188,89 @@
 			return await response.json();
 		}
 
+		// קריאה עם streaming. חובה לתשובות ארוכות - חיבור לא-streaming נופל בדרך.
+		// מחזירה { text, stopReason, usage }. onProgress מקבל את מספר התווים שהתקבלו עד כה.
+		async function callClaudeAPIStreaming(requestBody, onProgress) {
+			const apiKey = getAnthropicKey();
+			if (!apiKey) {
+				throw new Error('לא הוגדר מפתח Claude API בהגדרות המערכת');
+			}
+
+			let response;
+			try {
+				response = await fetch(CLAUDE_API_URL, {
+					method: 'POST',
+					headers: {
+						'content-type': 'application/json',
+						'x-api-key': apiKey,
+						'anthropic-version': '2023-06-01',
+						'anthropic-dangerous-direct-browser-access': 'true'
+					},
+					body: JSON.stringify({ ...requestBody, stream: true })
+				});
+			} catch (networkError) {
+				console.error('Claude API network error:', networkError);
+				throw new Error('לא הצלחתי להתחבר ל-Claude. בדוק חיבור לאינטרנט');
+			}
+
+			if (!response.ok) {
+				let detail = '';
+				try {
+					const errBody = await response.json();
+					detail = errBody?.error?.message || '';
+				} catch (e) { /* גוף שגיאה לא תקין */ }
+
+				if (response.status === 401) throw new Error('מפתח Claude לא תקין');
+				if (response.status === 429) throw new Error('חריגה ממכסת השימוש ב-Claude. נסה שוב בעוד כמה דקות');
+				if (response.status >= 500) throw new Error('שרת Claude לא זמין כרגע');
+				throw new Error(`שגיאה מ-Claude (${response.status}): ${detail || 'ללא פירוט'}`);
+			}
+
+			const reader = response.body.getReader();
+			const decoder = new TextDecoder();
+			let buffer = '';
+			let text = '';
+			let stopReason = null;
+			let usage = null;
+			let thinkingChars = 0;
+
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
+
+				buffer += decoder.decode(value, { stream: true });
+				const lines = buffer.split('\n');
+				buffer = lines.pop(); // השורה האחרונה עשויה להיות חלקית
+
+				for (const line of lines) {
+					if (!line.startsWith('data: ')) continue;
+
+					let event;
+					try {
+						event = JSON.parse(line.slice(6));
+					} catch (e) {
+						continue; // שורה לא תקינה - ממשיכים
+					}
+
+					if (event.type === 'content_block_delta') {
+						if (event.delta?.type === 'text_delta') {
+							text += event.delta.text;
+							if (onProgress) onProgress(text.length, thinkingChars);
+						} else if (event.delta?.type === 'thinking_delta') {
+							thinkingChars += (event.delta.thinking || '').length;
+						}
+					} else if (event.type === 'message_delta') {
+						if (event.delta?.stop_reason) stopReason = event.delta.stop_reason;
+						if (event.usage) usage = event.usage;
+					} else if (event.type === 'error') {
+						throw new Error(`שגיאה מ-Claude במהלך הזרמת התשובה: ${event.error?.message || 'ללא פירוט'}`);
+					}
+				}
+			}
+
+			return { text, stopReason, usage };
+		}
+
 		// בדיקת חיבור - הקריאה הקטנה ביותר האפשרית
 		async function testClaudeConnection() {
 			const statusEl = document.getElementById('claudeConnectionStatus');
@@ -8537,9 +8620,11 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 					incomeMessages.length ? incomeMessages.join('\n') : '(לא סופק)'
 				].join('\n');
 
-				const result = await callClaudeAPI({
+				const totalMessages = visitMessages.length + incomeMessages.length;
+
+				const result = await callClaudeAPIStreaming({
 					model: CLAUDE_MODEL,
-					max_tokens: 16000,
+					max_tokens: 64000,
 					thinking: { type: 'adaptive' },
 					output_config: {
 						effort: 'high',
@@ -8547,33 +8632,37 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 					},
 					system: TELEGRAM_PARSE_INSTRUCTIONS,
 					messages: [{ role: 'user', content: userContent }]
+				}, (textChars, thinkingChars) => {
+					// עדכון חי כדי שלא ייראה תקוע. כתיבה ישירה ל-DOM ולא דרך
+					// showLoading, שמדפיס לקונסול בכל קריאה ויציף אותו.
+					const el = document.getElementById('loadingText');
+					if (el) {
+						el.textContent = textChars === 0
+							? `מנתח ${totalMessages} הודעות...`
+							: `כותב תוצאות... ${textChars} תווים`;
+					}
 				});
 
-				console.log('Claude raw response:', result);
-				console.log('stop_reason:', result?.stop_reason, '| content blocks:', (result?.content || []).map(b => b.type));
+				console.log('Claude stream finished. stop_reason:', result.stopReason, '| usage:', result.usage);
 
-				if (result.stop_reason === 'max_tokens') {
+				if (result.stopReason === 'max_tokens') {
 					hideLoading();
-					showToast('הפיענוח נקטע - יותר מדי נתונים. הרץ שוב על טווח תאריכים קצר יותר', 'error', 8000);
+					console.error('Truncated output:', result.text);
+					showToast('הפיענוח נקטע גם בתקציב המוגדל. הרץ שוב על טווח תאריכים קצר יותר', 'error', 9000);
 					return;
 				}
 
-				const jsonText = (result.content || [])
-					.filter(b => b.type === 'text')
-					.map(b => b.text)
-					.join('');
-
 				let parsed;
 				try {
-					parsed = JSON.parse(jsonText);
+					parsed = JSON.parse(result.text);
 				} catch (e) {
-					console.error('Claude returned unparseable output:', jsonText);
+					console.error('Claude returned unparseable output:', result.text);
 					hideLoading();
 					showToast('התשובה מ-Claude לא הייתה בפורמט תקין. נסה שוב', 'error', 6000);
 					return;
 				}
 
-				console.log('Telegram parse result:', parsed, 'usage:', result.usage);
+				console.log('Telegram parse result:', parsed);
 
 				const flaggedCount = flagPossibleDuplicateVisits(parsed.visits || []);
 
