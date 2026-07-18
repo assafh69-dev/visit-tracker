@@ -2517,7 +2517,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.2</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3096,6 +3096,9 @@
 					<h3>📥 ייבוא נתונים</h3>
 					
 					<div class="import-main-buttons" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
+						<button onclick="showTelegramImportModal()" class="btn" style="background: #0d6efd; color: white;">
+							🤖 ייבוא מטלגרם
+						</button>
 						<button onclick="createImportTable()" class="btn">
 							🔗 צור טבלת עזר לייבוא
 						</button>
@@ -3248,6 +3251,25 @@
 								<input type="text" id="defaultWorkDone" value="חרמש גיזום וניקיון" placeholder="לדוגמה: חרמש גיזום וניקיון" onchange="saveCostSettings()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
 								<small style="color: #888;">יוזן אוטומטית בשדה "עבודה שבוצעה" בטיפול חדש מסוג "מלא"</small>
 							</div>
+						</div>
+					</div>
+
+					<!-- Claude API Key (for Telegram import) -->
+					<div style="background: rgba(13, 110, 253, 0.08); border: 2px solid #0d6efd; border-radius: 8px; padding: 15px;">
+						<h4 style="color: #0d6efd; margin-bottom: 10px;">🤖 מפתח Claude API</h4>
+						<p style="font-size: 13px; color: #666; margin: 0 0 12px 0;">
+							נדרש לייבוא מטלגרם. נשמר במכשיר הזה בלבד ולא נשלח לענן.
+						</p>
+						<div class="form-group">
+							<label for="anthropicApiKey">מפתח:</label>
+							<input type="password" id="anthropicApiKey" placeholder="sk-ant-..." onchange="saveAnthropicKey()" autocomplete="off" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; direction: ltr; text-align: left;">
+						</div>
+						<div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px;">
+							<button onclick="testClaudeConnection()"
+									style="padding: 10px 18px; background: #0d6efd; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+								🔌 בדוק חיבור ל-Claude
+							</button>
+							<span id="claudeConnectionStatus" style="font-size: 13px; color: #666;"></span>
 						</div>
 					</div>
 				</div>
@@ -4338,7 +4360,13 @@
 						document.getElementById('defaultWorkDone').value = costSettings.defaultWorkDone || '';
 					}
 				}
-				
+
+				// מפתח Claude - מקומי בלבד, לא מגיע מהענן
+				const savedAnthropicKey = localStorage.getItem('anthropic_api_key');
+				if (savedAnthropicKey && document.getElementById('anthropicApiKey')) {
+					document.getElementById('anthropicApiKey').value = savedAnthropicKey;
+				}
+
 				console.log('Data loaded from local storage');
 				
 			} catch (error) {
@@ -8085,6 +8113,589 @@
 		}, 300000); // בדיקה כל 5 דקות
 	   
 	   
+
+		// ===== Claude API - מפתח וחיבור (לייבוא מטלגרם) =====
+
+		const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+		const CLAUDE_MODEL = 'claude-opus-4-8';
+
+		// המפתח נשמר מקומית בלבד - במכוון לא נשלח לגיליון SystemSettings בענן
+		function saveAnthropicKey() {
+			const key = (document.getElementById('anthropicApiKey').value || '').trim();
+
+			if (!key) {
+				localStorage.removeItem('anthropic_api_key');
+				showToast('מפתח Claude נמחק', 'info');
+				return;
+			}
+
+			localStorage.setItem('anthropic_api_key', key);
+			showToast('מפתח Claude נשמר במכשיר', 'success');
+		}
+
+		function getAnthropicKey() {
+			return localStorage.getItem('anthropic_api_key') || '';
+		}
+
+		// קריאה בסיסית ל-Claude. מחזירה את הודעת התשובה או זורקת שגיאה מפורטת.
+		async function callClaudeAPI(requestBody) {
+			const apiKey = getAnthropicKey();
+			if (!apiKey) {
+				throw new Error('לא הוגדר מפתח Claude API בהגדרות המערכת');
+			}
+
+			let response;
+			try {
+				response = await fetch(CLAUDE_API_URL, {
+					method: 'POST',
+					headers: {
+						'content-type': 'application/json',
+						'x-api-key': apiKey,
+						'anthropic-version': '2023-06-01',
+						// נדרש כדי לאפשר קריאה ישירה מהדפדפן
+						'anthropic-dangerous-direct-browser-access': 'true'
+					},
+					body: JSON.stringify(requestBody)
+				});
+			} catch (networkError) {
+				// כשל לפני קבלת תשובה - כמעט תמיד CORS או ניתוק רשת
+				console.error('Claude API network error:', networkError);
+				throw new Error('לא הצלחתי להתחבר ל-Claude. בדוק חיבור לאינטרנט, ואם הבעיה חוזרת פתח את הקונסול (F12) וחפש שגיאת CORS');
+			}
+
+			if (!response.ok) {
+				let detail = '';
+				try {
+					const errBody = await response.json();
+					detail = errBody?.error?.message || '';
+				} catch (e) { /* גוף שגיאה לא תקין - נסתפק בסטטוס */ }
+
+				if (response.status === 401) {
+					throw new Error('מפתח Claude לא תקין. בדוק אותו בהגדרות המערכת');
+				}
+				if (response.status === 429) {
+					throw new Error('חריגה ממכסת השימוש ב-Claude. נסה שוב בעוד כמה דקות');
+				}
+				if (response.status === 400 && detail.includes('credit')) {
+					throw new Error('אין יתרה בחשבון Claude API. יש לטעון קרדיט בקונסול של Anthropic');
+				}
+				if (response.status >= 500) {
+					throw new Error('שרת Claude לא זמין כרגע. נסה שוב בעוד כמה דקות');
+				}
+				throw new Error(`שגיאה מ-Claude (${response.status}): ${detail || 'ללא פירוט'}`);
+			}
+
+			return await response.json();
+		}
+
+		// בדיקת חיבור - הקריאה הקטנה ביותר האפשרית
+		async function testClaudeConnection() {
+			const statusEl = document.getElementById('claudeConnectionStatus');
+			const key = (document.getElementById('anthropicApiKey').value || '').trim();
+
+			// אם הוקלד מפתח ולא נשמר עדיין - לשמור לפני הבדיקה
+			if (key && key !== getAnthropicKey()) {
+				localStorage.setItem('anthropic_api_key', key);
+			}
+
+			if (!getAnthropicKey()) {
+				statusEl.textContent = '❌ לא הוזן מפתח';
+				statusEl.style.color = '#dc3545';
+				return;
+			}
+
+			statusEl.textContent = '⏳ בודק...';
+			statusEl.style.color = '#666';
+
+			try {
+				const result = await callClaudeAPI({
+					model: CLAUDE_MODEL,
+					max_tokens: 16,
+					messages: [{ role: 'user', content: 'ענה במילה אחת: תקין' }]
+				});
+
+				const reply = (result.content || [])
+					.filter(b => b.type === 'text')
+					.map(b => b.text)
+					.join(' ')
+					.trim();
+
+				statusEl.textContent = `✅ החיבור עובד (Claude ענה: "${reply}")`;
+				statusEl.style.color = '#28a745';
+				showToast('החיבור ל-Claude עובד', 'success');
+				console.log('Claude connection OK. Usage:', result.usage);
+
+			} catch (error) {
+				statusEl.textContent = '❌ ' + error.message;
+				statusEl.style.color = '#dc3545';
+				showToast(error.message, 'error', 6000);
+				console.error('Claude connection test failed:', error);
+			}
+		}
+
+		// ===== ייבוא מטלגרם - פיענוח AI =====
+
+		// ההנחיות לפיענוח. כל שינוי כאן משנה את איכות הייבוא - לערוך בזהירות.
+		const TELEGRAM_PARSE_INSTRUCTIONS = `אתה מפענח יומן עבודה של בעל עסק גינון, שנכתב בהודעות טלגרם קצרות בעברית.
+המטרה: להפיק רשימת טיפולים ורשימת תשלומים, במבנה שמתאים לייבוא לתוכנית הניהול שלו.
+
+## עקרון העל
+בכל אי-בהירות - להשאיר ריק ולסמן, לא לנחש ולא להשלים בהיגיון.
+עדיף לכלול טיפול מסופק מאשר להשמיט טיפול שבוצע: כפילות המשתמש רואה ומתקן, טיפול חסר לוקח לו חודשיים לגלות.
+
+## מבנה היומן
+הודעה שמזכירה לקוח פותחת סשן. "סיום" סוגר אותו. מה שביניהם מתאר את העבודה.
+משך = הפרש בין חותמות הזמן, אלא אם נכתב במפורש בטקסט.
+
+## זיהוי לקוחות
+תקבל רשימת לקוחות פעילים בפורמט "כתובת מלאה | איש קשר".
+- שדה customer חייב להיות הכתובת המלאה **בדיוק כפי שהיא ברשימה**, כולל העיר.
+- ההתאמה יכולה להיות לפי כתובת חלקית, כתיב שונה (קנטי/קאנטי, ז'בוטינסקי/זבוטינסקי), או **לפי שם איש הקשר בלבד** ("גואל. מכולת" = הכתובת שבה איש הקשר גואל).
+- סדר המילים יכול להתהפך ("אלי קקל 18" = הכתובת "קקל 18" שאיש הקשר בה אלי).
+- שם איש קשר יכול להופיע לבדו בהמשך היום או ביום אחר, בהתבסס על הקשר קודם.
+
+**אסור בתכלית האיסור לתקן מספר בית.** אם נכתב "אושה 9" והרשימה מכילה רק "אושה 7" - זה יכול להיות לקוח חדש או טעות הקלדה, ואין דרך לדעת. במקרה כזה:
+customer = הכתובת כפי שנכתבה בטלגרם, needs_review = true, review_reason = "לקוח לא נמצא ברשימה".
+
+אם כתובת קיימת בשתי ערים ואין בהודעה הכרעה - needs_review = true עם הסבר.
+
+## סוג טיפול - שתי אפשרויות בלבד
+- "מלא": חרמש, גיזום, ניקיון, כיסוח, חיתוך עצים, פינוי גזם, גירוף, מפוח
+- "אחר": השקיה, שתילה, תיקון טכני, החלפת מתזים/צנרת, שדרוג
+בספק - "מלא". לעולם לא ערכים אחרים.
+
+## משך
+- ביטוי מפורש בטקסט **גובר** על הפרש חותמות הזמן. "4.5 שעות" = 270 דקות גם אם החותמות אומרות אחרת.
+- שעת התחלה או סיום מפורשת בטקסט גוברת גם היא ("התחלתי בשעה 11", "סיום. 19:30", "סיום לפני רבע שעה").
+- לפענח ביטויים: "שעתיים"=120, "שעה וחצי"=90, "שעתיים ורבע"=135, "כמעט 3 שעות"=~175, "2.75 שעות"=165.
+- **לא לעגל** לרבעי שעה. לרשום את המספר האמיתי.
+- **סשן בלי "סיום": duration = 0, needs_review = true.** אין להסיק שהסשן נגמר כשהתחיל הלקוח הבא.
+
+## מצבים מיוחדים
+- **"המשך"**: שורה נפרדת ביום שבו הוא נכתב. **לא למזג** עם הטיפול הקודם ולא לשנות אותו.
+- **לקוחות מקבילים** (עבודה על שני בניינים לסירוגין, למשל "מבצע נחשון 12 14" או השדה 7 ו-9): שורה נפרדת לכל לקוח, המשך הכולל מתחלק שווה בשווה, ובהערות של כל שורה לציין "טיפול מקביל ל-<הלקוח השני>".
+- **מחיר שהוזכר** בהודעה (למשל "מעוניינת ב-350") - להכניס ל-amount.
+- **הוצאה עבור לקוח** ("קניתי ל אלי 125 שח") - לתוך notes של הטיפול, לא לשדה נפרד.
+
+## מה לא להכניס כטיפול
+- רעש: "יציאה", "יציאה מאוחרת", "בבית", "הביתה", "מתחיל", "אחרי הפסקה", "גשם", "אזעקה", "צפירה", "שוב כביסה"
+- קניות ותחזוקה: "יורי" (חנות כלים), "משתלת כל גן", "רמי לוי", "שופרסל", "קניתי חרמש"
+- הוצאות עסקיות: דלק, ציוד
+- מידע עסקי שאינו טיפול: סיכום תנאים, מחיר או תדירות שסוכמו בשיחה
+כל אלה, אם יש בהם מידע ששווה לבדוק - ל-review_notes.
+
+## תשלומים (מקובץ ההכנסות)
+- client_address: אותם כללי זיהוי כמו בטיפולים.
+- אמצעי תשלום: "העברה"/"צ'ק"/"ביט" לפי הכתוב; אם לא צוין - "מזומן".
+- תשלום שמכסה כמה טיפולים ("1300 כולל עבור 2 טיפולים, 700 קודם 600 היום") - שורה אחת עם הסכום הכולל והפירוט בהערה.
+- "נקלט כסף בחשבון. מי??" או כל תשלום שלא ברור מי שילם - לא ליצור שורה, ל-review_notes.
+- original_text: הטקסט המקורי המלא של ההודעה.
+- אם מוזכר תשלום גם ביומן הטיפולים וגם ביומן ההכנסות - ליצור שורה **אחת בלבד**, מקובץ ההכנסות.
+
+## שדות
+date בפורמט YYYY-MM-DD. duration בדקות (מספר שלם). amount מספר, 0 אם לא ידוע.
+notes בעברית, קצר וענייני. needs_review=true בכל מקום שיש ספק, עם review_reason קצר שמסביר מה לבדוק.`;
+
+		// סכימת הפלט - מבטיחה JSON תקין
+		const TELEGRAM_PARSE_SCHEMA = {
+			type: 'object',
+			properties: {
+				visits: {
+					type: 'array',
+					description: 'טיפולים שבוצעו',
+					items: {
+						type: 'object',
+						properties: {
+							date: { type: 'string', description: 'YYYY-MM-DD' },
+							customer: { type: 'string', description: 'כתובת מלאה כולל עיר' },
+							treatment: { type: 'string', enum: ['מלא', 'אחר'] },
+							work_done: { type: 'string' },
+							duration: { type: 'integer', description: 'דקות. 0 אם לא ידוע' },
+							amount: { type: 'number' },
+							notes: { type: 'string' },
+							needs_review: { type: 'boolean' },
+							review_reason: { type: 'string', description: 'ריק אם needs_review=false' }
+						},
+						required: ['date', 'customer', 'treatment', 'work_done', 'duration', 'amount', 'notes', 'needs_review', 'review_reason'],
+						additionalProperties: false
+					}
+				},
+				payments: {
+					type: 'array',
+					description: 'תשלומים שהתקבלו',
+					items: {
+						type: 'object',
+						properties: {
+							date: { type: 'string', description: 'YYYY-MM-DD' },
+							time: { type: 'string', description: 'HH:MM' },
+							client_address: { type: 'string' },
+							amount: { type: 'number' },
+							payment_method: { type: 'string' },
+							notes: { type: 'string' },
+							original_text: { type: 'string' },
+							needs_review: { type: 'boolean' },
+							review_reason: { type: 'string' }
+						},
+						required: ['date', 'time', 'client_address', 'amount', 'payment_method', 'notes', 'original_text', 'needs_review', 'review_reason'],
+						additionalProperties: false
+					}
+				},
+				review_notes: {
+					type: 'array',
+					description: 'הודעות שלא הפכו לטיפול או לתשלום אך שווה לבדוק אותן',
+					items: {
+						type: 'object',
+						properties: {
+							date: { type: 'string' },
+							original_text: { type: 'string' },
+							reason: { type: 'string', description: 'למה לא נכנס כטיפול או תשלום' }
+						},
+						required: ['date', 'original_text', 'reason'],
+						additionalProperties: false
+					}
+				}
+			},
+			required: ['visits', 'payments', 'review_notes'],
+			additionalProperties: false
+		};
+
+		// רשימת הלקוחות הפעילים, בפורמט שהמודל מקבל
+		function buildActiveClientsList() {
+			return locations
+				.filter(loc => {
+					const a = loc.active;
+					// ברירת מחדל: פעיל, אלא אם סומן במפורש כלא פעיל
+					return !(a === false || a === 'FALSE' || a === 'false' || a === 'לא');
+				})
+				.map(loc => {
+					const address = (loc.name || loc.full_address || '').trim();
+					if (!address) return null;
+					const contact = (loc.contact_person || '').trim();
+					return contact ? `${address} | ${contact}` : address;
+				})
+				.filter(Boolean)
+				.join('\n');
+		}
+
+		// קריאת קובץ JSON של טלגרם והחזרת ההודעות בטווח התאריכים
+		function readTelegramJsonFile(file, fromDate, toDate) {
+			return new Promise((resolve, reject) => {
+				const reader = new FileReader();
+
+				reader.onload = () => {
+					try {
+						const data = JSON.parse(reader.result);
+						const messages = data.messages || [];
+
+						const filtered = messages
+							.filter(m => m.type === 'message' && typeof m.text === 'string' && m.text.trim())
+							.filter(m => {
+								const day = (m.date || '').slice(0, 10);
+								if (fromDate && day < fromDate) return false;
+								if (toDate && day > toDate) return false;
+								return true;
+							})
+							.map(m => `[${m.date}] ${m.text}`);
+
+						resolve(filtered);
+					} catch (e) {
+						reject(new Error(`הקובץ ${file.name} אינו JSON תקין של טלגרם`));
+					}
+				};
+
+				reader.onerror = () => reject(new Error(`שגיאה בקריאת הקובץ ${file.name}`));
+				reader.readAsText(file, 'UTF-8');
+			});
+		}
+
+		// סימון טיפולים שכבר קיימים בתוכנית. מסמן בלבד - לעולם לא מסיר.
+		function flagPossibleDuplicateVisits(parsedVisits) {
+			let flagged = 0;
+
+			parsedVisits.forEach(v => {
+				const existing = visits.find(ex => {
+					if (ex.date !== v.date) return false;
+					const loc = locations.find(l => l.ID === ex.location_id);
+					const locName = (loc?.name || loc?.full_address || '').trim();
+					if (!locName || locName !== v.customer.trim()) return false;
+					return (ex.visit_type || '') === v.treatment;
+				});
+
+				if (existing) {
+					v.notes = `⚠️ ייתכן כפול - קיים כבר בתוכנית. ${v.notes || ''}`.trim();
+					flagged++;
+				}
+			});
+
+			return flagged;
+		}
+
+		// מודל בחירת הקבצים
+		function showTelegramImportModal() {
+			if (!getAnthropicKey()) {
+				showToast('יש להגדיר מפתח Claude API בהגדרות המערכת', 'warning', 5000);
+				return;
+			}
+
+			const modalHTML = `
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 520px; width: 92vw; text-align: right;">
+					<h3 style="margin: 0 0 6px 0; color: #0d6efd;">🤖 ייבוא מטלגרם</h3>
+					<p style="color: #666; font-size: 13px; margin: 0 0 18px 0;">
+						הקבצים יפוענחו ויכתבו לטבלת עזר חדשה. משם - "ייבוא מהיר וכולל" כרגיל.
+					</p>
+
+					<div class="form-group" style="margin-bottom: 14px;">
+						<label>קובץ טיפולים (קבוצת "גינות"):</label>
+						<input type="file" id="telegramVisitsFile" accept=".json" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+					</div>
+
+					<div class="form-group" style="margin-bottom: 14px;">
+						<label>קובץ תשלומים (קבוצת "הכנסות"):</label>
+						<input type="file" id="telegramIncomesFile" accept=".json" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+					</div>
+
+					<p style="font-size: 12px; color: #888; margin: 0 0 14px 0;">אפשר לבחור רק אחד מהם.</p>
+
+					<div style="display: flex; gap: 10px; margin-bottom: 18px;">
+						<div class="form-group" style="flex: 1;">
+							<label>מתאריך:</label>
+							<input type="date" id="telegramFromDate" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+						</div>
+						<div class="form-group" style="flex: 1;">
+							<label>עד תאריך:</label>
+							<input type="date" id="telegramToDate" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+						</div>
+					</div>
+					<p style="font-size: 12px; color: #888; margin: -8px 0 18px 0;">ריק = כל הקובץ. מומלץ עד חודש בכל הרצה.</p>
+
+					<div style="display: flex; gap: 10px; justify-content: center;">
+						<button onclick="runTelegramImport()"
+								style="padding: 12px 25px; background: #0d6efd; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px;">
+							🤖 פענח וכתוב לטבלת עזר
+						</button>
+						<button onclick="closeAnyModal();"
+								style="padding: 12px 25px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px;">
+							ביטול
+						</button>
+					</div>
+				</div>
+			`;
+
+			const container = document.getElementById('modalContainer');
+			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
+			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
+			container.onclick = closeAnyModal;
+		}
+
+		// התהליך המלא: קריאה -> פיענוח -> סימון כפילויות -> כתיבה לטבלת עזר חדשה
+		async function runTelegramImport() {
+			const visitsFile = document.getElementById('telegramVisitsFile').files[0];
+			const incomesFile = document.getElementById('telegramIncomesFile').files[0];
+			const fromDate = document.getElementById('telegramFromDate').value;
+			const toDate = document.getElementById('telegramToDate').value;
+
+			if (!visitsFile && !incomesFile) {
+				showToast('יש לבחור לפחות קובץ אחד', 'warning');
+				return;
+			}
+			if (!await validateToken()) {
+				showToast('התחבר לגוגל קודם - הטבלה נוצרת בענן', 'warning');
+				return;
+			}
+
+			closeAnyModal();
+
+			try {
+				showLoading('קורא את הקבצים...');
+
+				const visitMessages = visitsFile ? await readTelegramJsonFile(visitsFile, fromDate, toDate) : [];
+				const incomeMessages = incomesFile ? await readTelegramJsonFile(incomesFile, fromDate, toDate) : [];
+
+				if (visitMessages.length === 0 && incomeMessages.length === 0) {
+					hideLoading();
+					showToast('לא נמצאו הודעות בטווח התאריכים שנבחר', 'warning', 5000);
+					return;
+				}
+
+				const clientsList = buildActiveClientsList();
+				if (!clientsList) {
+					hideLoading();
+					showToast('אין לקוחות פעילים בתוכנית - טען נתונים קודם', 'error', 5000);
+					return;
+				}
+
+				showLoading(`מפענח ${visitMessages.length + incomeMessages.length} הודעות מול Claude...`);
+
+				const userContent = [
+					'## רשימת הלקוחות הפעילים',
+					clientsList,
+					'',
+					'## יומן הטיפולים (קבוצת "גינות")',
+					visitMessages.length ? visitMessages.join('\n') : '(לא סופק)',
+					'',
+					'## יומן ההכנסות (קבוצת "הכנסות")',
+					incomeMessages.length ? incomeMessages.join('\n') : '(לא סופק)'
+				].join('\n');
+
+				const result = await callClaudeAPI({
+					model: CLAUDE_MODEL,
+					max_tokens: 16000,
+					thinking: { type: 'adaptive' },
+					output_config: {
+						effort: 'high',
+						format: { type: 'json_schema', schema: TELEGRAM_PARSE_SCHEMA }
+					},
+					system: TELEGRAM_PARSE_INSTRUCTIONS,
+					messages: [{ role: 'user', content: userContent }]
+				});
+
+				if (result.stop_reason === 'max_tokens') {
+					hideLoading();
+					showToast('הפיענוח נקטע - יותר מדי נתונים. הרץ שוב על טווח תאריכים קצר יותר', 'error', 8000);
+					return;
+				}
+
+				const jsonText = (result.content || [])
+					.filter(b => b.type === 'text')
+					.map(b => b.text)
+					.join('');
+
+				let parsed;
+				try {
+					parsed = JSON.parse(jsonText);
+				} catch (e) {
+					console.error('Claude returned unparseable output:', jsonText);
+					hideLoading();
+					showToast('התשובה מ-Claude לא הייתה בפורמט תקין. נסה שוב', 'error', 6000);
+					return;
+				}
+
+				console.log('Telegram parse result:', parsed, 'usage:', result.usage);
+
+				const flaggedCount = flagPossibleDuplicateVisits(parsed.visits || []);
+
+				showLoading('יוצר טבלת עזר וכותב את התוצאות...');
+				const spreadsheetId = await createTelegramImportTable();
+				await writeTelegramResultsToHelper(spreadsheetId, parsed);
+
+				localStorage.setItem('importTableId', spreadsheetId);
+				updateImportTableStatus();
+
+				hideLoading();
+				window.open(`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`, '_blank');
+
+				const needsReview = (parsed.visits || []).filter(v => v.needs_review).length;
+				let summary = `✅ ${(parsed.visits || []).length} טיפולים, ${(parsed.payments || []).length} תשלומים`;
+				if (flaggedCount) summary += ` | ${flaggedCount} סומנו כייתכן כפולים`;
+				if (needsReview) summary += ` | ${needsReview} דורשים בדיקה`;
+				showToast(summary, 'success', 9000);
+
+			} catch (error) {
+				hideLoading();
+				console.error('Telegram import failed:', error);
+				showToast(error.message || 'שגיאה בייבוא מטלגרם', 'error', 8000);
+			}
+		}
+
+		// טבלת עזר חדשה לכל ייבוא מטלגרם - כך לעולם לא נכתב על נתונים קיימים
+		async function createTelegramImportTable() {
+			const response = await gapi.client.sheets.spreadsheets.create({
+				resource: {
+					properties: { title: `telegram_import_${getLocalDateString()}` },
+					sheets: [
+						{ properties: { title: 'Locations' } },
+						{ properties: { title: 'Visits' } },
+						{ properties: { title: 'Receipts' } },
+						{ properties: { title: 'PaymentsImport' } },
+						{ properties: { title: 'SystemSettings' } },
+						{ properties: { title: 'הערות_לבדיקה' } }
+					]
+				}
+			});
+
+			const spreadsheetId = response.result.spreadsheetId;
+			await addImportHeaders(spreadsheetId);
+
+			await gapi.client.sheets.spreadsheets.values.update({
+				spreadsheetId: spreadsheetId,
+				range: 'הערות_לבדיקה!A1:C1',
+				valueInputOption: 'RAW',
+				resource: { values: [['תאריך', 'הטקסט המקורי', 'למה לא נכנס']] }
+			});
+
+			return spreadsheetId;
+		}
+
+		// כתיבת תוצאות הפיענוח לגליונות המתאימים
+		async function writeTelegramResultsToHelper(spreadsheetId, parsed) {
+			const visitRows = (parsed.visits || []).map(v => {
+				const [year, month, day] = (v.date || '').split('-');
+				const notes = v.needs_review
+					? `❗ ${v.review_reason || 'דורש בדיקה'}. ${v.notes || ''}`.trim()
+					: (v.notes || '');
+
+				// 13 עמודות בדיוק, בסדר הכותרות של גליון Visits
+				return [
+					parseInt(year) || '', parseInt(month) || '', parseInt(day) || '',
+					v.customer || '',
+					'',                      // contact_person - נשאר ריק במכוון
+					v.treatment || 'מלא',
+					v.date || '',
+					v.work_done || '',
+					v.duration || 0,
+					v.amount || 0,
+					0,                       // paid
+					0,                       // expense
+					notes
+				];
+			});
+
+			const paymentRows = (parsed.payments || []).map(p => {
+				const notes = p.needs_review
+					? `❗ ${p.review_reason || 'דורש בדיקה'}. ${p.notes || ''}`.trim()
+					: (p.notes || '');
+
+				// 7 עמודות בדיוק, בסדר הכותרות של גליון PaymentsImport
+				return [
+					p.date || '', p.time || '', p.client_address || '',
+					p.amount || 0, p.payment_method || 'מזומן',
+					notes, p.original_text || ''
+				];
+			});
+
+			const noteRows = (parsed.review_notes || []).map(n => [
+				n.date || '', n.original_text || '', n.reason || ''
+			]);
+
+			const writes = [];
+			if (visitRows.length) {
+				writes.push(gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: spreadsheetId,
+					range: `Visits!A2:M${visitRows.length + 1}`,
+					valueInputOption: 'RAW',
+					resource: { values: visitRows }
+				}));
+			}
+			if (paymentRows.length) {
+				writes.push(gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: spreadsheetId,
+					range: `PaymentsImport!A2:G${paymentRows.length + 1}`,
+					valueInputOption: 'RAW',
+					resource: { values: paymentRows }
+				}));
+			}
+			if (noteRows.length) {
+				writes.push(gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: spreadsheetId,
+					range: `הערות_לבדיקה!A2:C${noteRows.length + 1}`,
+					valueInputOption: 'RAW',
+					resource: { values: noteRows }
+				}));
+			}
+
+			await Promise.all(writes);
+			console.log(`Written to helper table: ${visitRows.length} visits, ${paymentRows.length} payments, ${noteRows.length} notes`);
+		}
 
 		// שמירת הגדרות עלות פשוטה יותר
 		function saveCostSettings() {
@@ -21121,6 +21732,7 @@
 					title: '📥 ייבוא נתונים',
 					color: '#0d6efd',
 					items: [
+						{ name: '🤖 ייבוא מטלגרם', desc: 'בוחר קובצי JSON שיוצאו מקבוצות הטלגרם, מפענח אותם מול Claude ורשימת הלקוחות הפעילים, וכותב את התוצאה לטבלת עזר <b>חדשה</b>. משם ממשיכים ב"ייבוא מהיר וכולל" כרגיל.', warn: 'הפיענוח לא מושלם. יש לעבור על הטבלה לפני הייבוא — שורות עם ❗ או ⚠️ דורשות תשומת לב.' },
 						{ name: '🔗 צור טבלת עזר לייבוא', desc: 'יוצר גיליון Google חדש ונפרד עם כותרות מוכנות, לרישום ידני של לקוחות/טיפולים/קבלות. נפתח בלשונית חדשה והקישור אליו נשמר.' },
 						{ name: '🚀 ייבוא מהיר וכולל', desc: 'מושך מטבלת העזר לקוחות, טיפולים וקבלות בבת אחת. מדלג על לקוחות שכבר קיימים (לפי שם או כתובת), ואז שומר את החדשים לגיליון הראשי.' },
 						{ name: '💳 ייבוא תשלומים', desc: 'מייבא רק את גיליון PaymentsImport מטבלת העזר. מזהה לקוח לפי כתובת חלקית; שורות שלא זוהו מוצגות בסוף.' },
@@ -21167,7 +21779,8 @@
 					title: '⚙️ הגדרות מערכת',
 					color: '#6c757d',
 					items: [
-						{ name: 'תעריפים ותיאור ברירת מחדל', desc: 'נשמר אוטומטית בכל שינוי, גם מקומית וגם לענן.' }
+						{ name: 'תעריפים ותיאור ברירת מחדל', desc: 'נשמר אוטומטית בכל שינוי, גם מקומית וגם לענן.' },
+						{ name: '🤖 מפתח Claude API', desc: 'נדרש לייבוא מטלגרם. נשמר במכשיר הזה בלבד ולא נשלח לענן — אם תתחבר ממכשיר אחר תצטרך להזין אותו שוב.' }
 					]
 				}
 			];
