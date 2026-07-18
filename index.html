@@ -2517,7 +2517,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.1</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.2</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3082,8 +3082,15 @@
 
 			<!-- System Section -->
 			<section id="system" class="section">
-				<h2>🛠️ מערכת</h2>
-				
+				<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+					<h2 style="margin: 0;">🛠️ מערכת</h2>
+					<button onclick="showSystemHelp()" title="הדרכה - מה כל כפתור עושה"
+							style="display: flex; align-items: center; gap: 8px; padding: 8px 14px 8px 8px; background: #e7f1ff; color: #0d6efd; border: 2px solid #0d6efd; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: bold;">
+						<span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #0d6efd; color: white; font-size: 16px;">?</span>
+						הדרכה
+					</button>
+				</div>
+
 				<!-- Import Section -->
 				<div class="form-section">
 					<h3>📥 ייבוא נתונים</h3>
@@ -21106,6 +21113,108 @@
 
 
 		// הצגת אישור לפני שחזור
+		// חלונית הדרכה לטאב מערכת - הסבר תמציתי על כל כפתור
+		function showSystemHelp() {
+			// כל קבוצה: כותרת, צבע, ורשימת פריטים {name, desc, warn}
+			const helpGroups = [
+				{
+					title: '📥 ייבוא נתונים',
+					color: '#0d6efd',
+					items: [
+						{ name: '🔗 צור טבלת עזר לייבוא', desc: 'יוצר גיליון Google חדש ונפרד עם כותרות מוכנות, לרישום ידני של לקוחות/טיפולים/קבלות. נפתח בלשונית חדשה והקישור אליו נשמר.' },
+						{ name: '🚀 ייבוא מהיר וכולל', desc: 'מושך מטבלת העזר לקוחות, טיפולים וקבלות בבת אחת. מדלג על לקוחות שכבר קיימים (לפי שם או כתובת), ואז שומר את החדשים לגיליון הראשי.' },
+						{ name: '💳 ייבוא תשלומים', desc: 'מייבא רק את גיליון PaymentsImport מטבלת העזר. מזהה לקוח לפי כתובת חלקית; שורות שלא זוהו מוצגות בסוף.' },
+						{ name: '⚡ חשב מחירים לפי זמן', desc: 'לטיפולים שסכומם 0 ויש להם משך בדקות - מחשב סכום לפי תעריף שעתי שמזינים בחלונית. לא נוגע בטיפולים שכבר יש להם סכום או תשלום מקושר.' },
+						{ name: '🔗 קישור אוטומטי תשלומים-טיפולים', desc: 'מחפש התאמות בין תשלומים לטיפולים פתוחים ומציג רשימת הצעות. הקישור בפועל נעשה רק אחרי אישור בחלונית - הכפתור עצמו לא משנה כלום.' },
+						{ name: '🔄 המר "כללי" ל"מלא"', desc: 'ניקוי נתונים: מסדר סוגי טיפול ישנים ל"מלא"/"אחר", ומוחק את ההערה "יובא מטבלת עזר" מטיפולים ומלקוחות.' },
+						{ name: '📍 פרק כתובות לשדות', desc: 'מפצל כתובת מלאה לרחוב ומספר בית עבור לקוחות שהשדות אצלם ריקים. לא דורס ערכים שכבר קיימים.' },
+						{ name: '📅 עדכן תאריכי טיפול לפי היסטוריה', desc: 'לכל לקוח פעיל: קובע "טיפול אחרון" לפי הטיפול <b>המלא</b> האחרון, ומחשב מחדש את תאריך הטיפול הבא לפי המרווח והיום המועדף.', warn: 'דורס תאריכי טיפול הבא ששינית ידנית.' }
+					]
+				},
+				{
+					title: '💾 גיבוי ושחזור',
+					color: '#ffc107',
+					items: [
+						{ name: '💾 צור גיבוי עכשיו', desc: 'מעתיק את כל הגיליונות לגיליונות גיבוי מקבילים באותו קובץ.', warn: 'נשמר דור אחד בלבד - גיבוי חדש דורס את הקודם.' },
+						{ name: '🔄 שחזר מגיבוי', desc: 'מחזיר את הנתונים מגיליונות הגיבוי אל הגיליונות הפעילים.', warn: 'הפעולה ההרסנית ביותר במערכת: כל מה שנוסף מאז הגיבוי האחרון נמחק.' }
+					]
+				},
+				{
+					title: '📤 ייצוא נתונים',
+					color: '#0dcaf0',
+					items: [
+						{ name: '📤 ייצוא טיפולים (מבנה קלאסי)', desc: 'כותב את הטיפולים בטווח התאריכים לגיליון ExportVisitsClassic במבנה הישן (לאקסל/רואה חשבון). מנקה את הגיליון הזה וכותב מחדש בכל פעם - הנתונים המקוריים לא נוגעים.', warn: 'זה ייצוא, לא גיבוי - אי אפשר לשחזר ממנו.' },
+						{ name: 'השנה / שנה שעברה / הכל', desc: 'קיצורי דרך שממלאים את שדות התאריך בלבד.' }
+					]
+				},
+				{
+					title: '📊 דוחות וסטטיסטיקות',
+					color: '#6f42c1',
+					items: [
+						{ name: '📈 סיכום הכנסות שנתי', desc: 'חלונית עם פירוט חודשי לשנה נבחרת: טיפולים, שעות, הכנסה, הוצאות פועל ורווח נטו.' },
+						{ name: '👥 דוח לקוחות פעילים', desc: 'נפתח בחלון הדפסה נפרד. רשימת הלקוחות הפעילים עם מרווח הטיפול ותעריף שעתי ממוצע.' },
+						{ name: '🔍 איתור טיפולים כפולים', desc: 'נפתח בחלון הדפסה נפרד. מאתר טיפולים עם אותו לקוח ואותו תאריך. רק מציג - המחיקה ידנית.' }
+					]
+				},
+				{
+					title: '🗂️ ניהול נתונים',
+					color: '#dc3545',
+					items: [
+						{ name: '🗑️ נקה את כל הנתונים המקומיים', desc: 'מרוקן את הנתונים מהמכשיר בלבד. הגיליון בענן נשאר שלם, וטעינה מהענן תחזיר הכל.', warn: 'אם אחרי הניקוי תלחץ "שמור לענן" - המצב הריק יידרס על הגיליון.' }
+					]
+				},
+				{
+					title: '⚙️ הגדרות מערכת',
+					color: '#6c757d',
+					items: [
+						{ name: 'תעריפים ותיאור ברירת מחדל', desc: 'נשמר אוטומטית בכל שינוי, גם מקומית וגם לענן.' }
+					]
+				}
+			];
+
+			const groupsHTML = helpGroups.map(group => `
+				<div style="margin-bottom: 22px;">
+					<h4 style="margin: 0 0 10px 0; padding-bottom: 6px; border-bottom: 2px solid ${group.color}; color: ${group.color};">${group.title}</h4>
+					${group.items.map(item => `
+						<div style="margin-bottom: 12px;">
+							<div style="font-weight: bold; font-size: 14px; color: #212529;">${item.name}</div>
+							<div style="font-size: 13px; color: #555; line-height: 1.5;">${item.desc}</div>
+							${item.warn ? `<div style="font-size: 12px; color: #856404; background: #fff3cd; border-radius: 6px; padding: 6px 10px; margin-top: 5px;">⚠️ ${item.warn}</div>` : ''}
+						</div>
+					`).join('')}
+				</div>
+			`).join('');
+
+			const modalHTML = `
+				<div style="background: white; border-radius: 12px; max-width: 620px; width: 92vw; max-height: 85vh; display: flex; flex-direction: column; text-align: right;">
+					<div style="padding: 20px 25px 12px 25px; border-bottom: 1px solid #eee;">
+						<h3 style="margin: 0; color: #0d6efd;">❓ הדרכה - טאב מערכת</h3>
+						<p style="margin: 6px 0 0 0; font-size: 13px; color: #888;">מה כל כפתור עושה ומה ההבדל בין הדומים</p>
+					</div>
+					<div style="padding: 20px 25px; overflow-y: auto; flex: 1;">
+						${groupsHTML}
+						<div style="background: #f8f9fa; border-radius: 8px; padding: 14px; font-size: 13px; line-height: 1.7;">
+							<div style="font-weight: bold; margin-bottom: 8px;">🧭 ההבדלים שקל להתבלבל בהם</div>
+							<div><b>סנכרן</b> - מיזוג דו-כיווני בין המכשיר לענן. <b>טען מהענן</b> - הענן דורס את המכשיר. <b>שמור לענן</b> - המכשיר דורס את הענן.</div>
+							<div style="margin-top: 6px;"><b>גיבוי</b> - עותק בתוך אותו קובץ, ניתן לשחזור. <b>ייצוא</b> - דוח חד-כיווני לאקסל, לא ניתן לשחזור.</div>
+							<div style="margin-top: 6px;"><b>ניקוי נתונים מקומיים</b> - מוחק במכשיר בלבד. <b>שחזור מגיבוי</b> - דורס את הענן.</div>
+						</div>
+					</div>
+					<div style="padding: 15px 25px; border-top: 1px solid #eee; text-align: center;">
+						<button onclick="closeAnyModal();"
+								style="padding: 12px 30px; background: #0d6efd; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px;">
+							סגור
+						</button>
+					</div>
+				</div>
+			`;
+
+			const container = document.getElementById('modalContainer');
+			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
+			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
+			container.onclick = closeAnyModal;
+		}
+
 		function showRestoreConfirm() {
 			const lastBackup = localStorage.getItem('lastBackupTime');
 			const lastBackupText = lastBackup 
