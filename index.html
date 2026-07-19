@@ -6912,6 +6912,33 @@
 
 
 		async function deleteLocation(locationId) {
+			let relatedVisitsCount = visits.filter(v => v.location_id === locationId).length;
+			let relatedPaymentsCount = payments.filter(p => (p.client_id || p.location_id) === locationId).length;
+
+			// בדיקה נוספת מול הענן - הנתונים המקומיים עלולים להיות לא מעודכנים
+			// (למשל אם עדיין לא סונכרן במכשיר הזה מאז שהוזן טיפול/תשלום במכשיר אחר)
+			if (access_token && SPREADSHEET_ID) {
+				showLoading('בודק טיפולים ותשלומים קיימים בענן...');
+				try {
+					const [cloudVisits, cloudPayments] = await Promise.all([
+						loadVisitsFromSheetsRaw(),
+						loadPaymentsFromSheetsRaw()
+					]);
+					const cloudVisitsCount = cloudVisits.filter(v => v.location_id === locationId).length;
+					const cloudPaymentsCount = cloudPayments.filter(p => (p.client_id || p.location_id) === locationId).length;
+					relatedVisitsCount = Math.max(relatedVisitsCount, cloudVisitsCount);
+					relatedPaymentsCount = Math.max(relatedPaymentsCount, cloudPaymentsCount);
+				} catch (error) {
+					console.error('Error checking cloud history before delete:', error);
+				}
+				hideLoading();
+			}
+
+			if (relatedVisitsCount > 0 || relatedPaymentsCount > 0) {
+				showToast(`⚠️ לא ניתן למחוק - ללקוח יש ${relatedVisitsCount} טיפולים ו-${relatedPaymentsCount} תשלומים במערכת. יש למחוק אותם קודם`, 'warning', 8000);
+				return;
+			}
+
 			if (confirm('האם אתה בטוח שברצונך למחוק את הלקוח?')) {
 				// מחיקה מקומית
 				locations = locations.filter(g => g.ID != locationId);
