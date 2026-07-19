@@ -2517,7 +2517,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v6.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -8585,7 +8585,8 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 			}
 
 			const modalHTML = `
-				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 520px; width: 92vw; text-align: right;">
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 520px; width: 92vw; text-align: right; position: relative;">
+					<button onclick="closeAnyModal()" title="סגור" style="position: absolute; top: 10px; left: 12px; background: none; border: none; font-size: 24px; line-height: 1; color: #999; cursor: pointer; padding: 4px;">×</button>
 					<h3 style="margin: 0 0 6px 0; color: #0d6efd;">🤖 ייבוא מטלגרם</h3>
 					<p style="color: #666; font-size: 13px; margin: 0 0 18px 0;">
 						הקבצים יפוענחו ויכתבו לטבלת עזר חדשה. משם - "ייבוא מהיר וכולל" כרגיל.
@@ -8637,8 +8638,8 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 
 			const container = document.getElementById('modalContainer');
 			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
-			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
-			container.onclick = closeAnyModal;
+			container.innerHTML = modalHTML;
+			container.onclick = null; // לא נסגר בלחיצה על הרקע - תוצאה/בחירה יקרה מדי לאבד בטעות
 		}
 
 		// התהליך המלא: קריאה -> פיענוח -> סימון כפילויות -> כתיבה לטבלת עזר חדשה
@@ -8809,7 +8810,8 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 
 		function showTelegramGapScanModal() {
 			const modalHTML = `
-				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 480px; width: 92vw; text-align: right;">
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 480px; width: 92vw; text-align: right; position: relative;">
+					<button onclick="closeAnyModal()" title="סגור" style="position: absolute; top: 10px; left: 12px; background: none; border: none; font-size: 24px; line-height: 1; color: #999; cursor: pointer; padding: 4px;">×</button>
 					<h3 style="margin: 0 0 6px 0; color: #6f42c1;">🔍 סריקת פערים מטלגרם</h3>
 					<p style="color: #666; font-size: 13px; margin: 0 0 18px 0;">
 						בודק אילו לקוחות מוזכרים בקובץ הטלגרם בתאריך מסוים, אך אין להם טיפול/תשלום תואם במערכת באותו תאריך.
@@ -8848,8 +8850,8 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 
 			const container = document.getElementById('modalContainer');
 			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
-			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
-			container.onclick = closeAnyModal;
+			container.innerHTML = modalHTML;
+			container.onclick = null; // לא נסגר בלחיצה על הרקע - תוצאה/בחירה יקרה מדי לאבד בטעות
 		}
 
 		// קריאת קובץ JSON של טלגרם, ללא סינון תאריכים - כדי לזהות את הטווח המלא
@@ -8987,7 +8989,8 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 				: `<tr><td colspan="2" style="padding: 14px; text-align: center; color: #28a745;">לא נמצאו פערים 🎉</td></tr>`;
 
 			const modalHTML = `
-				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 520px; width: 92vw; max-height: 80vh; display: flex; flex-direction: column; text-align: right;">
+				<div style="background: white; padding: 25px; border-radius: 12px; max-width: 520px; width: 92vw; max-height: 80vh; display: flex; flex-direction: column; text-align: right; position: relative;">
+					<button onclick="closeAnyModal()" title="סגור" style="position: absolute; top: 10px; left: 12px; background: none; border: none; font-size: 24px; line-height: 1; color: #999; cursor: pointer; padding: 4px;">×</button>
 					<h3 style="margin: 0 0 6px 0; color: #6f42c1;">🔍 דוח פערים - ${typeLabel}</h3>
 					<p style="color: #666; font-size: 13px; margin: 0 0 14px 0;">
 						טווח: ${formatDate(result.minDay)} - ${formatDate(result.maxDay)} |
@@ -9021,8 +9024,8 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 
 			const container = document.getElementById('modalContainer');
 			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
-			container.innerHTML = `<div onclick="event.stopPropagation()">${modalHTML}</div>`;
-			container.onclick = closeAnyModal;
+			container.innerHTML = modalHTML;
+			container.onclick = null; // לא נסגר בלחיצה על הרקע - תוצאה יקרה מדי לאבד בטעות
 		}
 
 		// טבלת עזר חדשה לכל ייבוא מטלגרם - כך לעולם לא נכתב על נתונים קיימים
