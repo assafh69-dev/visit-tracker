@@ -2517,7 +2517,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v6.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -7729,7 +7729,9 @@
 			let filteredVisits = [...visits];
 			
 			// Filter by active status with null safety
-			const activeFilter = document.getElementById('filterActiveClients')?.value || '1';
+			// לא || '1' - הערך התקין של "כל הלקוחות" הוא מחרוזת ריקה, וה-|| היה מאפס אותו בחזרה ל"פעילים בלבד"
+			const activeFilterEl = document.getElementById('filterActiveClients');
+			const activeFilter = activeFilterEl ? activeFilterEl.value : '1';
 			if (activeFilter !== '') {
 				const activeStatus = activeFilter === '1';
 				const activeLocationIds = locations
