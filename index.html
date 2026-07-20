@@ -2517,7 +2517,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v6.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v2.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -7716,32 +7716,36 @@
 		}
 	   
 		// תוספה - סינון וטעינת טיפולים
+		// מסנן מערך טיפולים לפי "הצג לקוחות" (פעילים/לא פעילים/הכל).
+		// פונקציה משותפת ל-applyVisitFilters ול-applyAdditionalFiltersToVisits (חיפוש חכם) -
+		// כדי ששני נתיבי הסינון לא יסטו זה מזה שוב.
+		function filterVisitsByActiveStatus(visitsArray) {
+			const activeFilterEl = document.getElementById('filterActiveClients');
+			const activeFilter = activeFilterEl ? activeFilterEl.value : '1';
+			if (activeFilter === '') return visitsArray;
+
+			const activeStatus = activeFilter === '1';
+			const activeLocationIds = locations
+				.filter(loc => (activeStatus ? loc.active === "1" : loc.active !== "1"))
+				.map(loc => loc.ID);
+			return visitsArray.filter(visit => activeLocationIds.includes(visit.location_id));
+		}
+
 		function applyVisitFilters() {
 			console.log('🔍 מסנן טיפולים...');
-			
+
 			// Check for smart search first
 			const smartSearch = document.getElementById('visitSmartSearch')?.value;
 			if (smartSearch && smartSearch.trim()) {
 				handleVisitSmartSearch(smartSearch);
 				return;
 			}
-			
+
 			let filteredVisits = [...visits];
-			
+
 			// Filter by active status with null safety
-			// לא || '1' - הערך התקין של "כל הלקוחות" הוא מחרוזת ריקה, וה-|| היה מאפס אותו בחזרה ל"פעילים בלבד"
-			const activeFilterEl = document.getElementById('filterActiveClients');
-			const activeFilter = activeFilterEl ? activeFilterEl.value : '1';
-			if (activeFilter !== '') {
-				const activeStatus = activeFilter === '1';
-				const activeLocationIds = locations
-					.filter(loc => (activeStatus ? loc.active === "1" : loc.active !== "1"))
-					.map(loc => loc.ID);
-				filteredVisits = filteredVisits.filter(visit => 
-					activeLocationIds.includes(visit.location_id)
-				);
-			}
-			
+			filteredVisits = filterVisitsByActiveStatus(filteredVisits);
+
 			// Filter by payment status with null safety
 			const paymentFilter = document.getElementById('filterPayment')?.value || '';
 			if (paymentFilter) {
@@ -17838,15 +17842,18 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 
 
 		// חיפוש חכם לקוחות - החלפת הפונקציה הקיימת
-		function searchClientsAdvanced(searchTerm) {
+		// includeInactive=false (ברירת מחדל) - כמו תמיד, לחיפוש לקוח להוספת טיפול/תשלום/קבלה חדשים.
+		// includeInactive=true - לחיפוש בטאב טיפולים, שם הסינון פעיל/לא פעיל/הכל מתבצע בנפרד על התוצאה.
+		function searchClientsAdvanced(searchTerm, includeInactive = false) {
+			const pool = includeInactive ? locations : locations.filter(location => location.active === "1");
+
 			if (!searchTerm || searchTerm.trim() === '') {
-				return locations.filter(location => location.active === "1").slice(0, 10);
+				return pool.slice(0, 10);
 			}
-			
+
 			const term = searchTerm.toLowerCase().trim();
-			
-			return locations
-				.filter(location => location.active === "1")
+
+			return pool
 				.filter(location => {
 					const name = (location.name || '').toLowerCase();
 					const address = (location.full_address || '').toLowerCase();
@@ -17982,10 +17989,10 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 				return;
 			}
 			
-			// מציאת לקוחות מתאימים
-			const matchingClients = searchClientsAdvanced(searchTerm);
+			// מציאת לקוחות מתאימים - כולל לא פעילים, כי הסינון "הצג לקוחות" מתבצע בהמשך על התוצאה
+			const matchingClients = searchClientsAdvanced(searchTerm, true);
 			const clientIds = matchingClients.map(client => client.ID);
-			
+
 			if (clientIds.length === 0) {
 				displayFilteredVisits([]);
 				updateTreatmentsStats([]);
@@ -18014,21 +18021,17 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 		// פונקציה לhחלת הסינונים הרגילים על קבוצה מסוימת של ביקורים
 		function applyAdditionalFiltersToVisits(visitsArray) {
 			let filtered = [...visitsArray];
-			
-			// סינון לפי תשלום
+
+			// סינון לפי פעיל/לא פעיל - אותה פונקציה שמשמשת את הסינון הרגיל
+			filtered = filterVisitsByActiveStatus(filtered);
+
+			// סינון לפי תשלום - אותה השוואה כמו ב-applyVisitFilters
+			// (הערכים בתפריט הם '1'/'0'/'3'/'2', לא 'כן'/'לא'/'ללא')
 			const paymentFilter = document.getElementById('filterPayment')?.value;
 			if (paymentFilter) {
-				filtered = filtered.filter(visit => {
-					const paymentStatus = getVisitPaymentStatus(visit.ID);
-					switch(paymentFilter) {
-						case 'כן': return paymentStatus === 'paid';
-						case 'לא': return paymentStatus === 'unpaid';
-						case 'ללא': return paymentStatus === 'no_payment';
-						default: return true;
-					}
-				});
+				filtered = filtered.filter(visit => getVisitPaymentStatus(visit.ID) === paymentFilter);
 			}
-			
+
 			// סינון לפי תאריך
 			const dateFrom = document.getElementById('filterDateFrom')?.value;
 			const dateTo = document.getElementById('filterDateTo')?.value;
