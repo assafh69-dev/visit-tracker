@@ -2517,7 +2517,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v4.5</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -8607,6 +8607,41 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 			return { kept, excluded };
 		}
 
+		// בודק אם תשלום שפוענח מטלגרם כבר קיים בתוכנית (לקוח + תאריך + סכום) - אותו עיקרון כמו isVisitPossibleDuplicate
+		function isPaymentPossibleDuplicate(p) {
+			return !!payments.find(ex => {
+				if (ex.date !== p.date) return false;
+				if ((ex.client_name || '').trim() !== p.client_address.trim()) return false;
+				return (parseFloat(ex.amount) || 0) === (parseFloat(p.amount) || 0);
+			});
+		}
+
+		// מסמן תשלומים חשודים ככפולים - משאיר את כולם, רק מוסיף אזהרה בהערות. לעולם לא מסיר.
+		function flagPossibleDuplicatePayments(parsedPayments) {
+			let flagged = 0;
+			parsedPayments.forEach(p => {
+				if (isPaymentPossibleDuplicate(p)) {
+					p.notes = `⚠️ ייתכן כפול - קיים כבר בתוכנית. ${p.notes || ''}`.trim();
+					flagged++;
+				}
+			});
+			return flagged;
+		}
+
+		// משמיט תשלומים חשודים ככפולים לגמרי - הם לא ייכתבו לטבלת העזר ולכן לא ייובאו
+		function excludeDuplicatePayments(parsedPayments) {
+			const kept = [];
+			let excluded = 0;
+			parsedPayments.forEach(p => {
+				if (isPaymentPossibleDuplicate(p)) {
+					excluded++;
+				} else {
+					kept.push(p);
+				}
+			});
+			return { kept, excluded };
+		}
+
 		// מודל בחירת הקבצים
 		function showTelegramImportModal() {
 			if (!getAnthropicKey()) {
@@ -8651,10 +8686,10 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 						<label>סוג הקובץ:</label>
 						<div style="display: flex; gap: 16px; margin-top: 6px;">
 							<label style="font-weight: normal; cursor: pointer;">
-								<input type="radio" name="telegramImportType" value="visits" checked onchange="onTelegramImportTypeChange()"> טיפולים (קבוצת "גינות")
+								<input type="radio" name="telegramImportType" value="visits" checked> טיפולים (קבוצת "גינות")
 							</label>
 							<label style="font-weight: normal; cursor: pointer;">
-								<input type="radio" name="telegramImportType" value="payments" onchange="onTelegramImportTypeChange()"> תשלומים (קבוצת "הכנסות")
+								<input type="radio" name="telegramImportType" value="payments"> תשלומים (קבוצת "הכנסות")
 							</label>
 						</div>
 					</div>
@@ -8677,7 +8712,7 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 					<p style="font-size: 12px; color: #888; margin: -8px 0 18px 0;">ריק = כל הקובץ. למלא רק אם מתקבלת אזהרת כמות הודעות - לצמצום הטווח.</p>
 
 					<div class="form-group" id="telegramDuplicateModeWrapper" style="margin-bottom: 18px;">
-						<label>טיפולים שאולי כבר קיימים במערכת:</label>
+						<label>רשומות שאולי כבר קיימות במערכת:</label>
 						<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
 							<label style="font-weight: normal; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
 								<input type="radio" name="telegramDuplicateMode" value="flag" ${duplicateMode === 'flag' ? 'checked' : ''} style="margin-top: 3px;">
@@ -8707,13 +8742,6 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 			container.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);';
 			container.innerHTML = modalHTML;
 			container.onclick = null; // לא נסגר בלחיצה על הרקע - תוצאה/בחירה יקרה מדי לאבד בטעות
-		}
-
-		// בדיקת כפילויות רלוונטית רק לטיפולים - isVisitPossibleDuplicate לא בודקת תשלומים
-		function onTelegramImportTypeChange() {
-			const type = document.querySelector('input[name="telegramImportType"]:checked').value;
-			const wrapper = document.getElementById('telegramDuplicateModeWrapper');
-			if (wrapper) wrapper.style.display = type === 'visits' ? 'block' : 'none';
 		}
 
 		// התהליך המלא: קריאה -> פיענוח -> סימון כפילויות -> כתיבה לטבלת עזר חדשה
@@ -8844,12 +8872,22 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 		async function deliverTelegramParseToHelper(parsed, duplicateMode = 'flag', importType = 'visits') {
 			let flaggedCount = 0;
 			let excludedCount = 0;
-			if (duplicateMode === 'exclude') {
-				const result = excludeDuplicateVisits(parsed.visits || []);
-				parsed.visits = result.kept;
-				excludedCount = result.excluded;
+			if (importType === 'payments') {
+				if (duplicateMode === 'exclude') {
+					const result = excludeDuplicatePayments(parsed.payments || []);
+					parsed.payments = result.kept;
+					excludedCount = result.excluded;
+				} else {
+					flaggedCount = flagPossibleDuplicatePayments(parsed.payments || []);
+				}
 			} else {
-				flaggedCount = flagPossibleDuplicateVisits(parsed.visits || []);
+				if (duplicateMode === 'exclude') {
+					const result = excludeDuplicateVisits(parsed.visits || []);
+					parsed.visits = result.kept;
+					excludedCount = result.excluded;
+				} else {
+					flaggedCount = flagPossibleDuplicateVisits(parsed.visits || []);
+				}
 			}
 
 			// הפיענוח נמשך דקות ארוכות, והטוקן של גוגל עלול לפוג בינתיים.
@@ -8883,7 +8921,8 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 			hideLoading();
 			window.open(`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`, '_blank');
 
-			const needsReview = (parsed.visits || []).filter(v => v.needs_review).length;
+			const needsReview = (parsed.visits || []).filter(v => v.needs_review).length
+				+ (parsed.payments || []).filter(p => p.needs_review).length;
 			let summary = `${(parsed.visits || []).length} טיפולים, ${(parsed.payments || []).length} תשלומים`;
 			if (flaggedCount) summary += ` | ${flaggedCount} סומנו כייתכן כפולים`;
 			if (excludedCount) summary += ` | ${excludedCount} הושמטו כחשודים ככפולים`;
@@ -9222,6 +9261,13 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 			return spreadsheetId;
 		}
 
+		// שורות הערות לבדיקה - 3 עמודות בדיוק. משותף לטבלת העזר הזמנית ולארכיון.
+		function buildTelegramNoteRows(parsed) {
+			return (parsed.review_notes || []).map(n => [
+				n.date || '', n.original_text || '', n.reason || ''
+			]);
+		}
+
 		// שורות טיפולים בפורמט גליון Visits - 13 עמודות בדיוק. משותף לטבלת העזר הזמנית ולארכיון.
 		function buildTelegramVisitRows(parsedVisits) {
 			return (parsedVisits || []).map(v => {
@@ -9265,10 +9311,7 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 		async function writeTelegramResultsToHelper(spreadsheetId, parsed) {
 			const visitRows = buildTelegramVisitRows(parsed.visits);
 			const paymentRows = buildTelegramPaymentRows(parsed.payments);
-
-			const noteRows = (parsed.review_notes || []).map(n => [
-				n.date || '', n.original_text || '', n.reason || ''
-			]);
+			const noteRows = buildTelegramNoteRows(parsed);
 
 			const writes = [];
 			if (visitRows.length) {
@@ -9302,7 +9345,8 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 
 		// ===== ארכיון קבוע לפיענוחי טלגרם - בנוסף לטבלת העזר הזמנית, לא במקומה =====
 		// שני קבצים קבועים (חיפוש-או-יצירה, כמו findOrCreateMainSpreadsheet): TLGRM_visits, TLGRM_incomes.
-		// כל הרצה מוסיפה טאב חדש (בשם התאריך) לקובץ המתאים - בלי הערות_לבדיקה, רק השורות עצמן.
+		// כל הרצה מוסיפה טאב חדש (בשם התאריך) לקובץ המתאים עם השורות עצמן, ובנוסף מוסיפה את
+		// הערות הבדיקה של אותה ריצה לטאב קבוע אחד בשם "Remarks" (מצטבר על פני ריצות, לא נוצר מחדש).
 
 		async function findOrCreateTelegramArchive(importType) {
 			const fileName = importType === 'payments' ? 'TLGRM_incomes' : 'TLGRM_visits';
@@ -9336,32 +9380,77 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 			return `${baseName}_${i}`;
 		}
 
-		// מוסיף טאב חדש לקובץ הארכיון המתאים וכותב אליו את השורות. כישלון כאן לא אמור
-		// להפיל את שאר התהליך - טבלת העזר הזמנית כבר נכתבה בהצלחה לפני הקריאה לזה.
-		async function archiveTelegramParseResults(parsed, importType) {
-			const rows = importType === 'payments'
-				? buildTelegramPaymentRows(parsed.payments)
-				: buildTelegramVisitRows(parsed.visits);
-
-			if (rows.length === 0) return; // אין מה לארכב
-
-			const spreadsheetId = await findOrCreateTelegramArchive(importType);
-			const sheetName = await getUniqueSheetName(spreadsheetId, getLocalDateString());
+		// מוודא שקיים בקובץ טאב קבוע בשם נתון (בניגוד ל-getUniqueSheetName שיוצר טאב חדש
+		// בכל קריאה) - יוצר אותו עם שורת כותרות רק אם הוא עוד לא קיים.
+		async function findOrCreateNamedSheet(spreadsheetId, sheetName, headerRow) {
+			const meta = await gapi.client.sheets.spreadsheets.get({
+				spreadsheetId: spreadsheetId,
+				fields: 'sheets.properties.title'
+			});
+			const existingTitles = new Set((meta.result.sheets || []).map(s => s.properties.title));
+			if (existingTitles.has(sheetName)) return;
 
 			await gapi.client.sheets.spreadsheets.batchUpdate({
 				spreadsheetId: spreadsheetId,
 				resource: { requests: [{ addSheet: { properties: { title: sheetName } } }] }
 			});
 
-			const lastCol = importType === 'payments' ? 'G' : 'M';
 			await gapi.client.sheets.spreadsheets.values.update({
 				spreadsheetId: spreadsheetId,
-				range: `${sheetName}!A1:${lastCol}${rows.length}`,
+				range: `${sheetName}!A1:${String.fromCharCode(64 + headerRow.length)}1`,
 				valueInputOption: 'RAW',
-				resource: { values: rows }
+				resource: { values: [headerRow] }
 			});
+		}
 
-			console.log(`Archived to ${importType === 'payments' ? 'TLGRM_incomes' : 'TLGRM_visits'} / ${sheetName}: ${rows.length} rows`);
+		// מוסיף טאב חדש לקובץ הארכיון המתאים וכותב אליו את השורות. כישלון כאן לא אמור
+		// להפיל את שאר התהליך - טבלת העזר הזמנית כבר נכתבה בהצלחה לפני הקריאה לזה.
+		async function archiveTelegramParseResults(parsed, importType) {
+			const rows = importType === 'payments'
+				? buildTelegramPaymentRows(parsed.payments)
+				: buildTelegramVisitRows(parsed.visits);
+			const noteRows = buildTelegramNoteRows(parsed);
+
+			if (rows.length === 0 && noteRows.length === 0) return; // אין מה לארכב
+
+			const spreadsheetId = await findOrCreateTelegramArchive(importType);
+
+			if (rows.length) {
+				const sheetName = await getUniqueSheetName(spreadsheetId, getLocalDateString());
+
+				await gapi.client.sheets.spreadsheets.batchUpdate({
+					spreadsheetId: spreadsheetId,
+					resource: { requests: [{ addSheet: { properties: { title: sheetName } } }] }
+				});
+
+				const lastCol = importType === 'payments' ? 'G' : 'M';
+				await gapi.client.sheets.spreadsheets.values.update({
+					spreadsheetId: spreadsheetId,
+					range: `${sheetName}!A1:${lastCol}${rows.length}`,
+					valueInputOption: 'RAW',
+					resource: { values: rows }
+				});
+			}
+
+			// הערות לבדיקה מצטברות לאורך זמן בטאב קבוע אחד "Remarks" (לא טאב חדש לכל ריצה) -
+			// כל ריצה מוסיפה את ההערות שלה בסוף מה שכבר נכתב שם, גם אם אין באותה ריצה שורות טיפול/תשלום.
+			if (noteRows.length) {
+				const importDate = getLocalDateString();
+				const notesWithRunDate = noteRows.map(row => [importDate, ...row]);
+
+				await findOrCreateNamedSheet(spreadsheetId, 'Remarks',
+					['תאריך ייבוא', 'תאריך', 'הטקסט המקורי', 'למה לא נכנס']);
+
+				await gapi.client.sheets.spreadsheets.values.append({
+					spreadsheetId: spreadsheetId,
+					range: 'Remarks!A:D',
+					valueInputOption: 'RAW',
+					insertDataOption: 'INSERT_ROWS',
+					resource: { values: notesWithRunDate }
+				});
+			}
+
+			console.log(`Archived to ${importType === 'payments' ? 'TLGRM_incomes' : 'TLGRM_visits'}: ${rows.length} rows, ${noteRows.length} notes`);
 		}
 
 		// שמירת הגדרות עלות פשוטה יותר
