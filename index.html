@@ -2517,7 +2517,7 @@
 				<button onclick="showSection('payments')" class="nav-btn">💳 תשלומים</button>
 				<button onclick="showSection('tasks')" class="nav-btn">📋 משימות</button>
 				<button onclick="showSection('expenses')" class="nav-btn">💰 הוצאות</button>
-				<button onclick="showSection('system')" class="nav-btn">מערכת v5.0</button>
+				<button onclick="showSection('system')" class="nav-btn">מערכת v4.0</button>
 				
 				<!-- Client selector - only visible when locked -->
 				<button onclick="toggleClientLock()" class="nav-btn lock-btn" id="lockBtn" title="נעילת סינכרון לקוחות">
@@ -3652,6 +3652,10 @@
 						// ודא שכל הטבלאות החדשות קיימות
 						await checkAndFixTableStructure();
 
+						// הגדרות עלות (תעריף שעה, תיאור עבודה וכו') - תמיד מסונכרנות מהענן בכניסה,
+						// בניגוד לנתוני טיפולים/לקוחות שנטענים רק ידנית כדי למנוע דריסה
+						await loadSettingsFromCloud();
+
 						// טעינה אוטומטית של נתונים אם קיימים
 						// ❌ בוטל: טעינה אוטומטית - עכשיו רק ידנית
 						// המשתמש יבחר מתי לטעון כדי למנוע דריסת נתונים מקומיים
@@ -3794,7 +3798,11 @@
 				// בדיקת מבנה טבלאות בלבד - ללא טעינת נתונים
 				await findOrCreateMainSpreadsheet();
 				await checkAndFixTableStructure();
-				
+
+				// הגדרות עלות (תעריף שעה, תיאור עבודה וכו') - תמיד מסונכרנות מהענן בכניסה,
+				// בניגוד לנתוני טיפולים/לקוחות שנטענים רק ידנית כדי למנוע דריסה
+				await loadSettingsFromCloud();
+
 				// ❌ בוטל: טעינה אוטומטית - עכשיו רק ידנית
 				// המשתמש יבחר מתי לטעון כדי למנוע דריסת נתונים מקומיים
 				console.log('✅ Token שוחזר - טעינה ידנית בלבד (כפתור "טען")');
@@ -23867,27 +23875,47 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 			const totalIncome = recentVisits.reduce((sum, v) => sum + parseFloat(v.amount), 0);
 			const totalMinutes = recentVisits.reduce((sum, v) => sum + parseFloat(v.duration_minutes), 0);
 			const avgHourlyRate = totalMinutes > 0 ? (totalIncome / totalMinutes * 60) : 0;
-			
+
+			// סה"כ חוב מכל הלקוחות הפעילים
+			const totalDebtAllClients = activeLocations.reduce((sum, loc) => sum + getClientTotalDebt(loc.ID), 0);
+
 			// בניית שורות הטבלה
 			const rows = activeLocations.map(loc => {
 				const color = getIntervalColor(loc.interval_weeks);
 				const intervalLabel = getIntervalLabel(loc.interval_weeks);
-				
+
 				// 5 טיפולים אחרונים עם סכום ומשך
 				const locVisits = visits
 					.filter(v => v.location_id === loc.ID && parseFloat(v.amount) > 0 && parseFloat(v.duration_minutes) > 0)
 					.sort((a, b) => b.date.localeCompare(a.date))
 					.slice(0, 5);
-				
+
 				const avgDuration = locVisits.length > 0
 					? locVisits.reduce((sum, v) => sum + parseFloat(v.duration_minutes), 0) / locVisits.length / 60
 					: null;
-				
+
+				const avgAmount = locVisits.length > 0
+					? locVisits.reduce((sum, v) => sum + parseFloat(v.amount), 0) / locVisits.length
+					: null;
+
 				const avgHourly = locVisits.length > 0
-					? locVisits.reduce((sum, v) => sum + parseFloat(v.amount), 0) / 
+					? locVisits.reduce((sum, v) => sum + parseFloat(v.amount), 0) /
 					  locVisits.reduce((sum, v) => sum + parseFloat(v.duration_minutes) / 60, 0)
 					: null;
-				
+
+				// המלצה לעליית שכר - לפי אותה נוסחה שבטאב סטטיסטיקה בפרופיל הלקוח
+				const newRate = costSettings?.newHourlyRate || 200;
+				let priceRecommendationHTML = '-';
+				if (avgDuration !== null && avgAmount !== null) {
+					const recommendedPrice = Math.round(avgDuration * newRate / 10) * 10;
+					const priceIncrease = recommendedPrice - avgAmount;
+					const increasePercent = avgAmount > 0 ? (priceIncrease / avgAmount * 100) : 0;
+					const increaseColor = priceIncrease > 0 ? '#e74c3c' : '#27ae60';
+					priceRecommendationHTML = `<span style="color: ${increaseColor}; font-weight: bold;">${priceIncrease > 0 ? '+' : ''}${priceIncrease.toFixed(0)} ₪ (${increasePercent.toFixed(0)}%)</span>`;
+				}
+
+				const clientDebt = getClientTotalDebt(loc.ID);
+
 				return `
 					<tr style="border-bottom: 1px solid #eee;">
 						<td style="padding: 8px 10px;">${loc.name}</td>
@@ -23900,6 +23928,9 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 						<td style="padding: 8px 10px;">${parseFloat(loc.base_amount) > 0 ? '₪' + parseFloat(loc.base_amount).toFixed(0) : '-'}</td>
 						<td style="padding: 8px 10px;">${avgDuration !== null ? avgDuration.toFixed(1) + ' שע' : '-'}</td>
 						<td style="padding: 8px 10px;">${avgHourly !== null ? '₪' + avgHourly.toFixed(0) : '-'}</td>
+						<td style="padding: 8px 10px;">${avgAmount !== null ? '₪' + avgAmount.toFixed(0) : '-'}</td>
+						<td style="padding: 8px 10px;">${priceRecommendationHTML}</td>
+						<td style="padding: 8px 10px;">${clientDebt > 0.01 ? `<span style="color: #e74c3c; font-weight: bold;">₪${clientDebt.toFixed(0)}</span>` : '-'}</td>
 					</tr>
 				`;
 			}).join('');
@@ -23946,6 +23977,10 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 							<div class="stat-value">₪${avgHourlyRate.toFixed(0)}</div>
 							<div class="stat-label">עלות ממוצעת לשעה</div>
 						</div>
+						<div class="stat-item">
+							<div class="stat-value" style="color: #e74c3c;">₪${totalDebtAllClients.toFixed(0)}</div>
+							<div class="stat-label">סה"כ חוב מכל הלקוחות</div>
+						</div>
 						<div style="margin-top: 12px;">
 							<div style="font-size: 13px; color: #555; margin-bottom: 8px;">התפלגות לפי מרווח:</div>
 							<div style="display: flex; flex-wrap: wrap; gap: 6px;">
@@ -23963,6 +23998,9 @@ notes בעברית, קצר וענייני. needs_review=true בכל מקום ש�
 								<th>סכום קבוע</th>
 								<th>משך ממוצע</th>
 								<th>עלות לשעה</th>
+								<th>עלות טיפול ממוצעת</th>
+								<th>המלצה לעליית שכר</th>
+								<th>חוב כולל</th>
 							</tr>
 						</thead>
 						<tbody>${rows}</tbody>
